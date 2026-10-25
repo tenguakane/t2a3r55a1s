@@ -5037,18 +5037,34 @@ async function tableImageBlob(tableId, title, rowLimit = null){
     const panel = getComputedStyle(document.documentElement).getPropertyValue("--panel").trim() || "#1c1f27";
     const lineColor = getComputedStyle(document.documentElement).getPropertyValue("--line").trim() || "#2c303b";
     const textColor = getComputedStyle(document.documentElement).getPropertyValue("--text").trim() || "#e6e8ee";
-    ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+    // «Со стеклом»: таблица рисуется сразу на матовом стекле — без линий, заголовок и итоги чуть светлее, углы картинки прямые.
+    const glass = typeof window.__glassWanted === "function" && window.__glassWanted() && typeof window.__glassBackdrop === "function";
+    if (glass) window.__glassBackdrop(ctx, W, H);
+    else { ctx.fillStyle = bg; ctx.fillRect(0,0,W,H); }
     ctx.font = titleFont; ctx.textBaseline = "middle"; ctx.fillStyle = textColor;
     ctx.fillText(titleText, pad, pad+titleLineHeight/2);
 
     const tableY = pad+titleLineHeight+titleGap;
     const tableX = pad;
-    const tableRadius = 8;
-    ctx.fillStyle = panel;
+    const tableRadius = glass ? 12 : 8;
+    ctx.fillStyle = glass ? "rgba(255,255,255,.035)" : panel;
     ctx.beginPath();
     if (typeof ctx.roundRect === "function") ctx.roundRect(tableX, tableY, tableWidth, tableHeight, tableRadius);
     else ctx.rect(tableX, tableY, tableWidth, tableHeight);
     ctx.fill();
+    // Заметный цвет ячейки (подсветка лучшего дня, тепловая заливка) сохраняем и на стекле; обычные фоны — нет.
+    const normCtx = document.createElement("canvas").getContext("2d");
+    const strongColor = c => {
+      if (!c) return false;
+      normCtx.fillStyle = "#000"; normCtx.fillStyle = c; const v = String(normCtx.fillStyle);
+      let r, g, b, a = 1;
+      if (v[0] === "#") { r = parseInt(v.slice(1, 3), 16); g = parseInt(v.slice(3, 5), 16); b = parseInt(v.slice(5, 7), 16); }
+      else { const n = (v.match(/[\d.]+/g) || []).map(Number); if (/^color\(/.test(v)) { [r, g, b] = n.slice(0, 3).map(x => x * 255); a = n.length > 3 ? n[3] : 1; } else { [r, g, b] = n; a = n.length > 3 ? n[3] : 1; } }
+      return a >= .2 && Math.max(r, g, b) - Math.min(r, g, b) >= 40;
+    };
+    const tableRows = rows.map(r => r.parentElement && r.parentElement.tagName);
+    // светлые полосы заголовка и итогов не выходят за скруглённые углы таблицы
+    if (glass) { ctx.save(); ctx.beginPath(); if (typeof ctx.roundRect === "function") ctx.roundRect(tableX, tableY, tableWidth, tableHeight, tableRadius); else ctx.rect(tableX, tableY, tableWidth, tableHeight); ctx.clip(); }
 
     for (let ri = 0; ri < rows.length; ri++) {
       const row = rows[ri];
@@ -5056,14 +5072,19 @@ async function tableImageBlob(tableId, title, rowLimit = null){
       const rowY = tableY + (rr.top-tableRect.top), rowH = rr.height;
       const rowCS = getComputedStyle(row);
       const bgRow = canvasColor(rowCS.backgroundColor, panel);
-      ctx.fillStyle = bgRow; ctx.fillRect(tableX, rowY, tableWidth, rowH);
+      if (glass) {
+        const sec = tableRows[ri];
+        if (sec === "THEAD") { ctx.fillStyle = "rgba(255,255,255,.08)"; ctx.fillRect(tableX, rowY, tableWidth, rowH); }
+        else if (sec === "TFOOT") { ctx.fillStyle = "rgba(255,255,255,.065)"; ctx.fillRect(tableX, rowY, tableWidth, rowH); }
+      } else { ctx.fillStyle = bgRow; ctx.fillRect(tableX, rowY, tableWidth, rowH); }
       const cells = [...row.children].filter(el => el.tagName === "TD" || el.tagName === "TH");
       for (const cell of cells) {
         const cr = cell.getBoundingClientRect();
         const x = tableX + cr.left-tableRect.left, y = tableY + cr.top-tableRect.top;
         const cs = getComputedStyle(cell);
         const cellBg = canvasColor(cs.backgroundColor, bgRow);
-        if (cellBg !== "rgba(0, 0, 0, 0)" && cellBg !== "transparent") {
+        if (glass) { if (strongColor(cs.backgroundColor)) { ctx.fillStyle = cs.backgroundColor; ctx.fillRect(x, y, cr.width, cr.height); } }
+        else if (cellBg !== "rgba(0, 0, 0, 0)" && cellBg !== "transparent") {
           ctx.fillStyle = cellBg; ctx.fillRect(x,y,cr.width,cr.height);
         }
         if (cell.dataset.barPct) {
@@ -5074,23 +5095,38 @@ async function tableImageBlob(tableId, title, rowLimit = null){
         // Прозрачная граница (например, в режиме «без линий») — не рисуем её цветом линии по умолчанию.
         const seen = c => c && c !== "transparent" && !/^rgba\([^)]*,\s*0\)$/.test(c) && !/\/\s*0\)$/.test(c);
         const leftBorder = parseFloat(cs.borderLeftWidth) || 0;
-        if (leftBorder > 0 && cs.borderLeftStyle !== "none" && seen(cs.borderLeftColor)) {
+        if (!glass && leftBorder > 0 && cs.borderLeftStyle !== "none" && seen(cs.borderLeftColor)) {
           ctx.fillStyle = canvasColor(cs.borderLeftColor, lineColor); ctx.fillRect(x, y, leftBorder, cr.height);
         }
         drawCanvasCellText(ctx, cell, cr, tableRect, tableX, tableY, textColor);
         if (cell.querySelector("svg")) await drawInlineSvgVisuals(ctx, cell, tableRect, tableX, tableY);
         const borderWidth = parseFloat(cs.borderBottomWidth) || 0;
-        if (borderWidth > 0 && cs.borderBottomStyle !== "none" && seen(cs.borderBottomColor)) {
+        if (!glass && borderWidth > 0 && cs.borderBottomStyle !== "none" && seen(cs.borderBottomColor)) {
           const borderColor = canvasColor(cs.borderBottomColor, lineColor);
           ctx.fillStyle = borderColor; ctx.fillRect(x, y+cr.height-borderWidth, cr.width, borderWidth);
         }
       }
     }
-    ctx.strokeStyle = lineColor; ctx.lineWidth = 1; ctx.beginPath();
-    if (typeof ctx.roundRect === "function") ctx.roundRect(tableX+0.5,tableY+0.5,tableWidth-1,tableHeight-1,tableRadius);
-    else ctx.rect(tableX+0.5,tableY+0.5,tableWidth-1,tableHeight-1);
-    ctx.stroke();
-    return await new Promise((resolve,reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Не удалось создать PNG")), "image/png"));
+    if (glass) {
+      // единственная линия — под заголовком; итоги отделены тонкой линией сверху
+      const lastHead = rows.reduce((acc, r, i) => tableRows[i] === "THEAD" ? i : acc, -1);
+      const firstFoot = tableRows.indexOf("TFOOT");
+      if (lastHead >= 0) { ctx.fillStyle = "rgba(255,255,255,.16)"; ctx.fillRect(tableX, tableY + rowRects[lastHead].bottom - tableRect.top - 1, tableWidth, 1); }
+      if (firstFoot >= 0) { ctx.fillStyle = "rgba(255,255,255,.10)"; ctx.fillRect(tableX, tableY + rowRects[firstFoot].top - tableRect.top, tableWidth, 1); }
+      ctx.restore();
+      ctx.strokeStyle = "rgba(255,255,255,.14)"; ctx.lineWidth = 1; ctx.beginPath();
+      if (typeof ctx.roundRect === "function") ctx.roundRect(tableX+0.5,tableY+0.5,tableWidth-1,tableHeight-1,tableRadius);
+      else ctx.rect(tableX+0.5,tableY+0.5,tableWidth-1,tableHeight-1);
+      ctx.stroke();
+    } else {
+      ctx.strokeStyle = lineColor; ctx.lineWidth = 1; ctx.beginPath();
+      if (typeof ctx.roundRect === "function") ctx.roundRect(tableX+0.5,tableY+0.5,tableWidth-1,tableHeight-1,tableRadius);
+      else ctx.rect(tableX+0.5,tableY+0.5,tableWidth-1,tableHeight-1);
+      ctx.stroke();
+    }
+    const out = await new Promise((resolve,reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Не удалось создать PNG")), "image/png"));
+    if (glass) window.__glassRendered = {size: out.size, t: Date.now()};
+    return out;
   } finally {
     measureHost.remove();
   }
@@ -9276,6 +9312,26 @@ function cmpVerdict(m){
 }
 
 /* --- Графики и картинка --- */
+// Гладкая линия через точки без «выбросов» за пределы данных (монотонная кубическая интерполяция).
+function smoothLinePath(pts){
+  const n = pts.length; if (!n) return "";
+  if (n < 3) return pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join("");
+  const x = pts.map(p => p[0]), y = pts.map(p => p[1]), d = [], m = [];
+  for (let i = 0; i < n - 1; i++) d.push((y[i + 1] - y[i]) / (x[i + 1] - x[i] || 1));
+  m[0] = d[0]; m[n - 1] = d[n - 2];
+  for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+  for (let i = 0; i < n - 1; i++) {
+    if (d[i] === 0) { m[i] = 0; m[i + 1] = 0; continue; }
+    const a = m[i] / d[i], b = m[i + 1] / d[i], h = a * a + b * b;
+    if (h > 9) { const t = 3 / Math.sqrt(h); m[i] = t * a * d[i]; m[i + 1] = t * b * d[i]; }
+  }
+  let s = `M${x[0].toFixed(1)},${y[0].toFixed(1)}`;
+  for (let i = 0; i < n - 1; i++) {
+    const h = (x[i + 1] - x[i]) / 3;
+    s += `C${(x[i] + h).toFixed(1)},${(y[i] + m[i] * h).toFixed(1)} ${(x[i + 1] - h).toFixed(1)},${(y[i + 1] - m[i + 1] * h).toFixed(1)} ${x[i + 1].toFixed(1)},${y[i + 1].toFixed(1)}`;
+  }
+  return s;
+}
 function cmpLineSvg(s, nA, nB, cA, cB){
   const n = s.x.length;
   if (n < 2) return note("Недостаточно данных для графика");
@@ -9288,12 +9344,15 @@ function cmpLineSvg(s, nA, nB, cA, cB){
   [[cA, nA], [cB, nB]].forEach(([c, nm], i) => { o += `<circle cx="${lx}" cy="27" r="6" fill="${c}"/><text x="${lx + 12}" y="32" font-size="17" fill="#c0c6d4">${escH(nm)}</text>`; lx += legW[i]; });
   for (let v = 0; v <= max + 1e-9; v += step) o += `<line x1="${L}" y1="${sy(v).toFixed(1)}" x2="${R}" y2="${sy(v).toFixed(1)}" stroke="#ffffff" stroke-opacity="0.07"/><text x="${L - 10}" y="${(sy(v) + 5).toFixed(1)}" font-size="16" fill="#8a90a2" text-anchor="end">${yrShortNum(v)}</text>`;
   const every = Math.max(1, Math.ceil(n / 14));
-  s.x.forEach((k, i) => { if (i % every === 0 || i === n - 1) o += `<text x="${sx(i).toFixed(1)}" y="${Bt + 22}" font-size="15" fill="#c0c6d4" text-anchor="middle">${escH(k)}</text>`; });
+  // Подписи оси: каждая every-я и последняя. Если последняя слишком близко к предыдущей — предыдущую не пишем, иначе текст наезжает.
+  const ticks = []; for (let i = 0; i < n; i += every) ticks.push(i);
+  if (ticks[ticks.length - 1] !== n - 1) { if (ticks.length > 1 && sx(n - 1) - sx(ticks[ticks.length - 1]) < 66) ticks.pop(); ticks.push(n - 1); }
+  ticks.forEach(i => { o += `<text x="${sx(i).toFixed(1)}" y="${Bt + 22}" font-size="15" fill="#c0c6d4" text-anchor="middle">${escH(s.x[i])}</text>`; });
   o += `<line x1="${L}" y1="${Bt}" x2="${R}" y2="${Bt}" stroke="#dcdcdc" stroke-opacity="0.6" stroke-width="2"/>`;
   const line = (arr, c, nm) => {
     const pts = arr.map((v, i) => v == null ? null : [sx(i), sy(v), v, i]).filter(Boolean);
     if (!pts.length) return "";
-    return `<polyline class="anim-line" pathLength="1" points="${pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ")}" fill="none" stroke="${c}" stroke-width="3" stroke-linejoin="round"/>` +
+    return `<path class="anim-line" pathLength="1" d="${smoothLinePath(pts)}" fill="none" stroke="${c}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>` +
       (n <= 40 ? pts.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.5" fill="${c}"><title>${escH(nm)} · ${escH(s.tip(p[3]))}: ${fmt(p[2])}</title></circle>`).join("") : "");
   };
   o += line(s.b, cB, nB) + line(s.a, cA, nA);
@@ -14061,6 +14120,8 @@ function multiplesChart(){
 /* ===================== История обновлений (новые версии — сверху) ===================== */
 // tag: new — новое, imp — улучшено, fix — исправлено, del — убрано. area — раздел сайта.
 window.CHANGELOG = [
+  {v:"2026.10.25-12", date:"2026-10-25", title:"Карточки на всех вкладках, гладкий график сравнения", items:[{tag:"fix", area:"Матрица", text:"Ячейка с общим итогом в правом верхнем углу снова светлая, как весь заголовок: золотой блеск цифр больше не стирает её фон."},{tag:"fix", area:"Сравнение", text:"«Сообщения по месяцам»: подписи месяцев на оси больше не наезжают друг на друга, линии графика плавные, без острых углов."},{tag:"new", area:"Карточки", text:"Выбор «В ряд» (авто или от 1 до 8) — у каждой таблицы, которую можно показать карточками: Рекорды, Топ месяцев, Топ дней, Марафоны, Время, Дни рождения, Селфи, Карта. Число запоминается для каждой таблицы отдельно."},{tag:"fix", area:"Карточки", text:"Если у таблицы нет столбца «Место», первый столбец (имя, дата, город, марафон) становится заголовком карточки — так поправлены карточки на вкладках Время, Карта, Селфи и в «Все марафоны». Подписи значений больше не обрезаются, а слова не разрываются посередине."},{tag:"imp", area:"Селфи", text:"Карточка пятницы показывает только день, сколько всего селфи и кто пропустил."}]},
+  {v:"2026.10.25-11", date:"2026-10-25", title:"Таблица «Со стеклом» — чистая и матовая", items:[{tag:"imp", area:"Везде", text:"Таблица «Со стеклом» теперь рисуется сразу на стекле, а не обрабатывается после: никаких линий между строками, заголовок и строки итогов светлее, под заголовком и над итогами — по тонкой линии."},{tag:"imp", area:"Везде", text:"Стекло на картинках стало матовее: цветные пятна приглушены, как у панелей на сайте. Углы самой картинки прямые."}]},
   {v:"2026.10.25-10", date:"2026-10-25", title:"Картинка таблицы — ровно как на экране", items:[{tag:"del", area:"Везде", text:"Пустые столбцы больше не вырезаются из картинки таблицы: на неё попадает ровно то, что видно на странице, без пустого места справа. Ненужный столбец можно скрыть кнопкой «Столбцы»."},{tag:"fix", area:"Таблицы", text:"В режиме «Без линий» на картинке тоже нет линий, кроме линии под заголовком; компактный вид таблицы тоже переносится на картинку."}]},
   {v:"2026.10.25-9", date:"2026-10-25", title:"Карточки на всю ширину, одна в ряд", items:[{tag:"imp", area:"Статистика", text:"Карточки на ПК занимают всю ширину окна, а не только колонку содержимого сайта."},{tag:"new", area:"Статистика", text:"«В ряд» — можно выбрать одну карточку. При одной или двух в ряд карточки не растягиваются на весь экран, чтобы внутри не было пустоты."}]},
   {v:"2026.10.25-8", date:"2026-10-25", title:"Матрица: закреплённая шапка и лишние столбцы; карточек в ряд", items:[{tag:"fix", area:"Матрица", text:"При прокрутке закрепляется только строка с названиями столбцов (№, имя, дни, «Всего»), без столбиков-графиков, и текст больше не накладывается."},{tag:"new", area:"Матрица", text:"Столбцы «%» и «Δ места» справа можно убрать — галочки в «Параметрах»."},{tag:"new", area:"Статистика", text:"В режиме карточек рядом со «Столбцами» появился выбор «В ряд»: авто или от 2 до 8 карточек в ряду."}]},
@@ -17288,14 +17349,26 @@ body.glass-ui.tb-on .wrap:has(> table:not(.tv-cards))::after{content:"";position
 .st-cols select{height:30px;min-width:64px;border:0;border-radius:8px;background:transparent;color:var(--text);font:inherit;font-size:14px;cursor:pointer}
 @media (min-width:721px){
   .st-desk-tools:has(#st-tv[data-tv-mode="cards"]) .st-cols{display:inline-flex}
-  body[data-cards-cols] table.tv-cards > :is(tbody,tfoot){grid-template-columns:repeat(var(--cards-cols,4),minmax(0,1fr))!important}
+  body table.tv-cards[data-cols="3"] > :is(tbody,tfoot){grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  body table.tv-cards[data-cols="4"] > :is(tbody,tfoot){grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  body table.tv-cards[data-cols="5"] > :is(tbody,tfoot){grid-template-columns:repeat(5,minmax(0,1fr))!important}
+  body table.tv-cards[data-cols="6"] > :is(tbody,tfoot){grid-template-columns:repeat(6,minmax(0,1fr))!important}
+  body table.tv-cards[data-cols="7"] > :is(tbody,tfoot){grid-template-columns:repeat(7,minmax(0,1fr))!important}
+  body table.tv-cards[data-cols="8"] > :is(tbody,tfoot){grid-template-columns:repeat(8,minmax(0,1fr))!important}
+  .hc-bar:has(.tv-btn[data-tv-mode="cards"]) .hc-cols{display:inline-flex}
+  .hc-bar .hc-cols{height:30px;border-radius:10px;font-size:13px}
+  .hc-bar .hc-cols .msel{height:28px!important}
   /* карточки занимают всю ширину окна (с полями по 24 px), а не только узкую колонку содержимого сайта */
   main .wrap:has(> table.tv-cards){margin-left:calc(-1 * var(--cards-bl,0px))!important;margin-right:calc(-1 * var(--cards-br,0px))!important;width:calc(100% + var(--cards-bl,0px) + var(--cards-br,0px))!important;max-width:none!important}
   /* 1–2 карточки в ряд: карточка не растягивается на всю ширину, иначе внутри пусто */
-  body:is([data-cards-cols="1"],[data-cards-cols="2"]) main .wrap:has(> table.tv-cards){margin-left:0!important;margin-right:0!important;width:100%!important}
-  body[data-cards-cols="1"] table.tv-cards > :is(tbody,tfoot){grid-template-columns:minmax(0,560px)!important}
-  body[data-cards-cols="2"] table.tv-cards > :is(tbody,tfoot){grid-template-columns:repeat(2,minmax(0,560px))!important}
+  main .wrap:has(> table.tv-cards:is([data-cols="1"],[data-cols="2"])){margin-left:0!important;margin-right:0!important;width:100%!important}
+  body table.tv-cards[data-cols="1"] > :is(tbody,tfoot){grid-template-columns:minmax(0,560px)!important}
+  body table.tv-cards[data-cols="2"] > :is(tbody,tfoot){grid-template-columns:repeat(2,minmax(0,560px))!important}
 }
+
+/* ---------- Матрица: золотой блеск у общего итога не стирает фон ячейки заголовка ---------- */
+body.fx-shimmer .dm-table thead th.dm-grand{background-image:linear-gradient(100deg,transparent 35%,rgba(255,236,170,.95) 50%,transparent 65%),linear-gradient(currentColor,currentColor),linear-gradient(var(--dm-head-bg,var(--th-bg)),var(--dm-head-bg,var(--th-bg)));background-size:220% 100%,100% 100%,100% 100%;-webkit-background-clip:text,text,padding-box;background-clip:text,text,padding-box}
+body.glass-ui .dm-table{--dm-head-bg:color-mix(in srgb,var(--text) 4%,transparent)}
 
 /* ---------- Меню «Столбцы»: вид таблицы ---------- */
 .hc-view{display:flex;flex-direction:column;gap:2px;margin:6px 0 0;padding:8px 0 0;border-top:1px solid color-mix(in srgb,var(--text) 9%,transparent)}
@@ -17304,6 +17377,25 @@ body.glass-ui.tb-on .wrap:has(> table:not(.tv-cards))::after{content:"";position
 .hc-pop label.hc-vitem span{flex:1 1 auto;text-align:left}
 .hc-pop label.hc-vitem:hover{background:color-mix(in srgb,var(--text) 6%,transparent)}
 .hc-pop label.hc-vitem input{flex:0 0 16px!important;width:16px!important;min-width:0!important;max-width:16px!important;height:16px!important;padding:0!important;margin:0!important;accent-color:var(--accent)}
+
+/* ---------- Карточки таблиц без столбца «Место»: первый столбец — заголовок карточки ---------- */
+body table.tv-cards[data-card-title] > :is(tbody,tfoot) > tr > :is(td,th):nth-child(1){flex:1 1 100%!important;min-width:0!important;align-self:auto!important;text-align:left!important;font-weight:600!important;font-size:15.5px!important;color:var(--text)!important;overflow:hidden}
+body table.tv-cards[data-card-title] > :is(tbody,tfoot) > tr > :is(td,th):nth-child(1)::before{display:none!important}
+body table.tv-cards[data-card-title] > :is(tbody,tfoot) > tr > :is(td,th):nth-child(2):not([colspan]){flex:1 1 auto!important;min-width:min-content!important;align-self:auto!important;text-align:center!important;font-weight:inherit!important;font-size:14px!important;overflow:visible}
+body table.tv-cards[data-card-title] > :is(tbody,tfoot) > tr > :is(td,th):nth-child(2):not([colspan])::before{display:block!important}
+/* значения в карточке не сжимаются в столбик из букв */
+body table.tv-cards > :is(tbody,tfoot) > tr > :is(td,th){flex-basis:auto;min-width:min-content;overflow-wrap:break-word!important;word-break:normal!important}
+body table.tv-cards > :is(tbody,tfoot) > tr > :is(td,th)::before{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+body table.tv-cards > tbody > tr > td :is(svg){max-width:100%;height:auto}
+/* Селфи · последние пятницы: в карточке — день, сколько селфи и кто пропустил */
+body #s-days-table.tv-cards > :is(tbody,tfoot) > tr > :is(td,th):is(:nth-child(3),:nth-child(4)){display:none!important}
+body #s-days-table.tv-cards > tbody > tr > td:nth-child(2){flex:1 1 100%!important;text-align:left!important;background:none!important;box-shadow:none!important;font-size:20px!important;font-weight:700!important;line-height:1.1}
+body #s-days-table.tv-cards > tbody > tr > td:nth-child(2) *:not(.compare-diff){background:none!important}
+body #s-days-table.tv-cards > tbody > tr > td:nth-child(2)::before{content:"Селфи всего"!important;font-weight:500}
+body #s-days-table.tv-cards > tbody > tr > td.s-miss{flex:1 1 100%!important;text-align:left!important;font-size:13.5px!important;line-height:1.4;color:#f7768e}
+body #s-days-table.tv-cards > tbody > tr > td.s-miss:empty::after{content:"все сделали";color:#9ece6a}
+/* Селфи · участники: полоска «Последние 12» на всю ширину карточки */
+body #s-people-table.tv-cards > tbody > tr > td:last-child{flex:1 1 100%!important;text-align:left!important}
 
 /* ---------- Экспериментально: стеклянный интерфейс ---------- */
 body.glass-ui{--glass-bg:color-mix(in srgb,var(--panel) 42%,transparent);--glass-bg-strong:color-mix(in srgb,var(--panel) 72%,transparent);--glass-line:color-mix(in srgb,var(--text) 15%,transparent);--glass-hi:color-mix(in srgb,var(--text) 22%,transparent);--glass-blur:blur(22px) saturate(175%)}
@@ -17473,7 +17565,7 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
       if (!cols) {
         const l = document.createElement("label"); l.className = "st-cols"; l.title = "Сколько карточек ставить в один ряд";
         l.innerHTML = `<span>В ряд</span><select id="st-cards-cols" class="no-sheet"><option value="">Авто</option>${[1, 2, 3, 4, 5, 6, 7, 8].map(n => `<option value="${n}">${n}</option>`).join("")}</select>`;
-        cols = l.querySelector("select"); cols.value = cardsCols();
+        cols = l.querySelector("select"); { const stt = statsTable(); cols.value = stt ? colsOf(stt) : ""; }
       }
       if (cols.closest("label").parentNode !== box) box.appendChild(cols.closest("label"));
     } else {
@@ -17500,13 +17592,40 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
   { const mn = document.querySelector("main"); if (mn && window.ResizeObserver) new ResizeObserver(cardsBleed).observe(mn); }
   new MutationObserver(() => setTimeout(cardsBleed, 260)).observe(document.body, {attributes:true, attributeFilter:["class"]});
   cardsBleed();
+  // Число карточек в ряд — своё у каждой таблицы (Статистика, Рекорды, Топ месяцев, Марафоны и т. д.).
+  const COLS_MAP_KEY = "chatstats.cardsColsByTable.v1";
+  let colsMap = {}; try { colsMap = JSON.parse(lsGet(COLS_MAP_KEY, "{}")) || {}; } catch (e) {}
+  const tblKey = t => t.dataset.hcKey || t.id || "";
+  const colsOf = t => { const v = String(colsMap[tblKey(t)] ?? ""); return /^[1-8]$/.test(v) ? v : (tblKey(t) in colsMap ? "" : cardsCols()); };
+  const statsTable = () => [...document.querySelectorAll("#tab-stats table[data-hc]")].find(t => t.offsetParent && !t.closest(".sticky-table-head")) || null;
+  const COLS_OPTS = `<option value="">Авто</option>${[1, 2, 3, 4, 5, 6, 7, 8].map(n => `<option value="${n}">${n}</option>`).join("")}`;
   function applyCols(){
-    const v = cardsCols(), b = document.body;
-    if (v) { b.dataset.cardsCols = v; b.style.setProperty("--cards-cols", v); } else { delete b.dataset.cardsCols; b.style.removeProperty("--cards-cols"); }
-    document.querySelectorAll("#st-cards-cols, [data-tview-cols]").forEach(s => { if (s.value !== v) s.value = v; });
+    document.querySelectorAll("main table[data-hc]").forEach(t => {
+      // Первый столбец — не «Место/№», а имя, дата, город и т. п.: в карточке он становится заголовком.
+      const h0 = t.tHead && t.tHead.rows.length ? t.tHead.rows[t.tHead.rows.length - 1].cells[0] : null;
+      const titled = !!h0 && !/^(место|№|#)$/i.test(String(h0.dataset.hcName || h0.textContent).replace(/[▲▼△▽↑↓⇅⬍↕]/g, "").trim());
+      if (titled !== (t.dataset.cardTitle === "1")) { if (titled) t.dataset.cardTitle = "1"; else delete t.dataset.cardTitle; }
+      const v = colsOf(t);
+      if (v) { if (t.dataset.cols !== v) t.dataset.cols = v; } else if (t.dataset.cols) delete t.dataset.cols;
+      // выбор «В ряд» рядом с кнопкой «Карточки» над каждой таблицей
+      const bar = document.querySelector(`.hc-bar[data-for="${t.dataset.hc}"]`);
+      if (bar && bar.querySelector(".tv-btn") && !bar.querySelector("select[data-cols-for]")) {
+        const l = document.createElement("label"); l.className = "st-cols hc-cols"; l.title = "Сколько карточек ставить в один ряд";
+        l.innerHTML = `<span>В ряд</span><select class="no-sheet" data-cols-for="${t.dataset.hc}">${COLS_OPTS}</select>`;
+        bar.querySelector(".tv-btn").after(l);
+      }
+    });
+    document.querySelectorAll("select[data-cols-for]").forEach(s => { const t = document.querySelector(`table[data-hc="${s.dataset.colsFor}"]`); const v = t ? colsOf(t) : ""; if (s.value !== v) s.value = v; });
+    const st = $("st-cards-cols"), stt = statsTable(); if (st && stt && st.value !== colsOf(stt)) st.value = colsOf(stt);
   }
-  document.addEventListener("change", e => { if (e.target && (e.target.id === "st-cards-cols" || e.target.dataset.tviewCols !== undefined)) { lsSet(COLS_KEY, e.target.value || ""); applyCols(); } });
-  applyCols();
+  document.addEventListener("change", e => {
+    const s = e.target; if (!s || s.tagName !== "SELECT") return;
+    const t = s.id === "st-cards-cols" ? statsTable() : s.dataset.colsFor ? document.querySelector(`table[data-hc="${s.dataset.colsFor}"]`) : null;
+    if (!t) return;
+    colsMap[tblKey(t)] = s.value || ""; lsSet(COLS_MAP_KEY, JSON.stringify(colsMap));
+    applyCols();
+  });
+  applyCols(); setInterval(applyCols, 1200);
   let pT = 0; const placeLater = () => { clearTimeout(pT); pT = setTimeout(placeStatsTools, 80); };
   const sn = $("stats-subnav"); if (sn) sn.addEventListener("click", placeLater);
   document.addEventListener("click", e => { if (e.target.closest && e.target.closest("nav [data-tab], #ma-tabs button")) placeLater(); });
@@ -17521,7 +17640,11 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
      Картинка, которую сайт кладёт в буфер, проходит через «стекло»: её фон становится полупрозрачным,
      а под ним — размытые цветные пятна и стеклянная панель с бликом и светлой кромкой. */
   let glassNext = 0;
+  // Таблицы рисуются со стеклом сразу (см. tableImageBlob) — такую картинку повторно не обрабатываем.
+  window.__glassWanted = () => !!glassNext && Date.now() - glassNext < 8000;
   async function glassify(blob){
+    const done = window.__glassRendered;
+    if (done && done.size === blob.size && Date.now() - done.t < 15000) return blob;
     const bmp = await createImageBitmap(blob);
     const W = bmp.width, H = bmp.height, k = Math.max(1, W / 1200), pad = Math.round(36 * k);
     const src = document.createElement("canvas"); src.width = W; src.height = H;
@@ -17553,18 +17676,23 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
     const OW = cx1 - cx0, OH = cy1 - cy0, M = Math.max(OW, OH);
     const out = document.createElement("canvas"); out.width = OW; out.height = OH;
     const c = out.getContext("2d");
-    const acc = (getComputedStyle(document.body).getPropertyValue("--accent") || "").trim() || "#7aa2f7";
-    // Одна стеклянная карточка на всю картинку: скруглённые углы, цветные пятна за матовым стеклом. Без рамок и отступов вокруг.
-    const R = Math.round(20 * k);
-    c.beginPath(); if (c.roundRect) c.roundRect(0, 0, OW, OH, R); else c.rect(0, 0, OW, OH); c.clip();
-    c.fillStyle = "#0d1018"; c.fillRect(0, 0, OW, OH);
-    const spot = (x, y, r, col) => { const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, col); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(0, 0, OW, OH); };
-    c.save(); c.globalAlpha = .55; spot(OW * .14, OH * .2, M * .45, acc); c.globalAlpha = .4; spot(OW * .9, OH * .25, M * .4, "#ff6fb5"); spot(OW * .6, OH * .95, M * .5, "#4fd8ff"); c.globalAlpha = .33; spot(OW * .3, OH * .75, M * .35, "#9b7bff"); c.restore();
-    const sheen = c.createLinearGradient(0, 0, OW * .6, OH); sheen.addColorStop(0, "rgba(255,255,255,.10)"); sheen.addColorStop(.5, "rgba(255,255,255,.03)"); sheen.addColorStop(1, "rgba(255,255,255,.01)");
-    c.fillStyle = sheen; c.fillRect(0, 0, OW, OH);
+    // Одна стеклянная карточка на всю картинку, прямые углы, цветные пятна за матовым стеклом.
+    glassBackdrop(c, OW, OH);
     c.drawImage(src, cx0, cy0, OW, OH, 0, 0, OW, OH);
     return await new Promise((res, rej) => out.toBlob(b => b ? res(b) : rej(new Error("Не удалось создать PNG")), "image/png"));
   }
+  // Фон стеклянной картинки: тёмная основа, размытые цветные пятна и матовый слой стекла поверх них.
+  function glassBackdrop(c, W, H){
+    const M = Math.max(W, H), acc = (getComputedStyle(document.body).getPropertyValue("--accent") || "").trim() || "#7aa2f7";
+    c.fillStyle = "#0d1018"; c.fillRect(0, 0, W, H);
+    const spot = (x, y, r, col) => { const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, col); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(0, 0, W, H); };
+    c.save(); c.globalAlpha = .55; spot(W * .14, H * .2, M * .45, acc); c.globalAlpha = .4; spot(W * .9, H * .25, M * .4, "#ff6fb5"); spot(W * .6, H * .95, M * .5, "#4fd8ff"); c.globalAlpha = .33; spot(W * .3, H * .75, M * .35, "#9b7bff"); c.restore();
+    // матовость: стекло приглушает пятна, как полупрозрачные панели на сайте
+    c.fillStyle = "rgba(20,23,32,.5)"; c.fillRect(0, 0, W, H);
+    const sheen = c.createLinearGradient(0, 0, W * .6, H); sheen.addColorStop(0, "rgba(255,255,255,.07)"); sheen.addColorStop(.5, "rgba(255,255,255,.02)"); sheen.addColorStop(1, "rgba(255,255,255,0)");
+    c.fillStyle = sheen; c.fillRect(0, 0, W, H);
+  }
+  window.__glassBackdrop = glassBackdrop;
   // Границы содержимого: всё, что заметно отличается от цвета углов картинки (фона).
   function contentBox(d, W, H){
     const at = (x, y) => (y * W + x) * 4, c0 = at(0, 0), br = d[c0], bg = d[c0 + 1], bb = d[c0 + 2], ba = d[c0 + 3];
