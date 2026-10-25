@@ -9591,6 +9591,7 @@ function routeParam(t){
   if (t === "profile") return person.value;
   if (t === "marathons") return mrSelected;
   if (t === "yearreview") return YR.year;
+  if (t === "settings") return window.__settingsPane ? window.__settingsPane.get() : (window.__pendingSettingsPane || "");
   if (t === "compare") { if (CMP.mode === "user") return CMP.a && CMP.b ? `${CMP.a}-${CMP.b}` : ""; const pr = {chat:["chA", "chB"], month:["mA", "mB"], year:["yA", "yB"]}[CMP.mode]; return CMP[pr[0]] && CMP[pr[1]] ? `${CMP.mode}~${CMP[pr[0]]}~${CMP[pr[1]]}` : CMP.mode; }
   return "";
 }
@@ -9613,6 +9614,7 @@ function applyRoute(hash){
   if (tab === "compare" && /^\d+-\d+$/.test(p)) { CMP.mode = "user"; [CMP.a, CMP.b] = p.split("-"); }
   else if (tab === "compare" && /^(chat|month|year)(~|$)/.test(p)) { const [md, x, y] = p.split("~"), pr = {chat:["chA", "chB"], month:["mA", "mB"], year:["yA", "yB"]}[md]; CMP.mode = md; if (x && y) { CMP[pr[0]] = x; CMP[pr[1]] = y; } }
   btn.click();
+  if (tab === "settings") { if (window.__settingsPane) { if (p) window.__settingsPane.open(p); else window.__settingsPane.close(); } else window.__pendingSettingsPane = p || ""; }
   routeApplying = false;
   routeLastTab = tab;
   updateRoute();
@@ -13211,11 +13213,24 @@ function multiplesChart(){
   window.addEventListener("popstate", () => { if (active()) { restore(); setTimeout(mount, 80); } });
   dr.querySelector("#fd-toggle").addEventListener("click", () => { collapsed = !collapsed; save(); apply(); });
   // Выезд при наведении. Пока открыт выпадающий список из шторки, она не сворачивается.
+  // Сворачиваем по реальному положению курсора: как только он ушёл левее шторки и не стоит
+  // на всплывающем меню из неё — через мгновение шторка уезжает. Открытые внутри меню закрываем.
   let peekT = 0;
-  const busy = () => !!dr.querySelector('[aria-expanded="true"], details[open]') || [...document.querySelectorAll(".msel-pop, .hc-pop, .ss, .pick .pop")].some(e => e.getClientRects().length > 0);
-  function peekOff(){ clearTimeout(peekT); peekT = setTimeout(() => { if (dr.matches(":hover") || busy()) { peekOff(); return; } dr.classList.remove("fr-peek"); }, 260); }
-  dr.addEventListener("mouseenter", () => { clearTimeout(peekT); if (collapsed && active()) dr.classList.add("fr-peek"); });
-  dr.addEventListener("mouseleave", () => { if (dr.classList.contains("fr-peek")) peekOff(); });
+  const POPS = ".msel-pop, .hc-pop, .ss, .opt-list, .pop";
+  const overPopup = t => { const p = t && t.closest && t.closest(POPS); return !!p && !dr.contains(p); };
+  function peekClose(){
+    clearTimeout(peekT); peekT = 0;
+    dr.querySelectorAll("details[open]").forEach(d => d.removeAttribute("open"));
+    dr.classList.remove("fr-peek");
+  }
+  dr.addEventListener("mouseenter", () => { clearTimeout(peekT); peekT = 0; if (collapsed && active()) dr.classList.add("fr-peek"); });
+  document.addEventListener("pointermove", e => {
+    if (!dr.classList.contains("fr-peek")) return;
+    const outside = e.clientX < dr.getBoundingClientRect().left - 2 && !overPopup(e.target);
+    if (outside) { if (!peekT) peekT = setTimeout(peekClose, 240); }
+    else if (peekT) { clearTimeout(peekT); peekT = 0; }
+  }, {passive:true});
+  document.documentElement.addEventListener("mouseleave", () => { if (dr.classList.contains("fr-peek") && !peekT) peekT = setTimeout(peekClose, 400); });
   dr.querySelector("#fd-rail").addEventListener("click", () => { collapsed = false; save(); apply(); });
   document.getElementById("exp-filters-right")?.addEventListener("change", e => {
     on = e.target.checked; save();
@@ -13314,6 +13329,7 @@ function multiplesChart(){
     {sel:".bd-banner", kind:"gold", max:4, persp:1400, scale:1.006},
     {sel:".yr-pod", kind:"metal", max:10},
     {sel:".hub-kpi", kind:"foil", max:8},
+    {sel:"#p-out .tile", kind:"foil", max:8},
     {sel:".theme-card", kind:"metal", max:12},
   ];
   const ALL = TARGETS.map(t => t.sel).join(",");
@@ -14028,6 +14044,9 @@ function multiplesChart(){
 /* ===================== История обновлений (новые версии — сверху) ===================== */
 // tag: new — новое, imp — улучшено, fix — исправлено, del — убрано. area — раздел сайта.
 window.CHANGELOG = [
+  {v:"2026.10.25-5", date:"2026-10-25", title:"Настройки на телефоне: раздел «Телефон» и кнопка «назад»", items:[{tag:"fix", area:"Настройки", text:"Раздел «Телефон» больше не пустой: в нём мобильная версия в стиле приложения и вибрация при нажатиях."},{tag:"fix", area:"Телефон", text:"Кнопка «назад» внутри настроек возвращает к списку разделов, а не на предыдущую вкладку. У каждого раздела настроек свой адрес — его можно открыть ссылкой."}]},
+  {v:"2026.10.25-4", date:"2026-10-25", title:"Копирование со стеклом, голограмма в профиле", items:[{tag:"new", area:"Везде", text:"Рядом с кнопками копирования картинкой появилась кнопка «✨ Со стеклом»: таблица или график копируются на стеклянной панели с размытыми цветными пятнами за ней. Где кнопок копирования несколько (топ-10, топ-20, все), «Со стеклом» — переключатель для всей группы."},{tag:"new", area:"Профиль", text:"Голографический блик, как на плитках Хаба, — на плитках «О участнике», «Сообщения», «Серии активности» и «Селфи»."},{tag:"imp", area:"Статистика", text:"При фильтрах в правой шторке кнопки «Карточки» и «Столбцы» остаются на странице — справа от выбора даты."},{tag:"fix", area:"Фильтры справа", text:"Шторка надёжно сворачивается, когда курсор уходит: учитывается его реальное положение, открытые внутри меню закрываются."},{tag:"fix", area:"Стеклянный интерфейс", text:"Вернулась переливающаяся рамка вокруг таблиц."}]},
+  {v:"2026.10.25-3", date:"2026-10-25", title:"Стекло в таблицах, обводка призёров, компактные карточки", items:[{tag:"fix", area:"Стеклянный интерфейс", text:"Первый столбец и строки итогов таблиц теперь тоже стеклянные и одного тона с остальной таблицей; то, что уезжает под закреплённый столбец при прокрутке, размывается."},{tag:"fix", area:"Стеклянный интерфейс", text:"В режиме карточек за ними больше не остаётся подложка таблицы."},{tag:"new", area:"Карточки", text:"У карточек призовых мест обводка в стиле их шрифта: радужный перелив у 1 места, серебро у 2, бронза у 3. Без переливающегося текста — спокойные золото, серебро и бронза."},{tag:"new", area:"Карточки", text:"Компактные карточки — несколько в ряд: на ПК сколько поместится, на телефоне по две. Включаются в меню «Столбцы», в шторке фильтров и в «Настройки → Таблицы»."}]},
   {v:"2026.10.25-2", date:"2026-10-25", title:"Плавные боковые панели, шторка фильтров с булавкой", items:[{tag:"imp", area:"Боковые вкладки", text:"Сворачивание стало плавным: подписи видны, пока панель сужается, и гаснут только в самом конце."},{tag:"new", area:"Фильтры справа", text:"Шторка фильтров работает так же, как боковые вкладки: в свёрнутом виде — узкая полоска, при наведении выезжает поверх страницы, булавка закрепляет её открытой. Пока открыт выпадающий список, шторка не сворачивается."},{tag:"new", area:"Фильтры справа", text:"На вкладках с таблицами в шторке появился блок «Вид таблицы»: компактные таблицы, без линий, карточки вместо таблиц."},{tag:"imp", area:"Настройки", text:"Настройки мобильной версии и вибрации переехали из «Оформления» в отдельный раздел «Телефон»."},{tag:"fix", area:"Стеклянный интерфейс", text:"Боковые вкладки больше не пропадают при включённом стекле, из настроек снова можно уйти на другие вкладки."}]},
   {v:"2026.10.25-1", date:"2026-10-25", title:"Карточки на ПК, стекло, компактные таблицы", items:[{tag:"new", area:"ПК", text:"Таблицы можно смотреть карточками и на компьютере: кнопка «Карточки» рядом со «Столбцами» или сразу для всех таблиц в «Настройки → Таблицы»."},{tag:"new", area:"Таблицы", text:"Компактный вид (строки ниже, столбцы уже) и вид без линий — остаётся только линия под заголовком. Переключаются в меню «Столбцы» у любой таблицы и в настройках."},{tag:"new", area:"Экспериментально", text:"Стеклянный интерфейс, как в iOS: полупрозрачные карточки, таблицы, графики и панели с размытием фона."},{tag:"imp", area:"Боковые вкладки", text:"Панель уже, иконки меньше. Свёрнутая панель выезжает при наведении курсора, а кнопка-булавка закрепляет её открытой."},{tag:"new", area:"Частицы", text:"Плотность «Ещё меньше» и настройка размера частиц — от очень мелких до очень крупных."},{tag:"fix", area:"Телефон", text:"Частицы на фоне больше не остаются на экране и не накапливаются: каждый кадр холст очищается целиком."},{tag:"imp", area:"Статистика", text:"На ПК кнопки «Столбцы» и «Карточки» переехали в панель фильтров. Рядом с выбором одного дня больше не дублируется та же дата."},{tag:"del", area:"Сравнение", text:"Убран 3D-наклон карточек участников."},{tag:"fix", area:"Таблицы", text:"Матрица: убрана линия между номером и именем, у первых трёх мест линии больше не выглядят толще. Статистика: границы строк итогов совпадают с остальной таблицей."}]},
   {v:"2026.10.24-9", date:"2026-10-24", title:"Сброс фильтров и выход в шапке", items:[{tag:"new", area:"Телефон", text:"В шапке приложения появилась кнопка «Сбросить фильтры»: фильтры открытой вкладки возвращаются к исходным, остальные вкладки не меняются. В «Сравнении» пара участников сохраняется."},{tag:"new", area:"Телефон", text:"Кнопка «Выйти из приложения». Если телефон не даёт приложению закрыться самому, появится подсказка, как выйти."}]},
@@ -15874,7 +15893,7 @@ body.holo-text-on tr > td.medal-3:first-child{background-image:linear-gradient(1
 .set-tabs button.active{color:var(--text);background:color-mix(in srgb,var(--text) 11%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 11%,transparent),0 1px 2px #0003,inset 0 -2px 0 color-mix(in srgb,var(--accent) 45%,transparent)}
 .set-tabs button i{font-style:normal;font-size:16px;line-height:1}
 #tab-settings[data-scat] .set-pane{display:none}
-#tab-settings[data-scat="look"] .set-pane[data-cat="look"],#tab-settings[data-scat="fx"] .set-pane[data-cat="fx"],#tab-settings[data-scat="filters"] .set-pane[data-cat="filters"],#tab-settings[data-scat="people"] .set-pane[data-cat="people"],#tab-settings[data-scat="data"] .set-pane[data-cat="data"],#tab-settings[data-scat="site"] .set-pane[data-cat="site"]{display:block;animation:setIn .22s ease-out}
+#tab-settings[data-scat="look"] .set-pane[data-cat="look"],#tab-settings[data-scat="mobile"] .set-pane[data-cat="mobile"],#tab-settings[data-scat="fx"] .set-pane[data-cat="fx"],#tab-settings[data-scat="filters"] .set-pane[data-cat="filters"],#tab-settings[data-scat="people"] .set-pane[data-cat="people"],#tab-settings[data-scat="data"] .set-pane[data-cat="data"],#tab-settings[data-scat="site"] .set-pane[data-cat="site"]{display:block;animation:setIn .22s ease-out}
 @keyframes setIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .set-pane > h2:first-child,.set-pane > .set-back + h2{margin-top:0}
 .set-menu,.set-back{display:none}
@@ -16002,14 +16021,36 @@ body.tb-on .chart:has(svg.heatrows-svg){border:1.5px solid transparent;backgroun
     if (b && (b.closest(".set-tabs") || b.closest(".set-menu"))) {
       const fromMenu = !!b.closest(".set-menu");
       show(b.dataset.scat, fromMenu);
+      // Вход в раздел из списка — отдельный шаг в истории: «назад» вернёт к списку разделов, а не к другой вкладке.
+      if (fromMenu) { const h = "#settings/" + b.dataset.scat; try { if (location.hash !== h) { history.pushState(null, "", h); pushedPane = true; } } catch (err) {} }
       if (fromMenu || document.body.classList.contains("mapp")) scrollTo({top:0});
       return;
     }
-    if (e.target.closest(".set-back")) { tab.classList.remove("sm-in"); scrollTo({top:0}); }
+    if (e.target.closest(".set-back")) {
+      if (pushedPane && /^#settings\/./.test(location.hash)) { history.back(); return; }
+      closePane();
+    }
   });
+  let pushedPane = false;
+  function closePane(){
+    pushedPane = false;
+    tab.classList.remove("sm-in"); scrollTo({top:0});
+    try { if (/^#settings\/./.test(location.hash)) history.replaceState(null, "", "#settings"); } catch (e) {}
+  }
+  // Назад/вперёд браузера и системная кнопка «назад» на телефоне: адрес #settings/раздел ↔ #settings.
+  function fromHash(){
+    const m = /^#settings(?:\/([a-z]+))?$/.exec(location.hash); if (!m) return;
+    if (m[1] && panes[m[1]]) { if (!tab.classList.contains("sm-in") || cat !== m[1]) { show(m[1], true); scrollTo({top:0}); } }
+    else if (tab.classList.contains("sm-in")) { pushedPane = false; tab.classList.remove("sm-in"); scrollTo({top:0}); }
+  }
+  window.addEventListener("popstate", fromHash);
+  window.addEventListener("hashchange", fromHash);
   // Если что-то из сайта ведёт к элементу настроек (например, по id), открываем нужный раздел.
   document.addEventListener("focusin", e => { const p = e.target.closest && e.target.closest(".set-pane"); if (p && p.dataset.cat !== cat) show(p.dataset.cat, true); });
   window.__settingsCats = {show:(k) => show(k, true), list:CATS.map(c => c.k)};
+  window.__settingsPane = {get:() => tab.classList.contains("sm-in") ? cat : "", open:(k) => { if (panes[k]) show(k, true); }, close:() => tab.classList.remove("sm-in")};
+  // Страницу открыли по ссылке на раздел настроек (#settings/раздел) — адрес разобран раньше, чем появились разделы.
+  if (window.__pendingSettingsPane && panes[window.__pendingSettingsPane]) { const k = window.__pendingSettingsPane; window.__pendingSettingsPane = ""; setTimeout(() => show(k, true), 0); }
   show(cat, false);
 })();
 
@@ -17179,6 +17220,46 @@ body.tbl-noborders main .wrap > table:not(.tv-cards) > thead > tr > :is(td,th){b
 body.tbl-noborders main .wrap > table:not(.tv-cards) > thead > tr:last-child > :is(td,th){border-bottom:1px solid color-mix(in srgb,var(--text) 22%,var(--line))!important}
 body.tbl-noborders main .wrap > table:not(.tv-cards) > tbody > tr:hover > td{background-color:color-mix(in srgb,var(--text) 4%,transparent)}
 
+/* ---------- Карточки призовых мест: обводка в стиле их шрифта ---------- */
+table.tv-cards > tbody > tr:has(> td:is(.medal-1,.medal-2,.medal-3)){border-color:transparent!important;isolation:isolate}
+table.tv-cards > tbody > tr:has(> td:is(.medal-1,.medal-2,.medal-3))::after{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;pointer-events:none;z-index:3;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);background:var(--medal-ring)}
+table.tv-cards > tbody > tr:has(> td.medal-1){--medal-ring:#ffd166;box-shadow:0 0 18px -6px rgba(255,209,102,.45)}
+table.tv-cards > tbody > tr:has(> td.medal-2){--medal-ring:#c9d1e0;box-shadow:0 0 16px -8px rgba(220,230,245,.4)}
+table.tv-cards > tbody > tr:has(> td.medal-3){--medal-ring:#e3a36b;box-shadow:0 0 16px -8px rgba(227,163,107,.4)}
+body.holo-text-on table.tv-cards > tbody > tr:has(> td:is(.medal-1,.medal-2,.medal-3))::after{background-size:300% 100%;animation:holoText 7s linear infinite}
+body.holo-text-on table.tv-cards > tbody > tr:has(> td.medal-1){--medal-ring:linear-gradient(100deg,#ffd166 0%,#ff9ecf 18%,#67e8f9 36%,#a78bfa 54%,#76f0b6 72%,#ffd166 90%);box-shadow:0 0 22px -6px rgba(167,139,250,.45)}
+body.holo-text-on table.tv-cards > tbody > tr:has(> td.medal-2){--medal-ring:linear-gradient(100deg,#9aa6bd 0%,#ffffff 16%,#7f8aa1 36%,#dfe6f2 56%,#8e99b0 78%,#9aa6bd 100%)}
+body.holo-text-on table.tv-cards > tbody > tr:has(> td.medal-3){--medal-ring:linear-gradient(100deg,#e3a36b 0%,#f3c79a 30%,#b8784a 55%,#e3a36b 80%,#e3a36b 100%)}
+body.holo-text-on table.tv-cards > tbody > tr:has(> td.medal-2)::after{animation-duration:10s}
+body.holo-text-on table.tv-cards > tbody > tr:has(> td.medal-3)::after{animation-duration:14s}
+@media (prefers-reduced-motion:reduce){table.tv-cards > tbody > tr::after{animation:none!important}}
+
+/* ---------- Компактные карточки: несколько в ряд ---------- */
+body.cards-compact table.tv-cards > :is(tbody,tfoot){grid-template-columns:repeat(auto-fill,minmax(190px,1fr))!important;gap:8px!important}
+body.cards-compact table.tv-cards > :is(tbody,tfoot) > tr{gap:4px 8px!important;padding:8px 10px 9px!important;border-radius:12px!important}
+body.cards-compact table.tv-cards > :is(tbody,tfoot) > tr > :is(td,th){flex:1 1 calc(50% - 8px)!important;min-width:0!important;font-size:13px!important}
+body.cards-compact table.tv-cards > :is(tbody,tfoot) > tr > :is(td,th)::before{font-size:10px!important}
+body.cards-compact table.tv-cards > :is(tbody,tfoot) > tr > :is(td,th):nth-child(1){flex:0 0 22px!important;font-size:13px!important}
+body.cards-compact table.tv-cards > :is(tbody,tfoot) > tr > :is(td,th):nth-child(2){flex:0 0 calc(100% - 30px)!important;font-size:14px!important}
+body.cards-compact table.tv-cards > :is(tbody,tfoot) > tr:has(> :is([colspan],[data-hc-cs])) > :is(td,th):not([colspan],[data-hc-cs]){flex:1 1 calc(50% - 8px)!important;min-width:0!important}
+body.cards-compact table.tv-cards > :is(tbody,tfoot) > tr > :is(td,th):is([colspan],[data-hc-cs]){flex:1 1 100%!important;min-width:0!important;font-size:13px!important;text-align:left!important}
+body.cards-compact table.tv-cards .row-exclude-btn{width:18px;height:18px}
+@media (max-width:720px){
+  body.cards-compact table.tv-cards > :is(tbody,tfoot){grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+}
+
+/* ---------- Стекло + рамка таблиц: рамка рисуется кольцом поверх стекла (рамка-фон стеклом перекрывалась) ---------- */
+body.glass-ui.tb-on .wrap:has(> table:not(.tv-cards)){position:relative;border-color:transparent!important;animation:none!important;box-shadow:inset 0 1px 0 var(--glass-hi),0 12px 34px -14px rgba(0,0,0,.55),0 0 22px -10px var(--tb-glow,transparent)!important}
+body.glass-ui.tb-on .wrap:has(> table:not(.tv-cards))::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;pointer-events:none;z-index:6;background:conic-gradient(from var(--tb-ang),var(--tb-c));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);animation:tbSpin var(--tb-speed,6s) linear infinite}
+@media (prefers-reduced-motion:reduce){body.glass-ui.tb-on .wrap::after{animation:none!important}}
+
+/* ---------- Кнопка «Со стеклом» рядом с копированием картинкой ---------- */
+.copy-glass-btn{display:inline-flex;align-items:center;gap:6px}
+.copy-glass-btn[aria-pressed="true"]{color:var(--accent)!important;border-color:color-mix(in srgb,var(--accent) 55%,var(--line))!important;background:color-mix(in srgb,var(--accent) 12%,transparent)!important}
+#stats-quick .st-desk-tools{margin-left:8px}
+#stats-quick .st-desk-tools :is(#st-hc,#st-tv){height:32px!important;padding:0 11px!important;font-size:13px!important;border-radius:11px!important}
+
 /* ---------- Меню «Столбцы»: вид таблицы ---------- */
 .hc-view{display:flex;flex-direction:column;gap:2px;margin:6px 0 0;padding:8px 0 0;border-top:1px solid color-mix(in srgb,var(--text) 9%,transparent)}
 .hc-view h4{margin:0 6px 4px!important}
@@ -17213,7 +17294,15 @@ body.glass-ui :is(.hc-pop,.pop,.opt-list,.dm-pop,.msel-pop,.nav-sheet:not([hidde
 body.glass-ui .wrap > table,body.glass-ui .wrap > table > :is(thead,tbody,tfoot) > tr > :is(td,th){background-color:transparent}
 body.glass-ui .wrap > table > thead > tr > th{background-color:color-mix(in srgb,var(--text) 4%,transparent)}
 body.glass-ui .wrap > table > tfoot > tr > :is(td,th){background-color:color-mix(in srgb,var(--text) 5%,transparent)}
-body.glass-ui .wrap > table:not(.tv-cards) > :is(thead,tbody,tfoot) > tr > :is(td,th):first-child,body.glass-ui .dm-table :is(.dm-no,.dm-name),body.glass-ui .dm-table .dm-bars th,body.glass-ui .sticky-table-head :is(th,table){background-color:var(--glass-bg-strong)!important}
+/* закреплённые ячейки — того же тона, что и строка. Плотный фон с размытием появляется,
+   только когда таблицу прокрутили вбок и под закреплённый столбец что-то уезжает. */
+body.glass-ui .wrap > table:not(.tv-cards) > tbody > tr > :is(td,th):first-child,body.glass-ui .dm-table > tbody > tr > :is(.dm-no,.dm-name){background-color:transparent!important}
+body.glass-ui .wrap > table:not(.tv-cards) > thead > tr > :is(td,th):first-child,body.glass-ui .dm-table > thead > tr > :is(.dm-no,.dm-name,th),body.glass-ui .sticky-table-head :is(th,table){background-color:color-mix(in srgb,var(--text) 4%,transparent)!important}
+body.glass-ui .wrap > table:not(.tv-cards) > tfoot > tr > :is(td,th){background-color:color-mix(in srgb,var(--text) 5%,transparent)!important}
+body.glass-ui .wrap > table:not(.tv-cards) > tbody > tr:hover > :is(td,th):first-child{background-color:color-mix(in srgb,var(--text) 6%,transparent)!important}
+body.glass-ui .wrap.glass-hs > table:not(.tv-cards) > :is(thead,tbody,tfoot) > tr > :is(td,th):first-child,body.glass-ui .wrap.glass-hs > .dm-table > :is(thead,tbody) > tr > :is(.dm-no,.dm-name){background-color:color-mix(in srgb,var(--panel) 62%,transparent)!important;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+/* карточки: подложку-таблицу убираем полностью, остаются только сами карточки */
+body.glass-ui .wrap:has(> table.tv-cards){background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:0!important}
 body.glass-ui .wrap > table > tbody > tr:hover > td{background-color:color-mix(in srgb,var(--text) 6%,transparent)}
 body.glass-ui table.tv-cards > :is(tbody,tfoot) > tr{background:linear-gradient(145deg,color-mix(in srgb,var(--text) 9%,transparent),color-mix(in srgb,var(--text) 2%,transparent) 55%),var(--glass-bg)!important;-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border-color:var(--glass-line);box-shadow:inset 0 1px 0 var(--glass-hi),0 10px 28px -14px rgba(0,0,0,.5)}
 body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
@@ -17237,6 +17326,7 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
     compact:{key:"chatstats.tableCompact.v1", cls:"tbl-compact", ids:["set-tbl-compact"]},
     noborders:{key:"chatstats.tableNoBorders.v1", cls:"tbl-noborders", ids:["set-tbl-noborders"]},
     glass:{key:"chatstats.glassUi.v1", cls:"glass-ui", ids:["exp-glass"]},
+    cardscompact:{key:"chatstats.cardsCompact.v1", cls:"cards-compact", ids:["set-cards-compact"]},
   };
   const isOn = f => lsGet(FLAGS[f].key, "0") === "1";
   function apply(){
@@ -17270,7 +17360,8 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
     box.innerHTML = `<b>Вид таблицы</b>`
       + `<label class="checkline" title="Меньше отступы в ячейках: строки ниже, столбцы уже"><input type="checkbox" data-tview="compact">Компактные таблицы</label>`
       + `<label class="checkline" title="Убрать все линии внутри таблиц, оставить только линию под заголовком"><input type="checkbox" data-tview="noborders">Без линий — только под заголовком</label>`
-      + `<label class="checkline" title="Показывать таблицы карточками. Отдельную таблицу можно переключить кнопкой «Карточки» рядом со «Столбцами»"><input type="checkbox" data-tview="cards">Карточки вместо таблиц</label>`;
+      + `<label class="checkline" title="Показывать таблицы карточками. Отдельную таблицу можно переключить кнопкой «Карточки» рядом со «Столбцами»"><input type="checkbox" data-tview="cards">Карточки вместо таблиц</label>`
+      + `<label class="checkline" title="Карточки меньше и стоят по несколько в ряд"><input type="checkbox" data-tview="cardscompact">Компактные карточки — несколько в ряд</label>`;
     host.appendChild(box); syncLook();
   };
 
@@ -17284,7 +17375,8 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
       const box = document.createElement("div"); box.className = "filters";
       box.innerHTML = `<label class="checkline" title="Меньше отступы в ячейках: строки ниже, столбцы уже"><input type="checkbox" id="set-tbl-compact">Компактные таблицы</label>`
         + `<label class="checkline" title="Убрать все линии внутри таблиц, оставить только линию под заголовком"><input type="checkbox" id="set-tbl-noborders">Без линий — только под заголовком</label>`
-        + `<label class="checkline" title="Только для компьютера. Отдельную таблицу можно переключить кнопкой «Карточки» рядом со «Столбцами»"><input type="checkbox" id="set-tbl-cards-desk">Показывать таблицы карточками на ПК</label>`;
+        + `<label class="checkline" title="Только для компьютера. Отдельную таблицу можно переключить кнопкой «Карточки» рядом со «Столбцами»"><input type="checkbox" id="set-tbl-cards-desk">Показывать таблицы карточками на ПК</label>`
+        + `<label class="checkline" title="Карточки меньше и стоят по несколько в ряд: на ПК — сколько поместится, на телефоне — по две"><input type="checkbox" id="set-cards-compact">Компактные карточки — несколько в ряд</label>`;
       legend.after(h, p, box);
     }
     const side = $("exp-sidenav");
@@ -17300,10 +17392,11 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
     if (id === "set-tbl-compact") setFlag("compact", e.target.checked);
     else if (id === "set-tbl-noborders") setFlag("noborders", e.target.checked);
     else if (id === "exp-glass") setFlag("glass", e.target.checked);
+    else if (id === "set-cards-compact") setFlag("cardscompact", e.target.checked);
     else if (id === "set-tbl-cards-desk") { if (window.__tableCardsDesktop) window.__tableCardsDesktop.set(e.target.checked); }
     else if (e.target.dataset && e.target.dataset.tview) {
       const v = e.target.dataset.tview;
-      if (v === "compact" || v === "noborders") setFlag(v, e.target.checked);
+      if (v === "compact" || v === "noborders" || v === "cardscompact") setFlag(v, e.target.checked);
       else if (v === "cards" && window.__tableCardsDesktop) { window.__tableCardsDesktop.set(e.target.checked); apply(); }
       syncLook();
     }
@@ -17315,7 +17408,8 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
     const v = document.createElement("div"); v.className = "hc-view";
     v.innerHTML = `<h4>Вид таблицы</h4>`
       + `<label class="hc-vitem"><input type="checkbox" data-tview="compact"${isOn("compact") ? " checked" : ""}><span>Компактно</span></label>`
-      + `<label class="hc-vitem"><input type="checkbox" data-tview="noborders"${isOn("noborders") ? " checked" : ""}><span>Без линий, кроме заголовка</span></label>`;
+      + `<label class="hc-vitem"><input type="checkbox" data-tview="noborders"${isOn("noborders") ? " checked" : ""}><span>Без линий, кроме заголовка</span></label>`
+      + `<label class="hc-vitem"><input type="checkbox" data-tview="cardscompact"${isOn("cardscompact") ? " checked" : ""}><span>Компактные карточки, несколько в ряд</span></label>`;
     pop.appendChild(v);
   }
   // Меню перерисовывает своё содержимое при каждом изменении — возвращаем блок после каждой перерисовки.
@@ -17328,11 +17422,14 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
     if (!hc || !tools) return;
     if (!hc.querySelector(".st-hc-lbl")) { const s = document.createElement("span"); s.className = "st-hc-lbl"; s.textContent = "Столбцы"; const b = hc.querySelector("b"); hc.insertBefore(s, b); }
     if (desk.matches) {
+      // Фильтры в правой шторке: кнопки остаются на странице — в строке периода, справа от выбора даты.
+      const quick = document.body.classList.contains("filters-right") && $("stats-quick");
       const sec = document.querySelector("#tab-stats .stat-content.active") || document.querySelector("#tab-stats .stat-content");
-      const panel = sec && [...sec.children].find(c => c.classList && c.classList.contains("filters"));
+      const panel = quick || (sec && [...sec.children].find(c => c.classList && c.classList.contains("filters")));
       if (!panel) return;
       let box = panel.querySelector(":scope > .st-desk-tools");
       if (!box) { box = document.createElement("div"); box.className = "st-desk-tools"; box.dataset.noExport = "1"; panel.appendChild(box); }
+      document.querySelectorAll(".st-desk-tools").forEach(b => { if (b !== box && !b.querySelector("#st-hc, #st-tv")) b.remove(); });
       if (tv && tv.parentNode !== box) box.appendChild(tv);
       if (hc.parentNode !== box) box.appendChild(hc);
     } else {
@@ -17345,7 +17442,108 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
   const sn = $("stats-subnav"); if (sn) sn.addEventListener("click", placeLater);
   document.addEventListener("click", e => { if (e.target.closest && e.target.closest("nav [data-tab], #ma-tabs button")) placeLater(); });
   if (desk.addEventListener) desk.addEventListener("change", placeLater);
+  new MutationObserver(placeLater).observe(document.body, {attributes:true, attributeFilter:["class"]});
+  setInterval(() => { if (document.querySelector("#tab-stats.active")) placeStatsTools(); }, 1500);
   const ts = $("tab-stats"); if (ts) new MutationObserver(ms => { if (ms.some(m => m.attributeName === "class")) placeLater(); }).observe(ts, {subtree:true, attributes:true, attributeFilter:["class"]});
+
+  // Стекло: таблицу прокрутили вбок — закреплённому столбцу нужен плотный фон, иначе текст накладывается.
+  document.addEventListener("scroll", e => { const w = e.target; if (w && w.classList && w.classList.contains("wrap")) { const on = w.scrollLeft > 0; if (w.classList.contains("glass-hs") !== on) w.classList.toggle("glass-hs", on); } }, true);
+  /* ---------- Копирование картинкой со стеклянным эффектом ----------
+     Картинка, которую сайт кладёт в буфер, проходит через «стекло»: её фон становится полупрозрачным,
+     а под ним — размытые цветные пятна и стеклянная панель с бликом и светлой кромкой. */
+  let glassNext = 0;
+  async function glassify(blob){
+    const bmp = await createImageBitmap(blob);
+    const W = bmp.width, H = bmp.height, k = Math.max(1, W / 1200), pad = Math.round(36 * k);
+    const src = document.createElement("canvas"); src.width = W; src.height = H;
+    const sx = src.getContext("2d"); sx.drawImage(bmp, 0, 0);
+    const img = sx.getImageData(0, 0, W, H), d = img.data;
+    // Фоновые цвета картинки — самые частые малонасыщенные тёмные оттенки.
+    const hist = new Map();
+    for (let i = 0; i < d.length; i += 4 * 7) {
+      const r = d[i], g = d[i + 1], b = d[i + 2], mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+      if (d[i + 3] < 200 || mx - mn > 40 || mx > 120) continue;
+      const key = (r >> 3) << 10 | (g >> 3) << 5 | (b >> 3);
+      hist.set(key, (hist.get(key) || 0) + 1);
+    }
+    const total = [...hist.values()].reduce((a, v) => a + v, 0) || 1;
+    const bgs = [...hist.entries()].sort((a, b) => b[1] - a[1]).filter(([, n]) => n / total > .04).slice(0, 4)
+      .map(([key]) => [((key >> 10) & 31) * 8 + 4, ((key >> 5) & 31) * 8 + 4, (key & 31) * 8 + 4]);
+    if (bgs.length) for (let i = 0; i < d.length; i += 4) {
+      let best = 1e9;
+      for (const c of bgs) { const dr = d[i] - c[0], dg = d[i + 1] - c[1], db = d[i + 2] - c[2], v = dr * dr + dg * dg + db * db; if (v < best) best = v; }
+      const t = Math.max(0, Math.min(1, (Math.sqrt(best) - 10) / 46));
+      d[i + 3] = Math.round(d[i + 3] * (.2 + .8 * t));
+    }
+    sx.putImageData(img, 0, 0);
+    const out = document.createElement("canvas"); out.width = W + pad * 2; out.height = H + pad * 2;
+    const c = out.getContext("2d"), OW = out.width, OH = out.height, M = Math.max(OW, OH);
+    const acc = (getComputedStyle(document.body).getPropertyValue("--accent") || "").trim() || "#7aa2f7";
+    c.fillStyle = "#0d1018"; c.fillRect(0, 0, OW, OH);
+    const spot = (x, y, r, col) => { const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, col); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(0, 0, OW, OH); };
+    c.save(); c.globalAlpha = .55; spot(OW * .14, OH * .2, M * .45, acc); c.globalAlpha = .4; spot(OW * .9, OH * .25, M * .4, "#ff6fb5"); spot(OW * .6, OH * .95, M * .5, "#4fd8ff"); c.globalAlpha = .33; spot(OW * .3, OH * .75, M * .35, "#9b7bff"); c.restore();
+    const R = Math.round(18 * k), x0 = pad / 2, y0 = pad / 2, w0 = OW - pad, h0 = OH - pad;
+    const rr = () => { c.beginPath(); if (c.roundRect) c.roundRect(x0, y0, w0, h0, R); else c.rect(x0, y0, w0, h0); };
+    c.save(); c.shadowColor = "rgba(0,0,0,.45)"; c.shadowBlur = 40 * k; c.shadowOffsetY = 14 * k; rr(); c.fillStyle = "rgba(255,255,255,.06)"; c.fill(); c.restore();
+    c.save(); rr(); c.clip();
+    const sheen = c.createLinearGradient(x0, y0, x0 + w0 * .6, y0 + h0); sheen.addColorStop(0, "rgba(255,255,255,.12)"); sheen.addColorStop(.5, "rgba(255,255,255,.03)"); sheen.addColorStop(1, "rgba(255,255,255,.01)");
+    c.fillStyle = sheen; c.fillRect(x0, y0, w0, h0);
+    c.drawImage(src, pad, pad);
+    c.restore();
+    rr(); c.lineWidth = Math.max(1, 1.2 * k);
+    const edge = c.createLinearGradient(0, y0, 0, y0 + h0); edge.addColorStop(0, "rgba(255,255,255,.38)"); edge.addColorStop(.35, "rgba(255,255,255,.12)"); edge.addColorStop(1, "rgba(255,255,255,.06)");
+    c.strokeStyle = edge; c.stroke();
+    return await new Promise((res, rej) => out.toBlob(b => b ? res(b) : rej(new Error("Не удалось создать PNG")), "image/png"));
+  }
+  window.__glassifyPng = glassify;
+  (function(){
+    const cb = navigator.clipboard; if (!cb || !cb.write || cb.write.__glass) return;
+    const orig = cb.write.bind(cb);
+    const w = function(items){
+      if (!glassNext || Date.now() - glassNext > 8000 || typeof ClipboardItem === "undefined") return orig(items);
+      glassNext = 0;
+      const out = [...items].map(it => it && it.types && it.types.includes("image/png") ? new ClipboardItem({"image/png": it.getType("image/png").then(glassify)}) : it);
+      return orig(out);
+    };
+    w.__glass = true;
+    try { cb.write = w; } catch (e) {}
+    if (cb.write !== w) { try { Object.defineProperty(cb, "write", {value:w, configurable:true, writable:true}); } catch (e) {} }
+  })();
+  // Кнопки, которые копируют картинку: «Копировать как изображение», «…график», «…топ-10», «…постер» и т. п.
+  const IMG_COPY = /^копировать\s+(как\s+изображение|как\s+картинку|картинку|график|таблицу|топ|все|постер|радар|с\s+описанием|сравнение|с\s+аватарками|карту|результаты)/i;
+  const isImgCopy = b => !!b && b.tagName === "BUTTON" && !b.classList.contains("copy-glass-btn") && IMG_COPY.test((b.textContent || "").replace(/\s+/g, " ").trim()) && !b.closest("#tab-settings, .hc-pop");
+  function addGlassButtons(){
+    document.querySelectorAll("main button, #filter-drawer button").forEach(b => {
+      if (b.dataset.glassDone || !isImgCopy(b)) return;
+      b.dataset.glassDone = "1";
+      const group = [...b.parentElement.children].filter(isImgCopy);
+      if (group.length > 1) {
+        // Несколько кнопок копирования рядом (топ-10, топ-20, все) — один переключатель «Со стеклом» для всей группы.
+        if (b.parentElement.querySelector(":scope > .copy-glass-btn")) return;
+        const t = document.createElement("button"); t.type = "button"; t.className = "mini copy-glass-btn"; t.dataset.glassToggle = "1"; t.setAttribute("aria-pressed", "false");
+        t.textContent = "✨ Со стеклом"; t.title = "Включи — и кнопки копирования рядом положат в буфер картинку со стеклянным эффектом";
+        group[group.length - 1].after(t);
+      } else {
+        const g = document.createElement("button"); g.type = "button"; g.className = "mini copy-glass-btn"; g.textContent = "✨ Со стеклом";
+        g.title = "Скопировать ту же картинку, но со стеклянным эффектом";
+        g.__src = b; b.after(g);
+      }
+    });
+  }
+  document.addEventListener("click", e => {
+    const g = e.target.closest && e.target.closest(".copy-glass-btn");
+    if (g) {
+      e.preventDefault(); e.stopPropagation();
+      if (g.dataset.glassToggle) { g.setAttribute("aria-pressed", g.getAttribute("aria-pressed") === "true" ? "false" : "true"); return; }
+      const src = g.__src && g.__src.isConnected ? g.__src : g.previousElementSibling; if (!src) return;
+      glassNext = Date.now(); src.click();
+      return;
+    }
+    const b = e.target.closest && e.target.closest("button");
+    if (b && isImgCopy(b)) { const t = b.parentElement && b.parentElement.querySelector(':scope > .copy-glass-btn[data-glass-toggle][aria-pressed="true"]'); if (t) glassNext = Date.now(); }
+  }, true);
+  let gbT = 0; new MutationObserver(() => { clearTimeout(gbT); gbT = setTimeout(addGlassButtons, 150); }).observe(document.body, {childList:true, subtree:true});
+  addGlassButtons();
 
   apply(); placeStatsTools(); setTimeout(placeStatsTools, 600);
 })();
