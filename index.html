@@ -398,12 +398,12 @@ tbody tr.ytint:hover td{filter:brightness(1.18)}
 .s-mark-head{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:12px}
 .s-mark-head h3{margin:0 auto 0 0!important;font-size:15px!important;color:var(--text)!important;align-self:center}
 .s-friday-hint{color:var(--muted);font-size:13px;align-self:center}
-.s-friday-hint b{color:#9ece6a}
+.s-friday-hint b{color:var(--accent)}
 .s-people{display:flex;flex-wrap:wrap;gap:6px}
 .s-chip{height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--ctrl);color:var(--muted);font:inherit;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s,border-color .15s,color .15s}
-.s-chip:hover{border-color:#9ece6a;color:var(--text)}
-.s-chip[aria-pressed="true"]{background:#9ece6a24;border-color:#9ece6a;color:#e3f8cf}
-.s-chip[aria-pressed="true"]::before{content:"✓";color:#9ece6a}
+.s-chip:hover{border-color:var(--accent);color:var(--text)}
+.s-chip[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 16%,transparent);border-color:var(--accent);color:color-mix(in srgb,var(--accent) 35%,#ffffff)}
+.s-chip[aria-pressed="true"]::before{content:"✓";color:var(--accent)}
 .s-chip small{color:var(--muted);font-size:12.5px}
 .s-names{text-align:left!important;white-space:normal;min-width:220px;max-width:520px;font-size:13px;color:#cdd3e1}
 .s-miss{color:#f7768e}
@@ -4963,6 +4963,12 @@ async function tableImageBlob(tableId, title, rowLimit = null){
     background:"transparent", height:"auto"
   });
   const table = source.cloneNode(true);
+  // Выравнивание текста берём с таблицы на странице: часть правил действует только внутри страницы,
+  // и без этого, например, столбец «Место» на картинке уезжал к левому краю.
+  { const srcRows = [...source.rows], clRows = [...table.rows];
+    clRows.forEach((r, i) => { const sr = srcRows[i]; if (!sr) return; [...r.cells].forEach((c, j) => { const sc = sr.cells[j]; if (!sc) return; const cs = getComputedStyle(sc); const ta = source.classList.contains("tv-cards") && i > 0 && j === 0 ? "center" : cs.textAlign; c.style.setProperty("text-align", ta === "start" ? "left" : ta, "important"); }); }); }
+  // Заголовок на картинке заметнее: светлый текст чуть крупнее (фон заголовка — темнее, см. отрисовку ниже).
+  if (table.tHead) [...table.tHead.querySelectorAll("th,td")].forEach(c => { const fs = parseFloat(getComputedStyle(source.tHead.rows[0].cells[0] || c).fontSize) || 13; if (!c.matches(".sorted, .dm-weekend, .dm-barcell")) c.style.setProperty("color", "#eef1f8", "important"); c.style.setProperty("font-size", (fs + 1.5) + "px", "important"); c.style.setProperty("font-weight", "600", "important"); });
   table.removeAttribute("id");
   table.querySelectorAll("[id]").forEach(el => el.removeAttribute("id"));
   table.querySelectorAll("[data-no-export]").forEach(el => el.remove());
@@ -5074,9 +5080,11 @@ async function tableImageBlob(tableId, title, rowLimit = null){
       const bgRow = canvasColor(rowCS.backgroundColor, panel);
       if (glass) {
         const sec = tableRows[ri];
-        if (sec === "THEAD") { ctx.fillStyle = "rgba(255,255,255,.08)"; ctx.fillRect(tableX, rowY, tableWidth, rowH); }
+        if (sec === "THEAD") { ctx.fillStyle = "rgba(0,0,0,.30)"; ctx.fillRect(tableX, rowY, tableWidth, rowH); }
         else if (sec === "TFOOT") { ctx.fillStyle = "rgba(255,255,255,.065)"; ctx.fillRect(tableX, rowY, tableWidth, rowH); }
-      } else { ctx.fillStyle = bgRow; ctx.fillRect(tableX, rowY, tableWidth, rowH); }
+      } else {
+        ctx.fillStyle = bgRow; ctx.fillRect(tableX, rowY, tableWidth, rowH);
+      }
       const cells = [...row.children].filter(el => el.tagName === "TD" || el.tagName === "TH");
       for (const cell of cells) {
         const cr = cell.getBoundingClientRect();
@@ -5087,6 +5095,8 @@ async function tableImageBlob(tableId, title, rowLimit = null){
         else if (cellBg !== "rgba(0, 0, 0, 0)" && cellBg !== "transparent") {
           ctx.fillStyle = cellBg; ctx.fillRect(x,y,cr.width,cr.height);
         }
+        // заголовок на обычной картинке — темнее строк, чтобы светлый текст читался лучше
+        if (!glass && tableRows[ri] === "THEAD") { ctx.fillStyle = "rgba(0,0,0,.28)"; ctx.fillRect(x, y, cr.width, cr.height); }
         if (cell.dataset.barPct) {
           const share = Math.max(0, Math.min(100, Number(cell.dataset.barPct) || 0)) / 100;
           ctx.fillStyle = cell.dataset.barColor || "rgba(122,162,247,.3)";
@@ -6776,7 +6786,7 @@ function sStrip(m, p, days, cell = 11){
   const gap = 3, W = days.length * (cell + gap) - gap;
   const rects = days.map((d, i) => {
     const did = p && p.fr.has(d), before = !p || d < p.first, open = d === m.openF && !did;
-    const c = did ? "#9ece6a" : before ? "#2f3441" : open ? "#3b4252" : "#f7768e";
+    const c = did ? (typeof selfieAccent === "function" ? selfieAccent() : "#9ece6a") : before ? "#2f3441" : open ? "#3b4252" : "#f7768e";
     return `<rect x="${i * (cell + gap)}" y="0" width="${cell}" height="${cell}" rx="3" fill="${c}"><title>${sFmtDate(d)}: ${did ? "селфи" : before ? "ещё не участвовал(а)" : open ? "окно ещё открыто" : "пропуск"}</title></rect>`;
   }).join("");
   return `<svg width="${W}" height="${cell}" viewBox="0 0 ${W} ${cell}" style="vertical-align:middle">${rects}</svg>`;
@@ -7297,7 +7307,9 @@ DEFAULT_TEXT_STYLE["selfie-ranking"] = {...DEFAULT_TEXT_STYLE.bars};
 DEFAULT_TEXT_STYLE["selfie-years"] = {...DEFAULT_TEXT_STYLE.trend, valuesSize:22, axisSize:18, legendSize:14};
 const sChartKind = () => $("s-chart-type")?.value || "fridays";
 const sChartType = () => "selfie-" + sChartKind();
-const sOpts = p => ({...SELFIE_OPT_DEFAULTS, ...(p.selfie || {})});
+// Цвет «селфи сделано» — цвет выбранной темы, если пользователь не задал свой.
+const selfieAccent = () => { try { return getComputedStyle(document.body).getPropertyValue("--accent").trim() || "#9ece6a"; } catch (e) { return "#9ece6a"; } };
+const sOpts = p => { const o = {...SELFIE_OPT_DEFAULTS, ...(p.selfie || {})}; if (!o.did || String(o.did).toLowerCase() === "#9ece6a") o.did = selfieAccent(); return o; };
 const sSeriesColor = (p, kind, key, fallback) => p.seriesColors?.[`${kind}:${key}`] || fallback;
 try { const k = localStorage.getItem("chatstats.selfieChart.v1"); if (k && SELFIE_CHARTS[k]) $("s-chart-type").value = k; } catch (e) {}
 
@@ -8677,6 +8689,16 @@ const SITE_BASES = {
   slate:   {name:"Сланец",   bg:"#0e1215", panel:"#161b1f", panel2:"#1c2227", line:"#273036", text:"#e6ecef", muted:"#87939b", th:"#1a2025", ctrl:"#101417", hover:"#1e252b", foot:"#192025"},
   warm:    {name:"Тёплый",   bg:"#121110", panel:"#1b1a18", panel2:"#22201e", line:"#2e2b28", text:"#efebe6", muted:"#968f87", th:"#1f1d1b", ctrl:"#151413", hover:"#262321", foot:"#201e1c"},
   oled:    {name:"Чёрный",   bg:"#000000", panel:"#0c0c0e", panel2:"#131316", line:"#26262c", text:"#f5f5f7", muted:"#a0a0aa", th:"#101013", ctrl:"#060607", hover:"#19191d", foot:"#121215"},
+  navy:    {name:"Глубокий синий", bg:"#0a0f1c", panel:"#111829", panel2:"#172033", line:"#22304a", text:"#e6ecfa", muted:"#8593b3", th:"#141c2f", ctrl:"#0c1220", hover:"#1a2440", foot:"#151e31"},
+  dusk:    {name:"Сумерки",  bg:"#100e1a", panel:"#181525", panel2:"#1f1b2f", line:"#2c2742", text:"#ece8f7", muted:"#938cab", th:"#1c1829", ctrl:"#13101e", hover:"#241f37", foot:"#1d192b"},
+  plum:    {name:"Слива",    bg:"#130d14", panel:"#1c141e", panel2:"#241a27", line:"#352638", text:"#f2e8f2", muted:"#9e8aa0", th:"#201722", ctrl:"#160f17", hover:"#2a1e2d", foot:"#221824"},
+  wine:    {name:"Бордо",    bg:"#140b0e", panel:"#1e1115", panel2:"#26161b", line:"#381f27", text:"#f4e7ea", muted:"#a3878d", th:"#221418", ctrl:"#170d10", hover:"#2c1a20", foot:"#24161a"},
+  forest:  {name:"Лес",      bg:"#0b110e", panel:"#121a16", panel2:"#18221d", line:"#24322b", text:"#e7f1eb", muted:"#86998e", th:"#151e19", ctrl:"#0d1410", hover:"#1b2821", foot:"#16201b"},
+  teal:    {name:"Бирюзовая ночь", bg:"#081214", panel:"#0f1b1e", panel2:"#152427", line:"#1f3438", text:"#e3f2f3", muted:"#7f9a9d", th:"#122023", ctrl:"#0a1517", hover:"#172b2e", foot:"#132225"},
+  olive:   {name:"Олива",    bg:"#11120c", panel:"#1a1b13", panel2:"#212318", line:"#2f3122", text:"#eeefe4", muted:"#969883", th:"#1e1f16", ctrl:"#14150e", hover:"#26281b", foot:"#202118"},
+  cocoa:   {name:"Шоколад",  bg:"#130e0b", panel:"#1d1612", panel2:"#251c17", line:"#372a22", text:"#f3ebe5", muted:"#a08f83", th:"#211915", ctrl:"#16100d", hover:"#2c211b", foot:"#231b16"},
+  asphalt: {name:"Асфальт",  bg:"#16181c", panel:"#1f2227", panel2:"#262a30", line:"#33373f", text:"#eceef2", muted:"#949aa6", th:"#23262c", ctrl:"#1a1c21", hover:"#2b2f36", foot:"#25282e"},
+  cosmos:  {name:"Космос",   bg:"#05040b", panel:"#0d0b18", panel2:"#131022", line:"#221d38", text:"#eeeaff", muted:"#8d86ad", th:"#100e1e", ctrl:"#08070f", hover:"#19152c", foot:"#110f20"},
 };
 const SITE_ACCENTS = [
   ["midnight", "Полночь", "#7aa2f7", "#bb9af7", "night"],
@@ -13538,7 +13560,7 @@ function multiplesChart(){
     ["fireworks", "Салют в «Итогах года» (декабрь и январь)"],
     ["season", "Частицы на фоне (вид выбирается ниже)"],
     ["misha", "🥚 Пасхалка в «Профиле»"],
-    ["yearchips", "Переливающиеся плашки годов в «Топ месяцев» и «Топ дней»"],
+    ["yearchips", "Пульсирующие плашки годов в «Топ месяцев» и «Топ дней»"],
     ["glow", "Свечение выделенной линии на графиках"],
     ["pulse", "Пульсирующая точка «сейчас» на линиях"],
     ["morph", "Плавная перестройка столбцов при смене периода"],
@@ -14120,6 +14142,7 @@ function multiplesChart(){
 /* ===================== История обновлений (новые версии — сверху) ===================== */
 // tag: new — новое, imp — улучшено, fix — исправлено, del — убрано. area — раздел сайта.
 window.CHANGELOG = [
+  {v:"2026.10.25-13", date:"2026-10-25", title:"Картинки таблиц, пульс годов, новые фоны", items:[{tag:"fix", area:"Таблицы", text:"На картинке таблицы выравнивание как на странице: столбец «Место» снова по центру."},{tag:"imp", area:"Таблицы", text:"Заголовок таблицы на картинке заметнее: шрифт крупнее и светлее, фон заголовка темнее."},{tag:"imp", area:"Таблицы", text:"Компактный вид уменьшает только строки с данными — заголовок и строки итогов остаются прежней высоты."},{tag:"imp", area:"Топ месяцев и дней", text:"Плашки годов вместо бегущего блика мягко пульсируют своим цветом."},{tag:"imp", area:"Селфи", text:"Сделанные селфи (квадратики, отметки участников, график-матрица) — в цвете выбранной темы, а не салатовые."},{tag:"new", area:"Оформление", text:"10 новых фонов сайта: Глубокий синий, Сумерки, Слива, Бордо, Лес, Бирюзовая ночь, Олива, Шоколад, Асфальт, Космос."}]},
   {v:"2026.10.25-12", date:"2026-10-25", title:"Карточки на всех вкладках, гладкий график сравнения", items:[{tag:"fix", area:"Матрица", text:"Ячейка с общим итогом в правом верхнем углу снова светлая, как весь заголовок: золотой блеск цифр больше не стирает её фон."},{tag:"fix", area:"Сравнение", text:"«Сообщения по месяцам»: подписи месяцев на оси больше не наезжают друг на друга, линии графика плавные, без острых углов."},{tag:"new", area:"Карточки", text:"Выбор «В ряд» (авто или от 1 до 8) — у каждой таблицы, которую можно показать карточками: Рекорды, Топ месяцев, Топ дней, Марафоны, Время, Дни рождения, Селфи, Карта. Число запоминается для каждой таблицы отдельно."},{tag:"fix", area:"Карточки", text:"Если у таблицы нет столбца «Место», первый столбец (имя, дата, город, марафон) становится заголовком карточки — так поправлены карточки на вкладках Время, Карта, Селфи и в «Все марафоны». Подписи значений больше не обрезаются, а слова не разрываются посередине."},{tag:"imp", area:"Селфи", text:"Карточка пятницы показывает только день, сколько всего селфи и кто пропустил."}]},
   {v:"2026.10.25-11", date:"2026-10-25", title:"Таблица «Со стеклом» — чистая и матовая", items:[{tag:"imp", area:"Везде", text:"Таблица «Со стеклом» теперь рисуется сразу на стекле, а не обрабатывается после: никаких линий между строками, заголовок и строки итогов светлее, под заголовком и над итогами — по тонкой линии."},{tag:"imp", area:"Везде", text:"Стекло на картинках стало матовее: цветные пятна приглушены, как у панелей на сайте. Углы самой картинки прямые."}]},
   {v:"2026.10.25-10", date:"2026-10-25", title:"Картинка таблицы — ровно как на экране", items:[{tag:"del", area:"Везде", text:"Пустые столбцы больше не вырезаются из картинки таблицы: на неё попадает ровно то, что видно на странице, без пустого места справа. Ненужный столбец можно скрыть кнопкой «Столбцы»."},{tag:"fix", area:"Таблицы", text:"В режиме «Без линий» на картинке тоже нет линий, кроме линии под заголовком; компактный вид таблицы тоже переносится на картинку."}]},
@@ -16001,8 +16024,10 @@ body:not(.fv3-off) #tab-settings .set-pane > .filters{padding:10px;border-radius
 
 /* ===================== Анимированные плашки годов («Топ месяцев», «Топ дней») ===================== */
 body.fx-yearchips .ychip{position:relative;overflow:hidden;isolation:isolate;vertical-align:1px}
-body.fx-yearchips .ychip.yc-live{animation:ycGlow 3.6s ease-in-out infinite;animation-delay:var(--yc-d,0s)}
-body.fx-yearchips .ychip.yc-live::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:60%;background:linear-gradient(100deg,transparent 0%,rgba(255,255,255,.18) 35%,rgba(255,255,255,.7) 50%,rgba(255,255,255,.18) 65%,transparent 100%);transform:translateX(0) skewX(-18deg);animation:ycShine 3.6s cubic-bezier(.4,0,.2,1) infinite;animation-delay:var(--yc-d,0s);mix-blend-mode:overlay;pointer-events:none}
+/* плашка года: лёгкая пульсация её же цветом вместо бегущего блика */
+body.fx-yearchips .ychip.yc-live{animation:ycPulse 3.2s ease-in-out infinite;animation-delay:var(--yc-d,0s)}
+@keyframes ycPulse{0%,100%{background-color:color-mix(in srgb,currentColor 0%,transparent);box-shadow:0 0 0 0 transparent}50%{background-color:color-mix(in srgb,currentColor 22%,transparent);box-shadow:0 0 10px -3px currentColor}}
+body.fx-yearchips .ychip.yc-live::after{content:none}
 @keyframes ycShine{0%,58%{transform:translateX(0) skewX(-18deg)}100%{transform:translateX(330%) skewX(-18deg)}}
 @keyframes ycGlow{0%,100%{box-shadow:0 0 0 0 transparent;filter:none}55%{box-shadow:0 0 0 0 transparent;filter:none}75%{box-shadow:0 0 12px -3px currentColor,inset 0 0 6px -3px currentColor;filter:brightness(1.18)}}
 /* кнопки-фильтры годов над таблицей: точка пульсирует, у выбранного бежит блик */
@@ -16010,7 +16035,8 @@ body.fx-yearchips .ychip-btn i{position:relative;animation:ycDot 2.4s ease-out i
 body.fx-yearchips .ychip-btn:nth-child(3n+2) i{animation-delay:.8s}
 body.fx-yearchips .ychip-btn:nth-child(3n) i{animation-delay:1.6s}
 @keyframes ycDot{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--yc) 70%,transparent)}70%,100%{box-shadow:0 0 0 7px color-mix(in srgb,var(--yc) 0%,transparent)}}
-body.fx-yearchips .ychip-btn.active{position:relative;overflow:hidden;background-image:linear-gradient(100deg,transparent 30%,color-mix(in srgb,var(--yc) 35%,transparent) 50%,transparent 70%);background-size:250% 100%;animation:ycBtn 3.2s linear infinite}
+body.fx-yearchips .ychip-btn.active{position:relative;animation:ycBtnPulse 3.2s ease-in-out infinite}
+@keyframes ycBtnPulse{0%,100%{background-color:color-mix(in srgb,var(--yc) 16%,var(--ctrl))}50%{background-color:color-mix(in srgb,var(--yc) 32%,var(--ctrl));box-shadow:0 0 12px -4px var(--yc)}}
 @keyframes ycBtn{from{background-position:120% 0}to{background-position:-130% 0}}
 
 /* ===================== Переливающаяся рамка у графиков (как у таблиц) ===================== */
@@ -17286,14 +17312,13 @@ tbody tr.qv-able{cursor:pointer}
 .wrap > table > tbody:has(+ tfoot) > tr:last-child > :is(td,th){border-bottom-color:transparent}
 
 /* ---------- Компактные таблицы ---------- */
-body.tbl-compact :is(main .wrap,.table-image-measure) > table:not(.tv-cards) > :is(thead,tbody,tfoot) > tr > :is(td,th){padding-top:3px!important;padding-bottom:3px!important;padding-left:7px!important;padding-right:7px!important;line-height:1.25!important}
-body.tbl-compact :is(main .wrap,.table-image-measure) > table:not(.tv-cards) > :is(tbody,tfoot) > tr{height:auto!important}
+body.tbl-compact :is(main .wrap,.table-image-measure) > table:not(.tv-cards) > tbody > tr > :is(td,th){padding-top:3px!important;padding-bottom:3px!important;padding-left:7px!important;padding-right:7px!important;line-height:1.25!important}
+body.tbl-compact :is(main .wrap,.table-image-measure) > table:not(.tv-cards) > tbody > tr{height:auto!important}
 body.tbl-compact :is(main .wrap,.table-image-measure) > table:not(.tv-cards) > tbody > tr > td{font-size:12.5px}
 body.tbl-compact :is(main .wrap,.table-image-measure) > table:not(.tv-cards) .row-exclude-btn{width:18px;height:18px}
 body.tbl-compact main .wrap:has(> table:not(.tv-cards)){width:fit-content!important;max-width:100%!important}
 body.tbl-compact :is(main .wrap,.table-image-measure) > table:not(.tv-cards):not(.dm-table){width:auto!important;min-width:0!important}
 body.tbl-compact :is(main .wrap,.table-image-measure) > table:not(.tv-cards) td:first-child{min-width:0!important}
-body.tbl-compact .dm-table .dm-bars th{padding-top:4px!important}
 
 /* ---------- Таблицы без линий: остаётся только линия под заголовком ---------- */
 body.tbl-noborders :is(main .wrap,.table-image-measure) > table:not(.tv-cards) > :is(tbody,tfoot) > tr > :is(td,th){border-top-color:transparent!important;border-bottom-color:transparent!important;border-left-color:transparent!important;border-right-color:transparent!important}
@@ -17393,7 +17418,7 @@ body #s-days-table.tv-cards > tbody > tr > td:nth-child(2){flex:1 1 100%!importa
 body #s-days-table.tv-cards > tbody > tr > td:nth-child(2) *:not(.compare-diff){background:none!important}
 body #s-days-table.tv-cards > tbody > tr > td:nth-child(2)::before{content:"Селфи всего"!important;font-weight:500}
 body #s-days-table.tv-cards > tbody > tr > td.s-miss{flex:1 1 100%!important;text-align:left!important;font-size:13.5px!important;line-height:1.4;color:#f7768e}
-body #s-days-table.tv-cards > tbody > tr > td.s-miss:empty::after{content:"все сделали";color:#9ece6a}
+body #s-days-table.tv-cards > tbody > tr > td.s-miss:empty::after{content:"все сделали";color:var(--accent)}
 /* Селфи · участники: полоска «Последние 12» на всю ширину карточки */
 body #s-people-table.tv-cards > tbody > tr > td:last-child{flex:1 1 100%!important;text-align:left!important}
 
