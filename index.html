@@ -5158,8 +5158,11 @@ async function tableImageBlob(tableId, title, rowLimit = null){
       else ctx.rect(tableX+0.5,tableY+0.5,tableWidth-1,tableHeight-1);
       ctx.stroke();
     }
+    // Рамка таблиц и графиков (если включена) — вокруг самой таблицы, как на сайте.
+    const framed = typeof window.__tbFrameDraw === "function" && window.__tbFrameDraw(ctx, tableX, tableY, tableWidth, tableHeight, tableRadius);
     const out = await new Promise((resolve,reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Не удалось создать PNG")), "image/png"));
     if (glass) window.__glassRendered = {size: out.size, t: Date.now()};
+    if (framed) window.__frameRendered = {size: out.size, t: Date.now()};
     return out;
   } finally {
     measureHost.remove();
@@ -14173,6 +14176,7 @@ function multiplesChart(){
 /* ===================== История обновлений (новые версии — сверху) ===================== */
 // tag: new — новое, imp — улучшено, fix — исправлено, del — убрано. area — раздел сайта.
 window.CHANGELOG = [
+  {v:"2026.10.25-18", date:"2026-10-25", title:"Рамка вокруг таблицы на картинке", items:[{tag:"fix", area:"Везде", text:"На скопированных и скачанных таблицах рамка теперь идёт вокруг самой таблицы, как на сайте, а не по краю картинки."}]},
   {v:"2026.10.25-17", date:"2026-10-25", title:"Стекло и рамка на всех картинках", items:[{tag:"del", area:"Везде", text:"Кнопки «✨ Со стеклом» убраны."},{tag:"imp", area:"Везде", text:"Если включён стеклянный интерфейс, все таблицы и графики копируются и скачиваются со стеклом."},{tag:"new", area:"Настройки", text:"Переливающаяся рамка таблиц и графиков теперь есть и на скопированных и скачанных картинках. Отключается в «Настройки → Эффекты» — «Рамка на скопированных и скачанных картинках»."}]},
   {v:"2026.10.25-16", date:"2026-10-25", title:"Одно окошко в «Матрице»", items:[{tag:"fix", area:"Матрица", text:"Клик по числу в «Матрице» открывает только маленькое окошко с подробностями возле ячейки — боковая карточка участника больше не выезжает. По клику на имя карточка открывается, как раньше."}]},
   {v:"2026.10.25-15", date:"2026-10-25", title:"Имена по центру и чистая шторка фильтров", items:[{tag:"fix", area:"Статистика", text:"В таблице «Участники» имена стоят по центру столбца — и на странице, и на картинке при копировании."},{tag:"imp", area:"Фильтры", text:"В шторке фильтров справа остались только фильтры: дата на вкладке «Статистика» выбирается на самой странице, кнопки копирования стоят рядом с таблицей, а вид таблицы настраивается в меню «Столбцы»."}]},
@@ -17729,33 +17733,44 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
     gold:[["#8a6a1f","#ffd166","#fff1b0","#e0a526","#8a6a1f"],"#e0a526"],
     silver:[["#6b7486","#dfe6f2","#9aa6bd","#ffffff","#6b7486"],"#9aa6bd"]
   };
-  async function framePng(blob){
-    const style = (["rainbow","aurora","sunset","ocean","neon","fire","gold","silver","accent","comet"].find(x => document.body.classList.contains("tb-" + x))) || "";
-    if (!style) return blob;
+  function tbStyle(){ return ["rainbow","aurora","sunset","ocean","neon","fire","gold","silver","accent","comet"].find(x => document.body.classList.contains("tb-" + x)) || ""; }
+  function frameGradient(c, style, cx, cy, w, h){
     const cssv = n => (getComputedStyle(document.body).getPropertyValue(n) || "").trim();
     const acc = cssv("--accent") || "#7aa2f7", line = cssv("--line") || "#2c303b";
+    const g = typeof c.createConicGradient === "function" ? c.createConicGradient(-Math.PI / 2, cx, cy) : c.createLinearGradient(cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2);
+    const n = document.createElement("canvas").getContext("2d"); const norm = v => { n.fillStyle = "#000"; n.fillStyle = v; return n.fillStyle; };
+    let glow;
+    if (style === "accent") { const soft = "color-mix(in srgb," + acc + " 25%,transparent)"; [[0, soft], [.25, acc], [.5, soft], [.75, acc], [1, soft]].forEach(([o, col]) => g.addColorStop(o, norm(col))); glow = acc; }
+    else if (style === "comet") { [[0, line], [.62, line], [.8, acc], [.86, "#ffffff"], [.94, line], [1, line]].forEach(([o, col]) => g.addColorStop(o, norm(col))); glow = acc; }
+    else { const [cols, gl] = TB_STOPS[style]; cols.forEach((col, i) => g.addColorStop(i / (cols.length - 1), col)); glow = gl; }
+    return {grad: g, glow: norm(glow)};
+  }
+  const rrect = (c, x, y, w, h, r) => { c.beginPath(); if (typeof c.roundRect === "function") c.roundRect(x, y, w, h, r); else c.rect(x, y, w, h); };
+  // Рамка вокруг таблицы в картинке (вызывается из tableImageBlob). Возвращает true, если нарисовала.
+  window.__tbFrameDraw = function(c, x, y, w, h, r){
+    if (!frameOn()) return false;
+    const style = tbStyle(); if (!style) return false;
+    const {grad, glow} = frameGradient(c, style, x + w / 2, y + h / 2, w, h), lw = 1.6;
+    c.save();
+    // мягкое свечение наружу, как у рамки на сайте
+    c.shadowColor = glow; c.shadowBlur = 12; c.globalAlpha = .55; c.strokeStyle = grad; c.lineWidth = lw; rrect(c, x + lw / 2, y + lw / 2, w - lw, h - lw, r); c.stroke();
+    c.shadowBlur = 0; c.globalAlpha = 1; c.strokeStyle = grad; c.lineWidth = lw; rrect(c, x + lw / 2, y + lw / 2, w - lw, h - lw, r); c.stroke();
+    c.restore();
+    return true;
+  };
+  // Остальные картинки (графики, карточки): рамка по краю самой картинки — у них картинка и есть график.
+  async function framePng(blob){
+    const done = window.__frameRendered;
+    if (done && done.size === blob.size && Date.now() - done.t < 15000) return blob;
+    const style = tbStyle(); if (!style) return blob;
     const bmp = await createImageBitmap(blob);
     const W = bmp.width, H = bmp.height, k = Math.max(1, W / 900), lw = Math.max(2, Math.round(2.6 * k)), r = Math.round(14 * k);
     const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
     const c = cv.getContext("2d");
-    const rr = (x, y, w, h, rad) => { c.beginPath(); if (typeof c.roundRect === "function") c.roundRect(x, y, w, h, rad); else c.rect(x, y, w, h); };
-    // Картинка — карточка со скруглёнными углами, по краю переливающаяся рамка, как на сайте.
-    c.save(); rr(0, 0, W, H, r); c.clip(); c.drawImage(bmp, 0, 0);
-    let grad, glow;
-    const conic = typeof c.createConicGradient === "function" ? c.createConicGradient(-Math.PI / 2, W / 2, H / 2) : null;
-    const g = conic || c.createLinearGradient(0, 0, W, H);
-    if (style === "accent" || style === "comet") {
-      const soft = "color-mix(in srgb," + acc + " 25%,transparent)";
-      const n = document.createElement("canvas").getContext("2d"); const norm = v => { n.fillStyle = "#000"; n.fillStyle = v; return n.fillStyle; };
-      if (style === "accent") { [[0, soft], [.25, acc], [.5, soft], [.75, acc], [1, soft]].forEach(([o, col]) => g.addColorStop(o, norm(col))); glow = acc; }
-      else { [[0, line], [.62, line], [.8, acc], [.86, "#ffffff"], [.94, line], [1, line]].forEach(([o, col]) => g.addColorStop(o, norm(col))); glow = acc; }
-    } else {
-      const [cols, gl] = TB_STOPS[style]; cols.forEach((col, i) => g.addColorStop(i / (cols.length - 1), col)); glow = gl;
-    }
-    grad = g;
-    // мягкое свечение внутрь от рамки
-    c.save(); c.shadowColor = glow; c.shadowBlur = 16 * k; c.strokeStyle = grad; c.lineWidth = lw; c.globalAlpha = .55; rr(lw / 2, lw / 2, W - lw, H - lw, r); c.stroke(); c.restore();
-    c.strokeStyle = grad; c.lineWidth = lw; rr(lw / 2, lw / 2, W - lw, H - lw, r); c.stroke();
+    const {grad, glow} = frameGradient(c, style, W / 2, H / 2, W, H);
+    c.save(); rrect(c, 0, 0, W, H, r); c.clip(); c.drawImage(bmp, 0, 0);
+    c.save(); c.shadowColor = glow; c.shadowBlur = 16 * k; c.strokeStyle = grad; c.lineWidth = lw; c.globalAlpha = .55; rrect(c, lw / 2, lw / 2, W - lw, H - lw, r); c.stroke(); c.restore();
+    c.strokeStyle = grad; c.lineWidth = lw; rrect(c, lw / 2, lw / 2, W - lw, H - lw, r); c.stroke();
     c.restore();
     return await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error("Не удалось создать PNG")), "image/png"));
   }
