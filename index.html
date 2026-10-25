@@ -4978,7 +4978,8 @@ async function tableImageBlob(tableId, title, rowLimit = null){
       if (!isPlaceholder) bodyRows.slice(rowLimit).forEach(row => row.remove());
     }
   }
-  dropEmptyColumns(table);
+  // В картинку попадает ровно то, что видно на странице: пустые столбцы больше не вырезаются
+  // (раньше после этого справа оставалось пустое место). Лишний столбец можно скрыть кнопкой «Столбцы».
   Object.assign(table.style, {width:"max-content", minWidth:"0", maxWidth:"none", tableLayout:"auto", margin:"0", borderSpacing:"0"});
   table.style.setProperty("width", "max-content", "important");
   table.style.setProperty("min-width", "0", "important");
@@ -5070,14 +5071,16 @@ async function tableImageBlob(tableId, title, rowLimit = null){
           ctx.fillStyle = cell.dataset.barColor || "rgba(122,162,247,.3)";
           ctx.fillRect(x, y, cr.width * share, cr.height);
         }
+        // Прозрачная граница (например, в режиме «без линий») — не рисуем её цветом линии по умолчанию.
+        const seen = c => c && c !== "transparent" && !/^rgba\([^)]*,\s*0\)$/.test(c) && !/\/\s*0\)$/.test(c);
         const leftBorder = parseFloat(cs.borderLeftWidth) || 0;
-        if (leftBorder > 0 && cs.borderLeftStyle !== "none") {
+        if (leftBorder > 0 && cs.borderLeftStyle !== "none" && seen(cs.borderLeftColor)) {
           ctx.fillStyle = canvasColor(cs.borderLeftColor, lineColor); ctx.fillRect(x, y, leftBorder, cr.height);
         }
         drawCanvasCellText(ctx, cell, cr, tableRect, tableX, tableY, textColor);
         if (cell.querySelector("svg")) await drawInlineSvgVisuals(ctx, cell, tableRect, tableX, tableY);
         const borderWidth = parseFloat(cs.borderBottomWidth) || 0;
-        if (borderWidth > 0 && cs.borderBottomStyle !== "none") {
+        if (borderWidth > 0 && cs.borderBottomStyle !== "none" && seen(cs.borderBottomColor)) {
           const borderColor = canvasColor(cs.borderBottomColor, lineColor);
           ctx.fillStyle = borderColor; ctx.fillRect(x, y+cr.height-borderWidth, cr.width, borderWidth);
         }
@@ -6291,7 +6294,7 @@ document.addEventListener("pointercancel", finishColumnResize, true);
     const headerBottom = siteHeader.getBoundingClientRect().bottom;
     let candidate = null, bestTop = -Infinity;
     activeTab.querySelectorAll(".wrap table").forEach(table => {
-      if (!table.tHead || !table.tHead.rows.length || !table.getClientRects().length) return;
+      if (!table.tHead || !table.tHead.rows.length || !table.getClientRects().length || table.classList.contains("tv-cards") || !table.tHead.getClientRects().length) return;
       const wrap = table.closest(".wrap"); if (!wrap || !wrap.getClientRects().length) return;
       const headRect = table.tHead.getBoundingClientRect();
       const tableRect = table.getBoundingClientRect();
@@ -14058,6 +14061,8 @@ function multiplesChart(){
 /* ===================== История обновлений (новые версии — сверху) ===================== */
 // tag: new — новое, imp — улучшено, fix — исправлено, del — убрано. area — раздел сайта.
 window.CHANGELOG = [
+  {v:"2026.10.25-10", date:"2026-10-25", title:"Картинка таблицы — ровно как на экране", items:[{tag:"del", area:"Везде", text:"Пустые столбцы больше не вырезаются из картинки таблицы: на неё попадает ровно то, что видно на странице, без пустого места справа. Ненужный столбец можно скрыть кнопкой «Столбцы»."},{tag:"fix", area:"Таблицы", text:"В режиме «Без линий» на картинке тоже нет линий, кроме линии под заголовком; компактный вид таблицы тоже переносится на картинку."}]},
+  {v:"2026.10.25-9", date:"2026-10-25", title:"Карточки на всю ширину, одна в ряд", items:[{tag:"imp", area:"Статистика", text:"Карточки на ПК занимают всю ширину окна, а не только колонку содержимого сайта."},{tag:"new", area:"Статистика", text:"«В ряд» — можно выбрать одну карточку. При одной или двух в ряд карточки не растягиваются на весь экран, чтобы внутри не было пустоты."}]},
   {v:"2026.10.25-8", date:"2026-10-25", title:"Матрица: закреплённая шапка и лишние столбцы; карточек в ряд", items:[{tag:"fix", area:"Матрица", text:"При прокрутке закрепляется только строка с названиями столбцов (№, имя, дни, «Всего»), без столбиков-графиков, и текст больше не накладывается."},{tag:"new", area:"Матрица", text:"Столбцы «%» и «Δ места» справа можно убрать — галочки в «Параметрах»."},{tag:"new", area:"Статистика", text:"В режиме карточек рядом со «Столбцами» появился выбор «В ряд»: авто или от 2 до 8 карточек в ряду."}]},
   {v:"2026.10.25-7", date:"2026-10-25", title:"«Со стеклом» у графиков", items:[{tag:"fix", area:"Графики", text:"Кнопка «✨ Со стеклом» появилась у всех кнопок, подписанных просто «Копировать»: графики, сравнение, селфи, время, итоги года, дни рождения, а также «Копировать часы» и «Копировать показатели»."}]},
   {v:"2026.10.25-6", date:"2026-10-25", title:"Чище копирование со стеклом", items:[{tag:"fix", area:"Везде", text:"Картинка «Со стеклом» больше не обрамлена лишней рамкой и отступом: это одна стеклянная карточка со скруглёнными углами. Пустые поля по краям обрезаются, отступы со всех сторон одинаковые — справа больше нет пустого места."}]},
@@ -17220,22 +17225,22 @@ tbody tr.qv-able{cursor:pointer}
 .wrap > table > tbody:has(+ tfoot) > tr:last-child > :is(td,th){border-bottom-color:transparent}
 
 /* ---------- Компактные таблицы ---------- */
-body.tbl-compact main .wrap > table:not(.tv-cards) > :is(thead,tbody,tfoot) > tr > :is(td,th){padding-top:3px!important;padding-bottom:3px!important;padding-left:7px!important;padding-right:7px!important;line-height:1.25!important}
-body.tbl-compact main .wrap > table:not(.tv-cards) > :is(tbody,tfoot) > tr{height:auto!important}
-body.tbl-compact main .wrap > table:not(.tv-cards) > tbody > tr > td{font-size:12.5px}
-body.tbl-compact main .wrap > table:not(.tv-cards) .row-exclude-btn{width:18px;height:18px}
+body.tbl-compact :is(main .wrap,.table-image-measure) > table:not(.tv-cards) > :is(thead,tbody,tfoot) > tr > :is(td,th){padding-top:3px!important;padding-bottom:3px!important;padding-left:7px!important;padding-right:7px!important;line-height:1.25!important}
+body.tbl-compact :is(main .wrap,.table-image-measure) > table:not(.tv-cards) > :is(tbody,tfoot) > tr{height:auto!important}
+body.tbl-compact :is(main .wrap,.table-image-measure) > table:not(.tv-cards) > tbody > tr > td{font-size:12.5px}
+body.tbl-compact :is(main .wrap,.table-image-measure) > table:not(.tv-cards) .row-exclude-btn{width:18px;height:18px}
 body.tbl-compact main .wrap:has(> table:not(.tv-cards)){width:fit-content!important;max-width:100%!important}
-body.tbl-compact main .wrap > table:not(.tv-cards):not(.dm-table){width:auto!important;min-width:0!important}
-body.tbl-compact main .wrap > table:not(.tv-cards) td:first-child{min-width:0!important}
+body.tbl-compact :is(main .wrap,.table-image-measure) > table:not(.tv-cards):not(.dm-table){width:auto!important;min-width:0!important}
+body.tbl-compact :is(main .wrap,.table-image-measure) > table:not(.tv-cards) td:first-child{min-width:0!important}
 body.tbl-compact .dm-table .dm-bars th{padding-top:4px!important}
 
 /* ---------- Таблицы без линий: остаётся только линия под заголовком ---------- */
-body.tbl-noborders main .wrap > table:not(.tv-cards) > :is(tbody,tfoot) > tr > :is(td,th){border-top-color:transparent!important;border-bottom-color:transparent!important;border-left-color:transparent!important;border-right-color:transparent!important}
-body.tbl-noborders main .wrap > table:not(.tv-cards) > :is(tbody,tfoot) > tr > :is(td,th):is(:first-child,.dm-no,.dm-name,[colspan]),
-body.tbl-noborders main .wrap > table:not(.tv-cards) > thead > tr > :is(td,th):is(:first-child,.dm-no,.dm-name){box-shadow:none!important}
-body.tbl-noborders main .wrap > table:not(.tv-cards) > thead > tr > :is(td,th){border-left-color:transparent!important;border-right-color:transparent!important;border-top-color:transparent!important}
-body.tbl-noborders main .wrap > table:not(.tv-cards) > thead > tr:last-child > :is(td,th){border-bottom:1px solid color-mix(in srgb,var(--text) 22%,var(--line))!important}
-body.tbl-noborders main .wrap > table:not(.tv-cards) > tbody > tr:hover > td{background-color:color-mix(in srgb,var(--text) 4%,transparent)}
+body.tbl-noborders :is(main .wrap,.table-image-measure) > table:not(.tv-cards) > :is(tbody,tfoot) > tr > :is(td,th){border-top-color:transparent!important;border-bottom-color:transparent!important;border-left-color:transparent!important;border-right-color:transparent!important}
+body.tbl-noborders :is(main .wrap,.table-image-measure) > table:not(.tv-cards) > :is(tbody,tfoot) > tr > :is(td,th):is(:first-child,.dm-no,.dm-name,[colspan]),
+body.tbl-noborders :is(main .wrap,.table-image-measure) > table:not(.tv-cards) > thead > tr > :is(td,th):is(:first-child,.dm-no,.dm-name){box-shadow:none!important}
+body.tbl-noborders :is(main .wrap,.table-image-measure) > table:not(.tv-cards) > thead > tr > :is(td,th){border-left-color:transparent!important;border-right-color:transparent!important;border-top-color:transparent!important}
+body.tbl-noborders :is(main .wrap,.table-image-measure) > table:not(.tv-cards) > thead > tr:last-child > :is(td,th){border-bottom:1px solid color-mix(in srgb,var(--text) 22%,var(--line))!important}
+body.tbl-noborders :is(main .wrap,.table-image-measure) > table:not(.tv-cards) > tbody > tr:hover > td{background-color:color-mix(in srgb,var(--text) 4%,transparent)}
 
 /* ---------- Карточки призовых мест: обводка в стиле их шрифта ---------- */
 table.tv-cards > tbody > tr:has(> td:is(.medal-1,.medal-2,.medal-3)){border-color:transparent!important;isolation:isolate}
@@ -17284,6 +17289,12 @@ body.glass-ui.tb-on .wrap:has(> table:not(.tv-cards))::after{content:"";position
 @media (min-width:721px){
   .st-desk-tools:has(#st-tv[data-tv-mode="cards"]) .st-cols{display:inline-flex}
   body[data-cards-cols] table.tv-cards > :is(tbody,tfoot){grid-template-columns:repeat(var(--cards-cols,4),minmax(0,1fr))!important}
+  /* карточки занимают всю ширину окна (с полями по 24 px), а не только узкую колонку содержимого сайта */
+  main .wrap:has(> table.tv-cards){margin-left:calc(-1 * var(--cards-bl,0px))!important;margin-right:calc(-1 * var(--cards-br,0px))!important;width:calc(100% + var(--cards-bl,0px) + var(--cards-br,0px))!important;max-width:none!important}
+  /* 1–2 карточки в ряд: карточка не растягивается на всю ширину, иначе внутри пусто */
+  body:is([data-cards-cols="1"],[data-cards-cols="2"]) main .wrap:has(> table.tv-cards){margin-left:0!important;margin-right:0!important;width:100%!important}
+  body[data-cards-cols="1"] table.tv-cards > :is(tbody,tfoot){grid-template-columns:minmax(0,560px)!important}
+  body[data-cards-cols="2"] table.tv-cards > :is(tbody,tfoot){grid-template-columns:repeat(2,minmax(0,560px))!important}
 }
 
 /* ---------- Меню «Столбцы»: вид таблицы ---------- */
@@ -17461,7 +17472,7 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
       let cols = $("st-cards-cols");
       if (!cols) {
         const l = document.createElement("label"); l.className = "st-cols"; l.title = "Сколько карточек ставить в один ряд";
-        l.innerHTML = `<span>В ряд</span><select id="st-cards-cols" class="no-sheet"><option value="">Авто</option>${[2, 3, 4, 5, 6, 7, 8].map(n => `<option value="${n}">${n}</option>`).join("")}</select>`;
+        l.innerHTML = `<span>В ряд</span><select id="st-cards-cols" class="no-sheet"><option value="">Авто</option>${[1, 2, 3, 4, 5, 6, 7, 8].map(n => `<option value="${n}">${n}</option>`).join("")}</select>`;
         cols = l.querySelector("select"); cols.value = cardsCols();
       }
       if (cols.closest("label").parentNode !== box) box.appendChild(cols.closest("label"));
@@ -17473,7 +17484,22 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
   }
   /* ---------- сколько карточек в ряд (на ПК) ---------- */
   const COLS_KEY = "chatstats.cardsCols.v1";
-  const cardsCols = () => { const v = lsGet(COLS_KEY, ""); return /^[2-8]$/.test(v) ? v : ""; };
+  const cardsCols = () => { const v = lsGet(COLS_KEY, ""); return /^[1-8]$/.test(v) ? v : ""; };
+  // На сколько карточки могут выйти за колонку содержимого сайта слева и справа: до краёв окна
+  // (с учётом боковых панелей) минус поля по 24 px.
+  function cardsBleed(){
+    const main = document.querySelector("main"), b = document.body; if (!main) return;
+    const cs = getComputedStyle(b), ms = getComputedStyle(main), r = main.getBoundingClientRect();
+    const innerL = r.left + parseFloat(ms.paddingLeft || 0), innerR = r.right - parseFloat(ms.paddingRight || 0);
+    const minL = parseFloat(cs.paddingLeft || 0) + 24, maxR = document.documentElement.clientWidth - parseFloat(cs.paddingRight || 0) - 24;
+    const bl = Math.max(0, Math.round(innerL - minL)), br = Math.max(0, Math.round(maxR - innerR));
+    if (b.style.getPropertyValue("--cards-bl") !== bl + "px") b.style.setProperty("--cards-bl", bl + "px");
+    if (b.style.getPropertyValue("--cards-br") !== br + "px") b.style.setProperty("--cards-br", br + "px");
+  }
+  addEventListener("resize", cardsBleed);
+  { const mn = document.querySelector("main"); if (mn && window.ResizeObserver) new ResizeObserver(cardsBleed).observe(mn); }
+  new MutationObserver(() => setTimeout(cardsBleed, 260)).observe(document.body, {attributes:true, attributeFilter:["class"]});
+  cardsBleed();
   function applyCols(){
     const v = cardsCols(), b = document.body;
     if (v) { b.dataset.cardsCols = v; b.style.setProperty("--cards-cols", v); } else { delete b.dataset.cardsCols; b.style.removeProperty("--cards-cols"); }
