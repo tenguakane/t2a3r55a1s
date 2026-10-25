@@ -71,7 +71,15 @@ table{width:100%;border-collapse:separate;border-spacing:0;min-width:520px}
 #tab-months .wrap > table, #tab-days .wrap > table, #chat-rank-table{width:max-content;min-width:0;max-width:none;table-layout:auto}
 /* Keep the rank column compact and centred on the Chats table. */
 #chat-rank-table th:first-child, #chat-rank-table td:first-child, #participants-table th:first-child, #participants-table tbody td:first-child{text-align:center!important;padding-left:8px;padding-right:8px;white-space:nowrap;width:1%}
-#participants-table th:nth-child(2), #participants-table tbody td:nth-child(2){text-align:left}
+#participants-table th:nth-child(2), #participants-table tbody td:nth-child(2){text-align:center}
+/* Имя по центру ячейки; крестик «Исключить» прижат к правому краю и не сдвигает имя. */
+#participants-table:not(.tv-cards) tbody td:nth-child(2):not([colspan]){position:relative;padding-left:36px;padding-right:36px}
+#participants-table:not(.tv-cards) tbody td:nth-child(2) .row-name-with-action{justify-content:center}
+#participants-table:not(.tv-cards) tbody td:nth-child(2) .row-name-with-action>.row-exclude-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%)}
+/* Шторка фильтров справа: дата, месяц и год уже есть на странице «Статистика» рядом с быстрым выбором периода. */
+body.filters-right:has(#tab-stats.active) #fd-body :is(#f-day,#f-month,#f-year){display:none!important}
+/* Если на странице остались только кнопки копирования — без рамки и фона панели. */
+body.filters-right .filters.fr-keep:not(:has(> :not(.table-export-actions))){padding:0!important;border:0!important;background:none!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;margin-bottom:12px}
 th,td{padding:10px 14px;text-align:center;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
 th:first-child,td:first-child{text-align:left}
 th{color:var(--muted);font-weight:500;font-size:13px;cursor:pointer;user-select:none;white-space:nowrap}
@@ -5005,9 +5013,11 @@ async function tableImageBlob(tableId, title, rowLimit = null){
   }
   // Preserve full participant/chat names in the content-sized clone rather than ellipsizing them.
   for (const box of table.querySelectorAll(".row-name-with-action")) {
+    const centered = box.closest("td,th")?.style.getPropertyValue("text-align") === "center";
     box.style.setProperty("width", "max-content", "important");
     box.style.setProperty("max-width", "none", "important");
-    box.style.setProperty("justify-content", "flex-start", "important");
+    box.style.setProperty("justify-content", centered ? "center" : "flex-start", "important");
+    if (centered) { box.style.setProperty("margin-left", "auto", "important"); box.style.setProperty("margin-right", "auto", "important"); }
     for (const span of box.querySelectorAll(":scope > span")) {
       span.style.setProperty("flex", "0 0 auto", "important");
       span.style.setProperty("width", "max-content", "important");
@@ -13263,10 +13273,11 @@ function multiplesChart(){
   try { on = localStorage.getItem(KEY) === "1"; collapsed = localStorage.getItem(KEY_C) === "1"; } catch (e) {}
   const active = () => on && mq.matches;
   function park(node, dest){ const mark = document.createComment("fd"); node.before(mark); moved.push([node, mark]); dest.appendChild(node); }
-  // Выбор участника (Профиль) и пары для сравнения остаются на странице: такие поля помечены data-fr-keep.
+  // Выбор участника (Профиль), пара для сравнения и кнопки копирования остаются на странице: поля помечены data-fr-keep.
   const holders = new Map(); // id блока фильтров → контейнер на странице
   function keepOut(node, mark){
-    const keep = node.querySelectorAll("[data-fr-keep]"); if (!keep.length) return;
+    // Кнопки копирования — не фильтры: они тоже остаются на странице.
+    const keep = node.querySelectorAll("[data-fr-keep], .table-export-actions"); if (!keep.length) return;
     let h = holders.get(node);
     if (!h) { h = document.createElement("div"); h.className = "filters fr-keep"; h.dataset.for = node.id || ""; mark.before(h); holders.set(node, h); }
     keep.forEach(el => { const m = document.createComment("fdk"); el.before(m); moved.push([el, m]); h.appendChild(el); });
@@ -13303,9 +13314,7 @@ function multiplesChart(){
     candidates().forEach(n => { park(n, body); keepOut(n, moved[moved.length - 1][1]); });
     body.dataset.tab = typeof activeDataTab === "function" ? activeDataTab() : "";
     ["ult-toggle", "vk-toggle"].forEach(id => { const b = document.getElementById(id); if (b && b.parentNode !== top) park(b, top); });
-    // «Вид таблицы» — на вкладках с таблицами (таблицы могут дорисоваться позже, поэтому проверяем ещё раз).
-    const look = () => { if (active() && typeof window.__fdLook === "function") window.__fdLook(body); };
-    look(); setTimeout(look, 700); setTimeout(look, 2000);
+    // «Вид таблицы» в шторку больше не добавляется: те же настройки есть в меню «Столбцы» у каждой таблицы.
   }
   function apply(){
     const act = active();
@@ -14164,6 +14173,8 @@ function multiplesChart(){
 /* ===================== История обновлений (новые версии — сверху) ===================== */
 // tag: new — новое, imp — улучшено, fix — исправлено, del — убрано. area — раздел сайта.
 window.CHANGELOG = [
+  {v:"2026.10.25-16", date:"2026-10-25", title:"Одно окошко в «Матрице»", items:[{tag:"fix", area:"Матрица", text:"Клик по числу в «Матрице» открывает только маленькое окошко с подробностями возле ячейки — боковая карточка участника больше не выезжает. По клику на имя карточка открывается, как раньше."}]},
+  {v:"2026.10.25-15", date:"2026-10-25", title:"Имена по центру и чистая шторка фильтров", items:[{tag:"fix", area:"Статистика", text:"В таблице «Участники» имена стоят по центру столбца — и на странице, и на картинке при копировании."},{tag:"imp", area:"Фильтры", text:"В шторке фильтров справа остались только фильтры: дата на вкладке «Статистика» выбирается на самой странице, кнопки копирования стоят рядом с таблицей, а вид таблицы настраивается в меню «Столбцы»."}]},
   {v:"2026.10.25-14", date:"2026-10-25", title:"Семь языков, палитра «Тема сайта» и аккуратные углы таблиц", items:[{tag:"new", area:"Настройки", text:"Сайт переведён на украинский, белорусский, казахский, английский, французский и польский. Язык выбирается в «Настройки → Оформление → Язык»; по умолчанию — русский. Переводятся вкладки, фильтры, подсказки, таблицы, графики и картинки; имена участников, названия чатов и история обновлений остаются как есть."},{tag:"new", area:"Матрица", text:"Палитра «Тема сайта»: столбики, тепловая заливка и лучший результат дня окрашиваются в цвета выбранной темы и меняются вместе с ней. Стала палитрой по умолчанию; свои цвета и готовые пары по-прежнему доступны в «⚙ Цвета»."},{tag:"new", area:"Графики", text:"Палитра «Тема сайта» в настройке каждого графика. По умолчанию фон графиков и тепловые цвета теперь тоже в стиле темы, а графики, окрашенные «по теме», перекрашиваются при её смене."},{tag:"fix", area:"Матрица", text:"Ячейка «всего» в правом верхнем углу и строка со столбиками — того же цвета, что и весь заголовок (со стеклом ячейка была светлее из-за двойного фона)."},{tag:"imp", area:"Матрица", text:"Столбец имён — по ширине самого длинного имени: лишнее место отдаётся дням."},{tag:"fix", area:"Таблицы", text:"Карточки занимают всю ширину сайта, даже если ширину таблицы меняли перетаскиванием краёв; при возврате к таблице ширина восстанавливается."},{tag:"fix", area:"Таблицы", text:"Переключатель «Таблица / Карточки» переведён на все языки."},{tag:"imp", area:"Таблицы", text:"На скачанной и скопированной картинке таблицы строка заголовка такая же светлая, как строка итогов — и в обычном виде, и «Со стеклом»."},{tag:"fix", area:"Таблицы", text:"Обводка таблицы на картинке больше не истончается в углах: заливки строк не выходят за скругление."},{tag:"fix", area:"Везде", text:"Переливающаяся рамка таблиц «Со стеклом» и графиков одинаковой толщины со всех сторон: раньше правый край светился вдвое тоньше."},{tag:"fix", area:"Везде", text:"Картинки, скопированные или скачанные на другом языке, тоже переведены (сравнение, радар, дни рождения, карта и др.), а кнопка «✨ Со стеклом» появляется у всех кнопок копирования на любом языке."}]},
   {v:"2026.10.25-13", date:"2026-10-25", title:"Картинки таблиц, пульс годов, новые фоны", items:[{tag:"fix", area:"Таблицы", text:"На картинке таблицы выравнивание как на странице: столбец «Место» снова по центру."},{tag:"imp", area:"Таблицы", text:"Заголовок таблицы на картинке заметнее: шрифт крупнее и светлее, фон заголовка темнее."},{tag:"imp", area:"Таблицы", text:"Компактный вид уменьшает только строки с данными — заголовок и строки итогов остаются прежней высоты."},{tag:"imp", area:"Топ месяцев и дней", text:"Плашки годов вместо бегущего блика мягко пульсируют своим цветом."},{tag:"imp", area:"Селфи", text:"Сделанные селфи (квадратики, отметки участников, график-матрица) — в цвете выбранной темы, а не салатовые."},{tag:"new", area:"Оформление", text:"10 новых фонов сайта: Глубокий синий, Сумерки, Слива, Бордо, Лес, Бирюзовая ночь, Олива, Шоколад, Асфальт, Космос."}]},
   {v:"2026.10.25-12", date:"2026-10-25", title:"Карточки на всех вкладках, гладкий график сравнения", items:[{tag:"fix", area:"Матрица", text:"Ячейка с общим итогом в правом верхнем углу снова светлая, как весь заголовок: золотой блеск цифр больше не стирает её фон."},{tag:"fix", area:"Сравнение", text:"«Сообщения по месяцам»: подписи месяцев на оси больше не наезжают друг на друга, линии графика плавные, без острых углов."},{tag:"new", area:"Карточки", text:"Выбор «В ряд» (авто или от 1 до 8) — у каждой таблицы, которую можно показать карточками: Рекорды, Топ месяцев, Топ дней, Марафоны, Время, Дни рождения, Селфи, Карта. Число запоминается для каждой таблицы отдельно."},{tag:"fix", area:"Карточки", text:"Если у таблицы нет столбца «Место», первый столбец (имя, дата, город, марафон) становится заголовком карточки — так поправлены карточки на вкладках Время, Карта, Селфи и в «Все марафоны». Подписи значений больше не обрезаются, а слова не разрываются посередине."},{tag:"imp", area:"Селфи", text:"Карточка пятницы показывает только день, сколько всего селфи и кто пропустил."}]},
@@ -16930,6 +16941,8 @@ tbody tr.qv-able{cursor:pointer}
     const tr = e.target.closest?.("main tbody tr"); if (!tr) return;
     if (e.target.closest("a, button, input, select, textarea, label, summary, details, [data-open-profile], .row-exclude-btn, .column-resize-handle, .table-outer-resize-handle")) return;
     if (window.getSelection && String(window.getSelection()).length) return; // выделяли текст — не мешаем
+    // В «Матрице» у ячейки с числом своё окошко подробностей — боковую карточку не открываем (по имени — открываем).
+    if (tr.closest(".dm-table") && !e.target.closest(".dm-name, .dm-no")) return;
     const pk = rowPk(tr); if (!pk) return;
     openQV(pk);
   });
