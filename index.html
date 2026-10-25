@@ -1913,7 +1913,10 @@ body.fx-pulse .fx-pulse-dot{display:inline;animation:fxPulse 1.6s ease-out infin
     </div>
     <div class="pbtn" style="margin:-6px 0 14px"><button class="mini" type="button" id="fx-all-on">Включить все эффекты</button><button class="mini" type="button" id="fx-all-off">Выключить все</button><button class="mini" type="button" id="fx-bg-toggle" title="Листопад и другие сезонные частицы, параллакс-фон, салют и конфетти">Выключить фоновые эффекты</button><span class="hint" style="margin-left:8px">При системной настройке «уменьшить движение» анимации не запускаются. В картинки эффекты не попадают.</span></div>
     <h2>Шрифт</h2>
-    <div class="filters"><label class="checkline"><input type="checkbox" id="no-bold">Убрать жирный шрифт</label><label class="checkline" title="На телефоне: своя шапка с названием раздела, нижняя панель вкладок, страница «Меню» со всеми разделами и фильтры в шторке"><input type="checkbox" id="set-m2" checked>Мобильная версия в стиле приложения</label></div>
+    <div class="filters"><label class="checkline"><input type="checkbox" id="no-bold">Убрать жирный шрифт</label></div>
+    <h2>Мобильная версия</h2>
+    <p class="hint">Как сайт выглядит и ведёт себя на телефоне.</p>
+    <div class="filters" id="set-mobile-box"><label class="checkline" title="На телефоне: своя шапка с названием раздела, нижняя панель вкладок, страница «Меню» со всеми разделами и фильтры в шторке"><input type="checkbox" id="set-m2" checked>Мобильная версия в стиле приложения</label></div>
     <h2>Фильтры</h2>
     <p class="hint">Как выглядят панели фильтров над таблицами и графиками.</p>
     <div class="filters">
@@ -13126,6 +13129,8 @@ function multiplesChart(){
 (function(){
   const KEY = "chatstats.filtersRight.v1", KEY_C = "chatstats.filtersRightCollapsed.v1";
   const mq = window.matchMedia("(min-width:721px)");
+  const FD_PIN_ON = `<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M15.5 3.2a1 1 0 0 1 1.4 0l3.9 3.9a1 1 0 0 1 0 1.4l-1.6 1.6a1 1 0 0 1-1.1.2l-.9-.4-3.2 3.2.3 2.4a1 1 0 0 1-.3.8l-1 1a1 1 0 0 1-1.4 0L8.4 14.1 4.7 17.8a.9.9 0 0 1-1.3-1.3l3.7-3.7-3.2-3.2a1 1 0 0 1 0-1.4l1-1a1 1 0 0 1 .8-.3l2.4.3 3.2-3.2-.4-.9a1 1 0 0 1 .2-1.1z"/></svg>`;
+  const FD_PIN_OFF = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M15.5 3.2a1 1 0 0 1 1.4 0l3.9 3.9a1 1 0 0 1 0 1.4l-1.6 1.6a1 1 0 0 1-1.1.2l-.9-.4-3.2 3.2.3 2.4a1 1 0 0 1-.3.8l-1 1a1 1 0 0 1-1.4 0L8.4 14.1 4.7 17.8M7.1 12.8l-3.2-3.2a1 1 0 0 1 0-1.4l1-1a1 1 0 0 1 .8-.3l2.4.3 3.2-3.2-.4-.9a1 1 0 0 1 .2-1.1z"/></svg>`;
   const dr = document.createElement("aside");
   dr.id = "filter-drawer"; dr.setAttribute("aria-label", "Фильтры");
   dr.innerHTML = `<div class="fd-head"><span>Фильтры</span><button type="button" id="fd-toggle" title="Свернуть шторку">»</button></div><div class="fd-top" id="fd-top"></div><div id="fd-body"></div><div class="fd-rail" id="fd-rail" title="Развернуть фильтры">⚙ Фильтры</div>`;
@@ -13153,6 +13158,7 @@ function multiplesChart(){
     const entry = moved.find(([n]) => n === node); if (entry) keepOut(node, entry[1]);
   }
   function restore(){
+    body.querySelectorAll(":scope > .fd-look").forEach(n => n.remove());
     while (moved.length) { const [node, mark] = moved.pop(); if (mark.parentNode) mark.replaceWith(node); }
     holders.forEach(h => h.remove()); holders.clear();
     body.dataset.tab = "";
@@ -13175,13 +13181,20 @@ function multiplesChart(){
     candidates().forEach(n => { park(n, body); keepOut(n, moved[moved.length - 1][1]); });
     body.dataset.tab = typeof activeDataTab === "function" ? activeDataTab() : "";
     ["ult-toggle", "vk-toggle"].forEach(id => { const b = document.getElementById(id); if (b && b.parentNode !== top) park(b, top); });
+    // «Вид таблицы» — на вкладках с таблицами (таблицы могут дорисоваться позже, поэтому проверяем ещё раз).
+    const look = () => { if (active() && typeof window.__fdLook === "function") window.__fdLook(body); };
+    look(); setTimeout(look, 700); setTimeout(look, 2000);
   }
   function apply(){
     const act = active();
     document.body.classList.toggle("filters-right", act);
     document.body.classList.toggle("fr-collapsed", act && collapsed);
-    dr.querySelector("#fd-toggle").textContent = collapsed ? "«" : "»";
-    dr.querySelector("#fd-toggle").title = collapsed ? "Развернуть фильтры" : "Свернуть шторку";
+    // Булавка: закреплена — шторка открыта и сдвигает страницу; откреплена — узкая полоска, выезжает при наведении.
+    const tg = dr.querySelector("#fd-toggle");
+    tg.innerHTML = collapsed ? FD_PIN_OFF : FD_PIN_ON;
+    tg.title = collapsed ? "Закрепить шторку открытой" : "Открепить: шторка свернётся и будет выезжать при наведении";
+    tg.classList.toggle("pinned", !collapsed); tg.setAttribute("aria-pressed", collapsed ? "false" : "true");
+    if (!collapsed) dr.classList.remove("fr-peek");
     const c = document.getElementById("exp-filters-right"); if (c) c.checked = on;
     if (act) mount(); else restore();
     setTimeout(() => { try { window.dispatchEvent(new Event("resize")); } catch (e) {} }, 250);
@@ -13197,6 +13210,12 @@ function multiplesChart(){
   }, true);
   window.addEventListener("popstate", () => { if (active()) { restore(); setTimeout(mount, 80); } });
   dr.querySelector("#fd-toggle").addEventListener("click", () => { collapsed = !collapsed; save(); apply(); });
+  // Выезд при наведении. Пока открыт выпадающий список из шторки, она не сворачивается.
+  let peekT = 0;
+  const busy = () => !!dr.querySelector('[aria-expanded="true"], details[open]') || [...document.querySelectorAll(".msel-pop, .hc-pop, .ss, .pick .pop")].some(e => e.getClientRects().length > 0);
+  function peekOff(){ clearTimeout(peekT); peekT = setTimeout(() => { if (dr.matches(":hover") || busy()) { peekOff(); return; } dr.classList.remove("fr-peek"); }, 260); }
+  dr.addEventListener("mouseenter", () => { clearTimeout(peekT); if (collapsed && active()) dr.classList.add("fr-peek"); });
+  dr.addEventListener("mouseleave", () => { if (dr.classList.contains("fr-peek")) peekOff(); });
   dr.querySelector("#fd-rail").addEventListener("click", () => { collapsed = false; save(); apply(); });
   document.getElementById("exp-filters-right")?.addEventListener("change", e => {
     on = e.target.checked; save();
@@ -14009,6 +14028,7 @@ function multiplesChart(){
 /* ===================== История обновлений (новые версии — сверху) ===================== */
 // tag: new — новое, imp — улучшено, fix — исправлено, del — убрано. area — раздел сайта.
 window.CHANGELOG = [
+  {v:"2026.10.25-2", date:"2026-10-25", title:"Плавные боковые панели, шторка фильтров с булавкой", items:[{tag:"imp", area:"Боковые вкладки", text:"Сворачивание стало плавным: подписи видны, пока панель сужается, и гаснут только в самом конце."},{tag:"new", area:"Фильтры справа", text:"Шторка фильтров работает так же, как боковые вкладки: в свёрнутом виде — узкая полоска, при наведении выезжает поверх страницы, булавка закрепляет её открытой. Пока открыт выпадающий список, шторка не сворачивается."},{tag:"new", area:"Фильтры справа", text:"На вкладках с таблицами в шторке появился блок «Вид таблицы»: компактные таблицы, без линий, карточки вместо таблиц."},{tag:"imp", area:"Настройки", text:"Настройки мобильной версии и вибрации переехали из «Оформления» в отдельный раздел «Телефон»."},{tag:"fix", area:"Стеклянный интерфейс", text:"Боковые вкладки больше не пропадают при включённом стекле, из настроек снова можно уйти на другие вкладки."}]},
   {v:"2026.10.25-1", date:"2026-10-25", title:"Карточки на ПК, стекло, компактные таблицы", items:[{tag:"new", area:"ПК", text:"Таблицы можно смотреть карточками и на компьютере: кнопка «Карточки» рядом со «Столбцами» или сразу для всех таблиц в «Настройки → Таблицы»."},{tag:"new", area:"Таблицы", text:"Компактный вид (строки ниже, столбцы уже) и вид без линий — остаётся только линия под заголовком. Переключаются в меню «Столбцы» у любой таблицы и в настройках."},{tag:"new", area:"Экспериментально", text:"Стеклянный интерфейс, как в iOS: полупрозрачные карточки, таблицы, графики и панели с размытием фона."},{tag:"imp", area:"Боковые вкладки", text:"Панель уже, иконки меньше. Свёрнутая панель выезжает при наведении курсора, а кнопка-булавка закрепляет её открытой."},{tag:"new", area:"Частицы", text:"Плотность «Ещё меньше» и настройка размера частиц — от очень мелких до очень крупных."},{tag:"fix", area:"Телефон", text:"Частицы на фоне больше не остаются на экране и не накапливаются: каждый кадр холст очищается целиком."},{tag:"imp", area:"Статистика", text:"На ПК кнопки «Столбцы» и «Карточки» переехали в панель фильтров. Рядом с выбором одного дня больше не дублируется та же дата."},{tag:"del", area:"Сравнение", text:"Убран 3D-наклон карточек участников."},{tag:"fix", area:"Таблицы", text:"Матрица: убрана линия между номером и именем, у первых трёх мест линии больше не выглядят толще. Статистика: границы строк итогов совпадают с остальной таблицей."}]},
   {v:"2026.10.24-9", date:"2026-10-24", title:"Сброс фильтров и выход в шапке", items:[{tag:"new", area:"Телефон", text:"В шапке приложения появилась кнопка «Сбросить фильтры»: фильтры открытой вкладки возвращаются к исходным, остальные вкладки не меняются. В «Сравнении» пара участников сохраняется."},{tag:"new", area:"Телефон", text:"Кнопка «Выйти из приложения». Если телефон не даёт приложению закрыться самому, появится подсказка, как выйти."}]},
   {v:"2026.10.24-8", date:"2026-10-24", title:"Ровные плашки в топах", items:[{tag:"fix", area:"Топ месяцев и дней", text:"Плашки года, «сейчас» и «сегодня» стоят ровно по центру строки рядом с названием месяца или дня — и в таблице, и в карточках на телефоне."}]},
@@ -15938,7 +15958,8 @@ body.tb-on .chart:has(svg.heatrows-svg){border:1.5px solid transparent;backgroun
   const tab = document.getElementById("tab-settings"); if (!tab || tab.querySelector(".set-panes")) return;
   const KEY = "chatstats.settingsCat.v1";
   const CATS = [
-    {k:"look", ic:"🎨", c:"#5e8bff", t:"Оформление", d:"Тема, цвет фона, шрифт и мобильная версия", h:["Тема оформления", "Шрифт"]},
+    {k:"look", ic:"🎨", c:"#5e8bff", t:"Оформление", d:"Тема, цвет фона и шрифт", h:["Тема оформления", "Шрифт"]},
+    {k:"mobile", ic:"📱", c:"#ff375f", t:"Телефон", d:"Мобильная версия в стиле приложения, вибрация", h:["Мобильная версия"]},
     {k:"fx", ic:"✨", c:"#bf5af2", t:"Эффекты", d:"Анимации, частицы на фоне, рамка таблиц и графиков", h:["Эффекты"]},
     {k:"filters", ic:"🎛️", c:"#34c759", t:"Фильтры и таблицы", d:"Вид фильтров и дополнения к таблицам", h:["Фильтры", "Экспериментально"]},
     {k:"people", ic:"👥", c:"#ff9f0a", t:"Участники", d:"Имена, цвета, дни рождения, города и аватарки", h:["Участники", "Дни рождения", "Аватарки"]},
@@ -16924,7 +16945,7 @@ tbody tr.qv-able{cursor:pointer}
   }, true);
   (function(){
     if (!("vibrate" in navigator)) return;
-    const host = $("no-bold")?.closest(".filters"); if (!host || $("set-haptics")) return;
+    const host = $("set-mobile-box") || $("no-bold")?.closest(".filters"); if (!host || $("set-haptics")) return;
     const l = document.createElement("label"); l.className = "checkline"; l.title = "Короткая вибрация при нажатии на вкладки и переключатели. Работает на Android";
     l.innerHTML = `<input type="checkbox" id="set-haptics">Вибрация при нажатиях (Android)`;
     host.appendChild(l);
@@ -17084,22 +17105,50 @@ tbody tr.qv-able{cursor:pointer}
 }
 .st-hc-lbl{display:none}
 
-/* ---------- Боковые вкладки: узкая полоска, выезжает при наведении; кнопка-булавка закрепляет ---------- */
+/* ---------- Боковые вкладки: узкая полоска, выезжает при наведении; кнопка-булавка закрепляет ----------
+   Подписи не прячутся сразу: при уходе курсора панель сначала плавно сужается (текст обрезается её краем),
+   и только в самом конце подписи гаснут. Иконки всё время стоят на одном месте. */
 @media (min-width:721px){
-  body.side-nav nav{transition:width .2s ease .18s,box-shadow .2s ease .18s}
-  body.side-nav .side-toggle{height:calc(var(--hdr-h,57px) + 1px);padding:0 12px 0 16px;font-size:13.5px}
-  body.side-nav .side-toggle i{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;color:var(--muted);transition:background .15s,color .15s}
+  body.side-nav nav{transition:width .3s cubic-bezier(.4,0,.2,1) .15s,box-shadow .3s ease .15s}
+  body.side-nav nav button{min-height:30px;padding-left:8px!important;padding-right:8px!important;text-overflow:clip!important}
+  body.side-nav nav button::before{-webkit-text-fill-color:currentColor}
+  body.side-nav .side-toggle{justify-content:flex-start!important;gap:6px;height:calc(var(--hdr-h,57px) + 1px);padding:0 10px 0 13px!important;font-size:13.5px;white-space:nowrap;overflow:hidden}
+  body.side-nav .side-toggle i{order:-1;flex:0 0 28px;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;color:var(--muted);transition:background .15s,color .15s}
   body.side-nav .side-toggle:hover i{background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--text)}
   body.side-nav .side-toggle.pinned i{color:var(--accent)}
   body.side-nav .side-sep{font-size:10.5px;margin-left:10px}
-  body.side-nav.side-collapsed nav:hover{width:var(--side-w-open,188px);box-shadow:16px 0 40px -14px rgba(0,0,0,.6);transition-delay:.06s}
-  body.side-nav.side-collapsed nav:hover button{font-size:13.5px;justify-content:flex-start;padding:clamp(3px, calc((100vh - 620px) / 46), 7px) 10px;gap:9px}
-  body.side-nav.side-collapsed nav:hover button::before{font-size:14px}
-  body.side-nav.side-collapsed nav:hover .side-sep{font-size:10.5px;margin:clamp(4px, 1.1vh, 12px) 10px 2px;border-top:0}
-  body.side-nav.side-collapsed nav:hover .side-toggle{justify-content:space-between;padding:0 12px 0 16px}
-  body.side-nav.side-collapsed nav:hover .side-toggle span{display:inline}
-  body.side-nav.side-collapsed .side-toggle i{width:30px;height:30px}
-  body.side-nav nav button{min-height:30px}
+  /* свёрнутая панель: та же раскладка, что у открытой, только узкая */
+  body.side-nav.side-collapsed nav button{font-size:13.5px!important;justify-content:flex-start!important;gap:9px!important;padding-top:clamp(3px, calc((100vh - 620px) / 46), 7px)!important;padding-bottom:clamp(3px, calc((100vh - 620px) / 46), 7px)!important}
+  body.side-nav.side-collapsed nav button::before{font-size:14px!important}
+  body.side-nav.side-collapsed .side-sep{font-size:10.5px!important;margin:clamp(4px, 1.1vh, 12px) 10px 2px!important;border-top:0!important}
+  body.side-nav.side-collapsed .side-toggle span{display:inline!important}
+  body.side-nav.side-collapsed .side-toggle{justify-content:flex-start!important;padding:0 10px 0 13px!important}
+  /* подписи в свёрнутом виде прозрачные; гаснут в конце сворачивания, появляются сразу при наведении */
+  body.side-nav.side-collapsed nav :is(button,.side-sep,.side-toggle span){-webkit-text-fill-color:transparent;transition:-webkit-text-fill-color .12s linear .36s,background-color .15s,color .15s}
+  body.side-nav.side-collapsed nav:hover{width:var(--side-w-open,188px);box-shadow:16px 0 40px -14px rgba(0,0,0,.6);transition-delay:.05s}
+  body.side-nav.side-collapsed nav:hover :is(button,.side-sep,.side-toggle span){-webkit-text-fill-color:currentColor;transition:-webkit-text-fill-color .1s linear .05s,background-color .15s,color .15s}
+}
+
+/* ---------- Фильтры справа: тот же механизм — узкая полоска, выезд при наведении, булавка ---------- */
+@media (min-width:721px){
+  body.filters-right #filter-drawer{transition:width .3s cubic-bezier(.4,0,.2,1) .15s,box-shadow .3s ease .15s;overflow:hidden}
+  body.filters-right #filter-drawer > :is(.fd-head,.fd-top,#fd-body){width:var(--fr-w-open,360px);min-width:var(--fr-w-open,360px);box-sizing:border-box}
+  body.filters-right #filter-drawer .fd-head{justify-content:flex-start;gap:8px;padding:0 10px 0 12px}
+  body.filters-right #filter-drawer .fd-head #fd-toggle{order:-1;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border-radius:8px}
+  body.filters-right #filter-drawer .fd-head #fd-toggle.pinned{color:var(--accent)}
+  body.fr-collapsed #filter-drawer .fd-head span{display:inline!important}
+  body.fr-collapsed #filter-drawer .fd-head{justify-content:flex-start!important;padding:0 10px 0 12px!important}
+  body.fr-collapsed #filter-drawer :is(.fd-top,#fd-body){display:flex!important}
+  body.fr-collapsed #filter-drawer #fd-body{display:block!important}
+  /* свёрнута: содержимое на месте, но прозрачное; рейка «Фильтры» видна */
+  body.fr-collapsed #filter-drawer > :is(.fd-top,#fd-body),body.fr-collapsed #filter-drawer .fd-head span{opacity:0;pointer-events:none;transition:opacity .14s linear .36s}
+  body.fr-collapsed #filter-drawer .fd-rail{position:absolute;left:0;top:calc(var(--hdr-h,57px) + 1px);width:52px;opacity:1;transition:opacity .14s linear .4s}
+  body.fr-collapsed #filter-drawer.fr-peek{width:var(--fr-w-open,360px);box-shadow:-16px 0 40px -14px rgba(0,0,0,.6);transition-delay:.05s}
+  body.fr-collapsed #filter-drawer.fr-peek > :is(.fd-top,#fd-body),body.fr-collapsed #filter-drawer.fr-peek .fd-head span{opacity:1;pointer-events:auto;transition:opacity .1s linear .05s}
+  body.fr-collapsed #filter-drawer.fr-peek .fd-rail{opacity:0;pointer-events:none;transition:opacity .08s linear}
+  /* «Вид таблицы» в шторке */
+  #fd-body .fd-look{display:flex;flex-direction:column;gap:8px;margin:0 0 14px;padding-top:14px;border-top:1px solid var(--line)}
+  #fd-body .fd-look > b{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
 }
 
 /* ---------- Матрица: без линии между номером и именем; у призёров линии как у всех ---------- */
@@ -17156,7 +17205,8 @@ body.glass-ui :is(.wrap,.filters,.tile,.p-card,.p-hero,.chart,.yr-chart-card,.yr
 /* вложенные стеклянные блоки не размываем повторно — так легче для видеокарты */
 body.glass-ui :is(.wrap,.filters,.tile,.p-card,.hub-card,.cmp-hero,.yr-chart-card) :is(.wrap,.filters,.tile,.p-card,.hub-card,.hub-kpi,.mt-card,.goal-card){-webkit-backdrop-filter:none;backdrop-filter:none}
 body.glass-ui .filters .field,body.glass-ui .filters :is(.seg,.pick summary,.msel,select,input:not([type=checkbox]):not([type=radio])){background:color-mix(in srgb,var(--text) 6%,transparent)!important;border-color:var(--glass-line)!important}
-body.glass-ui :is(header,body > nav){background:color-mix(in srgb,var(--panel) 50%,transparent)!important;-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur)}
+/* шапку не размываем через backdrop-filter: внутри неё лежит навигация, и закреплённая боковая панель «застревала» в шапке */
+body.glass-ui header{background:color-mix(in srgb,var(--panel) 50%,transparent)!important}
 body.glass-ui.side-nav nav{background:color-mix(in srgb,var(--panel) 55%,transparent)!important;-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border-right-color:var(--glass-line)}
 body.glass-ui :is(.hc-pop,.pop,.opt-list,.dm-pop,.msel-pop,.nav-sheet:not([hidden]),#filter-drawer){background:color-mix(in srgb,var(--panel) 66%,transparent)!important;-webkit-backdrop-filter:blur(26px) saturate(180%);backdrop-filter:blur(26px) saturate(180%);border-color:var(--glass-line)!important}
 /* таблицы: ячейки прозрачные, закреплённые столбцы — плотнее, чтобы при прокрутке текст не накладывался */
@@ -17196,10 +17246,33 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
       F.ids.forEach(id => { const el = $(id); if (el && el.checked !== on) el.checked = on; });
     });
     const dc = $("set-tbl-cards-desk"); if (dc && window.__tableCardsDesktop) dc.checked = window.__tableCardsDesktop.get();
+    if (typeof syncLook === "function") syncLook();
     // Графики подстраиваются под ширину: после смены компактности перерисуем.
   }
   function setFlag(f, on){ lsSet(FLAGS[f].key, on ? "1" : "0"); apply(); if (f === "compact") setTimeout(() => { try { dispatchEvent(new Event("resize")); } catch (e) {} }, 60); }
   window.__tableLook = {get:isOn, set:setFlag};
+
+  /* ---------- «Вид таблицы» в правой шторке фильтров ---------- */
+  function syncLook(){
+    document.querySelectorAll(".fd-look [data-tview]").forEach(i => {
+      const v = i.dataset.tview, on = v === "cards" ? !!(window.__tableCardsDesktop && window.__tableCardsDesktop.get()) : isOn(v);
+      if (i.checked !== on) i.checked = on;
+    });
+  }
+  window.__fdLook = function(host){
+    if (!host) return;
+    const tab = document.querySelector("main > .tab.active");
+    const hasTables = !!(tab && tab.id !== "tab-settings" && tab.querySelector(".wrap > table, table[data-hc]"));
+    const cur = host.querySelector(":scope > .fd-look");
+    if (!hasTables) { if (cur) cur.remove(); return; }
+    if (cur) { syncLook(); return; }
+    const box = document.createElement("div"); box.className = "fd-look";
+    box.innerHTML = `<b>Вид таблицы</b>`
+      + `<label class="checkline" title="Меньше отступы в ячейках: строки ниже, столбцы уже"><input type="checkbox" data-tview="compact">Компактные таблицы</label>`
+      + `<label class="checkline" title="Убрать все линии внутри таблиц, оставить только линию под заголовком"><input type="checkbox" data-tview="noborders">Без линий — только под заголовком</label>`
+      + `<label class="checkline" title="Показывать таблицы карточками. Отдельную таблицу можно переключить кнопкой «Карточки» рядом со «Столбцами»"><input type="checkbox" data-tview="cards">Карточки вместо таблиц</label>`;
+    host.appendChild(box); syncLook();
+  };
 
   /* ---------- пункты в настройках ---------- */
   (function(){
@@ -17231,6 +17304,8 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
     else if (e.target.dataset && e.target.dataset.tview) {
       const v = e.target.dataset.tview;
       if (v === "compact" || v === "noborders") setFlag(v, e.target.checked);
+      else if (v === "cards" && window.__tableCardsDesktop) { window.__tableCardsDesktop.set(e.target.checked); apply(); }
+      syncLook();
     }
   });
 
