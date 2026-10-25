@@ -1517,6 +1517,8 @@ body.fx-pulse .fx-pulse-dot{display:inline;animation:fxPulse 1.6s ease-out infin
       <div class="field"><label for="dm-top">Участники</label><select id="dm-top"><option value="10">Топ-10</option><option value="20">Топ-20</option><option value="all">Все</option></select></div>
       <div class="field"><label for="dm-min" title="Скрыть тех, кто был активен меньше указанного числа дней за период">Малоактивные</label><select id="dm-min"><option value="0">Показывать всех</option><option value="2">Скрыть: меньше 2 дней</option><option value="3">Скрыть: меньше 3 дней</option><option value="5">Скрыть: меньше 5 дней</option><option value="10">Скрыть: меньше 10 дней</option></select></div>
       <label class="checkline"><input type="checkbox" id="dm-heat">Тепловая заливка</label>
+      <label class="checkline" title="Доля участника от суммы за период"><input type="checkbox" id="dm-show-share" checked>Столбец «%»</label>
+      <label class="checkline" title="Изменение места по сравнению с прошлым периодом"><input type="checkbox" id="dm-show-delta" checked>Столбец «Δ места»</label>
       <div class="field"><label>Оформление</label><button class="mini" id="dm-colors-toggle" type="button" aria-expanded="false">⚙ Цвета</button></div>
       <label class="checkline"><input type="checkbox" id="hide-left-daymatrix">Убрать вышедших</label>
       <div class="table-export-actions filters-export-actions"><button class="mini copy-btn" id="dm-copy" type="button">Копировать как изображение</button><span class="hint" id="dm-copy-status"></span></div>
@@ -6253,19 +6255,23 @@ document.addEventListener("pointercancel", finishColumnResize, true);
   let sourceTable = null, sourceWrap = null, clonedTable = null, sourceShape = "", rafPending = false;
 
   function hideOverlay(){ overlay.style.display = "none"; sourceTable = sourceWrap = clonedTable = null; sourceShape = ""; overlay.replaceChildren(); }
+  // Закрепляем только строку с названиями столбцов — последнюю строку шапки. Строки над ней
+  // (например, столбики итогов в «Матрице») объединяют ячейки, и их копия наезжала текстом друг на друга.
+  const labelRow = table => table.tHead.rows[table.tHead.rows.length - 1];
   function shapeOf(table){
-    const widths = [...table.tHead.rows[0].cells].map(cell => cell.getBoundingClientRect().width.toFixed(2)).join(",");
+    const widths = [...labelRow(table).cells].map(cell => cell.getBoundingClientRect().width.toFixed(2)).join(",");
     return table.tHead.innerHTML + "|" + widths + "|" + table.getBoundingClientRect().width.toFixed(2);
   }
   function buildClone(table, wrap){
     overlay.replaceChildren();
     const clone = document.createElement("table");
-    clone.className = "sticky-table-clone";
+    clone.className = "sticky-table-clone" + (table.classList.contains("dm-table") ? " dm-table" : "");
     if (table.dataset.resizeKey) clone.dataset.resizeKey = table.dataset.resizeKey;
-    const head = table.tHead.cloneNode(true);
+    const head = document.createElement("thead");
+    head.appendChild(labelRow(table).cloneNode(true));
     head.querySelectorAll("[id]").forEach(el => el.removeAttribute("id"));
     const row = head.rows[0];
-    const originals = [...table.tHead.rows[0].cells];
+    const originals = [...labelRow(table).cells];
     [...row.cells].forEach((cell, i) => {
       cell.removeAttribute("id");
       cell.style.width = `${originals[i]?.getBoundingClientRect().width || cell.getBoundingClientRect().width}px`;
@@ -6290,7 +6296,8 @@ document.addEventListener("pointercancel", finishColumnResize, true);
       const headRect = table.tHead.getBoundingClientRect();
       const tableRect = table.getBoundingClientRect();
       const wrapRect = wrap.getBoundingClientRect();
-      if (headRect.top < headerBottom - 1 && tableRect.bottom > headerBottom + 2 && wrapRect.bottom > headerBottom + 2 && headRect.top > bestTop) {
+      const lblRect = labelRow(table).getBoundingClientRect();
+      if (lblRect.top < headerBottom - 1 && tableRect.bottom > headerBottom + 2 && wrapRect.bottom > headerBottom + 2 && headRect.top > bestTop) {
         candidate = {table, wrap}; bestTop = headRect.top;
       }
     });
@@ -6304,16 +6311,20 @@ document.addEventListener("pointercancel", finishColumnResize, true);
     overlay.style.left = `${wrapRect.left + wrap.clientLeft}px`;
     overlay.style.top = `${top}px`;
     overlay.style.width = `${wrap.clientWidth}px`;
-    overlay.style.height = `${table.tHead.getBoundingClientRect().height}px`;
+    const rowH = labelRow(table).getBoundingClientRect().height;
+    overlay.style.height = `${rowH}px`;
     clonedTable.style.transform = `translateX(${-wrap.scrollLeft}px)`;
-    clonedTable.style.height = `${table.tHead.getBoundingClientRect().height}px`;
+    clonedTable.style.height = `${rowH}px`;
   }
   function schedule(){ if (!rafPending) { rafPending = true; requestAnimationFrame(updateOverlay); } }
   document.addEventListener("scroll", schedule, {passive:true, capture:true});
   window.addEventListener("resize", schedule, {passive:true});
   document.querySelectorAll(".wrap").forEach(w => w.addEventListener("scroll", schedule, {passive:true}));
   overlay.addEventListener("click", e => {
-    const th = e.target.closest("th[data-k]"); if (!th || !sourceTable) return;
+    if (!sourceTable) return;
+    const dm = e.target.closest("th[data-dm-sort]");
+    if (dm) { const o = sourceTable.tHead.querySelector(`th[data-dm-sort="${dm.dataset.dmSort}"]`); if (o) o.click(); return; }
+    const th = e.target.closest("th[data-k]"); if (!th) return;
     const k = th.dataset.k;
     const original = [...sourceTable.tHead.querySelectorAll("th[data-k]")].find(item => item.dataset.k === k);
     if (original) original.click();
@@ -7516,7 +7527,7 @@ function dmSyncControls(){
   if ($("dm-week")) { $("dm-week").checked = Boolean(DM.week) && !DM.year; $("dm-week").disabled = Boolean(DM.year); }
   document.querySelectorAll("#dm-quick button").forEach(b => b.classList.toggle("active", b.dataset.q === DM.quick));
   const quickField = $("dm-quick")?.closest(".field"); if (quickField) quickField.hidden = Boolean(DM.year);
-  $("dm-metric").value = DM.metric; $("dm-top").value = DM.top; $("dm-heat").checked = DM.heat;
+  $("dm-metric").value = DM.metric; $("dm-top").value = DM.top; $("dm-heat").checked = DM.heat; $("dm-show-share").checked = DM.showShare !== false; $("dm-show-delta").checked = DM.showDelta !== false;
   if ($("dm-min")) $("dm-min").value = String(DM.minDays || 0);
   const chatsMode = DM.entity === "chats";
   document.querySelectorAll("#dm-entity [data-dm-entity]").forEach(b => b.classList.toggle("active", b.dataset.dmEntity === (chatsMode ? "chats" : "users")));
@@ -7652,7 +7663,8 @@ function renderDayMatrix(from = DM.from, to = DM.to){
   const ranked = [...per.values()].sort(byTot);
   const rankOf = new Map(ranked.map((u, i) => [u.k, i + 1]));
   const priorRank = new Map([...priorPer.values()].sort(byTot).map((u, i) => [u.k, i + 1]));
-  const showDelta = hasPrior && priorPer.size > 0;
+  const showDelta = hasPrior && priorPer.size > 0 && DM.showDelta !== false;
+  const showShare = DM.showShare !== false;
   const minDays = Number(DM.minDays) || 0;
   const eligible = ranked.filter(u => u.days.size >= minDays);
   const hiddenLow = ranked.length - eligible.length;
@@ -7673,7 +7685,7 @@ function renderDayMatrix(from = DM.from, to = DM.to){
     const h = Math.max(v ? 3 : 0, Math.round(v / maxCol * 46));
     return `<svg width="58" height="72" viewBox="0 0 58 72" aria-label="${fmt(v)}"><text x="29" y="${66 - h - 6}" text-anchor="middle" font-size="13" fill="#e8eaf1" font-family="Segoe UI, system-ui, sans-serif">${fmt(v)}</text><rect class="anim-bar-y" x="14" y="${66 - h}" width="30" height="${h}" rx="3" fill="${dmFill()}" fill-opacity="${v ? .85 : 0}"/><line x1="4" y1="66.5" x2="54" y2="66.5" stroke="#3a4050"/></svg>${dmDelta(v, priorColTot[i] || 0, cmpOn)}`;
   };
-  const tailCols = showDelta ? 3 : 2;
+  const tailCols = 1 + (showShare ? 1 : 0) + (showDelta ? 1 : 0);
   const arrow = k => sk === k ? (sd < 0 ? " ↓" : " ↑") : "";
   const sth = (k, label, cls = "", extra = "") => `<th data-dm-sort="${k}" class="${cls}${sk === k ? " sorted" : ""}" tabindex="0" title="Сортировать"${extra}>${label}${arrow(k)}</th>`;
   const head1 = `<tr class="dm-bars"><th colspan="2" class="dm-corner">${escH(chatName)}<small>${escH(MLBL[metric].toLowerCase())}${yearView ? ` · ${year} год` : weekView ? " · по неделям" : ""}</small></th>${columns.map((c, i) => `<th class="dm-barcell">${!yearView && c.from > today ? "" : bar(colTot[i], i)}</th>`).join("")}<th colspan="${tailCols}" class="dm-grand">${fmt(grand)}${dmDelta(grand, priorColTot.reduce((a,v)=>a+v,0), cmpOn)}<small>всего</small></th></tr>`;
@@ -7681,7 +7693,7 @@ function renderDayMatrix(from = DM.from, to = DM.to){
     const wd = new Date(c.date + "T00:00:00Z").getUTCDay(), weekend = !yearView && !weekView && (wd === 0 || wd === 6);
     const label = weekView ? `${escH(c.label)}<small>${escH(c.sub)}</small>` : escH(c.label);
     return sth("c" + i, label, weekend ? "dm-weekend" : "", ` data-col="${i}"`);
-  }).join("")}${sth("tot", "Всего", "dm-totcol")}${sth("share", "%")}${showDelta ? sth("delta", "Δ места", "", ` title="Изменение места по сравнению с прошлым периодом"`) : ""}</tr>`;
+  }).join("")}${sth("tot", "Всего", "dm-totcol")}${showShare ? sth("share", "%") : ""}${showDelta ? sth("delta", "Δ места", "", ` title="Изменение места по сравнению с прошлым периодом"`) : ""}</tr>`;
   $("dm-head").innerHTML = head1 + head2;
   $("dm-table").style.setProperty("--dm-we", dmHl());
   const colSpanAll = ncol + 2 + tailCols;
@@ -7696,7 +7708,7 @@ function renderDayMatrix(from = DM.from, to = DM.to){
       else if (DM.heat) style = `background-color:${hexA(dmFill(), (0.06 + 0.4 * Math.pow(v / cellMax, 0.7)).toFixed(3))}`;
       return `<td class="dm-cell${top ? " dm-top" : ""}" data-dm-cell="${escH(u.k)}|${i}"${style ? ` style="${style}"` : ""}>${fmt(v)}${dmDelta(v, pv, cmpOn && Boolean(prior))}</td>`;
     }).join("");
-    return `<tr><td class="dm-no${rank <= 3 ? " medal-" + rank : ""}">${rank}</td><td class="dm-name">${chatsMode ? `<span>${escH(u.name)}</span>` : `<span class="pname" data-open-profile="${escH(u.k)}">${escH(u.name)}</span>`}</td>${cells}<td class="dm-total">${fmt(u.tot)}${dmDelta(u.tot, prior?.tot || 0, cmpOn && Boolean(prior))}</td><td class="dm-share">${dmPct(u.tot, grand)}</td>${showDelta ? `<td class="dm-delta">${dmRankDelta(rank, priorRank.get(u.k))}</td>` : ""}</tr>`;
+    return `<tr><td class="dm-no${rank <= 3 ? " medal-" + rank : ""}">${rank}</td><td class="dm-name">${chatsMode ? `<span>${escH(u.name)}</span>` : `<span class="pname" data-open-profile="${escH(u.k)}">${escH(u.name)}</span>`}</td>${cells}<td class="dm-total">${fmt(u.tot)}${dmDelta(u.tot, prior?.tot || 0, cmpOn && Boolean(prior))}</td>${showShare ? `<td class="dm-share">${dmPct(u.tot, grand)}</td>` : ""}${showDelta ? `<td class="dm-delta">${dmRankDelta(rank, priorRank.get(u.k))}</td>` : ""}</tr>`;
   }).join("") : `<tr><td colspan="${colSpanAll}" style="text-align:center;color:var(--muted)">${hiddenLow ? `Все ${chatsMode ? "чаты" : "участники"} скрыты фильтром малоактивных` : "Нет данных за выбранный период"}</td></tr>`;
   dmSticky();
   const leftNote = hideLeft && leftFilterError ? ` · статусы участников не получены, вышедшие не отфильтрованы` : "";
@@ -7817,6 +7829,8 @@ $("dm-chat").onchange = () => { DM.chat = $("dm-chat").value; dmSave(); renderDa
 $("dm-metric").onchange = () => { DM.metric = $("dm-metric").value; dmSave(); renderDayMatrix(); };
 $("dm-top").onchange = () => { DM.top = $("dm-top").value; dmSave(); renderDayMatrix(); };
 $("dm-heat").onchange = () => { DM.heat = $("dm-heat").checked; dmSave(); renderDayMatrix(); };
+$("dm-show-share").onchange = () => { DM.showShare = $("dm-show-share").checked; dmSave(); renderDayMatrix(); };
+$("dm-show-delta").onchange = () => { DM.showDelta = $("dm-show-delta").checked; dmSave(); renderDayMatrix(); };
 $("dm-copy").onclick = () => {
   // Липкие ячейки при прокрутке смещаются — для картинки возвращаем таблицу в начало.
   const w = $("dm-table").closest(".wrap"); if (w) { w.scrollTop = 0; w.scrollLeft = 0; }
@@ -14044,6 +14058,9 @@ function multiplesChart(){
 /* ===================== История обновлений (новые версии — сверху) ===================== */
 // tag: new — новое, imp — улучшено, fix — исправлено, del — убрано. area — раздел сайта.
 window.CHANGELOG = [
+  {v:"2026.10.25-8", date:"2026-10-25", title:"Матрица: закреплённая шапка и лишние столбцы; карточек в ряд", items:[{tag:"fix", area:"Матрица", text:"При прокрутке закрепляется только строка с названиями столбцов (№, имя, дни, «Всего»), без столбиков-графиков, и текст больше не накладывается."},{tag:"new", area:"Матрица", text:"Столбцы «%» и «Δ места» справа можно убрать — галочки в «Параметрах»."},{tag:"new", area:"Статистика", text:"В режиме карточек рядом со «Столбцами» появился выбор «В ряд»: авто или от 2 до 8 карточек в ряду."}]},
+  {v:"2026.10.25-7", date:"2026-10-25", title:"«Со стеклом» у графиков", items:[{tag:"fix", area:"Графики", text:"Кнопка «✨ Со стеклом» появилась у всех кнопок, подписанных просто «Копировать»: графики, сравнение, селфи, время, итоги года, дни рождения, а также «Копировать часы» и «Копировать показатели»."}]},
+  {v:"2026.10.25-6", date:"2026-10-25", title:"Чище копирование со стеклом", items:[{tag:"fix", area:"Везде", text:"Картинка «Со стеклом» больше не обрамлена лишней рамкой и отступом: это одна стеклянная карточка со скруглёнными углами. Пустые поля по краям обрезаются, отступы со всех сторон одинаковые — справа больше нет пустого места."}]},
   {v:"2026.10.25-5", date:"2026-10-25", title:"Настройки на телефоне: раздел «Телефон» и кнопка «назад»", items:[{tag:"fix", area:"Настройки", text:"Раздел «Телефон» больше не пустой: в нём мобильная версия в стиле приложения и вибрация при нажатиях."},{tag:"fix", area:"Телефон", text:"Кнопка «назад» внутри настроек возвращает к списку разделов, а не на предыдущую вкладку. У каждого раздела настроек свой адрес — его можно открыть ссылкой."}]},
   {v:"2026.10.25-4", date:"2026-10-25", title:"Копирование со стеклом, голограмма в профиле", items:[{tag:"new", area:"Везде", text:"Рядом с кнопками копирования картинкой появилась кнопка «✨ Со стеклом»: таблица или график копируются на стеклянной панели с размытыми цветными пятнами за ней. Где кнопок копирования несколько (топ-10, топ-20, все), «Со стеклом» — переключатель для всей группы."},{tag:"new", area:"Профиль", text:"Голографический блик, как на плитках Хаба, — на плитках «О участнике», «Сообщения», «Серии активности» и «Селфи»."},{tag:"imp", area:"Статистика", text:"При фильтрах в правой шторке кнопки «Карточки» и «Столбцы» остаются на странице — справа от выбора даты."},{tag:"fix", area:"Фильтры справа", text:"Шторка надёжно сворачивается, когда курсор уходит: учитывается его реальное положение, открытые внутри меню закрываются."},{tag:"fix", area:"Стеклянный интерфейс", text:"Вернулась переливающаяся рамка вокруг таблиц."}]},
   {v:"2026.10.25-3", date:"2026-10-25", title:"Стекло в таблицах, обводка призёров, компактные карточки", items:[{tag:"fix", area:"Стеклянный интерфейс", text:"Первый столбец и строки итогов таблиц теперь тоже стеклянные и одного тона с остальной таблицей; то, что уезжает под закреплённый столбец при прокрутке, размывается."},{tag:"fix", area:"Стеклянный интерфейс", text:"В режиме карточек за ними больше не остаётся подложка таблицы."},{tag:"new", area:"Карточки", text:"У карточек призовых мест обводка в стиле их шрифта: радужный перелив у 1 места, серебро у 2, бронза у 3. Без переливающегося текста — спокойные золото, серебро и бронза."},{tag:"new", area:"Карточки", text:"Компактные карточки — несколько в ряд: на ПК сколько поместится, на телефоне по две. Включаются в меню «Столбцы», в шторке фильтров и в «Настройки → Таблицы»."}]},
@@ -17260,6 +17277,15 @@ body.glass-ui.tb-on .wrap:has(> table:not(.tv-cards))::after{content:"";position
 #stats-quick .st-desk-tools{margin-left:8px}
 #stats-quick .st-desk-tools :is(#st-hc,#st-tv){height:32px!important;padding:0 11px!important;font-size:13px!important;border-radius:11px!important}
 
+/* ---------- Карточек в ряд (ПК): выбор рядом со «Столбцами» ---------- */
+.st-cols{display:none;align-items:center;gap:8px;height:40px;padding:0 0 0 12px;border:1px solid color-mix(in srgb,var(--text) 11%,transparent);border-radius:12px;background:color-mix(in srgb,var(--text) 4%,var(--ctrl));color:var(--muted);font-size:13.5px}
+.st-cols .msel{height:38px!important;border:0!important;box-shadow:none!important;background:transparent!important;border-radius:0 12px 12px 0!important}
+.st-cols select{height:30px;min-width:64px;border:0;border-radius:8px;background:transparent;color:var(--text);font:inherit;font-size:14px;cursor:pointer}
+@media (min-width:721px){
+  .st-desk-tools:has(#st-tv[data-tv-mode="cards"]) .st-cols{display:inline-flex}
+  body[data-cards-cols] table.tv-cards > :is(tbody,tfoot){grid-template-columns:repeat(var(--cards-cols,4),minmax(0,1fr))!important}
+}
+
 /* ---------- Меню «Столбцы»: вид таблицы ---------- */
 .hc-view{display:flex;flex-direction:column;gap:2px;margin:6px 0 0;padding:8px 0 0;border-top:1px solid color-mix(in srgb,var(--text) 9%,transparent)}
 .hc-view h4{margin:0 6px 4px!important}
@@ -17432,12 +17458,29 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
       document.querySelectorAll(".st-desk-tools").forEach(b => { if (b !== box && !b.querySelector("#st-hc, #st-tv")) b.remove(); });
       if (tv && tv.parentNode !== box) box.appendChild(tv);
       if (hc.parentNode !== box) box.appendChild(hc);
+      let cols = $("st-cards-cols");
+      if (!cols) {
+        const l = document.createElement("label"); l.className = "st-cols"; l.title = "Сколько карточек ставить в один ряд";
+        l.innerHTML = `<span>В ряд</span><select id="st-cards-cols" class="no-sheet"><option value="">Авто</option>${[2, 3, 4, 5, 6, 7, 8].map(n => `<option value="${n}">${n}</option>`).join("")}</select>`;
+        cols = l.querySelector("select"); cols.value = cardsCols();
+      }
+      if (cols.closest("label").parentNode !== box) box.appendChild(cols.closest("label"));
     } else {
       if (tv && tv.parentNode !== tools) tools.insertBefore(tv, tools.querySelector("#st-hc") || null);
       if (hc.parentNode !== tools) tools.appendChild(hc);
       document.querySelectorAll(".st-desk-tools").forEach(b => { if (!b.children.length) b.remove(); });
     }
   }
+  /* ---------- сколько карточек в ряд (на ПК) ---------- */
+  const COLS_KEY = "chatstats.cardsCols.v1";
+  const cardsCols = () => { const v = lsGet(COLS_KEY, ""); return /^[2-8]$/.test(v) ? v : ""; };
+  function applyCols(){
+    const v = cardsCols(), b = document.body;
+    if (v) { b.dataset.cardsCols = v; b.style.setProperty("--cards-cols", v); } else { delete b.dataset.cardsCols; b.style.removeProperty("--cards-cols"); }
+    document.querySelectorAll("#st-cards-cols, [data-tview-cols]").forEach(s => { if (s.value !== v) s.value = v; });
+  }
+  document.addEventListener("change", e => { if (e.target && (e.target.id === "st-cards-cols" || e.target.dataset.tviewCols !== undefined)) { lsSet(COLS_KEY, e.target.value || ""); applyCols(); } });
+  applyCols();
   let pT = 0; const placeLater = () => { clearTimeout(pT); pT = setTimeout(placeStatsTools, 80); };
   const sn = $("stats-subnav"); if (sn) sn.addEventListener("click", placeLater);
   document.addEventListener("click", e => { if (e.target.closest && e.target.closest("nav [data-tab], #ma-tabs button")) placeLater(); });
@@ -17476,24 +17519,34 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
       d[i + 3] = Math.round(d[i + 3] * (.2 + .8 * t));
     }
     sx.putImageData(img, 0, 0);
-    const out = document.createElement("canvas"); out.width = W + pad * 2; out.height = H + pad * 2;
-    const c = out.getContext("2d"), OW = out.width, OH = out.height, M = Math.max(OW, OH);
+    // Обрезаем пустые поля: справа и снизу у исходной картинки бывает лишний фон (например, когда часть столбцов скрыта).
+    // Поля по краям делаем одинаковыми — по самому узкому из них.
+    const box = contentBox(d, W, H);
+    const m = Math.min(box.x0, box.y0, W - 1 - box.x1, H - 1 - box.y1, Math.round(40 * k));
+    const cx0 = Math.max(0, box.x0 - m), cy0 = Math.max(0, box.y0 - m), cx1 = Math.min(W, box.x1 + 1 + m), cy1 = Math.min(H, box.y1 + 1 + m);
+    const OW = cx1 - cx0, OH = cy1 - cy0, M = Math.max(OW, OH);
+    const out = document.createElement("canvas"); out.width = OW; out.height = OH;
+    const c = out.getContext("2d");
     const acc = (getComputedStyle(document.body).getPropertyValue("--accent") || "").trim() || "#7aa2f7";
+    // Одна стеклянная карточка на всю картинку: скруглённые углы, цветные пятна за матовым стеклом. Без рамок и отступов вокруг.
+    const R = Math.round(20 * k);
+    c.beginPath(); if (c.roundRect) c.roundRect(0, 0, OW, OH, R); else c.rect(0, 0, OW, OH); c.clip();
     c.fillStyle = "#0d1018"; c.fillRect(0, 0, OW, OH);
     const spot = (x, y, r, col) => { const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, col); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(0, 0, OW, OH); };
     c.save(); c.globalAlpha = .55; spot(OW * .14, OH * .2, M * .45, acc); c.globalAlpha = .4; spot(OW * .9, OH * .25, M * .4, "#ff6fb5"); spot(OW * .6, OH * .95, M * .5, "#4fd8ff"); c.globalAlpha = .33; spot(OW * .3, OH * .75, M * .35, "#9b7bff"); c.restore();
-    const R = Math.round(18 * k), x0 = pad / 2, y0 = pad / 2, w0 = OW - pad, h0 = OH - pad;
-    const rr = () => { c.beginPath(); if (c.roundRect) c.roundRect(x0, y0, w0, h0, R); else c.rect(x0, y0, w0, h0); };
-    c.save(); c.shadowColor = "rgba(0,0,0,.45)"; c.shadowBlur = 40 * k; c.shadowOffsetY = 14 * k; rr(); c.fillStyle = "rgba(255,255,255,.06)"; c.fill(); c.restore();
-    c.save(); rr(); c.clip();
-    const sheen = c.createLinearGradient(x0, y0, x0 + w0 * .6, y0 + h0); sheen.addColorStop(0, "rgba(255,255,255,.12)"); sheen.addColorStop(.5, "rgba(255,255,255,.03)"); sheen.addColorStop(1, "rgba(255,255,255,.01)");
-    c.fillStyle = sheen; c.fillRect(x0, y0, w0, h0);
-    c.drawImage(src, pad, pad);
-    c.restore();
-    rr(); c.lineWidth = Math.max(1, 1.2 * k);
-    const edge = c.createLinearGradient(0, y0, 0, y0 + h0); edge.addColorStop(0, "rgba(255,255,255,.38)"); edge.addColorStop(.35, "rgba(255,255,255,.12)"); edge.addColorStop(1, "rgba(255,255,255,.06)");
-    c.strokeStyle = edge; c.stroke();
+    const sheen = c.createLinearGradient(0, 0, OW * .6, OH); sheen.addColorStop(0, "rgba(255,255,255,.10)"); sheen.addColorStop(.5, "rgba(255,255,255,.03)"); sheen.addColorStop(1, "rgba(255,255,255,.01)");
+    c.fillStyle = sheen; c.fillRect(0, 0, OW, OH);
+    c.drawImage(src, cx0, cy0, OW, OH, 0, 0, OW, OH);
     return await new Promise((res, rej) => out.toBlob(b => b ? res(b) : rej(new Error("Не удалось создать PNG")), "image/png"));
+  }
+  // Границы содержимого: всё, что заметно отличается от цвета углов картинки (фона).
+  function contentBox(d, W, H){
+    const at = (x, y) => (y * W + x) * 4, c0 = at(0, 0), br = d[c0], bg = d[c0 + 1], bb = d[c0 + 2], ba = d[c0 + 3];
+    const differs = i => Math.abs(d[i] - br) + Math.abs(d[i + 1] - bg) + Math.abs(d[i + 2] - bb) + Math.abs(d[i + 3] - ba) > 24;
+    let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    for (let y = 0; y < H; y += 2) for (let x = 0; x < W; x += 2) if (differs(at(x, y))) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 < 0) return {x0:0, y0:0, x1:W - 1, y1:H - 1};
+    return {x0:Math.max(0, x0 - 1), y0:Math.max(0, y0 - 1), x1:Math.min(W - 1, x1 + 1), y1:Math.min(H - 1, y1 + 1)};
   }
   window.__glassifyPng = glassify;
   (function(){
@@ -17510,7 +17563,9 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
     if (cb.write !== w) { try { Object.defineProperty(cb, "write", {value:w, configurable:true, writable:true}); } catch (e) {} }
   })();
   // Кнопки, которые копируют картинку: «Копировать как изображение», «…график», «…топ-10», «…постер» и т. п.
-  const IMG_COPY = /^копировать\s+(как\s+изображение|как\s+картинку|картинку|график|таблицу|топ|все|постер|радар|с\s+описанием|сравнение|с\s+аватарками|карту|результаты)/i;
+  // Просто «Копировать» на сайте всегда кладёт картинку (графики, сравнение, селфи, время, итоги года, дни рождения);
+  // текст копируют только кнопки с уточнением («Копировать настройки», «…ссылку») — их не трогаем.
+  const IMG_COPY = /^копировать(\s*$|\s+(как\s+изображение|как\s+картинку|картинку|график|таблицу|топ|все|постер|радар|с\s+описанием|сравнение|с\s+аватарками|карту|результаты|часы|показатели))/i;
   const isImgCopy = b => !!b && b.tagName === "BUTTON" && !b.classList.contains("copy-glass-btn") && IMG_COPY.test((b.textContent || "").replace(/\s+/g, " ").trim()) && !b.closest("#tab-settings, .hc-pop");
   function addGlassButtons(){
     document.querySelectorAll("main button, #filter-drawer button").forEach(b => {
