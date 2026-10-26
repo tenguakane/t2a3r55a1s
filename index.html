@@ -1557,16 +1557,16 @@ body.fx-pulse .fx-pulse-dot{display:inline;animation:fxPulse 1.6s ease-out infin
 
   <section class="tab" id="tab-daymatrix">
     <div class="filters">
-      <div class="field"><label>Строки</label><div class="seg" id="dm-entity"><button type="button" data-dm-entity="users">Участники</button><button type="button" data-dm-entity="chats">Чаты</button></div></div>
-      <label class="checkline"><input type="checkbox" id="dm-year">Год</label>
+      <div class="field dm-entity-field" data-fr-keep><div class="seg" id="dm-entity" aria-label="Участники или чаты"><button type="button" data-dm-entity="users">Участники</button><button type="button" data-dm-entity="chats">Чаты</button></div></div>
+      <label class="checkline" hidden><input type="checkbox" id="dm-year">Год</label>
       <label class="checkline" title="Колонки — недели (с понедельника). Можно выбрать период до двух лет"><input type="checkbox" id="dm-week">По неделям</label>
       <label class="checkline" title="Колонки — годы, за всё время. Если включены данные VK, они тоже попадают в таблицу"><input type="checkbox" id="dm-years">По годам</label>
       <label class="checkline"><input type="checkbox" id="dm-compare">Сравнение</label>
       <div class="field"><label for="dm-from">С</label><input type="date" id="dm-from"></div>
       <div class="field"><label for="dm-to">По</label><input type="date" id="dm-to"></div>
       <div class="field"><label>Быстрый выбор</label><div class="seg" id="dm-quick"><button data-q="7">7 дней</button><button data-q="14">14 дней</button><button data-q="30">30 дней</button><button data-q="90">90 дней</button><button data-q="182" title="Включает режим «По неделям»">Полгода</button><button data-q="month">Этот месяц</button><button data-q="prev">Прошлый месяц</button></div></div>
-      <div class="field"><label for="dm-chat">Чат</label><select id="dm-chat"><option value="">Все чаты</option></select></div>
-      <div class="field"><label for="dm-metric">Показатель</label><select id="dm-metric"><option value="msgs">Сообщения</option><option value="stick">Стикеры</option><option value="voice">Голосовые</option><option value="video">Видеосообщения</option></select></div>
+      <div class="field" data-fr-keep><label for="dm-chat">Чат</label><select id="dm-chat"><option value="">Все чаты</option></select></div>
+      <div class="field" data-fr-keep><label for="dm-metric">Показатель</label><select id="dm-metric"><option value="msgs">Сообщения</option><option value="stick">Стикеры</option><option value="voice">Голосовые</option><option value="video">Видеосообщения</option></select></div>
       <div class="field"><label for="dm-top">Участники</label><select id="dm-top"><option value="10">Топ-10</option><option value="20">Топ-20</option><option value="all">Все</option></select></div>
       <div class="field"><label for="dm-min" title="Скрыть тех, кто был активен меньше указанного числа дней за период">Малоактивные</label><select id="dm-min"><option value="0">Показывать всех</option><option value="2">Скрыть: меньше 2 дней</option><option value="3">Скрыть: меньше 3 дней</option><option value="5">Скрыть: меньше 5 дней</option><option value="10">Скрыть: меньше 10 дней</option></select></div>
       <label class="checkline"><input type="checkbox" id="dm-heat">Тепловая заливка</label>
@@ -7850,10 +7850,13 @@ function renderDayMatrix(from = DM.from, to = DM.to){
   const tailCols = 1 + (showShare ? 1 : 0) + (showDelta ? 1 : 0);
   const arrow = k => sk === k ? (sd < 0 ? " ↓" : " ↑") : "";
   const sth = (k, label, cls = "", extra = "") => `<th data-dm-sort="${k}" class="${cls}${sk === k ? " sorted" : ""}" tabindex="0" title="Сортировать"${extra}>${label}${arrow(k)}</th>`;
-  const head1 = `<tr class="dm-bars"><th colspan="2" class="dm-corner">${escH(chatName)}<small>${escH(MLBL[metric].toLowerCase())}${yearsView ? " · по годам" : yearView ? ` · ${year} год` : weekView ? " · по неделям" : ""}</small></th>${columns.map((c, i) => `<th class="dm-barcell">${!yearView && c.from > today ? "" : bar(colTot[i], i)}</th>`).join("")}<th colspan="${tailCols}" class="dm-grand">${fmt(grand)}${dmDelta(grand, priorColTot.reduce((a,v)=>a+v,0), cmpOn && !yearsView)}<small>всего</small></th></tr>`;
+  const upBtn = yearView ? `<button type="button" class="dm-up" data-dm-up="years">← Все годы</button>` : (!yearsView && !weekView && DM.drill === "month" && from.slice(0, 7) === to.slice(0, 7)) ? `<button type="button" class="dm-up" data-dm-up="year">← ${from.slice(0, 4)} по месяцам</button>` : "";
+  const head1 = `<tr class="dm-bars"><th colspan="2" class="dm-corner">${upBtn}${escH(chatName)}<small>${escH(MLBL[metric].toLowerCase())}${yearsView ? " · по годам" : yearView ? ` · ${year} год` : weekView ? " · по неделям" : ""}</small></th>${columns.map((c, i) => `<th class="dm-barcell">${!yearView && c.from > today ? "" : bar(colTot[i], i)}</th>`).join("")}<th colspan="${tailCols}" class="dm-grand">${fmt(grand)}${dmDelta(grand, priorColTot.reduce((a,v)=>a+v,0), cmpOn && !yearsView)}<small>всего</small></th></tr>`;
   const head2 = `<tr class="dm-labels"><th class="dm-no">№</th>${sth("name", chatsMode ? "Чат" : "Имя", "dm-name")}${columns.map((c, i) => {
-    const wd = new Date(c.date + "T00:00:00Z").getUTCDay(), weekend = !yearView && !weekView && (wd === 0 || wd === 6);
+    const wd = new Date(c.date + "T00:00:00Z").getUTCDay(), weekend = !yearView && !weekView && !yearsView && (wd === 0 || wd === 6);
     const label = weekView || c.sub ? `${escH(c.label)}<small>${escH(c.sub)}</small>` : escH(c.label);
+    if (yearsView) return `<th class="dm-drill" data-dm-drill="year" data-y="${c.key}" tabindex="0" title="Открыть ${c.key} год по месяцам">${label}</th>`;
+    if (yearView) return `<th class="dm-drill" data-dm-drill="month" data-m="${c.key}" tabindex="0" title="Открыть ${escH(MONTHS[i].toLowerCase())} по дням">${label}</th>`;
     return sth("c" + i, label, weekend ? "dm-weekend" : "", ` data-col="${i}"`);
   }).join("")}${sth("tot", "Всего", "dm-totcol")}${showShare ? sth("share", "%") : ""}${showDelta ? sth("delta", "Δ места", "", ` title="Изменение места по сравнению с прошлым периодом"`) : ""}</tr>`;
   $("dm-head").innerHTML = head1 + head2;
@@ -7936,6 +7939,19 @@ function dmCellDetails(k, i){
   return h;
 }
 $("dm-table").addEventListener("click", e => {
+  const up = e.target.closest("[data-dm-up]");
+  if (up) {
+    if (up.dataset.dmUp === "years") { DM.year = false; DM.years = true; DM.drill = ""; }
+    else { const y = Number(DM.from.slice(0, 4)); DM.years = false; DM.year = true; DM.quick = ""; DM.drill = ""; [DM.from, DM.to] = dmYearRange(y); }
+    DM.sort = {k:"tot", dir:-1}; dmSave(); loadDayMatrix(); return;
+  }
+  const dr = e.target.closest("[data-dm-drill]");
+  if (dr) {
+    dmPopClose();
+    if (dr.dataset.dmDrill === "year") { const y = Number(dr.dataset.y); DM.years = false; DM.year = true; DM.week = false; DM.quick = ""; DM.drill = ""; [DM.from, DM.to] = dmYearRange(y); }
+    else { const [y, m] = dr.dataset.m.split("-").map(Number), today = iso(new Date()), last = iso(new Date(y, m, 0)); DM.years = false; DM.year = false; DM.week = false; DM.quick = ""; DM.drill = "month"; DM.from = `${y}-${pad(m)}-01`; DM.to = last > today ? today : last; }
+    DM.sort = {k:"tot", dir:-1}; dmSave(); loadDayMatrix(); return;
+  }
   const th = e.target.closest("[data-dm-sort]");
   if (th) {
     const k = th.dataset.dmSort, cur = DM.sort || {};
@@ -7957,7 +7973,7 @@ $("dm-table").addEventListener("click", e => {
   x = Math.max(8, Math.min(innerWidth - w - 8, x)); y = Math.max(8, y);
   dmPopEl.style.left = (x + scrollX) + "px"; dmPopEl.style.top = (y + scrollY) + "px";
 });
-$("dm-table").addEventListener("keydown", e => { const th = e.target.closest?.("[data-dm-sort]"); if (th && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); th.click(); } });
+$("dm-table").addEventListener("keydown", e => { const th = e.target.closest?.("[data-dm-sort], [data-dm-drill]"); if (th && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); th.click(); } });
 document.addEventListener("click", e => { if (dmPopEl && (e.target.closest(".dm-pop-x") || (!dmPopEl.contains(e.target) && !e.target.closest("td[data-dm-cell]")))) dmPopClose(); });
 document.addEventListener("keydown", e => { if (e.key === "Escape") dmPopClose(); });
 $("dm-table").closest(".wrap")?.addEventListener("scroll", () => dmPopClose(), {passive:true});
@@ -7967,7 +7983,7 @@ function dmTitle(){
   if (DM.years && dmLast?.yearsView) { const c = dmLast.columns; return `${MLBL[DM.metric]} по годам · ${DM.entity === "chats" ? "сравнение чатов" : (DM.chat || "Все чаты")} · ${c[0]?.label || ""} — ${c[c.length - 1]?.label || ""}`; }
   return `${MLBL[DM.metric]} ${DM.year ? "по месяцам" : DM.week ? "по неделям" : "по дням"} · ${DM.entity === "chats" ? "сравнение чатов" : (DM.chat || "Все чаты")} · ${DM.year ? f.slice(0,4) + " год" : sFmtDate(f) + " — " + sFmtDate(t)}`;
 }
-document.querySelectorAll("#dm-quick button").forEach(b => b.onclick = () => { DM.quick = b.dataset.q; DM.year = false; DM.years = false; if (b.dataset.q === "182") DM.week = true; dmSave(); loadDayMatrix(); });
+document.querySelectorAll("#dm-quick button").forEach(b => b.onclick = () => { DM.quick = b.dataset.q; DM.year = false; DM.years = false; DM.drill = ""; if (b.dataset.q === "182") DM.week = true; dmSave(); loadDayMatrix(); });
 $("dm-week").onchange = () => {
   DM.week = $("dm-week").checked;
   // Вернувшись к дням с длинным периодом, ужимаем его до допустимых 92 дней.
@@ -7977,7 +7993,7 @@ $("dm-week").onchange = () => {
 document.querySelectorAll("#dm-entity [data-dm-entity]").forEach(b => b.onclick = () => { DM.entity = b.dataset.dmEntity; dmSave(); dmSyncControls(); renderDayMatrix(); });
 $("dm-min").onchange = () => { DM.minDays = Number($("dm-min").value) || 0; dmSave(); renderDayMatrix(); };
 ["dm-from", "dm-to"].forEach(id => $(id).onchange = () => {
-  const value = $(id).value; DM.quick = "";
+  const value = $(id).value; DM.quick = ""; DM.drill = "";
   if (DM.year && value) { const y = Number(value.slice(0,4)); [DM.from, DM.to] = dmYearRange(y); }
   else { DM.from = $("dm-from").value; DM.to = $("dm-to").value; }
   dmSave(); loadDayMatrix();
@@ -14361,6 +14377,7 @@ function multiplesChart(){
 /* ===================== История обновлений (новые версии — сверху) ===================== */
 // tag: new — новое, imp — улучшено, fix — исправлено, del — убрано. area — раздел сайта.
 window.CHANGELOG = [
+  {v:"2026.10.27-1", date:"2026-10-27", title:"Матрица: от лет к месяцам и дням", items:[{tag:"fix", area:"Матрица", text:"В режиме «По годам» заголовки 2022 и 2023 больше не подсвечиваются: подсветка выходных ошибочно срабатывала, потому что 1 января этих лет — суббота и воскресенье."},{tag:"new", area:"Матрица", text:"Клик по году открывает этот год по месяцам, клик по месяцу — месяц по дням. Вернуться — кнопкой в левом верхнем углу таблицы. Галочка «Год» убрана: месяцы открываются из «По годам»."},{tag:"imp", area:"Матрица", text:"«Участники | Чаты», выбор чата и показателя теперь на странице, а не в шторке фильтров."}]},
   {v:"2026.10.26-8", date:"2026-10-26", title:"График «Отклонение от нормы»", items:[{tag:"new", area:"Графики", text:"Новый вид графика «Отклонение от нормы»: тепловая карта участник × неделя. Каждая клетка — насколько человек писал больше или меньше своей личной нормы (среднего за 8 недель до этой недели). Справа — последние 7 дней и сколько недель подряд он ниже нормы; сверху — те, кто сильнее всего притих. Число недель — 8, 12, 16, 26 или 52; работает и для чатов."}]},
   {v:"2026.10.26-7", date:"2026-10-26", title:"Матрица по годам, таблицы целиком, удобная панель «Графиков»", items:[{tag:"new", area:"Матрица", text:"Режим «По годам»: каждый столбец — год, за всё время. Если включены данные VK, они тоже учитываются. «Сравнение» показывает разницу с предыдущим годом, у текущего года подписано, по какое число он посчитан."},{tag:"fix", area:"Матрица", text:"Таблица показывается целиком, без своей вертикальной прокрутки, — рамка больше не застревает наверху. То же в «Настройках → Участники»."},{tag:"imp", area:"Графики", text:"«Участники | Чаты» — компактный переключатель без подписи «Группировать по». Выбор режима (день, неделя, месяц, год, все данные) теперь на той же панели. Поле месяца шире — название влезает целиком."}]},
   {v:"2026.10.26-6", date:"2026-10-26", title:"Стекло везде, таблицы по центру, ровный «Прогноз мест»", items:[{tag:"imp", area:"Стекло", text:"Стеклянными стали кнопки Хаба («Мой профиль», «Быстрый просмотр», «Это не я», «Обновить», «Обгоны»), карточки и поиск «Истории обновлений», меню «Параметры» и кнопка «Сегодня»."},{tag:"imp", area:"Хаб", text:"В «Истории обновлений» сразу видно 7 последних версий, остальные — под кнопкой «Посмотреть все». Поиск ищет по всем версиям."},{tag:"fix", area:"Таблицы", text:"Текст во всех таблицах сайта выровнен по центру, включая «Место», «Участник» и «Звание» в «Достижениях»."},{tag:"fix", area:"Прогноз", text:"«Прогноз мест»: таблица снова слева, «Ожидаемые обгоны» — справа, кнопки «Карточки» и «Столбцы» — над таблицей."},{tag:"imp", area:"Селфи", text:"Подпись «общая база — видна всем участникам» окрашена в цвет темы."}]},
@@ -18982,6 +18999,12 @@ main table:not(.tv-cards):not(#tab-settings table) > :is(thead,tbody,tfoot) > tr
 /* ===================== v31: Матрица и цвета участников без внутренней прокрутки, «Графики»: компактная панель ===================== */
 /* Таблица показывается целиком: без вертикальной полосы прокрутки, рамка идёт вокруг всей таблицы */
 #c-out > svg.norm-svg{width:100%;max-width:1150px}
+/* Матрица: год → месяцы → дни по клику на заголовок; переключатель «Участники | Чаты» без подписи */
+.dm-table th.dm-drill{cursor:pointer;text-decoration:underline dotted color-mix(in srgb,var(--accent) 60%,transparent);text-underline-offset:4px}
+.dm-table th.dm-drill:hover{color:var(--accent)}
+.dm-table .dm-up{display:inline-flex;align-items:center;margin:0 0 8px;padding:4px 10px;border-radius:9px;border:1px solid var(--glass-line,var(--line));background:color-mix(in srgb,var(--text) 7%,transparent);color:var(--accent);font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.dm-table .dm-up:hover{background:color-mix(in srgb,var(--accent) 16%,transparent)}
+.dm-entity-field{justify-content:flex-end}
 #tab-daymatrix .wrap,#tab-settings .people-wrap{max-height:none!important;overflow-y:visible!important}
 /* «Графики»: «Участники | Чаты» без подписи и компактнее; поле месяца шире — название месяца влезает целиком */
 .c-entity-field{justify-content:flex-end}
