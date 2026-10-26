@@ -14221,6 +14221,7 @@ function multiplesChart(){
 /* ===================== История обновлений (новые версии — сверху) ===================== */
 // tag: new — новое, imp — улучшено, fix — исправлено, del — убрано. area — раздел сайта.
 window.CHANGELOG = [
+  {v:"2026.10.26-5", date:"2026-10-26", title:"Свайпы на телефоне и настройки по устройству", items:[{tag:"new", area:"Телефон", text:"Свайп влево и вправо переключает вкладки нижней панели (Хаб → Профиль → Статистика → Графики → Меню). В разделе, открытом из «Меню», свайп слева направо возвращает в меню."},{tag:"new", area:"Настройки", text:"В настройках на телефоне свайп слева направо возвращает на шаг назад: из раздела — к списку разделов, из списка — в меню."},{tag:"imp", area:"Настройки", text:"Настройки, которые работают только на компьютере (вкладки слева, фильтры справа, карточки на ПК, современные списки), на телефоне скрыты, а раздел «Телефон» не показывается на компьютере."}]},
   {v:"2026.10.26-4", date:"2026-10-26", title:"Период — в подсказке у даты", items:[{tag:"imp", area:"Статистика", text:"Подпись «с … по …» рядом с датой убрана: период виден во всплывающей подсказке, если навести на поле даты."}]},
   {v:"2026.10.26-3", date:"2026-10-26", title:"Скруглённая шапка, выбор шрифта, «Копировать» в строке фильтров", items:[{tag:"fix", area:"Статистика", text:"Рамка таблицы больше не тянется на всю ширину, если таблице задана своя ширина или скрыты столбцы, — справа нет пустого места."},{tag:"imp", area:"Статистика", text:"Кнопка «Копировать» (бывшая «Копировать как изображение») переехала в строку фильтров, справа. Отступы шапка → фильтры → таблица одинаковые."},{tag:"imp", area:"Везде", text:"Шапка сайта — скруглённая панель с отступом от краёв."},{tag:"new", area:"Настройки", text:"«Настройки → Шрифт → Шрифт сайта»: Samsung Sans (по умолчанию, теперь встроен в страницу) или один из 15 шрифтов с кириллицей."}]},
   {v:"2026.10.26-2", date:"2026-10-26", title:"Меньше дублей в шторке, «Статистика» в одну строку", items:[{tag:"fix", area:"Фильтры справа", text:"В свёрнутой шторке подпись «Фильтры» больше не уезжает за край."},{tag:"imp", area:"Статистика", text:"«Режим» убран из шторки — период выбирается по центру. Фильтры над таблицей помещаются в одну строку, «Копировать как изображение» стоит справа от заголовка таблицы."},{tag:"imp", area:"Графики", text:"«Пользователи | Чаты», вид графика и дата теперь на странице, а не в шторке."}]},
@@ -18694,6 +18695,106 @@ html[data-site-font]:not([data-site-font="samsung"]) body :is(svg,svg text,svg t
     "Системный (Segoe UI / SF)":["System (Segoe UI / SF)","Системний (Segoe UI / SF)","Сістэмны (Segoe UI / SF)","Жүйелік (Segoe UI / SF)","Système (Segoe UI / SF)","Systemowa (Segoe UI / SF)"],
     "Каким шрифтом написан весь сайт: текст, таблицы, кнопки и графики. Samsung Sans встроен в страницу, остальные подгружаются из Google Fonts при выборе.":["The font used across the whole site: text, tables, buttons and charts. Samsung Sans is built into the page; the others load from Google Fonts when chosen.","Яким шрифтом написаний увесь сайт: текст, таблиці, кнопки й графіки. Samsung Sans вбудований у сторінку, інші завантажуються з Google Fonts під час вибору.","Якім шрыфтам напісаны ўвесь сайт: тэкст, табліцы, кнопкі і графікі. Samsung Sans убудаваны ў старонку, астатнія падгружаюцца з Google Fonts пры выбары.","Бүкіл сайттың қарпі: мәтін, кестелер, батырмалар мен графиктер. Samsung Sans бетке енгізілген, қалғандары таңдағанда Google Fonts-тан жүктеледі.","La police de tout le site : texte, tableaux, boutons et graphiques. Samsung Sans est intégrée à la page, les autres se chargent depuis Google Fonts.","Czcionka całej strony: tekst, tabele, przyciski i wykresy. Samsung Sans jest wbudowana w stronę, pozostałe ładują się z Google Fonts po wybraniu."]
   });
+})();
+</script>
+<style id="v29-ui">
+/* ===================== v29: настройки только для своего устройства, свайпы на телефоне ===================== */
+/* На компьютере не показываем раздел «Телефон» (мобильная версия, вибрация). */
+@media (min-width:721px){
+  #tab-settings [data-scat="mobile"],#tab-settings .set-pane[data-cat="mobile"]{display:none!important}
+}
+/* На телефоне не показываем настройки, которые работают только на компьютере. */
+@media (max-width:720px){
+  #tab-settings label.checkline:has(> input:is(#set-modern-select,#set-tbl-cards-desk,#exp-sidenav,#exp-sidenav-icons,#exp-filters-right)){display:none!important}
+  /* Короткий «въезд» страницы после свайпа */
+  body.sw-from-r main > .tab.active{animation:swIn .26s cubic-bezier(.2,.8,.2,1) both;--sw-x:36px}
+  body.sw-from-l main > .tab.active{animation:swIn .26s cubic-bezier(.2,.8,.2,1) both;--sw-x:-36px}
+  body.sw-from-l #tab-settings.sm-in .set-pane,body.sw-from-r #tab-settings.sm-in .set-pane{animation:none}
+}
+@keyframes swIn{from{transform:translateX(var(--sw-x));opacity:.35}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){body.sw-from-r main > .tab.active,body.sw-from-l main > .tab.active{animation:none}}
+</style>
+<script id="v29-js">
+/* ===================== v29: настройки по устройству и свайпы на телефоне ===================== */
+(function(){
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const mq = window.matchMedia("(max-width:720px)");
+
+  /* ---------- Открыт раздел «Телефон» на компьютере — переключаемся на «Оформление» ---------- */
+  function fixCat(){
+    const tab = $("tab-settings"); if (!tab || mq.matches || tab.dataset.scat !== "mobile") return;
+    tab.querySelector('.set-tabs [data-scat="look"]')?.click();
+  }
+  fixCat(); setTimeout(fixCat, 500);
+  mq.addEventListener?.("change", fixCat);
+
+  /* ---------- Свайпы ---------- */
+  const curTab = () => (document.querySelector("main > .tab.active")?.id || "").replace(/^tab-/, "");
+  const menuOpen = () => !!$("ma-menu")?.classList.contains("open");
+  const SKIP = "input,textarea,select,[contenteditable],svg,canvas,.msel-pop,.hc-pop,.ma-panel,dialog,[role=dialog],[data-no-swipe],.pick .pop";
+  // Свайп не перехватываем, если палец лёг на то, что само листается вбок (таблица, лента чипов, сегменты).
+  function sideScroller(el){
+    for (let n = el; n && n !== document.body; n = n.parentElement) {
+      if (n.scrollWidth > n.clientWidth + 2) { const ox = getComputedStyle(n).overflowX; if (ox === "auto" || ox === "scroll") return true; }
+    }
+    return false;
+  }
+  function anim(dir){
+    const b = document.body; b.classList.remove("sw-from-l", "sw-from-r");
+    void b.offsetWidth; b.classList.add(dir > 0 ? "sw-from-r" : "sw-from-l");
+    clearTimeout(anim.t); anim.t = setTimeout(() => b.classList.remove("sw-from-l", "sw-from-r"), 320);
+  }
+  function tapMa(k){ const b = document.querySelector(`#ma-tabs [data-ma="${k}"]`); if (b) { b.click(); return true; } return false; }
+  // dir: +1 — следующая вкладка (свайп справа налево), -1 — назад (свайп слева направо)
+  function navigate(dir){
+    const tab = curTab(), settings = $("tab-settings");
+    // Настройки: слева направо — на шаг назад (раздел → список разделов → меню).
+    if (tab === "settings" && !menuOpen()) {
+      if (dir > 0) return false;
+      if (settings?.classList.contains("sm-in")) { settings.querySelector(".set-back")?.click(); anim(-1); return true; }
+      if (document.body.classList.contains("mapp")) return tapMa("menu");
+      return false;
+    }
+    if (document.body.classList.contains("mapp")) {
+      const ORDER = ["hub", "profile", "stats", "charts", "menu"];
+      let i = menuOpen() ? 4 : ORDER.indexOf(tab);
+      if (i < 0) { // раздел, открытый из «Меню»: назад — в меню
+        if (dir < 0) return tapMa("menu");
+        return false;
+      }
+      const j = i + dir; if (j < 0 || j >= ORDER.length) return false;
+      const k = ORDER[j];
+      if (k === "menu") return tapMa("menu");
+      tapMa(k); anim(dir); return true;
+    }
+    // Обычная мобильная версия: по порядку вкладок в шапке.
+    const seen = new Set(), list = [...document.querySelectorAll("header nav button[data-tab]")].filter(b => b.offsetParent && !seen.has(b.dataset.tab) && seen.add(b.dataset.tab));
+    const i = list.findIndex(b => b.dataset.tab === tab), j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return false;
+    list[j].click(); scrollTo({top:0}); anim(dir); return true;
+  }
+  let st = null;
+  document.addEventListener("touchstart", e => {
+    st = null;
+    if (!mq.matches || e.touches.length !== 1) return;
+    if ($("ma-fsheet")?.classList.contains("open")) return;
+    const t = e.touches[0], el = e.target;
+    if (t.clientX < 24 || t.clientX > innerWidth - 24) return; // края экрана — системные жесты «назад/вперёд»
+    if (el.closest && el.closest(SKIP)) return;
+    if (sideScroller(el)) return;
+    st = {x:t.clientX, y:t.clientY, t:Date.now()};
+  }, {passive:true});
+  document.addEventListener("touchmove", e => { if (st && e.touches.length > 1) st = null; }, {passive:true});
+  document.addEventListener("touchend", e => {
+    const s = st; st = null; if (!s) return;
+    const t = e.changedTouches[0], dx = t.clientX - s.x, dy = t.clientY - s.y;
+    if (Date.now() - s.t > 700 || Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.7) return;
+    const sel = window.getSelection && String(window.getSelection()); if (sel) return;
+    navigate(dx < 0 ? 1 : -1);
+  }, {passive:true});
+  document.addEventListener("touchcancel", () => { st = null; }, {passive:true});
+  window.__swipeNav = navigate;
 })();
 </script>
 <script id="i18n-js">
