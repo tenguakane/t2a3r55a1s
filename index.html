@@ -14221,6 +14221,7 @@ function multiplesChart(){
 /* ===================== История обновлений (новые версии — сверху) ===================== */
 // tag: new — новое, imp — улучшено, fix — исправлено, del — убрано. area — раздел сайта.
 window.CHANGELOG = [
+  {v:"2026.10.26-6", date:"2026-10-26", title:"Стекло везде, таблицы по центру, ровный «Прогноз мест»", items:[{tag:"imp", area:"Стекло", text:"Стеклянными стали кнопки Хаба («Мой профиль», «Быстрый просмотр», «Это не я», «Обновить», «Обгоны»), карточки и поиск «Истории обновлений», меню «Параметры» и кнопка «Сегодня»."},{tag:"imp", area:"Хаб", text:"В «Истории обновлений» сразу видно 7 последних версий, остальные — под кнопкой «Посмотреть все». Поиск ищет по всем версиям."},{tag:"fix", area:"Таблицы", text:"Текст во всех таблицах сайта выровнен по центру, включая «Место», «Участник» и «Звание» в «Достижениях»."},{tag:"fix", area:"Прогноз", text:"«Прогноз мест»: таблица снова слева, «Ожидаемые обгоны» — справа, кнопки «Карточки» и «Столбцы» — над таблицей."},{tag:"imp", area:"Селфи", text:"Подпись «общая база — видна всем участникам» окрашена в цвет темы."}]},
   {v:"2026.10.26-5", date:"2026-10-26", title:"Свайпы на телефоне и настройки по устройству", items:[{tag:"new", area:"Телефон", text:"Свайп влево и вправо переключает вкладки нижней панели (Хаб → Профиль → Статистика → Графики → Меню). В разделе, открытом из «Меню», свайп слева направо возвращает в меню."},{tag:"new", area:"Настройки", text:"В настройках на телефоне свайп слева направо возвращает на шаг назад: из раздела — к списку разделов, из списка — в меню."},{tag:"imp", area:"Настройки", text:"Настройки, которые работают только на компьютере (вкладки слева, фильтры справа, карточки на ПК, современные списки), на телефоне скрыты, а раздел «Телефон» не показывается на компьютере."}]},
   {v:"2026.10.26-4", date:"2026-10-26", title:"Период — в подсказке у даты", items:[{tag:"imp", area:"Статистика", text:"Подпись «с … по …» рядом с датой убрана: период виден во всплывающей подсказке, если навести на поле даты."}]},
   {v:"2026.10.26-3", date:"2026-10-26", title:"Скруглённая шапка, выбор шрифта, «Копировать» в строке фильтров", items:[{tag:"fix", area:"Статистика", text:"Рамка таблицы больше не тянется на всю ширину, если таблице задана своя ширина или скрыты столбцы, — справа нет пустого места."},{tag:"imp", area:"Статистика", text:"Кнопка «Копировать» (бывшая «Копировать как изображение») переехала в строку фильтров, справа. Отступы шапка → фильтры → таблица одинаковые."},{tag:"imp", area:"Везде", text:"Шапка сайта — скруглённая панель с отступом от краёв."},{tag:"new", area:"Настройки", text:"«Настройки → Шрифт → Шрифт сайта»: Samsung Sans (по умолчанию, теперь встроен в страницу) или один из 15 шрифтов с кириллицей."}]},
@@ -14663,7 +14664,8 @@ window.CHANGELOG = [
   const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;"}[c]));
   const MG = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
   const dLong = d => `${+d.slice(8)} ${MG[+d.slice(5, 7) - 1]} ${d.slice(0, 4)}`;
-  let view = "main", tagF = "", q = "";
+  let view = "main", tagF = "", q = "", showAll = false;
+  const SHOW_N = 7; // сколько последних версий видно сразу, остальные — под «Посмотреть все»
   try { if (localStorage.getItem(VIEW_KEY) === "log") view = "log"; } catch (e) {}
   const seen = () => { try { return localStorage.getItem(SEEN_KEY) || ""; } catch (e) { return ""; } };
   function syncBadge(){ const b = document.getElementById("hub-log-new"); if (b) b.hidden = !LOG.length || seen() === LOG[0].v; }
@@ -14677,11 +14679,12 @@ window.CHANGELOG = [
     h += `<div class="quick-ranges cl-filters"><span class="qr-label">Показать:</span>${[["", "Всё"], ...Object.entries(TAGS)].map(([k, n]) => `<button type="button" class="quick-chip${tagF === k ? " active" : ""}" data-cl-tag="${k}">${n}</button>`).join("")}<input type="search" id="cl-find" placeholder="Поиск по изменениям" value="${esc(q)}" autocomplete="off" style="margin-left:8px;min-width:200px"></div>`;
     const ql = q.toLowerCase();
     const vers = LOG.map((v, idx) => ({v, idx, items:v.items.filter(i => (!tagF || i.tag === tagF) && (!ql || (i.text + " " + i.area + " " + v.title + " " + v.v).toLowerCase().includes(ql)))})).filter(x => x.items.length);
-    h += vers.length ? `<div class="cl-list">` + vers.map(({v, idx, items}) => {
+    const limited = !q && !showAll && vers.length > SHOW_N, visVers = limited ? vers.slice(0, SHOW_N) : vers;
+    h += vers.length ? `<div class="cl-list">` + visVers.map(({v, idx, items}) => {
       const byArea = new Map(); items.forEach(i => { if (!byArea.has(i.area)) byArea.set(i.area, []); byArea.get(i.area).push(i); });
       return `<div class="cl-ver${idx === 0 ? " cur" : ""}"><div class="cl-head"><h3>${hl(v.title)}</h3><code>${esc(v.v)}</code><span class="d">${dLong(v.date)}</span>${idx === 0 ? `<span class="cur-badge">текущая</span>` : ""}</div>`
         + [...byArea.entries()].map(([a, list]) => `<div class="cl-sec"><h4>${hl(a)}</h4><ul>${list.map(i => `<li><span class="cl-tag ${i.tag}">${TAGS[i.tag] || i.tag}</span>${hl(i.text)}</li>`).join("")}</ul></div>`).join("") + `</div>`;
-    }).join("") + `</div>` : `<div class="s-empty">Ничего не найдено.</div>`;
+    }).join("") + `</div>` + (limited ? `<div class="cl-more"><button type="button" class="mini" data-cl-all="1">Посмотреть все <span>(${vers.length})</span></button></div>` : (!q && showAll && vers.length > SHOW_N ? `<div class="cl-more"><button type="button" class="mini" data-cl-all="0">Скрыть старые</button></div>` : "")) : `<div class="s-empty">Ничего не найдено.</div>`;
     box.innerHTML = h;
   }
   function apply(){
@@ -14695,7 +14698,9 @@ window.CHANGELOG = [
     const b = e.target.closest && e.target.closest("#hub-seg [data-hub-view]");
     if (b) { view = b.dataset.hubView; try { localStorage.setItem(VIEW_KEY, view); } catch (err) {} apply(); return; }
     const t = e.target.closest && e.target.closest("[data-cl-tag]");
-    if (t) { tagF = t.dataset.clTag; render(); }
+    if (t) { tagF = t.dataset.clTag; render(); return; }
+    const all = e.target.closest && e.target.closest("[data-cl-all]");
+    if (all) { showAll = all.dataset.clAll === "1"; render(); if (!showAll) document.querySelector("#hub-log .cl-more")?.scrollIntoView({block:"center"}); }
   });
   document.addEventListener("input", e => {
     if (e.target && e.target.id === "cl-find") { q = e.target.value.trim(); const pos = e.target.selectionStart; render(); const f = document.getElementById("cl-find"); if (f) { f.focus(); try { f.setSelectionRange(pos, pos); } catch (err) {} } }
@@ -15310,7 +15315,7 @@ body.filters-right .stats-quick{display:flex}
 /* ---------- Облако селфи ---------- */
 .s-cloud-badge{display:inline-flex;align-items:center;gap:6px}
 .s-cloud-badge.sc-ok{color:#9ece6a}.s-cloud-badge.sc-err{color:#f7768e}.s-cloud-badge.sc-busy{color:#e0af68}.s-cloud-badge.sc-off{color:var(--muted)}
-.s-cloud-ok{color:#9ece6a}
+.s-cloud-ok{color:var(--accent)}
 .s-cloud-dlg{position:fixed;inset:0;z-index:10060;display:grid;place-items:center;padding:16px;background:#0008;backdrop-filter:blur(3px)}
 .s-cloud-box{width:min(420px,100%);display:grid;gap:10px;padding:18px;border-radius:16px;background:var(--panel-2);border:1px solid var(--line);box-shadow:0 24px 60px -16px #000}
 .s-cloud-box h3{margin:0}
@@ -18690,6 +18695,8 @@ html[data-site-font]:not([data-site-font="samsung"]) body :is(svg,svg text,svg t
   /* ---------- Переводы новых подписей ---------- */
   const D = window.__I18N_DICT;
   if (D) Object.assign(D, {
+    "Посмотреть все":["Show all","Переглянути всі","Паглядзець усе","Барлығын көру","Tout afficher","Pokaż wszystkie"],
+    "Скрыть старые":["Hide older","Сховати старі","Схаваць старыя","Ескілерін жасыру","Masquer les anciennes","Ukryj starsze"],
     "Шрифт сайта":["Site font","Шрифт сайту","Шрыфт сайта","Сайт қарпі","Police du site","Czcionka strony"],
     "Samsung Sans — по умолчанию":["Samsung Sans — default","Samsung Sans — за замовчуванням","Samsung Sans — па змаўчанні","Samsung Sans — әдепкі","Samsung Sans — par défaut","Samsung Sans — domyślna"],
     "Системный (Segoe UI / SF)":["System (Segoe UI / SF)","Системний (Segoe UI / SF)","Сістэмны (Segoe UI / SF)","Жүйелік (Segoe UI / SF)","Système (Segoe UI / SF)","Systemowa (Segoe UI / SF)"],
@@ -18797,6 +18804,38 @@ html[data-site-font]:not([data-site-font="samsung"]) body :is(svg,svg text,svg t
   window.__swipeNav = navigate;
 })();
 </script>
+<style id="v30-ui">
+/* ===================== v30: остатки стекла, таблицы всегда по центру, «Прогноз мест», цвет облака селфи ===================== */
+/* ---------- Стекло: Хаб (карточка «Ты сегодня», «Обновить», «Обгоны»), история обновлений, «Параметры», «Сегодня» ---------- */
+body.glass-ui #tab-hub{--ctrl:color-mix(in srgb,var(--text) 8%,transparent)}
+body.glass-ui :is(.mt-acts button,.mt-h button:not(.on),.cl-more .mini,#cl-find),
+body.glass-ui .filters .opt-pop > summary{background:var(--glass-ctrl)!important;border:1px solid var(--glass-line)!important;box-shadow:inset 0 1px 0 color-mix(in srgb,var(--text) 10%,transparent)!important;-webkit-backdrop-filter:blur(12px) saturate(160%);backdrop-filter:blur(12px) saturate(160%)}
+body.glass-ui :is(.mt-acts button,.mt-h button,.cl-more .mini,.filters .opt-pop > summary):hover{background:var(--glass-ctrl-hover)!important;border-color:color-mix(in srgb,var(--accent) 55%,var(--glass-line))!important}
+body.glass-ui .mt-h button.on{background:color-mix(in srgb,var(--accent) 22%,transparent)!important;border-color:color-mix(in srgb,var(--accent) 45%,transparent)!important;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+body.glass-ui .st-today.active{background:color-mix(in srgb,var(--accent) 20%,transparent)!important;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+body.glass-ui :is(.cl-sum > div,.cl-ver){
+  background:linear-gradient(145deg,color-mix(in srgb,var(--text) 9%,transparent),color-mix(in srgb,var(--text) 2%,transparent) 55%),var(--glass-bg)!important;
+  -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-line)!important;
+  box-shadow:inset 0 1px 0 var(--glass-hi),inset 0 -1px 0 color-mix(in srgb,var(--text) 5%,transparent),0 12px 34px -14px rgba(0,0,0,.55)!important}
+body.glass-ui .cl-ver::before{background:var(--bg)}
+body.glass-ui .cl-ver.cur::before{background:var(--accent)}
+body.glass-ui .cl-head code{background:color-mix(in srgb,var(--accent) 16%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 28%,transparent)}
+.cl-more{display:flex;justify-content:center;margin:4px 0 8px}
+.cl-more .mini{height:40px;padding:0 20px;border-radius:12px;font-size:14px}
+
+/* ---------- Таблицы: текст всегда по центру (кроме карточек и редакторов в настройках) ---------- */
+main table:not(.tv-cards):not(#tab-settings table) > :is(thead,tbody,tfoot) > tr > :is(th,td),
+.sticky-table-head table > thead > tr > th{text-align:center!important}
+main table:not(.tv-cards):not(#tab-settings table) > :is(thead,tbody,tfoot) > tr > :is(th,td) :is(.row-name-with-action,.name-cell,.pcell){justify-content:center}
+
+/* ---------- «Прогноз мест»: таблица слева, «Ожидаемые обгоны» справа; кнопки «Карточки/Столбцы» — над таблицей ---------- */
+.fc-places > .hc-bar{grid-column:1;grid-row:1;margin:0!important}
+.fc-places > .wrap{grid-column:1;grid-row:2;width:100%}
+.fc-places > .fc-over{grid-column:2;grid-row:2}
+.fc-places > .wrap:first-child{grid-row:1/3}
+@media(max-width:900px){.fc-places > :is(.hc-bar,.wrap,.fc-over){grid-column:1;grid-row:auto}}
+</style>
 <script id="i18n-js">
 /* ===================== Языки интерфейса: ru (по умолчанию), uk, be, kk, en ===================== */
 (function(){
