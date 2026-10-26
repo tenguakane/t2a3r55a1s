@@ -1578,7 +1578,7 @@ body.fx-pulse .fx-pulse-dot{display:inline;animation:fxPulse 1.6s ease-out infin
     </div>
     <div class="chart-settings-panel" id="dm-colors-panel" aria-hidden="true"><div class="chart-settings-heading"><h2>Цвета матрицы активности</h2><button class="mini" id="dm-colors-close" type="button">Свернуть</button></div><div id="dm-colors-content" class="chart-settings-content"></div></div>
     <p class="status" id="dm-status"></p>
-    <div class="wrap"><table id="dm-table" class="dm-table"><thead id="dm-head"></thead><tbody id="dm-body"></tbody></table></div>
+    <div class="wrap"><table id="dm-table" class="dm-table"><thead id="dm-head"></thead><tbody id="dm-body"></tbody><tfoot id="dm-foot"></tfoot></table></div>
   </section>
 
   <section class="tab" id="tab-charts">
@@ -5026,7 +5026,7 @@ async function tableImageBlob(tableId, title, rowLimit = null){
   // Выравнивание текста берём с таблицы на странице: часть правил действует только внутри страницы,
   // и без этого, например, столбец «Место» на картинке уезжал к левому краю.
   { const srcRows = [...source.rows], clRows = [...table.rows];
-    clRows.forEach((r, i) => { const sr = srcRows[i]; if (!sr) return; [...r.cells].forEach((c, j) => { const sc = sr.cells[j]; if (!sc) return; const cs = getComputedStyle(sc); const ta = source.classList.contains("tv-cards") && i > 0 && j === 0 ? "center" : cs.textAlign; c.style.setProperty("text-align", ta === "start" ? "left" : ta, "important"); }); }); }
+    clRows.forEach((r, i) => { const sr = srcRows[i]; if (!sr) return; [...r.cells].forEach((c, j) => { const sc = sr.cells[j]; if (!sc) return; const cs = getComputedStyle(sc); const ta = source.classList.contains("tv-cards") && i > 0 && j === 0 ? "center" : cs.textAlign; c.dataset.imgWs = cs.whiteSpace; c.style.setProperty("text-align", ta === "start" ? "left" : ta, "important"); }); }); }
   // Заголовок на картинке заметнее: светлый текст чуть крупнее (фон заголовка — темнее, см. отрисовку ниже).
   if (table.tHead) [...table.tHead.querySelectorAll("th,td")].forEach(c => { const fs = parseFloat(getComputedStyle(source.tHead.rows[0].cells[0] || c).fontSize) || 13; if (!c.matches(".sorted, .dm-weekend, .dm-barcell")) c.style.setProperty("color", "#eef1f8", "important"); c.style.setProperty("font-size", (fs + 1.5) + "px", "important"); c.style.setProperty("font-weight", "600", "important"); });
   table.removeAttribute("id");
@@ -5051,9 +5051,26 @@ async function tableImageBlob(tableId, title, rowLimit = null){
   table.style.setProperty("min-width", "0", "important");
   table.style.setProperty("max-width", "none", "important");
   table.style.setProperty("table-layout", "auto", "important");
+  // Если ширину таблицы или столбцов задали вручную — картинка повторяет её: те же ширины столбцов, что на экране.
+  const rkey = source.dataset.resizeKey;
+  const userSized = !source.classList.contains("tv-cards") && rkey && (savedTableWidths?.[rkey] || savedColumnWidths?.[rkey]);
+  if (userSized) {
+    const headRow = source.tHead?.rows?.[source.tHead.rows.length - 1] || source.rows[0];
+    const cw = [...headRow.cells].map(c => c.getBoundingClientRect().width);
+    if (cw.length && [...headRow.cells].every(c => c.colSpan === 1)) {
+      table.querySelectorAll(":scope > colgroup").forEach(g => g.remove());
+      const grp = document.createElement("colgroup");
+      cw.forEach(w => { const col = document.createElement("col"); if (w > 0) col.style.width = w.toFixed(2) + "px"; grp.appendChild(col); });
+      table.insertBefore(grp, table.firstChild);
+      const total = Math.round(cw.reduce((a, b) => a + b, 0));
+      table.style.setProperty("width", total + "px", "important");
+      table.style.setProperty("table-layout", "fixed", "important");
+    }
+  }
   for (const cell of table.querySelectorAll("th,td")) {
     // Keep the table current cell spacing in the image export; do not compact columns.
-    cell.style.setProperty("white-space", "nowrap", "important");
+    cell.style.setProperty("white-space", userSized ? (cell.dataset.imgWs || "normal") : "nowrap", "important");
+    if (userSized) { cell.style.setProperty("overflow", "hidden", "important"); cell.style.setProperty("text-overflow", "ellipsis", "important"); }
     cell.style.setProperty("position", "static", "important");
     cell.style.setProperty("left", "auto", "important");
     cell.style.setProperty("box-shadow", "none", "important");
@@ -5061,7 +5078,7 @@ async function tableImageBlob(tableId, title, rowLimit = null){
     cell.style.setProperty("max-width", "none", "important");
   }
   // Preserve full participant/chat names in the content-sized clone rather than ellipsizing them.
-  for (const box of table.querySelectorAll(".row-name-with-action")) {
+  for (const box of userSized ? [] : table.querySelectorAll(".row-name-with-action")) {
     const centered = box.closest("td,th")?.style.getPropertyValue("text-align") === "center";
     box.style.setProperty("width", "max-content", "important");
     box.style.setProperty("max-width", "none", "important");
@@ -7767,6 +7784,8 @@ function dmRankDelta(rank, prevRank){
 }
 function renderDayMatrix(from = DM.from, to = DM.to){
   if (!dmRows) return;
+  // «По годам»: период всегда — вся история (смена чата, показателя и т. п. раньше сужала её до одного года).
+  if (DM.years) { let lo = "", hi = ""; for (const x of dmRows) { const d = String(x[F.date] ?? "").slice(0, 10); if (d.length !== 10) continue; if (!lo || d < lo) lo = d; if (!hi || d > hi) hi = d; } if (lo) { from = lo.slice(0, 4) + "-01-01"; to = hi; } }
   if (from > to) [from, to] = [to, from];
   dmPopClose();
   const yearsView = Boolean(DM.years);
@@ -7875,6 +7894,9 @@ function renderDayMatrix(from = DM.from, to = DM.to){
     }).join("");
     return `<tr><td class="dm-no${rank <= 3 ? " medal-" + rank : ""}">${rank}</td><td class="dm-name">${chatsMode ? `<span>${escH(u.name)}</span>` : `<span class="pname" data-open-profile="${escH(u.k)}">${escH(u.name)}</span>`}</td>${cells}<td class="dm-total">${fmt(u.tot)}${dmDelta(u.tot, prior?.tot || 0, cmpOn && Boolean(prior))}</td>${showShare ? `<td class="dm-share">${dmPct(u.tot, grand)}</td>` : ""}${showDelta ? `<td class="dm-delta">${dmRankDelta(rank, priorRank.get(u.k))}</td>` : ""}</tr>`;
   }).join("") : `<tr><td colspan="${colSpanAll}" style="text-align:center;color:var(--muted)">${hiddenLow ? `Все ${chatsMode ? "чаты" : "участники"} скрыты фильтром малоактивных` : "Нет данных за выбранный период"}</td></tr>`;
+  // Отдельная строка итогов по каждому столбцу (по всем участникам/чатам, даже если показан только топ).
+  const footName = shown.length < ranked.length ? `Итого по всем (${ranked.length})` : "Итого";
+  $("dm-foot").innerHTML = shown.length ? `<tr class="dm-sum"><td class="dm-no"></td><td class="dm-name">${escH(footName)}</td>${colTot.map((v, i) => `<td class="dm-sumcell">${v ? fmt(v) : (yearView || yearsView || columns[i].from <= today ? "–" : "")}${yearsView && i === 0 ? "" : dmDelta(v, priorColTot[i] || 0, cmpOn)}</td>`).join("")}<td class="dm-total">${fmt(grand)}${dmDelta(grand, priorColTot.reduce((a, v) => a + v, 0), cmpOn && !yearsView)}</td>${showShare ? `<td class="dm-share">100%</td>` : ""}${showDelta ? `<td class="dm-delta"></td>` : ""}</tr>` : "";
   dmSticky();
   const leftNote = hideLeft && leftFilterError ? ` · статусы участников не получены, вышедшие не отфильтрованы` : "";
   const comparisonNote = comparisonEnabled ? (yearsView ? " · сравнение с предыдущим годом" : dmCompareError ? ` · не удалось загрузить предыдущий период: ${dmCompareError}` : ` · сравнение с ${yearView ? (year-1) + " годом" : "предыдущим периодом"}`) : "";
@@ -14377,6 +14399,8 @@ function multiplesChart(){
 /* ===================== История обновлений (новые версии — сверху) ===================== */
 // tag: new — новое, imp — улучшено, fix — исправлено, del — убрано. area — раздел сайта.
 window.CHANGELOG = [
+  {v:"2026.10.27-3", date:"2026-10-27", title:"Таблицы на телефоне без наложений", items:[{tag:"fix", area:"Матрица", text:"В режиме «По годам» после смены чата, показателя или «Участники | Чаты» таблица больше не сжимается до одного 2026 года — всегда видны все годы."},{tag:"fix", area:"Телефон", text:"Матрица: столбцы «№» и «Имя» и шапка таблицы больше не прозрачные — при прокрутке вбок числа не просвечивают сквозь имена и шапку."},{tag:"fix", area:"Таблицы", text:"Переливающаяся рамка вокруг таблицы со стеклом больше не уезжает и не обрывается, когда таблицу листают вбок."}]},
+  {v:"2026.10.27-2", date:"2026-10-27", title:"Картинка таблицы нужной ширины, итоги в Матрице", items:[{tag:"fix", area:"Таблицы", text:"Если ширина таблицы или столбцов выставлена вручную, картинка при копировании и скачивании повторяет её: те же ширины столбцов, что на экране."},{tag:"new", area:"Матрица", text:"Внизу таблицы — отдельная строка «Итого» с суммой по каждому столбцу, выделенная цветом и линией. Если показан только топ, итог считается по всем («Итого по всем»)."}]},
   {v:"2026.10.27-1", date:"2026-10-27", title:"Матрица: от лет к месяцам и дням", items:[{tag:"fix", area:"Матрица", text:"В режиме «По годам» заголовки 2022 и 2023 больше не подсвечиваются: подсветка выходных ошибочно срабатывала, потому что 1 января этих лет — суббота и воскресенье."},{tag:"new", area:"Матрица", text:"Клик по году открывает этот год по месяцам, клик по месяцу — месяц по дням. Вернуться — кнопкой в левом верхнем углу таблицы. Галочка «Год» убрана: месяцы открываются из «По годам»."},{tag:"imp", area:"Матрица", text:"«Участники | Чаты», выбор чата и показателя теперь на странице, а не в шторке фильтров."}]},
   {v:"2026.10.26-8", date:"2026-10-26", title:"График «Отклонение от нормы»", items:[{tag:"new", area:"Графики", text:"Новый вид графика «Отклонение от нормы»: тепловая карта участник × неделя. Каждая клетка — насколько человек писал больше или меньше своей личной нормы (среднего за 8 недель до этой недели). Справа — последние 7 дней и сколько недель подряд он ниже нормы; сверху — те, кто сильнее всего притих. Число недель — 8, 12, 16, 26 или 52; работает и для чатов."}]},
   {v:"2026.10.26-7", date:"2026-10-26", title:"Матрица по годам, таблицы целиком, удобная панель «Графиков»", items:[{tag:"new", area:"Матрица", text:"Режим «По годам»: каждый столбец — год, за всё время. Если включены данные VK, они тоже учитываются. «Сравнение» показывает разницу с предыдущим годом, у текущего года подписано, по какое число он посчитан."},{tag:"fix", area:"Матрица", text:"Таблица показывается целиком, без своей вертикальной прокрутки, — рамка больше не застревает наверху. То же в «Настройках → Участники»."},{tag:"imp", area:"Графики", text:"«Участники | Чаты» — компактный переключатель без подписи «Группировать по». Выбор режима (день, неделя, месяц, год, все данные) теперь на той же панели. Поле месяца шире — название влезает целиком."}]},
@@ -18880,6 +18904,13 @@ html[data-site-font]:not([data-site-font="samsung"]) body :is(svg,svg text,svg t
 @keyframes swIn{from{transform:translateX(var(--sw-x));opacity:.35}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){body.sw-from-r main > .tab.active,body.sw-from-l main > .tab.active{animation:none}}
 </style>
+<script id="v32-js">
+/* Рамка таблицы следует за прокруткой своей обёртки (иначе она уезжает вместе с содержимым) */
+document.addEventListener("scroll", e => {
+  const w = e.target; if (!w || !w.classList || !w.classList.contains("wrap")) return;
+  w.style.setProperty("--wrap-sl", w.scrollLeft + "px"); w.style.setProperty("--wrap-st", w.scrollTop + "px");
+}, {capture:true, passive:true});
+</script>
 <script id="v29-js">
 /* ===================== v29: настройки по устройству и свайпы на телефоне ===================== */
 (function(){
@@ -18999,6 +19030,18 @@ main table:not(.tv-cards):not(#tab-settings table) > :is(thead,tbody,tfoot) > tr
 /* ===================== v31: Матрица и цвета участников без внутренней прокрутки, «Графики»: компактная панель ===================== */
 /* Таблица показывается целиком: без вертикальной полосы прокрутки, рамка идёт вокруг всей таблицы */
 #c-out > svg.norm-svg{width:100%;max-width:1150px}
+/* Закреплённые столбцы и шапка Матрицы — непрозрачные: при прокрутке вбок числа не просвечивают сквозь «№ / Имя» */
+.dm-table{--dm-solid:color-mix(in srgb,var(--panel) 92%,var(--bg))}
+html body #dm-table > :is(tbody,tfoot) > tr > td:is(.dm-no,.dm-name){background-color:var(--dm-solid)!important;background-image:none!important;background-clip:border-box!important;-webkit-background-clip:border-box!important;-webkit-text-fill-color:currentColor!important;animation:none!important}
+html body #dm-table > thead > tr > th{background-color:color-mix(in srgb,var(--panel) 86%,var(--bg))!important}
+html body #dm-table > tfoot > tr.dm-sum > td:is(.dm-no,.dm-name){background-color:color-mix(in srgb,var(--accent) 13%,var(--dm-solid))!important}
+/* Переливающаяся рамка со стеклом рисуется поверх таблицы: держим её на месте, когда таблицу листают вбок */
+body.glass-ui.tb-on .wrap:has(> table:not(.tv-cards))::after{inset:auto!important;left:var(--wrap-sl,0px)!important;top:var(--wrap-st,0px)!important;width:100%!important;height:100%!important;box-sizing:border-box}
+/* Матрица: строка «Итого» заметно отделена от участников */
+.dm-table tfoot tr.dm-sum > td{font-weight:700;color:var(--text);background:color-mix(in srgb,var(--accent) 13%,var(--panel))!important;border-top:2px solid color-mix(in srgb,var(--accent) 55%,transparent)!important;border-bottom:0!important;padding-top:12px;padding-bottom:12px}
+body.glass-ui .dm-table tfoot tr.dm-sum > td{background:color-mix(in srgb,var(--accent) 14%,transparent)!important}
+.dm-table tfoot tr.dm-sum > td.dm-name{color:var(--accent);letter-spacing:.01em}
+.dm-table tfoot tr.dm-sum > td:is(.dm-no,.dm-name){position:sticky;z-index:2}
 /* Матрица: год → месяцы → дни по клику на заголовок; переключатель «Участники | Чаты» без подписи */
 .dm-table th.dm-drill{cursor:pointer;text-decoration:underline dotted color-mix(in srgb,var(--accent) 60%,transparent);text-underline-offset:4px}
 .dm-table th.dm-drill:hover{color:var(--accent)}
