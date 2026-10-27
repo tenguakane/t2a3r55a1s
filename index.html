@@ -4907,16 +4907,21 @@ function drawCanvasCellText(ctx, cell, rect, tableRect, xOffset, yOffset, fallba
   runs.forEach(r => { if (r.break) { if (lines[lines.length-1].length) lines.push([]); } else lines[lines.length-1].push(r); });
   const actualLines = lines.filter(line => line.length);
   if (!actualLines.length) return;
-  const maxLineHeight = actualLines.length * lineHeight;
+  // Несколько строк разного размера (например, крупное «350 629» и мелкое «всего»): высота каждой строки — по её шрифту,
+  // чтобы блок целиком стоял по центру ячейки, как на странице.
+  const pxOf = r => { const m = /(\d+(?:\.\d+)?)px/.exec(r.font || ""); return m ? Number(m[1]) : fontSize; };
+  const lineHs = actualLines.length > 1 ? actualLines.map(line => Math.max(...line.map(pxOf)) * 1.35) : [lineHeight];
+  const maxLineHeight = lineHs.reduce((a, b) => a + b, 0);
   const innerHeight = Math.max(lineHeight, rect.height - padTop - padBottom);
-  const startY = yOffset + rect.top - tableRect.top + padTop + Math.max(0, (innerHeight-maxLineHeight)/2) + lineHeight/2;
+  const top0 = yOffset + rect.top - tableRect.top + padTop + Math.max(0, (innerHeight-maxLineHeight)/2);
+  const lineY = i => top0 + lineHs.slice(0, i).reduce((a, b) => a + b, 0) + lineHs[i] / 2;
   ctx.save();
   ctx.beginPath(); ctx.rect(xOffset+rect.left-tableRect.left+1, yOffset+rect.top-tableRect.top+1, Math.max(1,rect.width-2), Math.max(1,rect.height-2)); ctx.clip();
   actualLines.forEach((line, lineIndex) => {
     let totalWidth = 0;
     for (const r of line) { ctx.font = r.font; totalWidth += r.marginLeft + ctx.measureText(r.text).width + r.marginRight; }
     let x = align === "left" ? contentLeft : align === "right" ? contentRight-totalWidth : contentLeft+(available-totalWidth)/2;
-    const y = startY + lineIndex*lineHeight;
+    const y = lineY(lineIndex);
     for (const r of line) {
       ctx.font = r.font; ctx.fillStyle = r.color; x += r.marginLeft;
       ctx.textBaseline = "middle"; ctx.fillText(r.text, x, y); x += ctx.measureText(r.text).width + r.marginRight;
@@ -7868,14 +7873,15 @@ function renderDayMatrix(from = DM.from, to = DM.to){
   const cmpOn = comparisonEnabled && priorPer.size > 0;
   dmLast = {columns, per, ranked, colTot, metric, yearView, weekView, yearsView, year, priorPer, priorColOf, cmpOn, chatsMode};
   const bar = (v, i) => {
-    const h = Math.max(v ? 3 : 0, Math.round(v / maxCol * 46));
-    return `<svg width="58" height="72" viewBox="0 0 58 72" aria-label="${fmt(v)}"><text x="29" y="${66 - h - 6}" text-anchor="middle" font-size="13" fill="#e8eaf1" font-family="Segoe UI, system-ui, sans-serif">${fmt(v)}</text><rect class="anim-bar-y" x="14" y="${66 - h}" width="30" height="${h}" rx="3" fill="${dmFill()}" fill-opacity="${v ? .85 : 0}"/><line x1="4" y1="66.5" x2="54" y2="66.5" stroke="#3a4050"/></svg>${dmDelta(v, priorColTot[i] || 0, cmpOn)}`;
+    // Числа под столбиками — в строке «Итого» внизу, поэтому здесь только сами столбики (число — во всплывающей подсказке).
+    const h = Math.max(v ? 3 : 0, Math.round(v / maxCol * 58));
+    return `<svg width="58" height="66" viewBox="0 0 58 66" aria-label="${fmt(v)}"><title>${fmt(v)}</title><rect class="anim-bar-y" x="14" y="${62 - h}" width="30" height="${h}" rx="3" fill="${dmFill()}" fill-opacity="${v ? .85 : 0}"/><line x1="4" y1="62.5" x2="54" y2="62.5" stroke="#3a4050"/></svg>`;
   };
   const tailCols = 1 + (showShare ? 1 : 0) + (showDelta ? 1 : 0);
   const arrow = k => sk === k ? (sd < 0 ? " ↓" : " ↑") : "";
   const sth = (k, label, cls = "", extra = "") => `<th data-dm-sort="${k}" class="${cls}${sk === k ? " sorted" : ""}" tabindex="0" title="Сортировать"${extra}>${label}${arrow(k)}</th>`;
-  const upBtn = yearView ? `<button type="button" class="dm-up" data-dm-up="years">← Все годы</button>` : (!yearsView && !weekView && DM.drill === "month" && from.slice(0, 7) === to.slice(0, 7)) ? `<button type="button" class="dm-up" data-dm-up="year">← ${from.slice(0, 4)} по месяцам</button>` : "";
-  const head1 = `<tr class="dm-bars"><th colspan="2" class="dm-corner">${upBtn}${escH(chatName)}<small>${escH(MLBL[metric].toLowerCase())}${yearsView ? " · по годам" : yearView ? ` · ${year} год` : weekView ? " · по неделям" : ""}</small></th>${columns.map((c, i) => `<th class="dm-barcell">${!yearView && c.from > today ? "" : bar(colTot[i], i)}</th>`).join("")}<th colspan="${tailCols}" class="dm-grand">${fmt(grand)}${dmDelta(grand, priorColTot.reduce((a,v)=>a+v,0), cmpOn && !yearsView)}<small>всего</small></th></tr>`;
+  const upBtn = yearView ? `<button type="button" class="dm-up" data-dm-up="years" data-no-export="1">← Все годы</button>` : (!yearsView && !weekView && DM.drill === "month" && from.slice(0, 7) === to.slice(0, 7)) ? `<button type="button" class="dm-up" data-dm-up="year" data-no-export="1">← ${from.slice(0, 4)} по месяцам</button>` : "";
+  const head1 = `<tr class="dm-bars"><th colspan="2" class="dm-corner">${upBtn}${escH(chatName)}<small>${escH(MLBL[metric].toLowerCase())}${yearsView ? " · по годам" : yearView ? ` · ${year} год` : weekView ? " · по неделям" : ""}</small></th>${columns.map((c, i) => `<th class="dm-barcell">${!yearView && c.from > today ? "" : bar(colTot[i], i)}</th>`).join("")}<th colspan="${tailCols}" class="dm-grand" style="vertical-align:middle">${fmt(grand)}${dmDelta(grand, priorColTot.reduce((a,v)=>a+v,0), cmpOn && !yearsView)}<small>всего</small></th></tr>`;
   const head2 = `<tr class="dm-labels"><th class="dm-no">№</th>${sth("name", chatsMode ? "Чат" : "Имя", "dm-name")}${columns.map((c, i) => {
     const wd = new Date(c.date + "T00:00:00Z").getUTCDay(), weekend = !yearView && !weekView && !yearsView && (wd === 0 || wd === 6);
     const label = weekView || c.sub ? `${escH(c.label)}<small>${escH(c.sub)}</small>` : escH(c.label);
@@ -14408,6 +14414,7 @@ function multiplesChart(){
 /* ===================== История обновлений (новые версии — сверху) ===================== */
 // tag: new — новое, imp — улучшено, fix — исправлено, del — убрано. area — раздел сайта.
 window.CHANGELOG = [
+  {v:"2026.10.27-5", date:"2026-10-27", title:"Матрица: чище шапка и картинка", items:[{tag:"fix", area:"Матрица", text:"Кнопка «← Все годы» больше не попадает на скопированную картинку."},{tag:"fix", area:"Матрица", text:"Число «всего» в правом верхнем углу выровнено по центру по вертикали."},{tag:"imp", area:"Матрица", text:"Над столбиками в шапке больше нет чисел — суммы в строке «Итого» внизу; при наведении на столбик число всплывает подсказкой."}]},
   {v:"2026.10.27-4", date:"2026-10-27", title:"Матрица: фильтр по количеству и без имени, стекло на месте", items:[{tag:"new", area:"Матрица", text:"«Скрыть, если меньше»: введи число — пропадут все, у кого за период меньше (по выбранному показателю)."},{tag:"new", area:"Матрица", text:"«Скрыть без имени»: прячет тех, кого нет в списке участников в настройках (у них только ник из Telegram)."},{tag:"fix", area:"Матрица", text:"Вернулся стеклянный вид столбцов «№ / Имя» и шапки. Плотный фон включается, только пока таблицу листают вбок, — чтобы числа не просвечивали."}]},
   {v:"2026.10.27-3", date:"2026-10-27", title:"Таблицы на телефоне без наложений", items:[{tag:"fix", area:"Матрица", text:"В режиме «По годам» после смены чата, показателя или «Участники | Чаты» таблица больше не сжимается до одного 2026 года — всегда видны все годы."},{tag:"fix", area:"Телефон", text:"Матрица: столбцы «№» и «Имя» и шапка таблицы больше не прозрачные — при прокрутке вбок числа не просвечивают сквозь имена и шапку."},{tag:"fix", area:"Таблицы", text:"Переливающаяся рамка вокруг таблицы со стеклом больше не уезжает и не обрывается, когда таблицу листают вбок."}]},
   {v:"2026.10.27-2", date:"2026-10-27", title:"Картинка таблицы нужной ширины, итоги в Матрице", items:[{tag:"fix", area:"Таблицы", text:"Если ширина таблицы или столбцов выставлена вручную, картинка при копировании и скачивании повторяет её: те же ширины столбцов, что на экране."},{tag:"new", area:"Матрица", text:"Внизу таблицы — отдельная строка «Итого» с суммой по каждому столбцу, выделенная цветом и линией. Если показан только топ, итог считается по всем («Итого по всем»)."}]},
@@ -19058,6 +19065,8 @@ body.glass-ui .dm-table tfoot tr.dm-sum > td{background:color-mix(in srgb,var(--
 .dm-table th.dm-drill{cursor:pointer;text-decoration:underline dotted color-mix(in srgb,var(--accent) 60%,transparent);text-underline-offset:4px}
 .dm-table th.dm-drill:hover{color:var(--accent)}
 .dm-table .dm-up{display:inline-flex;align-items:center;margin:0 0 8px;padding:4px 10px;border-radius:9px;border:1px solid var(--glass-line,var(--line));background:color-mix(in srgb,var(--text) 7%,transparent);color:var(--accent);font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.dm-table th.dm-grand,.dm-table th.dm-corner{vertical-align:middle!important}
+.dm-table .dm-up{display:flex;width:max-content}
 .dm-table .dm-up:hover{background:color-mix(in srgb,var(--accent) 16%,transparent)}
 .dm-entity-field{justify-content:flex-end}
 #tab-daymatrix .wrap,#tab-settings .people-wrap{max-height:none!important;overflow-y:visible!important}
