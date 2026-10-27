@@ -14431,13 +14431,17 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.10.27-14", date:"2026-10-27", title:"Новая навигация, иконки и плавность", items:[
+  {v:"2026.10.27-15", date:"2026-10-27", title:"Новая навигация, иконки и плавность", items:[
     {tag:"new", area:"ПК", text:"Боковые вкладки — три парящих блока: основные разделы, «Другое» и круглая кнопка настроек. В свёрнутом виде при наведении выезжает только блок под курсором."},
     {tag:"new", area:"Фильтры справа", text:"Шторка фильтров свёрнута в круглую кнопку и плавно раскрывается в парящую панель."},
     {tag:"imp", area:"Везде", text:"Эмодзи в значках заменены на белые линейные иконки — в навигации, Хабе, меню телефона, настройках и фильтрах."},
     {tag:"new", area:"Эффекты", text:"Плавная смена вкладок: блоки выплывают по очереди, строки таблиц — лесенкой, стекло видно с первого кадра. Отключается в «Эффектах»."},
     {tag:"imp", area:"Графики", text:"Под одиночными линиями (Динамика с одним участником, Прогноз, мини-графики) — мягкий градиент, затухающий до оси."},
     {tag:"imp", area:"Хаб", text:"История обновлений собрана в крупные выпуски с короткими описаниями."},
+    {tag:"imp", area:"ПК", text:"Боковые блоки начинаются под шапкой и подсвечиваются тенью только под курсором; кнопка фильтров — по высоте шапки."},
+    {tag:"imp", area:"Профиль", text:"Компактнее: наверху карточка с фото и именем, ниже одной строкой — выбор участника и разделы."},
+    {tag:"imp", area:"Телефон", text:"Белые значки на стекле, скруглённые переключатели разделов, стеклянные меню и настройки."},
+    {tag:"imp", area:"Настройки", text:"Блок выбора языка, поля и кнопки в настройках скруглены, как остальной интерфейс."},
   ]},
   {v:"2026.10.27-7", date:"2026-10-27", title:"Матрица по годам и новые графики", items:[
     {tag:"new", area:"Матрица", text:"Режим «По годам» за всю историю, вместе с данными VK. Клик по году раскрывает месяцы, по месяцу — дни; галочка «Год» больше не нужна."},
@@ -19095,7 +19099,6 @@ main > .tab.tab-fade{animation:tabFade .32s ease both}
   html body.side-nav nav button[data-tab]{border-radius:10px!important}
   html body.side-nav .side-grp.g-other .side-sep{margin:4px 8px 6px!important}
   /* Свёрнутая панель: выезжает при наведении, блоки растут вместе с ней */
-  html body.side-nav.side-collapsed nav:hover .side-grp:not(.g-set){box-shadow:0 0 0 1px var(--line),16px 14px 44px -14px rgba(0,0,0,.7)}
 
   /* ---------- Правая шторка фильтров: круглая кнопка, по нажатию плавно выезжает парящая панель ---------- */
   html body.filters-right.fr-collapsed{padding-right:68px!important}
@@ -19296,6 +19299,54 @@ body.side-nav nav button[data-tab]::before{content:""!important;display:inline-b
   pass(document);
 })();
 </script>
+<style id="v36-ui">
+/* ===================== v36: панели ниже шапки, кнопка фильтров по высоте шапки, компактный профиль, телефон: белые иконки, скругления, стекло в настройках ===================== */
+@media (min-width:721px){
+  /* Левые блоки начинаются под шапкой — раскрытый блок не наезжает на неё */
+  html body.side-nav nav{top:calc(var(--hdr-h,57px) + 24px)!important}
+  /* Круглая кнопка фильтров — по высоте шапки и на одной линии с ней */
+  html body.filters-right.fr-collapsed #filter-drawer{top:12px!important;width:min(var(--hdr-h,57px),64px)!important;height:min(var(--hdr-h,57px),64px)!important}
+  html body.filters-right.fr-collapsed{padding-right:calc(min(var(--hdr-h,57px),64px) + 24px)!important}
+  html body.filters-right:not(.fr-collapsed) #filter-drawer{top:12px!important;height:calc(100vh - 24px)!important}
+
+  /* Профиль компактнее: наверху карточка с фото и именем, ниже одной строкой — Профиль | Достижения, выбор участника и «К разделу» */
+  #tab-profile.active{display:flex!important;flex-wrap:wrap;align-items:center;column-gap:12px;row-gap:0}
+  #tab-profile.active > *{flex:1 0 100%;min-width:0;order:5}
+  #tab-profile.active > #p-out{display:contents}
+  #tab-profile.active > #p-out > *{flex:1 0 100%;min-width:0;max-width:100%}
+  #tab-profile.active > .sec-nav > *{white-space:nowrap;flex:0 0 auto}
+  #tab-profile.active > #p-out > .p-hero{order:1;margin:0 0 14px!important}
+  #tab-profile.active > .group-tabs{order:2;flex:0 0 auto;margin:0 0 18px!important}
+  #tab-profile.active > :is(.filters,.filters.fr-keep){order:3;flex:0 0 auto;margin:0 0 18px!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  #tab-profile.active > .sec-nav{order:4;flex:1 1 0;margin:0 0 18px!important;flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none}
+  #tab-profile.active > .sec-nav::-webkit-scrollbar{display:none}
+  #tab-profile.active > #p-status{order:4}
+  #tab-profile.active > #p-out > :not(.p-hero){order:6}
+  #tab-profile.active .p-hero{padding-top:16px!important;padding-bottom:16px!important}
+}
+
+/* Настройки: всё скруглённое — блок языка, поля, кнопки переноса настроек */
+#tab-settings .filters{border-radius:16px!important}
+#tab-settings :is(.mini,#api-base,input[type=text],input[type=url],input[type=number],textarea){border-radius:10px!important}
+#tab-settings .filters > .msel,#tab-settings .msel.solo{border-radius:12px!important}
+@media (max-width:720px){
+  /* Значки в меню и настройках — белые на стекле, без цветных плашек */
+  .ma-ico{background:color-mix(in srgb,var(--text) 10%,transparent)!important;border:1px solid color-mix(in srgb,var(--text) 14%,transparent);border-radius:10px!important;color:#fff}
+  .ma-ico svg.li{width:60%;height:60%;color:#f2f4f8}
+  /* Переключатели разделов («Хаб | История», «Участники | Чаты») — скруглённые панели, а не полосы на всю ширину */
+  body.mapp :is(.group-tabs,.stat-subnav){margin:0 0 12px!important;padding:4px!important;gap:4px!important;border:1px solid var(--glass-line,var(--line))!important;border-radius:16px!important;background:color-mix(in srgb,var(--panel) 55%,transparent)!important;-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%)}
+  body.mapp :is(.group-tabs,.stat-subnav) button{height:36px!important;border-radius:12px!important}
+  body.mapp :is(.group-tabs,.stat-subnav) button.active{background:color-mix(in srgb,var(--accent) 18%,transparent)!important;box-shadow:none!important}
+  body.mapp .stat-subnav{width:100%!important;box-sizing:border-box}
+  body.mapp .st-tools{background:none!important;height:36px!important;top:5px!important;right:5px!important;bottom:auto!important;padding-left:6px!important;align-items:center}
+  body.mapp .st-tools :is(button,.tv-btn,.hc-btn,.st-today){height:36px!important;min-height:0!important}
+  body.mapp main .seg button{border-radius:10px!important}
+  /* Стекло в меню и настройках на телефоне */
+  body.mapp #ma-menu :is(.ma-grp,.ma-app,.ma-search),
+  body.mapp #tab-settings :is(.set-menu,.set-pane .filters,.set-pane .p-card,.set-pane .theme-card,.set-pane .people-wrap){background:color-mix(in srgb,var(--panel) 55%,transparent)!important;border:1px solid var(--glass-line,var(--line))!important;border-radius:16px!important;-webkit-backdrop-filter:blur(20px) saturate(170%);backdrop-filter:blur(20px) saturate(170%);box-shadow:inset 0 1px 0 color-mix(in srgb,var(--text) 10%,transparent)!important;overflow:hidden}
+  body.mapp #tab-settings .set-menu{margin:0 0 16px!important}
+}
+</style>
 <script id="i18n-js">
 /* ===================== Языки интерфейса: ru (по умолчанию), uk, be, kk, en ===================== */
 (function(){
