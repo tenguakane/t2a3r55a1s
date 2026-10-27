@@ -1656,8 +1656,8 @@ body.fx-pulse .fx-pulse-dot{display:inline;animation:fxPulse 1.6s ease-out infin
       <div class="field" id="c-focus-field" hidden><label for="c-focus" title="Выделенная линия или строка остаётся яркой, остальные затемняются — и на экране, и в картинке">Выделить</label>
         <select id="c-focus"><option value="">— никого —</option></select>
       </div>
-      <div class="field" id="trend-fc-field" hidden><label for="trend-forecast" title="Пунктир от сегодняшнего дня до конца месяца: куда придёт каждый при нынешнем темпе">Прогноз</label>
-        <select id="trend-forecast"><option value="off">Не показывать</option><option value="month">До конца месяца</option></select>
+      <div class="field" id="trend-fc-field" hidden><label for="trend-forecast" title="Пунктир от сегодняшнего дня до конца месяца или года: куда придёт каждый при нынешнем темпе">Прогноз</label>
+        <select id="trend-forecast"><option value="off">Не показывать</option><option value="month">До конца месяца</option><option value="year">До конца года</option></select>
       </div>
       <div class="field" id="y-ceil-field" hidden><label for="y-ceil" title="Максимум вертикальной оси. Пусто — подбирается автоматически">Потолок оси</label><input type="number" id="y-ceil" min="1" step="any" placeholder="авто" inputmode="decimal" style="width:120px"></div>
       <div class="field" id="trend-count-field" hidden><label for="trend-top">Количество пользователей</label>
@@ -4450,8 +4450,10 @@ function trendChart(){
   if (last < 1) return note("Нет данных за выбранный период");
   // Прогноз до конца текущего месяца: ось продлевается до последнего дня месяца.
   const idxOf = d => Math.round((Date.parse(d + "T00:00:00Z") - t0) / DAY) + 1;
-  const todayIso = iso(now), monthEndIso = iso(new Date(now.getFullYear(), now.getMonth() + 1, 0));
-  const fcWanted = $("trend-forecast")?.value === "month";
+  const fcMode = $("trend-forecast")?.value, fcYear = fcMode === "year";
+  // До конца месяца или до 31 декабря текущего года.
+  const todayIso = iso(now), monthEndIso = fcYear ? `${now.getFullYear()}-12-31` : iso(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+  const fcWanted = fcMode === "month" || fcYear;
   const fcEnd = idxOf(monthEndIso), fcOn = fcWanted && NORM === "abs" && r[0] <= todayIso && r[1] >= addDaysIso(todayIso, -1) && fcEnd > last && last >= 3;
   let displayN = partialCurrentMonth ? last : N;
   if (fcOn) displayN = Math.max(displayN, fcEnd);
@@ -4486,7 +4488,7 @@ function trendChart(){
   if (last === idxOf(todayIso) || last === idxOf(addDaysIso(todayIso, -1))) series.forEach(s2 => { s2.live = true; });
   if (fcOn) {
     // Темп: 60% — последние 14 дней, 40% — весь период; разброс — по дневным значениям последних 28 дней.
-    const rem = fcEnd - last, monthStartIdx = Math.max(1, idxOf(todayIso.slice(0, 8) + "01"));
+    const rem = fcEnd - last, monthStartIdx = Math.max(1, idxOf(fcYear ? todayIso.slice(0, 5) + "01-01" : todayIso.slice(0, 8) + "01"));
     top.forEach((u, i) => {
       const n14 = Math.min(14, last), n28 = Math.min(28, last);
       let s14 = 0; for (let j = last - n14 + 1; j <= last; j++) s14 += u.a[j];
@@ -4494,7 +4496,7 @@ function trendChart(){
       const m28 = d28.reduce((a2, b2) => a2 + b2, 0) / n28, sd = Math.sqrt(d28.reduce((a2, b2) => a2 + (b2 - m28) ** 2, 0) / n28);
       const rate = .6 * (s14 / n14) + .4 * (u.t / last), y1 = u.t + rate * rem, spread = 1.28 * sd * Math.sqrt(rem);
       let mSoFar = 0; for (let j = monthStartIdx; j <= last; j++) mSoFar += u.a[j] || 0;
-      series[i].fc = {x0:last, y0:u.t, x1:fcEnd, y1, lo:Math.max(u.t, y1 - spread), hi:y1 + spread, rate, month:mSoFar + rate * rem, monthSoFar:mSoFar};
+      series[i].fc = {x0:last, y0:u.t, x1:fcEnd, y1, lo:Math.max(u.t, y1 - spread), hi:y1 + spread, rate, month:mSoFar + rate * rem, monthSoFar:mSoFar, pw:fcYear ? "год" : "месяц"};
     });
     const order = [...series].sort((a2, b2) => b2.fc.y1 - a2.fc.y1);
     order.forEach((s2, k) => { s2.fc.place = k + 1; });
@@ -5558,7 +5560,7 @@ function highlightDonut(seg){
         const fi = fcs.map(s => { const f = s.fc, t2 = (x - f.x0) / (f.x1 - f.x0); return {s, v:f.y0 + (f.y1 - f.y0) * t2, f}; }).sort((a, b) => b.v - a.v);
         const atEnd = x >= fi[0].f.x1;
         showTip(`<b>${escH(M.xLabel(x))} · прогноз</b>` + fi.map((q, k) => {
-          const mv = atEnd && Math.round(q.f.month) !== Math.round(q.v) ? ` · за месяц ≈ ${fmt(Math.round(q.f.month))}` : "";
+          const mv = atEnd && Math.round(q.f.month) !== Math.round(q.v) ? ` · за ${q.f.pw || "месяц"} ≈ ${fmt(Math.round(q.f.month))}` : "";
           const mv2 = atEnd && q.f.place !== q.f.nowPlace ? ` <span class="${q.f.place < q.f.nowPlace ? "up" : "down"}">${q.f.place < q.f.nowPlace ? "▲" : "▼"}${Math.abs(q.f.nowPlace - q.f.place)}</span>` : "";
           return tipRow(`<i style="background:${q.s.c}"></i>${k + 1}. ${escH(q.s.name)}${mv2}`, `≈ ${fmt(Math.round(q.v))}${mv}`);
         }).join("") + tipRow("Темп", fi[0].f.note || "60% — последние 14 дней, 40% — весь период") + (M.evNote ? M.evNote(x) : ""), e);
@@ -14414,6 +14416,7 @@ function multiplesChart(){
 /* ===================== История обновлений (новые версии — сверху) ===================== */
 // tag: new — новое, imp — улучшено, fix — исправлено, del — убрано. area — раздел сайта.
 window.CHANGELOG = [
+  {v:"2026.10.27-7", date:"2026-10-27", title:"Прогноз до конца года", items:[{tag:"new", area:"Графики", text:"На «Динамике» в «Прогнозе» появился вариант «До конца года»: пунктир и диапазон тянутся до 31 декабря, в подсказке — сколько выйдет за год и как поменяются места."}]},
   {v:"2026.10.27-6", date:"2026-10-27", title:"Матрица без дубля общей суммы", items:[{tag:"del", area:"Матрица", text:"Общая сумма «всего» в правом верхнем углу убрана — она уже есть в строке «Итого» внизу справа."}]},
   {v:"2026.10.27-5", date:"2026-10-27", title:"Матрица: чище шапка и картинка", items:[{tag:"fix", area:"Матрица", text:"Кнопка «← Все годы» больше не попадает на скопированную картинку."},{tag:"fix", area:"Матрица", text:"Число «всего» в правом верхнем углу выровнено по центру по вертикали."},{tag:"imp", area:"Матрица", text:"Над столбиками в шапке больше нет чисел — суммы в строке «Итого» внизу; при наведении на столбик число всплывает подсказкой."}]},
   {v:"2026.10.27-4", date:"2026-10-27", title:"Матрица: фильтр по количеству и без имени, стекло на месте", items:[{tag:"new", area:"Матрица", text:"«Скрыть, если меньше»: введи число — пропадут все, у кого за период меньше (по выбранному показателю)."},{tag:"new", area:"Матрица", text:"«Скрыть без имени»: прячет тех, кого нет в списке участников в настройках (у них только ник из Telegram)."},{tag:"fix", area:"Матрица", text:"Вернулся стеклянный вид столбцов «№ / Имя» и шапки. Плотный фон включается, только пока таблицу листают вбок, — чтобы числа не просвечивали."}]},
