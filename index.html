@@ -14429,6 +14429,7 @@ function multiplesChart(){
 /* ===================== История обновлений (новые версии — сверху) ===================== */
 // tag: new — новое, imp — улучшено, fix — исправлено, del — убрано. area — раздел сайта.
 window.CHANGELOG = [
+  {v:"2026.10.27-11", date:"2026-10-27", title:"Чище боковая панель", items:[{tag:"fix", area:"ПК", text:"Под тремя блоками боковой панели больше нет общего фона — блоки парят сами по себе."},{tag:"imp", area:"ПК", text:"Значки вкладок в боковой панели почти белые, у открытой вкладки — белые; текст прежнего цвета."}]},
   {v:"2026.10.27-10", date:"2026-10-27", title:"Точнее боковая панель и мягче градиенты", items:[{tag:"imp", area:"ПК", text:"В свёрнутой боковой панели при наведении выезжает только блок под курсором; закреплённая панель открывает оба блока."},{tag:"imp", area:"ПК", text:"Блок «Другое» без подписи и без пустого места внизу; значок закрепления выровнен и того же размера, что значки вкладок."},{tag:"fix", area:"Фильтры справа", text:"Значок фильтров стоит точно по центру круглой кнопки."},{tag:"imp", area:"Графики", text:"Градиент под одиночными линиями затухает раньше, не доходя до горизонтальной оси."}]},
   {v:"2026.10.27-9", date:"2026-10-27", title:"Три блока навигации, круглая кнопка фильтров, новые иконки", items:[{tag:"imp", area:"ПК", text:"Боковая панель вкладок разделена на три парящих блока: основные вкладки, «Другое» и круглая кнопка настроек внизу. Отступы — по сетке 4/8/12 px."},{tag:"imp", area:"Фильтры справа", text:"Шторка фильтров свёрнута в круглую кнопку справа вверху; по нажатию плавно раскрывается в парящую скруглённую панель."},{tag:"imp", area:"Везде", text:"Эмодзи в значках заменены на белые линейные иконки: боковые вкладки, Хаб, меню на телефоне, разделы настроек и подписи фильтров."},{tag:"imp", area:"Графики", text:"Под одиночными линиями — «Динамика» с одним участником, «Прогноз», мини-графики в таблицах и быстрый просмотр — появился мягкий градиентный спад."}]},
   {v:"2026.10.27-8", date:"2026-10-27", title:"Парящая боковая панель и плавная смена вкладок", items:[{tag:"imp", area:"ПК", text:"Боковая панель вкладок стала скруглённой и «парящей» — с отступом от краёв, как шапка сайта."},{tag:"new", area:"Эффекты", text:"При переходе на другую вкладку блоки страницы плавно появляются по очереди, сверху вниз. Отключается в «Настройки → Эффекты» — «Плавное появление блоков при смене вкладки»."}]},
@@ -19222,6 +19223,12 @@ body.side-nav nav button[data-tab]::before{content:""!important;display:inline-b
   html body.side-nav.side-collapsed nav:hover .side-grp :is(button,.side-sep,.side-toggle span){-webkit-text-fill-color:transparent!important;transition:-webkit-text-fill-color .12s linear!important}
   html body.side-nav.side-collapsed nav .side-grp:not(.g-set):hover :is(button,.side-toggle span){-webkit-text-fill-color:currentColor!important;transition:-webkit-text-fill-color .1s linear .14s!important}
   html body.side-nav.side-collapsed nav button::before{-webkit-text-fill-color:initial!important}
+  /* Под тремя блоками нет общего фона панели (в том числе со стеклом) */
+  html body.side-nav header nav,html body.glass-ui.side-nav header nav,html body.glass-ui.side-nav nav{background:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border:0!important;box-shadow:none!important}
+  /* Значки вкладок почти белые; текст остаётся своего цвета */
+  html body.side-nav nav button[data-tab]::before{background:#eef1f7!important;opacity:.92}
+  html body.side-nav nav button[data-tab]:is(.active,.side-active)::before{background:#fff!important;opacity:1}
+  html body.side-nav nav .side-toggle i{color:#eef1f7!important;opacity:.92}
   /* Значок фильтров — точно по центру круглой кнопки */
   html body.filters-right.fr-collapsed #filter-drawer .fd-rail::before{position:absolute!important;left:50%!important;top:50%!important;margin:0!important;transform:translate(-50%,-50%)!important}
 }
