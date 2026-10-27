@@ -1840,7 +1840,6 @@ body.fx-pulse .fx-pulse-dot{display:inline;animation:fxPulse 1.6s ease-out infin
       <label class="checkline"><input type="checkbox" id="d-show-today">Отобразить сегодня</label>
       <div class="table-export-actions filters-export-actions"><span class="tb-lbl">Копировать</span><button class="mini copy-btn" id="copy-days-top10" type="button" title="Копировать топ-10">Топ-10</button><button class="mini copy-btn" id="copy-days-top20" type="button" title="Копировать топ-20">Топ-20</button><button class="mini copy-btn" id="copy-days-all" type="button" title="Копировать все">Все</button><span class="hint" id="days-copy-status" role="status" aria-live="polite"></span></div>
     </div>
-    <p class="hint">Место рассчитывается по количеству сообщений за день. Если включить «Отобразить сегодня», сегодняшняя дата будет первой в таблице, но её номер места останется реальным. Нажми на год, чтобы оставить в таблице только его.</p>
     <p class="hint" id="d-fhint" hidden></p>
     <div class="year-legend" id="d-years"></div>
     <div class="top-tools"><label class="top-search"><span aria-hidden="true">🔍</span><input type="search" id="d-q" placeholder="Найти день: 15 марта, 15.03.2024, пятница" autocomplete="off" aria-label="Поиск дня"></label></div>
@@ -14452,8 +14451,10 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.10.27-18", date:"2026-10-27", title:"Новая навигация, иконки и плавность", items:[
-    {tag:"imp", area:"Вкладки", text:"Поиск, годы, разделы, копирование и кнопки таблицы собраны в одну ровную строку; у всех кнопок одна высота; подсказка в поиске теперь читается."},
+  {v:"2026.10.27-19", date:"2026-10-27", title:"Новая навигация, иконки и плавность", items:[
+    {tag:"imp", area:"Везде", text:"Все кнопки, переключатели и выпадающие списки оформлены как боковая навигация: полупрозрачная панель, выбранный пункт — светлая подложка с тонкой рамкой."},
+    {tag:"imp", area:"Вкладки", text:"Топ месяцев и дней: копирование и «Карточки / Таблица» — справа от поиска, годы — строкой ниже. В Рекордах, Времени, Марафонах и Днях рождения кнопки стоят в строке заголовка таблицы. Убрано длинное описание в Топе дней."},
+    {tag:"imp", area:"Вкладки", text:"У всех кнопок над блоками одна высота; подсказка в поиске теперь читается."},
     {tag:"imp", area:"Таблицы", text:"Кнопка «Столбцы» переименована в «Таблица»: в ней вид таблицы, столбцы и строки."},
     {tag:"new", area:"Цвета", text:"У цветов участников — лёгкий градиент (начало темнее, конец светлее), в том числе с готовыми палитрами. Выключается в «Настройки → Эффекты»."},
     {tag:"fix", area:"Графики", text:"В «Маленьких графиках» под линиями появился градиент, как на остальных."},
@@ -16489,6 +16490,7 @@ body.tb-on .chart:has(svg.heatrows-svg){border:1.5px solid transparent;backgroun
     t.dataset.hcKey = keyOf(t);
     const host = hostOf(t); if (!host) return;
     let bar = host.previousElementSibling;
+    if (!bar || !bar.classList.contains("hc-bar") || bar.dataset.for !== t.dataset.hc) bar = document.querySelector(`.hc-bar.hc-moved[data-for="${t.dataset.hc}"]`) || bar;
     if (!bar || !bar.classList.contains("hc-bar") || bar.dataset.for !== t.dataset.hc) {
       bar = document.createElement("div"); bar.className = "hc-bar"; bar.dataset.for = t.dataset.hc; bar.dataset.noExport = "1";
       bar.innerHTML = `<button type="button" class="hc-btn" aria-haspopup="true" aria-expanded="false" title="Настройка таблицы: вид, столбцы и строки">${EYE}Таблица<b hidden></b></button>`;
@@ -16501,7 +16503,7 @@ body.tb-on .chart:has(svg.heatrows-svg){border:1.5px solid transparent;backgroun
     pending = 0;
     document.querySelectorAll("main table").forEach(t => { if (eligible(t)) attach(t); });
     // Убираем кнопки, чья таблица исчезла.
-    document.querySelectorAll(".hc-bar").forEach(b => { const t = document.querySelector(`table[data-hc="${b.dataset.for}"]`); if (!t || hostOf(t)?.previousElementSibling !== b) b.remove(); });
+    document.querySelectorAll(".hc-bar").forEach(b => { const t = document.querySelector(`table[data-hc="${b.dataset.for}"]`); if (!t || (hostOf(t)?.previousElementSibling !== b && !b.classList.contains("hc-moved"))) b.remove(); });
     rules();
   }
   const later = () => { if (!pending) pending = setTimeout(scan, 60); };
@@ -19455,17 +19457,20 @@ html body .top-search > span svg{width:17px;height:17px}
 html body .top-search input,html body.glass-ui :is(main,#filter-drawer) .top-search input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]){-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:none!important;background-image:none!important;box-shadow:none!important;border:0!important;border-radius:0!important;height:100%!important;min-height:0!important;margin:0!important;padding:0!important;color:var(--text)!important;-webkit-text-fill-color:var(--text);font-size:14.5px!important}
 @media (min-width:721px){
   .tbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:0 0 14px}
-  .tbar.tb-hc{float:left;width:calc(100% - 250px);margin:0 0 12px}
-  .tbar.tb-hc + .hc-bar{display:flex;justify-content:flex-end;align-items:center;min-height:38px;margin:0 0 12px!important}
-  .tbar.tb-hc + .hc-bar + *{clear:both}
+  .tbar > .hc-bar{order:3;display:flex;gap:8px;flex:0 0 auto}
+  .tbar > .year-legend{flex:1 0 100%!important}
+  .tb-head{display:flex!important;flex-wrap:wrap;align-items:center;gap:8px}
+  .tb-head > :is(h2,h3){margin-right:auto!important}
+  .tb-head > :is(.hc-bar,.filters,.table-export-actions){margin:0!important;display:flex;gap:8px;flex:0 0 auto;min-height:0}
+  html body .tb-head > .filters{padding:0!important;background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
   .tbar > *{margin:0!important}
   .tbar > .sec-nav{order:0;flex:0 1 auto;align-items:center}
   .tbar > .sec-nav > .hint{margin:0 4px 0 0!important;align-self:center}
   .tbar > .top-tools{order:1;flex:0 1 340px}
   .tbar > .top-tools .top-search{flex:1 1 auto;min-width:200px}
-  .tbar > .year-legend{order:2;flex:0 1 auto;display:flex;flex-wrap:wrap;gap:6px}
+  .tbar > .year-legend{order:4;display:flex;flex-wrap:wrap;gap:6px}
   .tbar > .year-legend .ychip-btn{height:32px}
-  html body .tbar > .filters{order:3;margin-left:auto!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;flex:0 0 auto;display:flex}
+  html body .tbar > .filters{order:2;margin-left:auto!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;flex:0 0 auto;display:flex}
   html body .tbar .filters-export-actions{display:flex;flex-wrap:wrap;gap:8px;margin:0!important;padding:0!important}
   html body .tbar .filters-export-actions .mini{height:38px!important;min-height:0!important;padding:0 14px!important;font-size:14px!important;border-radius:12px!important;display:inline-flex;align-items:center;gap:6px}
   html body .hc-bar :is(.tv-btn,.hc-btn){height:38px!important;border-radius:12px!important;padding:0 13px!important}
@@ -19499,23 +19504,38 @@ main .sec-nav > .hint{margin:0 4px 0 0!important;align-self:center}
   const TABS = ["months", "days", "records", "forecast", "usermap", "birthdays", "vk"];
   const BIG = ".wrap, .tiles, .chart, .p-card, [id$='-out']";
   const onlyExport = f => f.matches(".filters") && f.children.length && ![...f.children].some(c => !c.matches(".table-export-actions"));
+  const HEAD = ".table-export-row, .section-head";
+  // «Карточки / Таблица» — в строку заголовка таблицы, если между ними только подсказки
+  function mergeHeads(sec){
+    sec.querySelectorAll(".hc-bar:not(.hc-moved)").forEach(hc => {
+      if (!hc.nextElementSibling?.matches(".wrap")) return;
+      let n = hc.previousElementSibling;
+      if (!n && hc.parentElement !== sec) n = hc.parentElement.previousElementSibling;
+      const skip = x => x.matches("p, .hint, .status") || !x.offsetHeight;
+      while (n && skip(n)) n = n.previousElementSibling;
+      if (!n || !n.matches(HEAD) || !n.querySelector(":scope > h2, :scope > h3")) return;
+      hc.classList.add("hc-moved"); n.classList.add("tb-head"); n.appendChild(hc);
+      // кнопка копирования сверху вкладки, сразу над этим заголовком — туда же
+      let pv = n.previousElementSibling;
+      while (pv && !pv.offsetHeight && !pv.matches(".tbar")) pv = pv.previousElementSibling;
+      if (pv && pv.matches(".tbar") && pv.children.length === 1 && onlyExport(pv.firstElementChild)) { const h = pv.firstElementChild; pv.remove(); pv = h; }
+      if (pv && onlyExport(pv)) { pv.classList.add("tb-in-head"); n.insertBefore(pv, hc); }
+    });
+  }
   function build(sec){
     if (!sec || !matchMedia("(min-width:721px)").matches) return;
+    mergeHeads(sec);
     let bar = sec.querySelector(":scope > .tbar");
     const items = [...sec.children].filter(c => c.matches(".sec-nav, .year-legend, .top-tools") || onlyExport(c));
-    if (!items.length) return;
-    const first = items[0];
-    if (!bar) { bar = document.createElement("div"); bar.className = "tbar"; bar.dataset.noExport = "1"; first.before(bar); }
-    // Кнопки «Карточки / Таблица» над таблицей — справа в той же строке
-    const hc = sec.querySelector(":scope > .hc-bar");
-    let okHc = false;
-    if (hc && hc.nextElementSibling?.matches(".wrap")) {
-      okHc = true;
-      for (let n = bar.nextElementSibling; n && n !== hc; n = n.nextElementSibling) if (n.matches(BIG)) { okHc = false; break; }
+    const hasMain = items.some(c => c.matches(".year-legend, .top-tools"));
+    if (!items.length && !bar) return;
+    if (!bar) { bar = document.createElement("div"); bar.className = "tbar"; bar.dataset.noExport = "1"; items[0].before(bar); }
+    // У поиска справа — копирование и «Карточки / Таблица», годы — строкой ниже
+    if (hasMain || bar.querySelector(".top-tools")) {
+      const hc = sec.querySelector(":scope > .hc-bar:not(.hc-moved)");
+      if (hc && hc.nextElementSibling?.matches(".wrap")) { hc.classList.add("hc-moved"); items.push(hc); }
     }
-    if (okHc && bar.nextElementSibling !== hc) hc.before(bar);
-    bar.classList.toggle("tb-hc", okHc);
-    const rank = c => c.matches(".sec-nav") ? 0 : c.matches(".top-tools") ? 1 : c.matches(".year-legend") ? 2 : 3;
+    const rank = c => c.matches(".sec-nav") ? 0 : c.matches(".top-tools") ? 1 : c.matches(".filters") ? 2 : c.matches(".hc-bar") ? 3 : 4;
     items.sort((a, b) => rank(a) - rank(b)).forEach(c => bar.appendChild(c));
   }
   const icon = () => document.querySelectorAll(".top-search > span").forEach(sp => {
@@ -19523,7 +19543,9 @@ main .sec-nav > .hint{margin:0 4px 0 0!important;align-self:center}
     const sv = window.__lineIcon.svg("search"); if (sv) sp.innerHTML = sv;
   });
   let raf = 0;
-  const run = () => { raf = 0; TABS.forEach(t => { const sec = document.getElementById("tab-" + t); if (sec && sec.classList.contains("active")) build(sec); }); icon(); };
+  const run = () => { raf = 0; const wide = matchMedia("(min-width:721px)").matches;
+    document.querySelectorAll("main > section.tab.active").forEach(sec => { if (!wide) return; if (TABS.includes(sec.id.slice(4))) build(sec); else if (!/^tab-(stats|charts|settings|hub|profile|daymatrix|compare)$/.test(sec.id)) mergeHeads(sec); });
+    icon(); };
   const later = () => { if (!raf) raf = requestAnimationFrame(run); };
   const main = document.querySelector("main");
   if (main) new MutationObserver(later).observe(main, {childList:true, subtree:true});
@@ -19531,6 +19553,32 @@ main .sec-nav > .hint{margin:0 4px 0 0!important;align-self:center}
   later();
 })();
 </script>
+<style id="v40-ui">
+/* ===================== v40: все кнопки, переключатели и списки — в стиле боковой навигации ===================== */
+html body{--nv-fill:var(--panel);--nv-line:var(--line);--nv-on:color-mix(in srgb,var(--text) 10%,transparent);--nv-on-line:color-mix(in srgb,var(--text) 22%,transparent);--nv-hover:color-mix(in srgb,var(--text) 6%,transparent)}
+html body.glass-ui{--nv-fill:color-mix(in srgb,var(--panel) 55%,transparent);--nv-line:var(--glass-line)}
+/* общие переменные старых правил — на тот же вид, что у блоков навигации */
+html body{--sg-fill:var(--nv-fill);--sg-line:var(--nv-line);--sg-on:var(--nv-on)}
+html body.glass-ui{--sg-fill:var(--nv-fill);--sg-line:var(--nv-line);--sg-hi:var(--glass-hi);--sg-on:var(--nv-on);--glass-ctrl:var(--nv-fill);--glass-ctrl-hover:color-mix(in srgb,var(--text) 9%,var(--nv-fill));--fv4-on:var(--nv-on);--fv4-line:var(--nv-on-line)}
+/* группы-переключатели: панель как блок навигации, выбранный пункт — как выбранная вкладка */
+html body :is(.seg,.sq-seg,.quick-ranges:not(#theme-bases),.group-tabs,.stat-subnav,.set-tabs){background:var(--nv-fill)!important;border:1px solid var(--nv-line)!important;box-shadow:inset 0 1px 0 var(--glass-hi,transparent)!important;border-radius:14px!important}
+html body.glass-ui :is(.seg,.sq-seg,.quick-ranges:not(#theme-bases),.group-tabs,.stat-subnav,.set-tabs){-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur)}
+html body :is(.seg,.sq-seg,.quick-ranges:not(#theme-bases),.group-tabs,.stat-subnav,.set-tabs) > :is(button,.quick-chip){border:1px solid transparent!important;border-radius:10px!important;background:transparent!important;box-shadow:none!important;color:var(--muted)!important}
+html body :is(.seg,.sq-seg,.quick-ranges:not(#theme-bases),.group-tabs,.stat-subnav,.set-tabs) > :is(button,.quick-chip):hover{color:var(--text)!important;background:var(--nv-hover)!important}
+html body :is(.seg,.sq-seg,.quick-ranges:not(#theme-bases),.group-tabs,.stat-subnav,.set-tabs) > :is(button,.quick-chip):is(.active,[aria-pressed="true"]){background:var(--nv-on)!important;border-color:var(--nv-on-line)!important;color:var(--text)!important;font-weight:600!important;box-shadow:none!important}
+/* одиночные кнопки, чипы и списки */
+html body:not(.nv-off) :is(main,#filter-drawer,header,#ma-fsheet,.hc-pop) :is(button.mini,.copy-btn,.tv-btn,.hc-btn,.chip,.s-chip,.ychip-btn,.quick-chip,.bd-pill,.p-cmp-btn,.msel.solo,.ult-btn,.sq-date,.top-search,#refresh-btn,select,.pick > summary):not(.seg *):not(.sq-seg *):not(.quick-ranges *):not(.group-tabs *):not(.stat-subnav *):not(.field *):not(.sq-date *){background:var(--nv-fill)!important;background-image:none!important;border:1px solid var(--nv-line)!important;box-shadow:inset 0 1px 0 var(--glass-hi,transparent)!important;color:var(--text)!important;border-radius:12px!important}
+html body.glass-ui:not(.nv-off) :is(main,#filter-drawer,header,#ma-fsheet) :is(button.mini,.copy-btn,.tv-btn,.hc-btn,.chip,.s-chip,.ychip-btn,.quick-chip,.bd-pill,.p-cmp-btn,.msel.solo,.ult-btn,.sq-date,.top-search,select,.pick > summary):not(.seg *):not(.field *){-webkit-backdrop-filter:var(--glass-blur)!important;backdrop-filter:var(--glass-blur)!important}
+html body:not(.nv-off) :is(main,#filter-drawer,header,#ma-fsheet,.hc-pop) :is(button.mini,.copy-btn,.tv-btn,.hc-btn,.chip,.s-chip,.ychip-btn,.quick-chip,.bd-pill,.p-cmp-btn,.msel.solo,.ult-btn,select,.pick > summary):not(.seg *):not(.quick-ranges *):not(.group-tabs *):not(.stat-subnav *):not(.field *):hover{background:color-mix(in srgb,var(--text) 9%,var(--nv-fill))!important}
+html body:not(.nv-off) :is(main,#filter-drawer,header,#ma-fsheet) :is(.chip,.s-chip,.ychip-btn,.quick-chip,.bd-pill,.ult-btn,.hc-btn,.tv-btn,button.mini):is(.active,.on,[aria-pressed="true"],[aria-expanded="true"]):not(.seg *):not(.quick-ranges *):not(.group-tabs *){background:color-mix(in srgb,var(--text) 10%,var(--nv-fill))!important;border-color:var(--nv-on-line)!important;box-shadow:none!important;color:var(--text)!important;font-weight:600}
+html body .ychip-btn small{color:var(--muted)}
+html body .field:has(> #cmp-swap) > label{display:none!important}
+html body:not(.nv-off) main .field:has(> #cmp-swap){padding:0!important;display:flex;align-items:center;justify-content:center;min-width:44px}
+/* поля фильтров: одна панель, внутри — без второй подложки */
+html body:not(.nv-off) :is(main,#filter-drawer) .filters .field:not([data-fr-keep] .field){background:var(--nv-fill)!important;border:1px solid var(--nv-line)!important;border-radius:12px!important}
+html body:not(.nv-off) :is(main,#filter-drawer) .field :is(select,input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),.msel,.pick > summary){background:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html body:not(.nv-off) :is(main,#filter-drawer) :is(input[type=text],input[type=search],input[type=number],input[type=date],input[type=month],input:not([type])):not(.field *):not(.top-search *):not(.sq-date *){background:var(--nv-fill)!important;background-image:none!important;border:1px solid var(--nv-line)!important;border-radius:12px!important;box-shadow:inset 0 1px 0 var(--glass-hi,transparent)!important}
+</style>
 <script id="i18n-js">
 /* ===================== Языки интерфейса: ru (по умолчанию), uk, be, kk, en ===================== */
 (function(){
