@@ -1569,6 +1569,8 @@ body.fx-pulse .fx-pulse-dot{display:inline;animation:fxPulse 1.6s ease-out infin
       <div class="field" data-fr-keep><label for="dm-metric">Показатель</label><select id="dm-metric"><option value="msgs">Сообщения</option><option value="stick">Стикеры</option><option value="voice">Голосовые</option><option value="video">Видеосообщения</option></select></div>
       <div class="field"><label for="dm-top">Участники</label><select id="dm-top"><option value="10">Топ-10</option><option value="20">Топ-20</option><option value="all">Все</option></select></div>
       <div class="field"><label for="dm-min" title="Скрыть тех, кто был активен меньше указанного числа дней за период">Малоактивные</label><select id="dm-min"><option value="0">Показывать всех</option><option value="2">Скрыть: меньше 2 дней</option><option value="3">Скрыть: меньше 3 дней</option><option value="5">Скрыть: меньше 5 дней</option><option value="10">Скрыть: меньше 10 дней</option></select></div>
+      <div class="field" title="Скрыть тех, у кого за выбранный период меньше указанного количества (сообщений, стикеров — по выбранному показателю). Пусто или 0 — показывать всех"><label for="dm-min-msgs">Скрыть, если меньше</label><input type="number" id="dm-min-msgs" min="0" step="1" inputmode="numeric" placeholder="0" style="min-width:110px"></div>
+      <label class="checkline" title="Скрыть тех, кого нет в списке участников («Настройки → Участники»): у них нет имени, только ник из Telegram"><input type="checkbox" id="dm-hide-noname">Скрыть без имени</label>
       <label class="checkline"><input type="checkbox" id="dm-heat">Тепловая заливка</label>
       <label class="checkline" title="Доля участника от суммы за период"><input type="checkbox" id="dm-show-share" checked>Столбец «%»</label>
       <label class="checkline" title="Изменение места по сравнению с прошлым периодом"><input type="checkbox" id="dm-show-delta" checked>Столбец «Δ места»</label>
@@ -7682,6 +7684,8 @@ function dmSyncControls(){
   ["dm-from", "dm-to"].forEach(id => { const f = $(id)?.closest(".field"); if (f) f.hidden = yearsMode; });
   $("dm-metric").value = DM.metric; $("dm-top").value = DM.top; $("dm-heat").checked = DM.heat; $("dm-show-share").checked = DM.showShare !== false; $("dm-show-delta").checked = DM.showDelta !== false;
   if ($("dm-min")) $("dm-min").value = String(DM.minDays || 0);
+  if ($("dm-min-msgs") && document.activeElement !== $("dm-min-msgs")) $("dm-min-msgs").value = DM.minMsgs ? String(DM.minMsgs) : "";
+  if ($("dm-hide-noname")) { $("dm-hide-noname").checked = Boolean(DM.hideNoName); const l = $("dm-hide-noname").closest("label"); if (l) l.hidden = DM.entity === "chats"; }
   const chatsMode = DM.entity === "chats";
   document.querySelectorAll("#dm-entity [data-dm-entity]").forEach(b => b.classList.toggle("active", b.dataset.dmEntity === (chatsMode ? "chats" : "users")));
   const chatField = $("dm-chat")?.closest(".field"); if (chatField) chatField.hidden = chatsMode;
@@ -7847,7 +7851,8 @@ function renderDayMatrix(from = DM.from, to = DM.to){
   const showDelta = !yearsView && hasPrior && priorPer.size > 0 && DM.showDelta !== false;
   const showShare = DM.showShare !== false;
   const minDays = Number(DM.minDays) || 0;
-  const eligible = ranked.filter(u => u.days.size >= minDays);
+  const minMsgs = Math.max(0, Number(DM.minMsgs) || 0), hideNoName = Boolean(DM.hideNoName) && !chatsMode;
+  const eligible = ranked.filter(u => u.days.size >= minDays && u.tot >= minMsgs && (!hideNoName || Object.prototype.hasOwnProperty.call(NAMES, u.k)));
   const hiddenLow = ranked.length - eligible.length;
   let shown = DM.top === "all" ? eligible : eligible.slice(0, Number(DM.top));
   // Сортировка по клику на заголовок; № всегда показывает место по сумме.
@@ -7893,7 +7898,7 @@ function renderDayMatrix(from = DM.from, to = DM.to){
       return `<td class="dm-cell${top ? " dm-top" : ""}" data-dm-cell="${escH(u.k)}|${i}"${style ? ` style="${style}"` : ""}>${fmt(v)}${dmDelta(v, pv, cmpOn && Boolean(prior))}</td>`;
     }).join("");
     return `<tr><td class="dm-no${rank <= 3 ? " medal-" + rank : ""}">${rank}</td><td class="dm-name">${chatsMode ? `<span>${escH(u.name)}</span>` : `<span class="pname" data-open-profile="${escH(u.k)}">${escH(u.name)}</span>`}</td>${cells}<td class="dm-total">${fmt(u.tot)}${dmDelta(u.tot, prior?.tot || 0, cmpOn && Boolean(prior))}</td>${showShare ? `<td class="dm-share">${dmPct(u.tot, grand)}</td>` : ""}${showDelta ? `<td class="dm-delta">${dmRankDelta(rank, priorRank.get(u.k))}</td>` : ""}</tr>`;
-  }).join("") : `<tr><td colspan="${colSpanAll}" style="text-align:center;color:var(--muted)">${hiddenLow ? `Все ${chatsMode ? "чаты" : "участники"} скрыты фильтром малоактивных` : "Нет данных за выбранный период"}</td></tr>`;
+  }).join("") : `<tr><td colspan="${colSpanAll}" style="text-align:center;color:var(--muted)">${hiddenLow ? `Все ${chatsMode ? "чаты" : "участники"} скрыты фильтрами (малоактивные, «меньше N», без имени)` : "Нет данных за выбранный период"}</td></tr>`;
   // Отдельная строка итогов по каждому столбцу (по всем участникам/чатам, даже если показан только топ).
   const footName = shown.length < ranked.length ? `Итого по всем (${ranked.length})` : "Итого";
   $("dm-foot").innerHTML = shown.length ? `<tr class="dm-sum"><td class="dm-no"></td><td class="dm-name">${escH(footName)}</td>${colTot.map((v, i) => `<td class="dm-sumcell">${v ? fmt(v) : (yearView || yearsView || columns[i].from <= today ? "–" : "")}${yearsView && i === 0 ? "" : dmDelta(v, priorColTot[i] || 0, cmpOn)}</td>`).join("")}<td class="dm-total">${fmt(grand)}${dmDelta(grand, priorColTot.reduce((a, v) => a + v, 0), cmpOn && !yearsView)}</td>${showShare ? `<td class="dm-share">100%</td>` : ""}${showDelta ? `<td class="dm-delta"></td>` : ""}</tr>` : "";
@@ -7902,7 +7907,7 @@ function renderDayMatrix(from = DM.from, to = DM.to){
   const comparisonNote = comparisonEnabled ? (yearsView ? " · сравнение с предыдущим годом" : dmCompareError ? ` · не удалось загрузить предыдущий период: ${dmCompareError}` : ` · сравнение с ${yearView ? (year-1) + " годом" : "предыдущим периодом"}`) : "";
   const unit = yearsView ? "каждого года" : yearView ? "каждого месяца" : weekView ? "каждой недели" : "каждого дня";
   const heading = yearsView ? `${ncol} ${wordForm(ncol, ["год","года","лет"])} · ${columns[0].label} — ${columns[ncol - 1].label}${window.__vk && window.__vk.state && window.__vk.state().ON ? " · с данными VK" : ""}` : yearView ? `${ncol} ${wordForm(ncol, ["месяц","месяца","месяцев"])} за ${year} год` : weekView ? `${ncol} ${wordForm(ncol, ["неделя","недели","недель"])} · ${sFmtDate(columns[0].from)} — ${sFmtDate(to)}` : `${fmt(ncol)} ${wordForm(ncol, ["день","дня","дней"])} · ${sFmtDate(from)} — ${sFmtDate(to)}`;
-  const lowNote = hiddenLow ? ` · скрыто малоактивных: ${hiddenLow}` : "";
+  const lowNote = hiddenLow ? ` · скрыто фильтрами: ${hiddenLow}` : "";
   dmStatus(`${heading} · ${chatsMode ? "чатов" : "участников"}: ${fmt(ranked.length)}${shown.length < ranked.length ? `, показано ${shown.length}` : ""}${lowNote} · подсвечен лучший результат ${unit} · нажми на число, чтобы увидеть подробности${comparisonNote}${leftNote}`);
 }
 // Шапка и колонки «№ / Имя» не уезжают при прокрутке: отступы считаются по реальным размерам.
@@ -8014,6 +8019,10 @@ $("dm-week").onchange = () => {
 };
 document.querySelectorAll("#dm-entity [data-dm-entity]").forEach(b => b.onclick = () => { DM.entity = b.dataset.dmEntity; dmSave(); dmSyncControls(); renderDayMatrix(); });
 $("dm-min").onchange = () => { DM.minDays = Number($("dm-min").value) || 0; dmSave(); renderDayMatrix(); };
+{ let t = 0; const apply = () => { DM.minMsgs = Math.max(0, Math.floor(Number($("dm-min-msgs").value) || 0)); dmSave(); renderDayMatrix(); };
+  $("dm-min-msgs").addEventListener("input", () => { clearTimeout(t); t = setTimeout(apply, 350); });
+  $("dm-min-msgs").addEventListener("change", () => { clearTimeout(t); apply(); }); }
+$("dm-hide-noname").onchange = () => { DM.hideNoName = $("dm-hide-noname").checked; dmSave(); renderDayMatrix(); };
 ["dm-from", "dm-to"].forEach(id => $(id).onchange = () => {
   const value = $(id).value; DM.quick = ""; DM.drill = "";
   if (DM.year && value) { const y = Number(value.slice(0,4)); [DM.from, DM.to] = dmYearRange(y); }
@@ -14399,6 +14408,7 @@ function multiplesChart(){
 /* ===================== История обновлений (новые версии — сверху) ===================== */
 // tag: new — новое, imp — улучшено, fix — исправлено, del — убрано. area — раздел сайта.
 window.CHANGELOG = [
+  {v:"2026.10.27-4", date:"2026-10-27", title:"Матрица: фильтр по количеству и без имени, стекло на месте", items:[{tag:"new", area:"Матрица", text:"«Скрыть, если меньше»: введи число — пропадут все, у кого за период меньше (по выбранному показателю)."},{tag:"new", area:"Матрица", text:"«Скрыть без имени»: прячет тех, кого нет в списке участников в настройках (у них только ник из Telegram)."},{tag:"fix", area:"Матрица", text:"Вернулся стеклянный вид столбцов «№ / Имя» и шапки. Плотный фон включается, только пока таблицу листают вбок, — чтобы числа не просвечивали."}]},
   {v:"2026.10.27-3", date:"2026-10-27", title:"Таблицы на телефоне без наложений", items:[{tag:"fix", area:"Матрица", text:"В режиме «По годам» после смены чата, показателя или «Участники | Чаты» таблица больше не сжимается до одного 2026 года — всегда видны все годы."},{tag:"fix", area:"Телефон", text:"Матрица: столбцы «№» и «Имя» и шапка таблицы больше не прозрачные — при прокрутке вбок числа не просвечивают сквозь имена и шапку."},{tag:"fix", area:"Таблицы", text:"Переливающаяся рамка вокруг таблицы со стеклом больше не уезжает и не обрывается, когда таблицу листают вбок."}]},
   {v:"2026.10.27-2", date:"2026-10-27", title:"Картинка таблицы нужной ширины, итоги в Матрице", items:[{tag:"fix", area:"Таблицы", text:"Если ширина таблицы или столбцов выставлена вручную, картинка при копировании и скачивании повторяет её: те же ширины столбцов, что на экране."},{tag:"new", area:"Матрица", text:"Внизу таблицы — отдельная строка «Итого» с суммой по каждому столбцу, выделенная цветом и линией. Если показан только топ, итог считается по всем («Итого по всем»)."}]},
   {v:"2026.10.27-1", date:"2026-10-27", title:"Матрица: от лет к месяцам и дням", items:[{tag:"fix", area:"Матрица", text:"В режиме «По годам» заголовки 2022 и 2023 больше не подсвечиваются: подсветка выходных ошибочно срабатывала, потому что 1 января этих лет — суббота и воскресенье."},{tag:"new", area:"Матрица", text:"Клик по году открывает этот год по месяцам, клик по месяцу — месяц по дням. Вернуться — кнопкой в левом верхнем углу таблицы. Галочка «Год» убрана: месяцы открываются из «По годам»."},{tag:"imp", area:"Матрица", text:"«Участники | Чаты», выбор чата и показателя теперь на странице, а не в шторке фильтров."}]},
@@ -18909,6 +18919,8 @@ html[data-site-font]:not([data-site-font="samsung"]) body :is(svg,svg text,svg t
 document.addEventListener("scroll", e => {
   const w = e.target; if (!w || !w.classList || !w.classList.contains("wrap")) return;
   w.style.setProperty("--wrap-sl", w.scrollLeft + "px"); w.style.setProperty("--wrap-st", w.scrollTop + "px");
+  // Пока таблицу не листали вбок, закреплённые столбцы остаются стеклянными; при прокрутке — плотными, чтобы числа не просвечивали.
+  w.classList.toggle("sx", w.scrollLeft > 2);
 }, {capture:true, passive:true});
 </script>
 <script id="v29-js">
@@ -19032,9 +19044,9 @@ main table:not(.tv-cards):not(#tab-settings table) > :is(thead,tbody,tfoot) > tr
 #c-out > svg.norm-svg{width:100%;max-width:1150px}
 /* Закреплённые столбцы и шапка Матрицы — непрозрачные: при прокрутке вбок числа не просвечивают сквозь «№ / Имя» */
 .dm-table{--dm-solid:color-mix(in srgb,var(--panel) 92%,var(--bg))}
-html body #dm-table > :is(tbody,tfoot) > tr > td:is(.dm-no,.dm-name){background-color:var(--dm-solid)!important;background-image:none!important;background-clip:border-box!important;-webkit-background-clip:border-box!important;-webkit-text-fill-color:currentColor!important;animation:none!important}
-html body #dm-table > thead > tr > th{background-color:color-mix(in srgb,var(--panel) 86%,var(--bg))!important}
-html body #dm-table > tfoot > tr.dm-sum > td:is(.dm-no,.dm-name){background-color:color-mix(in srgb,var(--accent) 13%,var(--dm-solid))!important}
+html body .wrap.sx > #dm-table > :is(tbody,tfoot) > tr > td:is(.dm-no,.dm-name){background-color:var(--dm-solid)!important;background-image:none!important;background-clip:border-box!important;-webkit-background-clip:border-box!important;-webkit-text-fill-color:currentColor!important;animation:none!important}
+html body .wrap.sx > #dm-table > thead > tr > th:is(.dm-no,.dm-name,.dm-corner){background-color:color-mix(in srgb,var(--panel) 86%,var(--bg))!important}
+html body .wrap.sx > #dm-table > tfoot > tr.dm-sum > td:is(.dm-no,.dm-name){background-color:color-mix(in srgb,var(--accent) 13%,var(--dm-solid))!important}
 /* Переливающаяся рамка со стеклом рисуется поверх таблицы: держим её на месте, когда таблицу листают вбок */
 body.glass-ui.tb-on .wrap:has(> table:not(.tv-cards))::after{inset:auto!important;left:var(--wrap-sl,0px)!important;top:var(--wrap-st,0px)!important;width:100%!important;height:100%!important;box-sizing:border-box}
 /* Матрица: строка «Итого» заметно отделена от участников */
