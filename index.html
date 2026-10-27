@@ -14429,6 +14429,7 @@ function multiplesChart(){
 /* ===================== История обновлений (новые версии — сверху) ===================== */
 // tag: new — новое, imp — улучшено, fix — исправлено, del — убрано. area — раздел сайта.
 window.CHANGELOG = [
+  {v:"2026.10.27-13", date:"2026-10-27", title:"Стекло сразу при смене вкладки", items:[{tag:"fix", area:"Эффекты", text:"При плавном появлении блоков стекло больше не «догружается» в конце: стеклянные панели выплывают уже со своим размытием, а проявляется их содержимое."}]},
   {v:"2026.10.27-12", date:"2026-10-27", title:"Плавная смена вкладок", items:[{tag:"imp", area:"Эффекты", text:"Переход между вкладками стал мягче: вкладка проявляется, блоки выплывают по очереди сверху вниз, строки таблиц — лесенкой. То, что дорисовалось после загрузки данных, тоже плавно проявляется, а графики после перерисовки — проступают. Работает и для «Участники | Чаты», «Хаб | История» и разделов настроек; отключается там же — «Плавное появление блоков при смене вкладки»."}]},
   {v:"2026.10.27-11", date:"2026-10-27", title:"Чище боковая панель", items:[{tag:"fix", area:"ПК", text:"Под тремя блоками боковой панели больше нет общего фона — блоки парят сами по себе."},{tag:"imp", area:"ПК", text:"Значки вкладок в боковой панели почти белые, у открытой вкладки — белые; текст прежнего цвета."}]},
   {v:"2026.10.27-10", date:"2026-10-27", title:"Точнее боковая панель и мягче градиенты", items:[{tag:"imp", area:"ПК", text:"В свёрнутой боковой панели при наведении выезжает только блок под курсором; закреплённая панель открывает оба блока."},{tag:"imp", area:"ПК", text:"Блок «Другое» без подписи и без пустого места внизу; значок закрепления выровнен и того же размера, что значки вкладок."},{tag:"fix", area:"Фильтры справа", text:"Значок фильтров стоит точно по центру круглой кнопки."},{tag:"imp", area:"Графики", text:"Градиент под одиночными линиями затухает раньше, не доходя до горизонтальной оси."}]},
@@ -19114,11 +19115,14 @@ body.filters-right #tab-charts > .filters.fr-keep #f-mode .seg{flex-wrap:nowrap}
 @keyframes rowIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes tabFade{from{opacity:.4}to{opacity:1}}
-.tab-in{animation:tabIn .62s cubic-bezier(.22,1,.36,1) both;animation-delay:var(--tab-in-d,0ms);will-change:transform,opacity}
+.tab-in{animation:tabIn .62s cubic-bezier(.22,1,.36,1) both;animation-delay:var(--tab-in-d,0ms)}
+@keyframes tabInG{from{transform:translateY(22px) scale(.985)}to{transform:none}}
+.tab-in-g{animation:tabInG .66s cubic-bezier(.22,1,.36,1) both;animation-delay:var(--tab-in-d,0ms)}
+.tab-in-c{animation:fadeIn .5s ease both;animation-delay:var(--tab-in-d,0ms)}
 tr.row-in{animation:rowIn .45s cubic-bezier(.22,1,.36,1) both;animation-delay:var(--tab-in-d,0ms)}
 svg.fade-in{animation:fadeIn .55s ease both;animation-delay:var(--tab-in-d,0ms)}
 main > .tab.tab-fade{animation:tabFade .32s ease both}
-@media (prefers-reduced-motion:reduce){.tab-in,tr.row-in,svg.fade-in,main > .tab.tab-fade{animation:none}}
+@media (prefers-reduced-motion:reduce){.tab-in,.tab-in-g,.tab-in-c,tr.row-in,svg.fade-in,main > .tab.tab-fade{animation:none}}
 </style>
 <script id="v33-js">
 /* Плавное появление блоков вкладки (Настройки → Эффекты):
@@ -19135,8 +19139,30 @@ main > .tab.tab-fade{animation:tabFade .32s ease both}
   const reduce = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
   const BIG = ".wrap,.chart,table,svg,.tiles,.hub-grid,.hub-feed";
   let seen = new WeakSet();
-  function anim(el, delay, cls = "tab-in"){
+  // Стекло (backdrop-filter) не рисуется, пока у блока или его предка прозрачность меньше 1.
+  // Поэтому стеклянные блоки только выплывают (transform), а проявляется их содержимое.
+  const GLASS = ".wrap,.filters,.tile,.p-card,.p-hero,.chart,.yr-chart-card,.yr-award,.yr-pod,.cmp-hero,.cmp-duels,.cmp-verdict,.hub-card,.hub-kpi,.hub-tile,.mt-card,.goal-card,.ach-card,.ach-hero,.bd-banner,.bd-clock,.um-card,.vk-card,.fc-over,.quiet,.set-tabs,.seg,.cl-ver,.cl-sum > div,.theme-card,.stats-topbar,.fr-keep";
+  const glassOn = () => document.body.classList.contains("glass-ui");
+  function animGlass(el, delay, depth){
     if (seen.has(el)) return; seen.add(el);
+    const kids = [...el.children].filter(c => !c.matches("script,style"));
+    if (depth === 0) run1(el, delay, "tab-in-g"); // вложенные стеклянные панели едут вместе с внешней, не сами по себе
+    kids.forEach(c => {
+      if (depth < 2 && (c.matches(GLASS) || c.querySelector(GLASS))) animGlass(c, delay + 60, depth + 1);
+      else if (!seen.has(c)) { seen.add(c); run1(c, delay + 90, "tab-in-c"); }
+    });
+  }
+  function run1(el, delay, cls){
+    el.style.setProperty("--tab-in-d", Math.round(delay) + "ms");
+    el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+    const done = () => { el.classList.remove(cls); el.style.removeProperty("--tab-in-d"); };
+    el.addEventListener("animationend", e => { if (e.target === el) done(); });
+    setTimeout(done, delay + 1500);
+  }
+  function anim(el, delay, cls = "tab-in"){
+    if (seen.has(el)) return;
+    if (cls === "tab-in" && glassOn() && (el.matches(GLASS) || el.querySelector(GLASS))) { animGlass(el, delay, 0); return; }
+    seen.add(el);
     el.style.setProperty("--tab-in-d", Math.round(delay) + "ms");
     el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
     const done = () => { el.classList.remove(cls); el.style.removeProperty("--tab-in-d"); };
@@ -19174,7 +19200,7 @@ main > .tab.tab-fade{animation:tabFade .32s ease both}
     if (!on || reduce() || Date.now() > until || !tabNow) return;
     let any = false;
     ms.forEach(m => m.addedNodes.forEach(n => {
-      if (n.nodeType !== 1 || !tabNow.contains(n) || n.closest(".tab-in, .row-in")) return;
+      if (n.nodeType !== 1 || !tabNow.contains(n) || n.closest(".tab-in, .row-in, .tab-in-c")) return;
       any = true;
       // Перерисованный график — плавно проступает целиком.
       if (n.matches("svg") && n.closest(".chart, #c-out, .yr-chart, .fc-chart")) anim(n, 40, "fade-in");
@@ -19185,8 +19211,7 @@ main > .tab.tab-fade{animation:tabFade .32s ease both}
   function start(tab){
     if (!on || reduce()) return;
     seen = new WeakSet(); tabNow = tab; until = Date.now() + 2200;
-    tab.classList.remove("tab-fade"); void tab.offsetWidth; tab.classList.add("tab-fade");
-    setTimeout(() => tab.classList.remove("tab-fade"), 700);
+    if (!glassOn()) { tab.classList.remove("tab-fade"); void tab.offsetWidth; tab.classList.add("tab-fade"); setTimeout(() => tab.classList.remove("tab-fade"), 700); }
     stagger(blocks(tab), 30); rows(tab);
     if (!watch) { watch = new MutationObserver(onLate); watch.observe(main, {childList:true, subtree:true}); }
   }
