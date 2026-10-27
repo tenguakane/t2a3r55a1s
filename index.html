@@ -4264,7 +4264,7 @@ function lineChart({title, st, series: allSeries, xMin, xMax, ticks, yMax: yMaxI
     if (!s.dash && P.length > 1 && series.filter(x => x.pts.length && !x.dash).length === 1) {
       const gid = "lcArea" + Math.random().toString(36).slice(2, 8);
       const yTop = Math.min(...P.map(p => p[1]));
-      defs.push(`<linearGradient id="${gid}" x1="0" y1="${yTop.toFixed(1)}" x2="0" y2="${B}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${pa.z}" stop-opacity=".42"/><stop offset=".6" stop-color="${pa.z}" stop-opacity=".12"/><stop offset="1" stop-color="${pa.z}" stop-opacity="0"/></linearGradient>`);
+      defs.push(`<linearGradient id="${gid}" x1="0" y1="${yTop.toFixed(1)}" x2="0" y2="${B}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${pa.z}" stop-opacity=".42"/><stop offset=".45" stop-color="${pa.z}" stop-opacity=".14"/><stop offset=".82" stop-color="${pa.z}" stop-opacity="0"/></linearGradient>`);
       o += `<path class="li-area anim-fade-late" d="${smooth(P)} L${P[P.length - 1][0].toFixed(1)},${B} L${P[0][0].toFixed(1)},${B} Z" fill="url(#${gid})" fill-opacity="${lineOpacity}" stroke="none"/>`;
     }
     o += `<path${dn}${s.dash ? "" : ' class="anim-line" pathLength="1"'} d="${hasArrow ? tr.d : smooth(P)}" fill="none" stroke="${pa.p}" stroke-opacity="${lineOpacity}" stroke-width="${lineWidth}" stroke-linecap="butt" stroke-linejoin="round"${s.dash ? ` stroke-dasharray="${s.dash}"` : ""}/>`;
@@ -5804,7 +5804,7 @@ function sparkSvg(a){
   }
   const pts = a.map((v, i) => `${px(i).toFixed(1)},${py(v).toFixed(1)}`).join(" ");
   const sg = "spk" + Math.random().toString(36).slice(2, 8);
-  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="vertical-align:middle"><defs><linearGradient id="${sg}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${AC}" stop-opacity=".45"/><stop offset="1" stop-color="${AC}" stop-opacity="0"/></linearGradient></defs><polygon points="${px(0).toFixed(1)},${H - 3} ${pts} ${px(n - 1).toFixed(1)},${H - 3}" fill="url(#${sg})"/><polyline points="${pts}" fill="none" stroke="${AC}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="vertical-align:middle"><defs><linearGradient id="${sg}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${AC}" stop-opacity=".45"/><stop offset=".8" stop-color="${AC}" stop-opacity="0"/></linearGradient></defs><polygon points="${px(0).toFixed(1)},${H - 3} ${pts} ${px(n - 1).toFixed(1)},${H - 3}" fill="url(#${sg})"/><polyline points="${pts}" fill="none" stroke="${AC}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
 }
 function buildSparkMap(entity){
   const r = range(); if (!r) return null;
@@ -6589,7 +6589,7 @@ function fcChartSvg(daily, b, T, title = "", subtitle = ""){
   }
   if (cum.length > 1) {
     const gid = "fcArea" + Math.random().toString(36).slice(2, 8), top = Math.min(...cum.map(sy));
-    out += `<defs><linearGradient id="${gid}" x1="0" y1="${top.toFixed(1)}" x2="0" y2="${B}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${o.fact}" stop-opacity=".4"/><stop offset=".6" stop-color="${o.fact}" stop-opacity=".1"/><stop offset="1" stop-color="${o.fact}" stop-opacity="0"/></linearGradient></defs>`;
+    out += `<defs><linearGradient id="${gid}" x1="0" y1="${top.toFixed(1)}" x2="0" y2="${B}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${o.fact}" stop-opacity=".4"/><stop offset=".45" stop-color="${o.fact}" stop-opacity=".12"/><stop offset=".82" stop-color="${o.fact}" stop-opacity="0"/></linearGradient></defs>`;
     out += `<polygon class="li-area" points="${sx(0).toFixed(1)},${B} ${cum.map((v, i) => `${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(" ")} ${sx(cum.length - 1).toFixed(1)},${B}" fill="url(#${gid})"/>`;
   }
   if (cum.length) {
@@ -14429,6 +14429,7 @@ function multiplesChart(){
 /* ===================== История обновлений (новые версии — сверху) ===================== */
 // tag: new — новое, imp — улучшено, fix — исправлено, del — убрано. area — раздел сайта.
 window.CHANGELOG = [
+  {v:"2026.10.27-10", date:"2026-10-27", title:"Точнее боковая панель и мягче градиенты", items:[{tag:"imp", area:"ПК", text:"В свёрнутой боковой панели при наведении выезжает только блок под курсором; закреплённая панель открывает оба блока."},{tag:"imp", area:"ПК", text:"Блок «Другое» без подписи и без пустого места внизу; значок закрепления выровнен и того же размера, что значки вкладок."},{tag:"fix", area:"Фильтры справа", text:"Значок фильтров стоит точно по центру круглой кнопки."},{tag:"imp", area:"Графики", text:"Градиент под одиночными линиями затухает раньше, не доходя до горизонтальной оси."}]},
   {v:"2026.10.27-9", date:"2026-10-27", title:"Три блока навигации, круглая кнопка фильтров, новые иконки", items:[{tag:"imp", area:"ПК", text:"Боковая панель вкладок разделена на три парящих блока: основные вкладки, «Другое» и круглая кнопка настроек внизу. Отступы — по сетке 4/8/12 px."},{tag:"imp", area:"Фильтры справа", text:"Шторка фильтров свёрнута в круглую кнопку справа вверху; по нажатию плавно раскрывается в парящую скруглённую панель."},{tag:"imp", area:"Везде", text:"Эмодзи в значках заменены на белые линейные иконки: боковые вкладки, Хаб, меню на телефоне, разделы настроек и подписи фильтров."},{tag:"imp", area:"Графики", text:"Под одиночными линиями — «Динамика» с одним участником, «Прогноз», мини-графики в таблицах и быстрый просмотр — появился мягкий градиентный спад."}]},
   {v:"2026.10.27-8", date:"2026-10-27", title:"Парящая боковая панель и плавная смена вкладок", items:[{tag:"imp", area:"ПК", text:"Боковая панель вкладок стала скруглённой и «парящей» — с отступом от краёв, как шапка сайта."},{tag:"new", area:"Эффекты", text:"При переходе на другую вкладку блоки страницы плавно появляются по очереди, сверху вниз. Отключается в «Настройки → Эффекты» — «Плавное появление блоков при смене вкладки»."}]},
   {v:"2026.10.27-7", date:"2026-10-27", title:"Прогноз до конца года", items:[{tag:"new", area:"Графики", text:"На «Динамике» в «Прогнозе» появился вариант «До конца года»: пунктир и диапазон тянутся до 31 декабря, в подсказке — сколько выйдет за год и как поменяются места."}]},
@@ -17178,7 +17179,7 @@ tbody tr.qv-able{cursor:pointer}
     const pts = vals.map((v, i) => [i * step, H - 4 - (v / max) * (H - 10)]);
     const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
     const qg = "qvg" + Math.random().toString(36).slice(2, 8);
-    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="${qg}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--mc)" stop-opacity=".45"/><stop offset="1" style="stop-color:var(--mc)" stop-opacity="0"/></linearGradient></defs><path d="${line} L${W} ${H} L0 ${H}Z" fill="url(#${qg})"/><path d="${line}" fill="none" stroke="var(--mc)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>`;
+    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="${qg}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--mc)" stop-opacity=".45"/><stop offset=".8" style="stop-color:var(--mc)" stop-opacity="0"/></linearGradient></defs><path d="${line} L${W} ${H} L0 ${H}Z" fill="url(#${qg})"/><path d="${line}" fill="none" stroke="var(--mc)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>`;
   }
   async function openQV(pk){
     pk = String(pk); closeQV(); vib(10);
@@ -19204,6 +19205,26 @@ body.side-nav nav button[data-tab]::before{content:""!important;display:inline-b
 
 /* ---------- Градиентный спад под одиночными линиями ---------- */
 .li-area{pointer-events:none}
+
+@media (min-width:721px){
+  /* «Другое» без подписи, блок — по высоте своих пунктов; настройки — внизу */
+  html body.side-nav .side-grp.g-other .side-sep{display:none!important}
+  html body.side-nav .side-grp.g-other{flex:0 1 auto!important}
+  html body.side-nav .side-grp.g-set{margin-top:auto}
+  /* Значок закрепления — в одной колонке и того же размера, что и значки вкладок */
+  html body.side-nav nav .side-grp .side-toggle{padding:0 0 0 9px!important;justify-content:flex-start!important;gap:9px!important}
+  html body.side-nav .side-toggle i{flex:0 0 18px!important;width:18px!important;height:18px!important;border-radius:6px!important}
+  html body.side-nav .side-toggle i svg{width:18px!important;height:18px!important}
+  /* Свёрнутая панель: выезжает только блок под курсором, а не вся панель */
+  html body.side-nav.side-collapsed nav,html body.side-nav.side-collapsed nav:hover{width:var(--side-w)!important;box-shadow:none!important}
+  html body.side-nav.side-collapsed .side-grp:not(.g-set){width:100%;transition:width .3s cubic-bezier(.4,0,.2,1) .12s,box-shadow .3s ease .12s}
+  html body.side-nav.side-collapsed .side-grp:not(.g-set):hover{width:var(--side-w-open,188px);box-shadow:0 0 0 1px var(--line),16px 14px 44px -14px rgba(0,0,0,.7);transition-delay:.04s}
+  html body.side-nav.side-collapsed nav:hover .side-grp :is(button,.side-sep,.side-toggle span){-webkit-text-fill-color:transparent!important;transition:-webkit-text-fill-color .12s linear!important}
+  html body.side-nav.side-collapsed nav .side-grp:not(.g-set):hover :is(button,.side-toggle span){-webkit-text-fill-color:currentColor!important;transition:-webkit-text-fill-color .1s linear .14s!important}
+  html body.side-nav.side-collapsed nav button::before{-webkit-text-fill-color:initial!important}
+  /* Значок фильтров — точно по центру круглой кнопки */
+  html body.filters-right.fr-collapsed #filter-drawer .fd-rail::before{position:absolute!important;left:50%!important;top:50%!important;margin:0!important;transform:translate(-50%,-50%)!important}
+}
 </style>
 <script id="v34-js">
 (function(){
