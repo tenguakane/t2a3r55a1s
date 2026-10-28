@@ -14451,7 +14451,8 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.10.27-19", date:"2026-10-27", title:"Новая навигация, иконки и плавность", items:[
+  {v:"2026.10.28-1", date:"2026-10-28", title:"Новая навигация, иконки и плавность", items:[
+    {tag:"imp", area:"ПК", text:"Свёрнутое боковое меню при наведении раскрывается ровно по ширине самой длинной подписи и меньше заходит на страницу."},
     {tag:"imp", area:"Везде", text:"Все кнопки, переключатели и выпадающие списки оформлены как боковая навигация: полупрозрачная панель, выбранный пункт — светлая подложка с тонкой рамкой."},
     {tag:"imp", area:"Вкладки", text:"Топ месяцев и дней: копирование и «Карточки / Таблица» — справа от поиска, годы — строкой ниже. В Рекордах, Времени, Марафонах и Днях рождения кнопки стоят в строке заголовка таблицы. Убрано длинное описание в Топе дней."},
     {tag:"imp", area:"Вкладки", text:"У всех кнопок над блоками одна высота; подсказка в поиске теперь читается."},
@@ -19579,6 +19580,32 @@ html body:not(.nv-off) :is(main,#filter-drawer) .filters .field:not([data-fr-kee
 html body:not(.nv-off) :is(main,#filter-drawer) .field :is(select,input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),.msel,.pick > summary){background:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 html body:not(.nv-off) :is(main,#filter-drawer) :is(input[type=text],input[type=search],input[type=number],input[type=date],input[type=month],input:not([type])):not(.field *):not(.top-search *):not(.sq-date *){background:var(--nv-fill)!important;background-image:none!important;border:1px solid var(--nv-line)!important;border-radius:12px!important;box-shadow:inset 0 1px 0 var(--glass-hi,transparent)!important}
 </style>
+<style id="v41-ui">
+/* ===================== v41: свёрнутое боковое меню раскрывается ровно по ширине подписей ===================== */
+@media (min-width:721px){
+  html body.side-nav.side-collapsed .side-grp:not(.g-set):hover{width:var(--grp-w,var(--side-w-open,188px))}
+}
+</style>
+<script id="v41-js">
+(() => {
+  function fit(){
+    document.querySelectorAll("nav .side-grp:not(.g-set)").forEach(g => {
+      let w = 0;
+      g.querySelectorAll("button").forEach(b => { if (b.offsetParent && b.textContent.trim()) w = Math.max(w, b.scrollWidth); });
+      if (!w) return;
+      const cs = getComputedStyle(g);
+      const full = Math.ceil(w + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth) + 10);
+      g.style.setProperty("--grp-w", Math.max(120, full) + "px");
+    });
+  }
+  const later = () => requestAnimationFrame(() => requestAnimationFrame(fit));
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", later); else later();
+  addEventListener("load", later);
+  if (document.fonts?.ready) document.fonts.ready.then(later);
+  const nav = document.querySelector("nav");
+  if (nav) new MutationObserver(later).observe(nav, {childList:true, subtree:true, characterData:true});
+})();
+</script>
 <script id="i18n-js">
 /* ===================== Языки интерфейса: ru (по умолчанию), uk, be, kk, en ===================== */
 (function(){
