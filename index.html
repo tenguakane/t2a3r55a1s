@@ -14553,7 +14553,8 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.10.28-5", date:"2026-10-28", title:"Новая навигация, иконки и плавность", items:[
+  {v:"2026.10.28-6", date:"2026-10-28", title:"Новая навигация, иконки и плавность", items:[
+    {tag:"new", area:"Бета", text:"События: прогноз для идущего события — на каком уровне и месте каждый закончит, диапазон, звание и уровень достижения в конце, кто ускоряется или сбавляет темп. Прогноз виден и в Профиле."},
     {tag:"new", area:"Бета", text:"Поставленные и полученные реакции — новые показатели: столбцы в Статистике и Топах, выбор в Графиках, Матрице, Марафонах и Прогнозе."},
     {tag:"new", area:"Бета", text:"Реакции и события в Итогах года (плитка, «Ценитель года», «Звезда года», победители событий), в Сравнении участников и в Профиле; новые достижения — в Хронике и Хабе."},
     {tag:"fix", area:"Бета", text:"Реакции: убрана светлая полоса на первой строке таблицы; вместо часов — графики по дням (или месяцам) и по дням недели, «Пик активности» заменён на «Самый активный день»."},
@@ -20017,7 +20018,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
       const order = [...m.entries()].sort((a, b) => b[1].xp - a[1].xp), pl = order.findIndex(([k]) => k === pk) + 1, tl = me ? ev.ach.th.filter(x => me.level >= x).length : 0;
       const ROM = ["—", "I", "II", "III", "IV", "V", "VI", "VII"], TC = l => l <= 0 ? "#4a5060" : l <= 3 ? "#e3a36b" : l <= 6 ? "#c0c6d4" : "#ffd166";
       return `<div class="ev-card" data-ev-open="${esc(ev.id)}" style="--ec1:${ev.c1};--ec2:${ev.c2}"><h3>${evSvg(ev.icon)}${esc(ev.title)}</h3><p class="hint">${fd(ev.start)} — ${fd(ev.end)}${st === "live" ? " · идёт" : ""}</p>
-        ${me ? `<div class="ev-meta"><span>Уровень: <b>${me.level}</b></span><span>${esc(rankName(ev, me.level))}</span></div><div class="ev-meta"><span>Место: <b>${pl}</b> из ${m.size}</span><span>«${esc(ev.ach.name)}»: <span class="ev-tier" style="--tc:${TC(tl)}">${ROM[tl]}</span></span></div>` : `<div class="ev-meta"><span>Не участвовал(а)</span></div>`}</div>`;
+        ${me && st === "live" ? (() => { const fc = forecastEvent(ev)?.list.find(x => x.k === pk); return fc ? `<div class="ev-meta"><span>Прогноз к концу: <b>ур. ${fc.end}</b> · ${fc.place}-е место</span></div>` : ""; })() : ""}${me ? `<div class="ev-meta"><span>Уровень: <b>${me.level}</b></span><span>${esc(rankName(ev, me.level))}</span></div><div class="ev-meta"><span>Место: <b>${pl}</b> из ${m.size}</span><span>«${esc(ev.ach.name)}»: <span class="ev-tier" style="--tc:${TC(tl)}">${ROM[tl]}</span></span></div>` : `<div class="ev-meta"><span>Не участвовал(а)</span></div>`}</div>`;
     }).join("");
     return `<h2>Реакции ${mockNote(react.isMock())}</h2>
       <div class="wrap"><table class="re-prof"><thead><tr><th style="text-align:left">Период</th><th>Поставил(а)</th><th>Получил(а)</th></tr></thead><tbody>${rowsT}</tbody></table></div>
@@ -20236,6 +20237,38 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     const s = e.target.closest?.("[data-re-sort]"); if (s) { RS.sort = s.dataset.reSort; renderReactions(); }
   });
 
+  /* ---------- Прогноз для идущего события: на каком уровне каждый закончит ----------
+     Опыт копится примерно пропорционально сообщениям. Темп = опыт с начала события / прошедшие дни,
+     поправленный на то, как человек пишет последние 14 дней по сравнению со средним с начала события.
+     Уровень из опыта — по кривой xp ≈ c·уровень^p, подобранной по текущим данным всех участников. */
+  function forecastEvent(ev){
+    if (statusOf(ev) !== "live") return null;
+    const m = evLevels().get(ev.id) || new Map(); if (!m.size) return null;
+    const t = today(), total = dI(ev.end) - dI(ev.start) + 1, done = Math.max(1, Math.min(total, dI(t) - dI(ev.start) + 1)), left = total - done;
+    // кривая уровня по опыту: log xp = log c + p·log lv
+    const pts = [...m.values()].filter(v => v.level > 1 && v.xp > 0).map(v => [Math.log(v.level), Math.log(v.xp)]);
+    let pw = 2, lc = Math.log(50);
+    if (pts.length >= 3) { const n = pts.length, sx = pts.reduce((a, q) => a + q[0], 0), sy = pts.reduce((a, q) => a + q[1], 0), sxx = pts.reduce((a, q) => a + q[0] * q[0], 0), sxy = pts.reduce((a, q) => a + q[0] * q[1], 0), den = n * sxx - sx * sx; if (den > 1e-9) { pw = (n * sxy - sx * sy) / den; lc = (sy - pw * sx) / n; } }
+    if (!(pw > .3)) pw = 2;
+    const lvOf = xp => Math.max(1, Math.floor(Math.exp((Math.log(Math.max(1, xp)) - lc) / pw)));
+    // активность по сообщениям: с начала события и за последние 14 дней
+    const rowsA = AR() || [], hasTot = rowsA.some(x => Number(x[F.chatPk]) === 0), since = new Map(), recent = new Map(), r0 = isoD(new Date(Date.parse(t + "T00:00:00Z") - 13 * 864e5));
+    rowsA.forEach(x => { if (hasTot && Number(x[F.chatPk]) !== 0) return; const d = String(x[F.date] ?? "").slice(0, 10); if (d < ev.start || d > t) return; const u = String(x[F.userId] ?? ""), v = Number(g(x, "msgs")) || 0; since.set(u, (since.get(u) || 0) + v); if (d >= r0) recent.set(u, (recent.get(u) || 0) + v); });
+    const recDays = Math.min(14, done);
+    const list = [...m.entries()].filter(([k]) => typeof isVisibleUser !== "function" || isVisibleUser(k)).map(([k, v]) => {
+      const perDay = v.xp / done, avgM = (since.get(k) || 0) / done, recM = (recent.get(k) || 0) / recDays;
+      const f = avgM > 0 ? Math.max(.3, Math.min(2.5, recM / avgM)) : (recM > 0 ? 1.5 : .5);
+      const mid = v.xp + perDay * left * (.5 + .5 * f), lo = v.xp + perDay * left * Math.min(1, f) * .8, hi = v.xp + perDay * left * Math.max(1, f) * 1.15;
+      const lvl = Math.max(v.level, lvOf(mid)), lvlLo = Math.max(v.level, lvOf(lo)), lvlHi = Math.max(lvl, lvOf(hi));
+      return {k, now:v.level, xp:v.xp, end:lvl, lo:lvlLo, hi:lvlHi, xpEnd:Math.round(mid), trend:f};
+    });
+    const nowRank = new Map([...list].sort((a, b) => b.xp - a.xp).map((x, i) => [x.k, i + 1]));
+    list.sort((a, b) => b.xpEnd - a.xpEnd);
+    list.forEach((x, i) => { x.place = i + 1; x.was = nowRank.get(x.k); });
+    return {list, left, total, done};
+  }
+  window.__beta.events.forecast = id => { const ev = EVENTS.find(e => e.id === id); return ev ? forecastEvent(ev) : null; };
+
   /* ---------- Вкладка «События» ---------- */
   let EVSEL = ls("chatstats.eventSel.v1");
   function renderEvents(){
@@ -20277,6 +20310,25 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
           <div class="bx-card"><h3>Сколько людей на каждом звании</h3><p class="hint">Звания события и диапазоны уровней</p>${bars(dist)}</div>
           <div class="bx-card"><h3>Уровни достижения «${esc(ev.ach.name)}»</h3><p class="hint">Сколько участников дошли до каждого уровня</p>${bars(tiers)}</div>
         </div>`;
+      const FC = forecastEvent(ev);
+      if (FC) {
+        const thE = ev.ach.th, tierOf = l => thE.filter(x => l >= x).length, mxE = Math.max(40, ...FC.list.map(x => x.hi));
+        const move = x => { const d = x.was - x.place; return d > 0 ? `<span style="color:#4ade80">▲ ${d}</span>` : d < 0 ? `<span style="color:#f87171">▼ ${-d}</span>` : `<span class="hint">—</span>`; };
+        const trend = f => f >= 1.15 ? `<span title="последние 2 недели пишет активнее обычного" style="color:#4ade80">↗ ускоряется</span>` : f <= .85 ? `<span title="последние 2 недели пишет меньше обычного" style="color:#f87171">↘ сбавляет темп</span>` : `<span class="hint">→ ровно</span>`;
+        const w = FC.list[0], newTiers = FC.list.filter(x => tierOf(x.end) > tierOf(x.now)).length, maxers = FC.list.filter(x => x.end >= thE[thE.length - 1]).length;
+        body += `<h2>Прогноз на конец события</h2>
+          <p class="hint">До ${fd(ev.end)} осталось ${fmtN(FC.left)} ${wf2(FC.left, ["день", "дня", "дней"])}. Опыт продлевается текущим темпом каждого участника с поправкой на то, как он пишет последние две недели; диапазон — от спокойного до активного сценария.</p>
+          <div class="tiles">
+            ${tile("Ожидаемый победитель", w ? esc(nm(w.k)) : "—", w ? `ур. ${w.end} · ${esc(rankName(ev, w.end))}` : "")}
+            ${tile("Средний уровень в конце", (FC.list.reduce((a, x) => a + x.end, 0) / (FC.list.length || 1)).toFixed(1).replace(".", ","), `сейчас ${(FC.list.reduce((a, x) => a + x.now, 0) / (FC.list.length || 1)).toFixed(1).replace(".", ",")}`)}
+            ${tile(`Новый уровень «${esc(ev.ach.name)}»`, fmtN(newTiers), "участников поднимут уровень достижения")}
+            ${tile(`Максимум (ур. ${thE[thE.length - 1]}+)`, fmtN(maxers), "участников дойдут до VII уровня")}
+          </div>
+          <div class="wrap"><table id="ev-fc-table"><thead><tr><th>Место в конце</th><th>Участник</th><th>Сейчас</th><th>Прогноз уровня</th><th>Диапазон</th><th>Звание в конце</th><th>«${esc(ev.ach.name)}» в конце</th><th>Место</th><th>Темп</th></tr></thead><tbody>${FC.list.map(x => {
+            const tl = tierOf(x.end), TC = l => l <= 0 ? "#4a5060" : l <= 3 ? "#e3a36b" : l <= 6 ? "#c0c6d4" : "#ffd166", ROM = ["—", "I", "II", "III", "IV", "V", "VI", "VII"];
+            return `<tr style="--ec1:${ev.c1};--ec2:${ev.c2}"><td>${x.place}</td><td><span class="pname" data-open-profile="${esc(x.k)}">${esc(nm(x.k))}</span></td><td>${x.now}</td><td><span class="ev-lv"><b>${x.end}</b><i style="position:relative"><em style="width:${(x.end / mxE * 100).toFixed(1)}%;opacity:.45"></em><em style="position:absolute;inset:0 auto 0 0;width:${(x.now / mxE * 100).toFixed(1)}%"></em></i></span></td><td class="ev-rank">${x.lo === x.hi ? x.end : `${x.lo}–${x.hi}`}</td><td class="ev-rank">${esc(rankName(ev, x.end))}</td><td><span class="ev-tier" style="--tc:${TC(tl)}">${ROM[tl]}</span>${tl > tierOf(x.now) ? ` <small style="color:#4ade80">+${tl - tierOf(x.now)}</small>` : ""}</td><td>${move(x)}</td><td>${trend(x.trend)}</td></tr>`;
+          }).join("")}</tbody></table></div>`;
+      }
     }
     // сводная по всем событиям
     const ppl = events.people().filter(k => list.some(e2 => (L.get(e2.id) || new Map()).has(k)));
