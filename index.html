@@ -2027,8 +2027,8 @@ document.body.classList.add("beta-re");
     <div class="pbtn"><button class="mini" id="cache-reset" type="button">Очистить кэш и загрузить заново</button><span class="hint" id="cache-info"></span></div>
     <h2>Связь участников с Telegram</h2>
     <p class="hint">Реакции и события автоматически загружаются из API Colony. Если в данных истории сообщений нет Telegram ID участника, соответствие можно указать вручную: telegram_user_id=user_pk, по одному на строку. Большинству пользователей это поле не требуется.</p>
-    <div class="filters" id="beta-api-fields">
-      <div class="field" style="flex:1 1 340px;min-width:min(320px,100%)"><label for="beta-api-user-map">Не сопоставленные Telegram ID → user_pk</label><textarea id="beta-api-user-map" rows="3" spellcheck="false" placeholder="telegram_user_id=user_pk" style="width:min(650px,80vw);min-width:180px;max-width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--ctrl);color:var(--text);font:inherit;line-height:1.45"></textarea><span class="hint">Автоматическое сопоставление имеет приоритет; поле нужно только для отсутствующих соответствий.</span></div>
+    <div class="filters" id="api-user-map-fields">
+      <div class="field" style="flex:1 1 340px;min-width:min(320px,100%)"><label for="api-user-map">Не сопоставленные Telegram ID → user_pk</label><textarea id="api-user-map" rows="3" spellcheck="false" placeholder="telegram_user_id=user_pk" style="width:min(650px,80vw);min-width:180px;max-width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--ctrl);color:var(--text);font:inherit;line-height:1.45"></textarea><span class="hint">Автоматическое сопоставление имеет приоритет; поле нужно только для отсутствующих соответствий.</span></div>
     </div>
     <h2>Перенос настроек между компьютерами</h2>
     <p class="hint">Экспорт включает все сохранённые настройки дашборда: цвета и пороги графиков, размеры ячеек, оформление текста, палитры, параметры таблиц и выбранные режимы вкладок. Статистика и API-ключ не включаются. Можно скопировать настройки в буфер или скачать JSON-файл.</p>
@@ -17079,11 +17079,13 @@ tbody tr.qv-able{cursor:pointer}
     if (!el || !el.classList || !el.classList.contains("status") || !el.classList.contains("err")) return;
     if (el.querySelector(".st-card")) return;
     const raw = el.textContent.trim(); if (!raw) return;
-    const net = /failed to fetch|networkerror|load failed|нет связи|localhost|start\.bat|502|прокси/i.test(raw);
+    const cors = /cors|origin страницы|cross-origin|file:\/\//i.test(raw);
+    const net = cors || /failed to fetch|networkerror|load failed|нет связи|localhost|start\.bat|502|прокси/i.test(raw);
     const key = /ключ|401|403/i.test(raw);
-    const title = key ? "Сервер не принял ключ" : net ? "Нет связи с сервером данных" : "Не удалось загрузить данные";
+    const title = key ? "Сервер не принял ключ" : cors ? "Браузер блокирует запрос к API" : net ? "Нет связи с сервером данных" : "Не удалось загрузить данные";
     const text = key ? "Проверь файл api_key.txt рядом с server.py и перезапусти start.bat."
-      : net ? "Сайт не смог получить свежие данные. Проверь, что запущен start.bat (или сервер доступен из интернета) и что в настройках указан верный адрес сервера."
+      : cors ? "Это не ошибка отрисовки. Открой подробности: если страница и API на разных origin, разреши origin сайта в CORS на сервере API. Если HTML открыт как file://, запускай его через HTTP/HTTPS."
+      : net ? "Сайт не смог получить свежие данные. Проверь доступность сервера и сетевое соединение."
       : "Попробуй ещё раз через минуту. Если ошибка повторяется — открой подробности.";
     const upd = ($("upd")?.textContent || "").trim();
     el.innerHTML = `<div class="st-card" role="alert"><div class="ic" aria-hidden="true">${net ? "📡" : key ? "🔑" : "⚠️"}</div><div><b>${title}</b><p>${esc(text)}${upd ? ` ${esc(upd)}.` : ""}</p>
@@ -17091,7 +17093,14 @@ tbody tr.qv-able{cursor:pointer}
       <details><summary>Подробности</summary>${esc(raw)}</details></div></div>`;
   }
   document.addEventListener("click", e => {
-    if (e.target.closest?.("[data-st-retry]")) { vib(10); const tab = qs("main > .tab.active"); if (tab && tab.id === "tab-hub" && window.loadHub) window.loadHub(); else $("refresh")?.click(); }
+    if (e.target.closest?.("[data-st-retry]")) {
+      vib(10);
+      const tab = qs("main > .tab.active");
+      if (tab?.id === "tab-reactions" && window.__beta?.reload) window.__beta.reload("reactions");
+      else if (tab?.id === "tab-events" && window.__beta?.reload) window.__beta.reload("events");
+      else if (tab && tab.id === "tab-hub" && window.loadHub) window.loadHub();
+      else $("refresh")?.click();
+    }
     else if (e.target.closest?.("[data-st-server]")) {
       qs('nav button[data-tab="settings"]')?.click();
       setTimeout(() => { try { window.__settingsCats?.show("data"); } catch (err) {} const i = $("api-base"); if (i) { i.scrollIntoView({block:"center"}); i.focus(); } }, 80);
@@ -19806,15 +19815,28 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
    идентификаторов в данных сайта или через настройки соответствий. */
 (() => {
   const K_RA = "chatstats.betaApiReact.v1", K_EA = "chatstats.betaApiEvents.v1", K_EP = "chatstats.betaApiProgress.v1", K_UM = "chatstats.betaTelegramUserMap.v1";
+  const API_PATH = {
+    [K_RA]: "/api/v1/reactions",
+    [K_EA]: "/api/v1/events",
+    [K_EP]: "/api/v1/event-progress"
+  };
   const DEFAULT_API = {
     [K_RA]: "https://colony-taras.com/api/v1/reactions",
     [K_EA]: "https://colony-taras.com/api/v1/events",
     [K_EP]: "https://colony-taras.com/api/v1/event-progress"
   };
   const ls = (k, v) => { try { if (v === undefined) return localStorage.getItem(k) || ""; if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) { return ""; } };
-  // Эндпоинты фиксированы: старые сохранённые адреса не могут вернуть тестовый режим.
-  const apiUrl = k => String(DEFAULT_API[k] || "").trim();
-  const mapEl = document.getElementById("beta-api-user-map");
+  // На основном домене используем относительный same-origin URL; вне него — опубликованный API.
+  // Это устраняет лишний cross-origin запрос, когда dashboard размещён на colony-taras.com.
+  const apiUrl = k => {
+    const host = String(location.hostname || "").toLowerCase();
+    if ((location.protocol === "https:" || location.protocol === "http:") &&
+        (host === "colony-taras.com") && API_PATH[k]) {
+      return new URL(API_PATH[k], location.origin).href;
+    }
+    return String(DEFAULT_API[k] || "").trim();
+  };
+  const mapEl = document.getElementById("api-user-map");
   if (mapEl) {
     mapEl.value = ls(K_UM);
     mapEl.addEventListener("change", () => { ls(K_UM, mapEl.value.trim()); location.reload(); });
@@ -19898,7 +19920,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     if (PEOPLE && PEOPLE.src === AR()) return PEOPLE.list;
     const w = new Map();
     (AR() || []).forEach(x => { const k = String(x[F.userId] ?? ""); if (!k || !NAMES[k]) return; w.set(k, (w.get(k) || 0) + (Number(g(x, "msgs")) || 0)); });
-    if (!w.size) Object.keys(NAMES).forEach(k => w.set(String(k), 1000 + hash(k) % 5000));
+    // Нет истории сообщений — нет искусственного рейтинга участников.
     const list = [...w.entries()].filter(([k]) => typeof isVisibleUser !== "function" || isVisibleUser(k)).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({pk:k, w:v}));
     PEOPLE = {src:AR(), list};
     return list;
@@ -19939,11 +19961,28 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     }
     throw new Error(`Ответ API ${label} не содержит списка items`);
   }
+  function explainApiFetchError(error, url, label){
+    const raw = String(error?.message || error || "Ошибка сети");
+    if (!/failed to fetch|networkerror|load failed|fetch failed/i.test(raw)) return raw;
+    let pageOrigin = "неизвестен", apiOrigin = "неизвестен";
+    try { pageOrigin = location.origin === "null" ? "file:// (локальный HTML)" : location.origin; } catch (e) {}
+    try { apiOrigin = new URL(url, location.href).origin; } catch (e) {}
+    if (location.protocol === "file:") {
+      return `Не удалось получить API «${label}»: страница запущена напрямую с диска (file://). Браузер может блокировать такие запросы к HTTPS API. Открой сайт через HTTP/HTTPS или размести страницу и API на одном origin. Адрес API: ${apiOrigin}.`;
+    }
+    if (pageOrigin !== apiOrigin) {
+      return `Не удалось получить API «${label}». Страница открыта с ${pageOrigin}, API — с ${apiOrigin}. Браузер скрывает точную причину сетевой ошибки; если адрес API открывается отдельно, наиболее вероятна CORS-блокировка: сервер API должен разрешать origin страницы. Также проверь сертификат HTTPS и сетевой доступ.`;
+    }
+    return `Не удалось подключиться к API «${label}» (${apiOrigin}). Проверь доступность endpoint, HTTPS-сертификат, DNS и сетевые ограничения. Исходная ошибка браузера: ${raw}`;
+  }
   async function fetchJsonApi(url, label){
     if (!url) throw new Error(`Не задан адрес API ${label}`);
-    const res = await fetch(url, {cache:"no-store", headers:{"Accept":"application/json"}});
+    let res;
+    try { res = await fetch(url, {cache:"no-store", headers:{"Accept":"application/json"}}); }
+    catch (e) { throw new Error(explainApiFetchError(e, url, label)); }
     if (!res.ok) throw new Error(`HTTP ${res.status} (${label})`);
-    return res.json();
+    try { return await res.json(); }
+    catch (e) { throw new Error(`API «${label}» вернул некорректный JSON: ${String(e?.message || e)}`); }
   }
   const firstField = (row, keys) => { for (const key of keys) if (row?.[key] !== undefined && row[key] !== null && row[key] !== "") return [key, row[key]]; return ["", ""]; };
   function nestedIdentity(row, keys){
@@ -20474,12 +20513,48 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
   });
   document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.matches?.("[data-ev]")) e.target.click(); });
 
+  /* Повторная загрузка только выбранного внешнего API по кнопке «Повторить». */
+  window.__beta.reload = async t => {
+    CELL = null;
+    if (t === "reactions") {
+      RX_RAW = RX_API = RX_API_SRC = RX_API_METRICS_SRC = null; RX_LOADING = null; RX_ERR = "";
+      rxAll(); if (RX_LOADING) await RX_LOADING;
+      renderReactions();
+    } else {
+      EV_API_ROWS = EV_API = EV_API_SRC = EV_API_METRICS_SRC = null; EV_LOADING = null; EV_ERR = "";
+      EVENTS.splice(0, EVENTS.length);
+      evLevels(); if (EV_LOADING) await EV_LOADING;
+      renderEvents();
+    }
+  };
+
   /* ---------- Загрузка при открытии вкладки ---------- */
   async function open(t){
     const id = t === "reactions" ? "re-out" : "ev-out", o = document.getElementById(id);
     if (!AR() && o && !o.children.length) loading(id);
-    try { await getHistory(); } catch (e) { if (o) o.innerHTML = `<p class="status err">Не удалось загрузить данные: ${esc(e.message)}</p>`; return; }
-    t === "reactions" ? renderReactions() : renderEvents();
+
+    // История сообщений нужна для имён/профилей, но не должна блокировать независимые API.
+    // Загружаем её в фоне. Если она доступна позже, пересобираем сопоставления и перерисовываем вкладку.
+    if (!AR()) {
+      getHistory().then(() => {
+        if (curTab() !== t) return;
+        CELL = null;
+        if (t === "reactions") renderReactions(); else renderEvents();
+      }).catch(() => {
+        // Вкладки «Реакции» и «События» должны оставаться доступными без локальной истории.
+      });
+    }
+
+    // Запрашиваем свои API независимо от сервера основной статистики.
+    if (t === "reactions") {
+      rxAll();
+      if (RX_LOADING) await RX_LOADING;
+      renderReactions();
+    } else {
+      evLevels();
+      if (EV_LOADING) await EV_LOADING;
+      renderEvents();
+    }
   }
   function rerender(){
     const t = curTab();
