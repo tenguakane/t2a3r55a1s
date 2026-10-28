@@ -2120,7 +2120,9 @@ const CONFIG = {
 // Названия полей в ответе API. Можно указать несколько вариантов — подойдёт первый найденный.
 let lineMeta = null, lineSeriesInfo = null; const hiddenSeries = new Set();
 // Бета «Реакции и события»: два новых показателя — rgive (поставленные реакции) и rgot (полученные)
-const RX_ON = !!window.__betaOn, RX_KEYS = RX_ON ? ["rgive", "rgot"] : [];
+// API реакций пока не содержит дат, поэтому временные метрики в дневных/месячных таблицах отключены.
+// Общая статистика за всё время и профиль участника остаются доступными через window.__beta.react.
+const RX_ON = false, RX_KEYS = [];
 const F = {
   date:   "stat_date",
   chat:   "chat_title",
@@ -19815,18 +19817,27 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
    идентификаторов в данных сайта или через настройки соответствий. */
 (() => {
   const K_RA = "chatstats.betaApiReact.v1", K_EA = "chatstats.betaApiEvents.v1", K_EP = "chatstats.betaApiProgress.v1", K_UM = "chatstats.betaTelegramUserMap.v1";
-  // Все три новых API направляются через существующий Cloudflare Worker,
-  // чтобы браузер не обращался напрямую к colony-taras.com и не упирался в CORS.
-  const API_PROXY_BASE = "https://chat-taras.tenguakane.workers.dev";
   const API_PATH = {
     [K_RA]: "/api/v1/reactions",
     [K_EA]: "/api/v1/events",
     [K_EP]: "/api/v1/event-progress"
   };
-  const DEFAULT_API = Object.fromEntries(Object.entries(API_PATH).map(([key, path]) => [key, API_PROXY_BASE + path]));
+  const DEFAULT_API = {
+    [K_RA]: "https://chat-taras.tenguakane.workers.dev/api/v1/reactions",
+    [K_EA]: "https://chat-taras.tenguakane.workers.dev/api/v1/events",
+    [K_EP]: "https://chat-taras.tenguakane.workers.dev/api/v1/event-progress"
+  };
   const ls = (k, v) => { try { if (v === undefined) return localStorage.getItem(k) || ""; if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) { return ""; } };
-  // Фиксированный адрес прокси: события, прогресс и реакции проходят через Cloudflare.
-  const apiUrl = k => String(DEFAULT_API[k] || "").trim();
+  // На основном домене используем относительный same-origin URL; вне него — опубликованный API.
+  // Это устраняет лишний cross-origin запрос, когда dashboard размещён на colony-taras.com.
+  const apiUrl = k => {
+    const host = String(location.hostname || "").toLowerCase();
+    if ((location.protocol === "https:" || location.protocol === "http:") &&
+        (host === "colony-taras.com") && API_PATH[k]) {
+      return new URL(API_PATH[k], location.origin).href;
+    }
+    return String(DEFAULT_API[k] || "").trim();
+  };
   const mapEl = document.getElementById("api-user-map");
   if (mapEl) {
     mapEl.value = ls(K_UM);
@@ -19892,7 +19903,8 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     [...(history || []), ...(metrics || [])].forEach(row => { const pk = String(row?.[F.userId] ?? row?.user_pk ?? row?.userPk ?? ""); const name = String(row?.[F.name] ?? row?.first_name ?? row?.display_name ?? row?.name ?? "").trim(); if (pk && name && !map.has(pk)) map.set(pk, name); });
     SITE_NAME_HISTORY = history; SITE_NAME_METRICS = metrics; SITE_NAMES = map; return map;
   }
-  const nm = pk => { const k = String(pk ?? ""); if (NAMES[k]) return NAMES[k]; const n = nameMap().get(k); if (n) return n; return /^\d{8,}$/.test(k) ? `Telegram ID ${k}` : `ID ${k}`; };
+  let RX_NAMES = new Map();
+  const nm = pk => { const k = String(pk ?? ""); if (NAMES[k]) return NAMES[k]; const n = nameMap().get(k); if (n) return n; const apiName = RX_NAMES.get(k); if (apiName) return apiName; return /^\d{8,}$/.test(k) ? `Telegram ID ${k}` : `ID ${k}`; };
   const personHtml = pk => { const k = String(pk); return sitePks().has(k) ? `<span class="pname" data-open-profile="${esc(k)}">${esc(nm(k))}</span>` : `<span>${esc(nm(k))}</span>`; };
   const col = pk => { try { return getStyle("u", pk).c[0]; } catch (e) { return "#7aa2f7"; } };
   const grad = c => { try { if (window.SOFT_GRAD) { const [a, z] = softPair(c); return `linear-gradient(90deg,${a},${z})`; } } catch (e) {} return c; };
@@ -19919,7 +19931,6 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
   const pick = (list, r) => { let s = 0; for (const x of list) s += x.p; let t = r() * s; for (const x of list) { t -= x.p; if (t <= 0) return x; } return list[list.length - 1]; };
 
   /* ---------- Реакции ---------- */
-  const EMOJI = [["👍", 22], ["❤️", 18], ["😂", 16], ["🔥", 11], ["😁", 7], ["👏", 5], ["🤔", 4], ["💯", 4], ["🥰", 4], ["😢", 3], ["🤡", 3], ["😱", 2], ["🙏", 2], ["💔", 1.5], ["🤝", 1.5]];
   let RX = null, RX_API = null, RX_RAW = null, RX_API_SRC = null, RX_API_METRICS_SRC = null, RX_LOADING = null;
   /* Реакции поступают только из API; синтетические данные не создаются. */
   // Показатели rgive/rgot для строк истории: реакции участника за день «живут» в одной его строке —
@@ -19987,22 +19998,69 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     return ["", ""];
   }
   function normalizeReactionRows(items){
-    return (items || []).map(x => {
-      const [fromKey, fromValue] = nestedIdentity(x, ["from_user_pk", "from_telegram_user_id", "from_telegram_id", "sender_telegram_user_id", "sender_telegram_id", "actor_telegram_user_id", "from_user_id", "sender_user_id", "actor_user_id", "from_id", "sender_id", "user_from_id", "from", "sender", "actor", "from_user", "sender_user", "user_pk", "telegram_user_id", "user_id", "actor_id"]);
-      const [toKey, toValue] = nestedIdentity(x, ["to_user_pk", "to_telegram_user_id", "to_telegram_id", "target_telegram_user_id", "target_telegram_id", "recipient_telegram_user_id", "to_user_id", "target_user_id", "recipient_user_id", "to_id", "target_id", "user_to_id", "to", "target", "recipient", "receiver", "to_user", "target_user", "receiver_user_id", "message_author_id", "message_author_telegram_user_id"]);
-      const dateValue = x.date ?? x.stat_date ?? x.day ?? x.created_at ?? x.createdAt ?? x.reaction_date ?? x.timestamp ?? x.reacted_at ?? "";
+    const apiNames = new Map();
+    const labelOf = user => {
+      if (!user || typeof user !== "object") return "";
+      const first = String(user.first_name ?? "").trim();
+      const last = String(user.last_name ?? "").trim();
+      const full = [first, last].filter(Boolean).join(" ").trim();
+      return full || (user.username ? "@" + String(user.username).replace(/^@/, "") : "");
+    };
+    const remember = (user, field) => {
+      if (!user || typeof user !== "object") return;
+      const raw = user.telegram_user_id ?? user.telegram_id ?? user.user_id ?? user.id ?? user.user_pk;
+      if (raw == null || raw === "") return;
+      const id = resolveApiUserId(raw, `${field}.telegram_user_id`);
+      const label = labelOf(user);
+      if (id && label && !apiNames.has(String(id))) apiNames.set(String(id), label);
+    };
+    const normalized = (items || []).map(x => {
+      // Фактическая схема API: giver — поставивший реакцию, receiver — автор сообщения.
+      const [fromKey, fromValue] = nestedIdentity(x, [
+        "from_user_pk", "from_telegram_user_id", "from_telegram_id", "sender_telegram_user_id",
+        "sender_telegram_id", "actor_telegram_user_id", "from_user_id", "sender_user_id",
+        "actor_user_id", "from_id", "sender_id", "user_from_id", "from", "sender", "actor",
+        "giver", "from_user", "sender_user", "user_pk", "telegram_user_id", "user_id", "actor_id"
+      ]);
+      const [toKey, toValue] = nestedIdentity(x, [
+        "to_user_pk", "to_telegram_user_id", "to_telegram_id", "target_telegram_user_id",
+        "target_telegram_id", "recipient_telegram_user_id", "to_user_id", "target_user_id",
+        "recipient_user_id", "to_id", "target_id", "user_to_id", "to", "target", "recipient",
+        "receiver", "to_user", "target_user", "receiver_user_id", "message_author_id",
+        "message_author_telegram_user_id"
+      ]);
+      remember(x.giver, "giver");
+      remember(x.receiver, "receiver");
+      const dateValue = x.changed_at ?? x.date ?? x.stat_date ?? x.day ?? x.created_at ?? x.createdAt ?? x.reaction_date ?? x.timestamp ?? x.reacted_at ?? "";
       let d = "";
-      if (typeof dateValue === "number") { const ms = dateValue < 1e12 ? dateValue * 1000 : dateValue; try { d = new Date(ms).toISOString().slice(0,10); } catch (e) {} }
-      else d = String(dateValue).slice(0,10);
-      const fromIsPk = /user_pk|^user_pk$|^from_pk$/i.test(fromKey);
+      if (typeof dateValue === "number") {
+        const ms = dateValue < 1e12 ? dateValue * 1000 : dateValue;
+        try { d = new Date(ms).toISOString().slice(0, 10); } catch (e) {}
+      } else {
+        const candidate = String(dateValue).slice(0, 10);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(candidate)) d = candidate;
+      }
+      const fromIsPk = /user_pk|^from_pk$/i.test(fromKey);
       const toIsPk = /user_pk|^to_pk$/i.test(toKey);
       const f = fromIsPk ? String(fromValue ?? "") : resolveApiUserId(fromValue, fromKey);
       const t = toIsPk ? String(toValue ?? "") : resolveApiUserId(toValue, toKey);
-      const emojiValue = x.emoji ?? x.reaction_emoji ?? x.emoji_name ?? x.reaction ?? x.reaction_type ?? x.type;
-      const emoji = emojiValue && typeof emojiValue === "object" ? (emojiValue.emoji ?? emojiValue.name ?? emojiValue.value ?? "👍") : (emojiValue ?? "👍");
-      const countValue = Number(x.count ?? x.total_count ?? x.reaction_count ?? x.amount ?? x.total ?? 1);
-      return {d, f, t, e:String(emoji), n:Number.isFinite(countValue) && countValue > 0 ? countValue : 0};
-    }).filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x.d) && x.f && x.t && x.n > 0);
+      const rawCount = x.reaction_count ?? x.count ?? x.total_count ?? x.amount ?? x.total ?? 1;
+      const countValue = Number(rawCount);
+      const n = Number.isFinite(countValue) && countValue > 0 ? countValue : 0;
+      const chatId = String(x.telegram_chat_id ?? x.chat_id ?? x.chatId ?? "");
+      const chat = String(x.chat_title ?? x.chat_name ?? x.chat ?? "").trim();
+      const messageId = String(x.message_id ?? x.messageId ?? "");
+      return {
+        d, f: String(f ?? ""), t: String(t ?? ""), n,
+        chatId, chat, messageId,
+        source: String(x.source ?? ""),
+        receiverUnknown: Boolean(x.receiver_unknown) || !t,
+        changedAtUnknown: Boolean(x.changed_at_unknown) || !d,
+        reactionsUnknown: Boolean(x.reactions_unknown) || x.reactions == null
+      };
+    }).filter(x => x.n > 0 && (x.f || x.t || x.chatId || x.messageId));
+    RX_NAMES = apiNames;
+    return normalized;
   }
   async function fetchApiItems(url, label){
     const all = [], seen = new Set(); let cursor = null;
@@ -20022,29 +20080,62 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     return all;
   }
   async function loadReactApi(){
-    // Метрики участников могут содержать telegram_user_id → user_pk; загружаем их до нормализации.
-    try { if (typeof ensureUserMetrics === "function") await ensureUserMetrics(); } catch (e) {}
+    // Реакции загружаются независимо от основной истории сообщений; сопоставление ID обновится автоматически,
+    // если справочник пользователей сайта станет доступен позже.
     return fetchApiItems(apiUrl(K_RA), "реакций");
   }
   function rxAll(){
     if (RX_RAW !== null) {
       const refs = siteRowsRefs();
-      if (RX_API_SRC !== refs.history || RX_API_METRICS_SRC !== refs.metrics) { RX_API = normalizeReactionRows(RX_RAW); RX_API_SRC = refs.history; RX_API_METRICS_SRC = refs.metrics; RX_ERR = RX_RAW.length && !RX_API.length ? "API вернул строки, но в них не распознаны дата, отправитель и получатель реакции. Проверь формат ответа API /api/v1/reactions." : ""; CELL = null; }
+      if (RX_API_SRC !== refs.history || RX_API_METRICS_SRC !== refs.metrics) { RX_API = normalizeReactionRows(RX_RAW); RX_API_SRC = refs.history; RX_API_METRICS_SRC = refs.metrics; RX_ERR = RX_RAW.length && !RX_API.length ? "API вернул записи, но не удалось распознать отправителя реакции. Ожидаются поля giver.telegram_user_id и reaction_count." : ""; CELL = null; }
       return RX_API || [];
     }
-    if (!RX_LOADING) RX_LOADING = loadReactApi().then(items => { RX_RAW = items; RX_API = normalizeReactionRows(items); const refs = siteRowsRefs(); RX_API_SRC = refs.history; RX_API_METRICS_SRC = refs.metrics; RX_ERR = items.length && !RX_API.length ? "API вернул строки, но в них не распознаны дата, отправитель и получатель реакции. Проверь формат ответа API /api/v1/reactions." : ""; RX_LOADING = null; rerender(); return RX_API; }).catch(e => { RX_RAW = []; RX_API = []; const refs = siteRowsRefs(); RX_API_SRC = refs.history; RX_API_METRICS_SRC = refs.metrics; RX_ERR = e?.message || String(e); RX_LOADING = null; rerender(); return RX_API; });
+    if (!RX_LOADING) RX_LOADING = loadReactApi().then(items => { RX_RAW = items; RX_API = normalizeReactionRows(items); const refs = siteRowsRefs(); RX_API_SRC = refs.history; RX_API_METRICS_SRC = refs.metrics; RX_ERR = items.length && !RX_API.length ? "API вернул записи, но не удалось распознать отправителя реакции. Ожидаются поля giver.telegram_user_id и reaction_count." : ""; RX_LOADING = null; rerender(); return RX_API; }).catch(e => { RX_RAW = []; RX_API = []; const refs = siteRowsRefs(); RX_API_SRC = refs.history; RX_API_METRICS_SRC = refs.metrics; RX_ERR = e?.message || String(e); RX_LOADING = null; rerender(); return RX_API; });
     return [];
   }
   let RX_ERR = "";
-  const inR = (x, from, to) => (!from || x.d >= from) && (!to || x.d <= to);
+  const inR = (x, from, to) => x.d
+    ? ((!from || x.d >= from) && (!to || x.d <= to))
+    : (!from && !to);
   const react = {
-    range(from, to){ const given = new Map(), got = new Map(), emo = new Map(); let total = 0;
-      rxAll().forEach(x => { if (!inR(x, from, to)) return; total += x.n; given.set(x.f, (given.get(x.f) || 0) + x.n); got.set(x.t, (got.get(x.t) || 0) + x.n); emo.set(x.e, (emo.get(x.e) || 0) + x.n); });
-      return {total, given, got, emo, topEmoji:[...emo.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || ""}; },
-    between(a, b, from, to){ let ab = 0, ba = 0; rxAll().forEach(x => { if (!inR(x, from, to)) return; if (x.f === a && x.t === b) ab += x.n; else if (x.f === b && x.t === a) ba += x.n; }); return {ab, ba}; },
-    totalsIn(pk, from, to){ let given = 0, got = 0; rxAll().forEach(x => { if (!inR(x, from, to)) return; if (x.f === pk) given += x.n; if (x.t === pk) got += x.n; }); return {given, got}; },
-    rows:rxAll,
-    totals(pk){ pk = String(pk); let given = 0, got = 0; rxAll().forEach(x => { if (x.f === pk) given += x.n; if (x.t === pk) got += x.n; }); return {given, got}; }
+    range(from, to){
+      const given = new Map(), got = new Map(), pairs = new Map();
+      let total = 0;
+      rxAll().forEach(x => {
+        if (!inR(x, from, to)) return;
+        total += x.n;
+        if (x.f) given.set(x.f, (given.get(x.f) || 0) + x.n);
+        if (x.t) got.set(x.t, (got.get(x.t) || 0) + x.n);
+        if (x.f && x.t) { const key = x.f + ">" + x.t; pairs.set(key, (pairs.get(key) || 0) + x.n); }
+      });
+      return {total, given, got, pairs};
+    },
+    between(a, b, from, to){
+      let ab = 0, ba = 0;
+      rxAll().forEach(x => {
+        if (!inR(x, from, to) || !x.f || !x.t) return;
+        if (x.f === a && x.t === b) ab += x.n;
+        else if (x.f === b && x.t === a) ba += x.n;
+      });
+      return {ab, ba};
+    },
+    totalsIn(pk, from, to){
+      let given = 0, got = 0;
+      rxAll().forEach(x => {
+        if (!inR(x, from, to)) return;
+        if (x.f === pk) given += x.n;
+        if (x.t === pk) got += x.n;
+      });
+      return {given, got};
+    },
+    // Старые временные сводки получают только записи с реальной датой.
+    rows:() => rxAll().filter(x => !!x.d && !!x.f && !!x.t),
+    totals(pk){
+      pk = String(pk);
+      let given = 0, got = 0;
+      rxAll().forEach(x => { if (x.f === pk) given += x.n; if (x.t === pk) got += x.n; });
+      return {given, got};
+    }
   };
 
   /* ---------- События ---------- */
@@ -20118,8 +20209,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     EVENTS.splice(0, EVENTS.length, ...hydrated);
   }
   async function loadEventsApi(){
-    // Подтягиваем локальный справочник участников, если он содержит Telegram ID.
-    try { if (typeof ensureUserMetrics === "function") await ensureUserMetrics(); } catch (e) {}
+    // События и прогресс участников загружаются независимо от основной истории сообщений.
     const [eventItems, progressItems] = await Promise.all([
       fetchApiItems(apiUrl(K_EA), "списка событий"),
       fetchApiItems(apiUrl(K_EP), "прогресса участников")
@@ -20162,11 +20252,18 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
   window.__beta.profileHtml = (pk, color) => {
     pk = String(pk);
     const t = today(), P = [["Сегодня", t, t], ["Этот месяц", t.slice(0, 7) + "-01", t], ["Этот год", t.slice(0, 4) + "-01-01", t], ["За всё время", "", ""]];
+    const hasDatedRows = rxAll().some(x => !!x.d);
     const place = (m, v) => { if (!v) return "—"; let better = 0, n = 0; m.forEach((x, k) => { if (typeof isVisibleUser === "function" && !isVisibleUser(k)) return; if (x > 0) n++; if (x > v) better++; }); return `${better + 1} из ${n}`; };
-    const rowsT = P.map(([l, f, to]) => { const R = react.range(f, to), gv = R.given.get(pk) || 0, gt = R.got.get(pk) || 0;
-      return `<tr><td style="text-align:left">${l}</td><td><b>${fmtN(gv)}</b> <small class="hint">${place(R.given, gv)}</small></td><td><b>${fmtN(gt)}</b> <small class="hint">${place(R.got, gt)}</small></td></tr>`; }).join("");
-    const toM = new Map(), fromM = new Map(), emo = new Map();
-    rxAll().forEach(x => { if (x.f === pk) { toM.set(x.t, (toM.get(x.t) || 0) + x.n); emo.set(x.e, (emo.get(x.e) || 0) + x.n); } if (x.t === pk) fromM.set(x.f, (fromM.get(x.f) || 0) + x.n); });
+    const rowsT = P.map(([l, f, to]) => {
+      const unknownPeriod = Boolean(f || to) && !hasDatedRows;
+      const R = react.range(f, to), gv = R.given.get(pk) || 0, gt = R.got.get(pk) || 0;
+      return `<tr><td style="text-align:left">${l}</td><td><b>${unknownPeriod ? "—" : fmtN(gv)}</b> <small class="hint">${unknownPeriod ? "даты не предоставлены" : place(R.given, gv)}</small></td><td><b>${unknownPeriod ? "—" : fmtN(gt)}</b> <small class="hint">${unknownPeriod ? "даты не предоставлены" : place(R.got, gt)}</small></td></tr>`;
+    }).join("");
+    const toM = new Map(), fromM = new Map();
+    rxAll().forEach(x => {
+      if (x.f === pk && x.t) toM.set(x.t, (toM.get(x.t) || 0) + x.n);
+      if (x.t === pk && x.f) fromM.set(x.f, (fromM.get(x.f) || 0) + x.n);
+    });
     const top = (m, n) => [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n);
     const L = evLevels();
     const evCards = EVENTS.filter(ev => !ev.start || ev.start <= t).map(ev => {
@@ -20177,11 +20274,11 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
         ${me && st === "live" ? (() => { const fc = forecastEvent(ev)?.list.find(x => x.k === pk); return fc ? `<div class="ev-meta"><span>Прогноз к концу: <b>ур. ${fc.end}</b> · ${fc.place}-е место</span></div>` : ""; })() : ""}${me ? `<div class="ev-meta"><span>Уровень: <b>${me.level}</b></span><span>${esc(rankName(ev, me.level))}</span></div><div class="ev-meta"><span>Место: <b>${pl}</b> из ${m.size}</span><span>«${esc(ev.ach.name)}»: <span class="ev-tier" style="--tc:${TC(tl)}">${ROM[tl]}</span></span></div>` : `<div class="ev-meta"><span>Не участвовал(а)</span></div>`}</div>`;
     }).join("");
     return `<h2>Реакции</h2>
+      <p class="hint">За всю доступную историю. API не передаёт даты установки реакций, поэтому показатели по дням, месяцам и годам недоступны.</p>
       <div class="wrap"><table class="re-prof"><thead><tr><th style="text-align:left">Период</th><th>Поставил(а)</th><th>Получил(а)</th></tr></thead><tbody>${rowsT}</tbody></table></div>
       <div class="bx-grid">
         <div class="bx-card"><h3>Кому ставит реакции</h3><p class="hint">Топ-5 за всё время</p>${bars(top(toM, 5).map(([k, v]) => ({lbl:esc(nm(k)), v, c:col(k)})), {empty:"Реакций не ставил(а)"})}</div>
-        <div class="bx-card"><h3>Кто ставит реакции</h3><p class="hint">Топ-5 за всё время</p>${bars(top(fromM, 5).map(([k, v]) => ({lbl:esc(nm(k)), v, c:col(k)})), {empty:"Реакций не получал(а)"})}</div>
-        <div class="bx-card"><h3>Любимые реакции</h3><p class="hint">Что ставит чаще всего</p>${bars(top(emo, 5).map(([e, v]) => ({lbl:e, v, bg:grad(color || col(pk))})), {emo:true})}</div>
+        <div class="bx-card"><h3>Кто ставит реакции</h3><p class="hint">Топ-5 отправителей реакций на сообщения пользователя</p>${bars(top(fromM, 5).map(([k, v]) => ({lbl:esc(nm(k)), v, c:col(k)})), {empty:"Реакций не получал(а)"})}</div>
       </div>
       <h2>События</h2><div class="ev-timeline">${evCards}</div>`;
   };
@@ -20289,106 +20386,140 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
   const loading = id => { const o = document.getElementById(id); if (o) o.innerHTML = `<div class="sk sk-poster" style="height:120px"></div>`; };
 
   /* ---------- Вкладка «Реакции» ---------- */
-  const RS = {per:"90", pk:"", sort:"given"};
+  const RS = {per:"all", pk:"", sort:"given"};
   try { Object.assign(RS, JSON.parse(ls("chatstats.reactUi.v1") || "{}")); } catch (e) {}
-  const PERIODS = [["7", "7 дней"], ["30", "30 дней"], ["90", "90 дней"], ["365", "Год"], ["all", "Всё время"]];
-  const WD = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+  RS.per = "all";
   function renderReactions(){
     const out = document.getElementById("re-out"); if (!out) return;
     if (apiUrl(K_RA) && RX_RAW === null) { loading("re-out"); rxAll(); return; }
-    const all = rxAll(), t = today(), from = RS.per === "all" ? "" : isoD(new Date(Date.parse(t + "T00:00:00Z") - (Number(RS.per) - 1) * 864e5));
-    const rows = from ? all.filter(x => x.d >= from && x.d <= t) : all;
-    const days = new Set(rows.map(x => x.d)).size || 1;
-    const given = new Map(), got = new Map(), emo = new Map(), pair = new Map(), byDay = new Map(), byWd = new Array(7).fill(0), favE = new Map();
-    let total = 0;
+
+    const rows = rxAll();
+    const given = new Map(), got = new Map(), pairs = new Map(), chats = new Map();
+    const messageKeys = new Set(), messagesByReceiver = new Map(), chatsByPerson = new Map();
+    let total = 0, unknownReceivers = 0, unknownGivers = 0;
+    const chatKeyOf = x => x.chatId || (x.chat ? "title:" + x.chat : "unknown-chat");
+    const chatTitleOf = x => x.chat || (x.chatId ? `Чат ${x.chatId}` : "Чат без названия");
+    const messageKeyOf = x => x.messageId ? `${x.chatId || chatKeyOf(x)}:${x.messageId}` : "";
+    const addSetMap = (map, key, value) => {
+      if (!key || !value) return;
+      let set = map.get(key); if (!set) map.set(key, set = new Set()); set.add(value);
+    };
+
     rows.forEach(x => {
       total += x.n;
-      given.set(x.f, (given.get(x.f) || 0) + x.n); got.set(x.t, (got.get(x.t) || 0) + x.n);
-      emo.set(x.e, (emo.get(x.e) || 0) + x.n);
-      const pk = x.f + ">" + x.t; pair.set(pk, (pair.get(pk) || 0) + x.n);
-      byDay.set(x.d, (byDay.get(x.d) || 0) + x.n); byWd[(new Date(x.d + "T00:00:00Z").getUTCDay() + 6) % 7] += x.n;
-      let m = favE.get(x.f); if (!m) favE.set(x.f, m = new Map()); m.set(x.e, (m.get(x.e) || 0) + x.n);
+      const chatKey = chatKeyOf(x), chatTitle = chatTitleOf(x), messageKey = messageKeyOf(x);
+      if (!chats.has(chatKey)) chats.set(chatKey, {key:chatKey, title:chatTitle, count:0, givers:new Set(), receivers:new Set(), messages:new Set(), unknownReceivers:0});
+      const ch = chats.get(chatKey); ch.count += x.n;
+      if (messageKey) { messageKeys.add(messageKey); ch.messages.add(messageKey); }
+      if (x.f) {
+        given.set(x.f, (given.get(x.f) || 0) + x.n);
+        ch.givers.add(x.f);
+        addSetMap(chatsByPerson, x.f, chatKey);
+      } else unknownGivers += x.n;
+      if (x.t) {
+        got.set(x.t, (got.get(x.t) || 0) + x.n);
+        ch.receivers.add(x.t);
+        addSetMap(chatsByPerson, x.t, chatKey);
+        if (messageKey) addSetMap(messagesByReceiver, x.t, messageKey);
+      } else {
+        unknownReceivers += x.n;
+        ch.unknownReceivers += x.n;
+      }
+      if (x.f && x.t) {
+        const pairKey = x.f + ">" + x.t;
+        pairs.set(pairKey, (pairs.get(pairKey) || 0) + x.n);
+      }
     });
-    const ppl = [...new Set([...given.keys(), ...got.keys()])].filter(k => typeof isVisibleUser !== "function" || isVisibleUser(k));
-    const top = (m, n) => [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n);
-    const gTop = top(given, 1)[0], rTop = top(got, 1)[0], eTop = top(emo, 1)[0];
-    const fav = k => top(favE.get(k) || new Map(), 1)[0]?.[0] || "—";
+
+    const ppl = [...new Set([...given.keys(), ...got.keys()])].sort((a,b) => nm(a).localeCompare(nm(b), "ru"));
+    const top = (m, n) => [...m.entries()].sort((a, b) => b[1] - a[1] || nm(a[0]).localeCompare(nm(b[0]), "ru")).slice(0, n);
+    const sumMap = m => [...m.values()].reduce((a,b) => a + b, 0);
+    const gTop = top(given, 1)[0], rTop = top(got, 1)[0];
     if (!RS.pk || !ppl.includes(RS.pk)) RS.pk = gTop ? gTop[0] : (ppl[0] || "");
     const save = () => ls("chatstats.reactUi.v1", JSON.stringify(RS));
+    const sentMessageCount = pk => {
+      const set = new Set();
+      rows.forEach(x => { if (x.f === pk) { const key = messageKeyOf(x); if (key) set.add(key); } });
+      return set.size;
+    };
+    const uniqueChatsFor = pk => chatsByPerson.get(pk)?.size || 0;
 
-    // таблица
-    const sortKey = {given:k => given.get(k) || 0, got:k => got.get(k) || 0, bal:k => (got.get(k) || 0) - (given.get(k) || 0)}[RS.sort] || (k => given.get(k) || 0);
-    const list = ppl.slice().sort((a, b) => sortKey(b) - sortKey(a));
-    const th = (k, l) => `<th data-re-sort="${k}" style="cursor:pointer"${RS.sort === k ? ' class="sorted"' : ""}>${l}${RS.sort === k ? " ↓" : ""}</th>`;
-    const table = `<div class="wrap"><table id="re-table"><thead><tr><th>Место</th><th>Участник</th>${th("given", "Поставил(а)")}${th("got", "Получил(а)")}${th("bal", "Баланс")}<th>В день</th><th>Любимая реакция</th></tr></thead><tbody>${list.map((k, i) => {
-      const gv = given.get(k) || 0, gt = got.get(k) || 0, b = gt - gv;
-      return `<tr><td>${i + 1}</td><td>${personHtml(k)}</td><td>${fmtN(gv)}</td><td>${fmtN(gt)}</td><td style="color:${b > 0 ? "#4ade80" : b < 0 ? "#f87171" : "inherit"}">${b > 0 ? "+" : ""}${fmtN(b)}</td><td>${(gv / days).toFixed(1).replace(".", ",")}</td><td style="font-size:18px">${fav(k)}</td></tr>`;
-    }).join("")}</tbody></table></div>`;
+    const sortKey = {
+      given:k => given.get(k) || 0,
+      got:k => got.get(k) || 0,
+      bal:k => (got.get(k) || 0) - (given.get(k) || 0),
+      messages:k => messagesByReceiver.get(k)?.size || 0,
+      chats:k => uniqueChatsFor(k)
+    }[RS.sort] || (k => given.get(k) || 0);
+    const list = ppl.slice().sort((a, b) => sortKey(b) - sortKey(a) || nm(a).localeCompare(nm(b), "ru"));
+    const th = (k, label) => `<th data-re-sort="${k}" style="cursor:pointer"${RS.sort === k ? ' class="sorted"' : ""}>${label}${RS.sort === k ? " ↓" : ""}</th>`;
+    const allMessages = messageKeys.size;
+    const table = `<div class="wrap"><table id="re-table"><thead><tr><th>Место</th><th>Участник</th>${th("given", "Поставил(а)")}${th("got", "Получил(а)")}${th("bal", "Баланс")}${th("messages", "Сообщений с реакциями")}${th("chats", "Чатов")}</tr></thead><tbody>${list.map((k, i) => {
+      const gv = given.get(k) || 0, gt = got.get(k) || 0, bal = gt - gv;
+      return `<tr><td>${i + 1}</td><td>${personHtml(k)}</td><td>${fmtN(gv)}</td><td>${fmtN(gt)}</td><td style="color:${bal > 0 ? "#4ade80" : bal < 0 ? "#f87171" : "inherit"}">${bal > 0 ? "+" : ""}${fmtN(bal)}</td><td>${fmtN(messagesByReceiver.get(k)?.size || 0)}</td><td>${fmtN(uniqueChatsFor(k))}</td></tr>`;
+    }).join("")}</tbody><tfoot><tr><td colspan="2">Итого</td><td>${fmtN(total)}</td><td>${fmtN(sumMap(got))}</td><td>—</td><td>${fmtN(allMessages)}</td><td>${fmtN(chats.size)}</td></tr></tfoot></table></div>`;
 
-    // по дням и дням недели (у реакций есть только дата, без времени)
-    const peakD = [...byDay.entries()].sort((a, b) => b[1] - a[1])[0];
-    const colBars = (arr, lab, tip) => { const mx = Math.max(...arr.map(x => x.v)) || 1; return `<div class="re-hours">${arr.map((x, i) => `<div title="${esc(tip(x))}"><i style="height:${(x.v / mx * 100).toFixed(1)}%"></i><small>${lab(x, i)}</small></div>`).join("")}</div>`; };
-    const tl = (() => {
-      const ds = [...byDay.keys()].sort(); if (!ds.length) return {title:"По дням", hint:"", html:`<div class="bx-empty">Нет данных</div>`};
-      const span = dI(ds[ds.length - 1]) - dI(ds[0]) + 1;
-      if (span <= 92) {
-        const arr = []; for (let k = dI(ds[0]); k <= dI(ds[ds.length - 1]); k++) { const d = isoD(new Date(k * 864e5)); arr.push({d, v:byDay.get(d) || 0}); }
-        const step = Math.max(1, Math.ceil(arr.length / 10));
-        return {title:"По дням", hint:"Сколько реакций поставили в каждый день периода", html:colBars(arr, (x, i) => i % step === 0 ? x.d.slice(8) + "." + x.d.slice(5, 7) : "", x => `${fd(x.d)} — ${fmtN(x.v)}`)};
+    const chatList = [...chats.values()].sort((a,b) => b.count-a.count || a.title.localeCompare(b.title,"ru"));
+    const chatTable = `<div class="wrap"><table><thead><tr><th>Чат</th><th>Реакций</th><th>Отправителей</th><th>Получателей</th><th>Сообщений</th><th>Без автора</th></tr></thead><tbody>${chatList.map(ch => `<tr><td style="text-align:left;white-space:normal">${esc(ch.title)}</td><td>${fmtN(ch.count)}</td><td>${fmtN(ch.givers.size)}</td><td>${fmtN(ch.receivers.size)}</td><td>${fmtN(ch.messages.size)}</td><td>${fmtN(ch.unknownReceivers)}</td></tr>`).join("")}</tbody></table></div>`;
+
+    const me = RS.pk, toM = new Map(), fromM = new Map(), myChats = new Map();
+    const myMessageSet = new Set(), myReceivedMessageSet = messagesByReceiver.get(me) || new Set();
+    rows.forEach(x => {
+      if (x.f === me) {
+        if (x.t) toM.set(x.t, (toM.get(x.t) || 0) + x.n);
+        const ck = chatKeyOf(x); myChats.set(ck, (myChats.get(ck) || 0) + x.n);
+        const mk = messageKeyOf(x); if (mk) myMessageSet.add(mk);
       }
-      const MN = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"], m = new Map();
-      byDay.forEach((v, d) => m.set(d.slice(0, 7), (m.get(d.slice(0, 7)) || 0) + v));
-      const arr = [...m.entries()].sort().map(([k, v]) => ({k, v})), step = Math.max(1, Math.ceil(arr.length / 12));
-      return {title:"По месяцам", hint:"Сколько реакций поставили за каждый месяц", html:colBars(arr, (x, i) => i % step === 0 ? MN[+x.k.slice(5) - 1] + (x.k.slice(5) === "01" || i === 0 ? " " + x.k.slice(2, 4) : "") : "", x => `${MN[+x.k.slice(5) - 1]} ${x.k.slice(0, 4)} — ${fmtN(x.v)}`)};
-    })();
-    const wdCnt = new Array(7).fill(0); byDay.forEach((v, d) => { wdCnt[(new Date(d + "T00:00:00Z").getUTCDay() + 6) % 7]++; });
-    const wdHtml = colBars(byWd.map((v, i) => ({v:wdCnt[i] ? Math.round(v / wdCnt[i]) : 0, i})), x => WD[x.i], x => `${WD[x.i]} — в среднем ${fmtN(x.v)} в день`);
-
-    // лично
-    const me = RS.pk, toM = new Map(), fromM = new Map();
-    rows.forEach(x => { if (x.f === me) toM.set(x.t, (toM.get(x.t) || 0) + x.n); if (x.t === me) fromM.set(x.f, (fromM.get(x.f) || 0) + x.n); });
-    const mine = (m) => top(m, 10).map(([k, v]) => ({lbl:esc(nm(k)), v, c:col(k)}));
-    let mutual = null; toM.forEach((v, k) => { const back = fromM.get(k) || 0, s = Math.min(v, back); if (!mutual || s > mutual.s) mutual = {k, s, v, back}; });
-    const opts = ppl.slice().sort((a, b) => nm(a).localeCompare(nm(b), "ru")).map(k => `<option value="${esc(k)}"${k === me ? " selected" : ""}>${esc(nm(k))}</option>`).join("");
-    const meE = top(favE.get(me) || new Map(), 6).map(([e, v]) => ({lbl:e, v, bg:grad(col(me))}));
+      if (x.t === me && x.f) fromM.set(x.f, (fromM.get(x.f) || 0) + x.n);
+    });
+    const mine = m => top(m, 10).map(([k, v]) => ({lbl:esc(nm(k)), v, c:col(k)}));
+    let mutual = null;
+    toM.forEach((v, k) => { const back = fromM.get(k) || 0, score = Math.min(v, back); if (!mutual || score > mutual.score) mutual = {k, score, v, back}; });
+    const opts = ppl.map(k => `<option value="${esc(k)}"${k === me ? " selected" : ""}>${esc(nm(k))}</option>`).join("");
+    const topPairs = top(pairs, 10).map(([key, value]) => { const [a,b] = key.split(">"); return {lbl:`${esc(nm(a))} → ${esc(nm(b))}`, v:value, c:col(a)}; });
+    const topChats = top(myChats, 10).map(([key, value]) => ({lbl:esc(chats.get(key)?.title || key), v:value}));
+    const myGiven = given.get(me) || 0, myGot = got.get(me) || 0;
+    const status = RX_ERR ? `<p class="status err">Не удалось загрузить API реакций: ${esc(RX_ERR)}</p>` : (!rows.length ? `<div class="bx-empty">API не вернул доступных записей реакций.</div>` : "");
 
     out.innerHTML = `
-      <div class="bx-head"><h2>Реакции</h2>
-        <div class="seg" role="tablist">${PERIODS.map(([k, l]) => `<button type="button" data-re-per="${k}" class="${RS.per === k ? "active" : ""}">${l}</button>`).join("")}</div></div>
-      ${RX_ERR ? `<p class="status err">Не удалось загрузить API реакций: ${esc(RX_ERR)}</p>` : ""}
+      <div class="bx-head"><h2>Реакции</h2><span class="now-chip">За всю доступную историю</span></div>
+      ${status}
+      <p class="hint">Статистика учитывает количество записей API и не разбивается по типу эмодзи. API сейчас не передаёт даты установки реакций и сами эмодзи, поэтому фильтр по периодам и графики по дням не показываются. Если автор сообщения неизвестен, реакция учитывается в общем количестве и у отправителя, но не приписывается получателю.</p>
       <div class="tiles">
-        ${tile("Всего реакций", fmtN(total), `≈ ${fmtN(Math.round(total / days))} в день`)}
-        ${tile("Ставит больше всех", gTop ? esc(nm(gTop[0])) : "—", gTop ? `${fmtN(gTop[1])} ${wf2(gTop[1], ["реакция", "реакции", "реакций"])}` : "")}
-        ${tile("Получает больше всех", rTop ? esc(nm(rTop[0])) : "—", rTop ? `${fmtN(rTop[1])} ${wf2(rTop[1], ["реакция", "реакции", "реакций"])}` : "")}
-        ${tile("Любимая реакция чата", eTop ? `<span style="font-size:36px">${eTop[0]}</span>` : "—", eTop ? `${Math.round(eTop[1] / (total || 1) * 100)}% всех реакций` : "")}
-        ${tile("Самый активный день", peakD ? fd(peakD[0]) : "—", peakD ? `${fmtN(peakD[1])} ${wf2(peakD[1], ["реакция", "реакции", "реакций"])}` : "")}
+        ${tile("Всего реакций", fmtN(total), "по данным API")}
+        ${tile("Активных отправителей", fmtN(given.size), "у кого есть реакции в роли отправителя")}
+        ${tile("Получателей", fmtN(got.size), "авторов сообщений с реакциями")}
+        ${tile("Чатов с реакциями", fmtN(chats.size), `${fmtN(allMessages)} уникальных сообщений`)}
+        ${tile("Неизвестен автор", fmtN(unknownReceivers), "записей не распределено по получателям")}
+        ${tile("Неизвестен отправитель", fmtN(unknownGivers), "записей без идентификатора отправителя")}
       </div>
       <h2>Кто сколько ставит и получает</h2>
-      <p class="hint">Баланс — сколько реакций человек получил минус сколько поставил сам. Нажми на заголовок столбца, чтобы отсортировать.</p>
+      <p class="hint">Баланс = получено − поставлено. «Сообщений с реакциями» — число уникальных сообщений пользователя, на которые поставили реакции.</p>
       ${table}
+      <h2>Статистика по чатам</h2>
+      ${chatTable}
       <h2>Лично</h2>
       <div class="re-person"><label class="hint" for="re-pk">Участник</label><select id="re-pk">${opts}</select></div>
-      ${mutual && mutual.s ? `<div class="re-mutual"><span>Самая взаимная пара: <b>${esc(nm(me))}</b> ⇄ <b>${esc(nm(mutual.k))}</b> — ${fmtN(mutual.v)} и ${fmtN(mutual.back)}</span><span>Поставил(а): <b>${fmtN(given.get(me) || 0)}</b></span><span>Получил(а): <b>${fmtN(got.get(me) || 0)}</b></span></div>` : ""}
-      <div class="bx-grid">
-        <div class="bx-card"><h3>Кому ${esc(nm(me))} ставит реакции</h3><p class="hint">Топ-10 за выбранный период</p>${bars(mine(toM), {empty:"Реакций не ставил(а)"})}</div>
-        <div class="bx-card"><h3>Кто ставит реакции ${esc(nm(me))}</h3><p class="hint">Топ-10 за выбранный период</p>${bars(mine(fromM), {empty:"Реакций не получал(а)"})}</div>
-        <div class="bx-card"><h3>Любимые реакции ${esc(nm(me))}</h3><p class="hint">Какие смайлы ставит чаще всего</p>${bars(meE, {emo:true})}</div>
+      <div class="tiles">
+        ${tile("Поставил(а)", fmtN(myGiven), "за всю доступную историю")}
+        ${tile("Получил(а)", fmtN(myGot), "на свои сообщения")}
+        ${tile("Баланс", `${myGot - myGiven > 0 ? "+" : ""}${fmtN(myGot - myGiven)}`, "получено минус поставлено")}
+        ${tile("Сообщений оценил(а)", fmtN(myMessageSet.size), "уникальных сообщений")}
+        ${tile("Чатов", fmtN(uniqueChatsFor(me)), "с участием пользователя")}
       </div>
-      <h2>Когда ставят реакции</h2>
+      ${mutual && mutual.score ? `<div class="re-mutual"><span>Самая взаимная пара: <b>${esc(nm(me))}</b> ⇄ <b>${esc(nm(mutual.k))}</b></span><span>Поставил(а) ему/ей: <b>${fmtN(mutual.v)}</b></span><span>Получил(а) от него/неё: <b>${fmtN(mutual.back)}</b></span></div>` : ""}
       <div class="bx-grid">
-        <div class="bx-card"><h3>${tl.title}</h3><p class="hint">${tl.hint}</p>${tl.html}</div>
-        <div class="bx-card"><h3>По дням недели</h3><p class="hint">Сколько реакций в среднем ставят в каждый день недели</p>${wdHtml}</div>
+        <div class="bx-card"><h3>Кому ${esc(nm(me))} ставит реакции</h3><p class="hint">Топ-10 получателей</p>${bars(mine(toM), {empty:"Нет известных получателей"})}</div>
+        <div class="bx-card"><h3>Кто ставит реакции ${esc(nm(me))}</h3><p class="hint">Топ-10 отправителей реакций на сообщения пользователя</p>${bars(mine(fromM), {empty:"Нет известных отправителей"})}</div>
+        <div class="bx-card"><h3>Чаты, где ${esc(nm(me))} ставит реакции</h3><p class="hint">Рейтинг по количеству записей</p>${bars(topChats, {empty:"Нет данных по чатам"})}</div>
       </div>
-      <h2>Реакции и пары</h2>
-      <div class="bx-grid">
-        <div class="bx-card"><h3>Популярные реакции</h3><p class="hint">Сколько раз поставили каждую</p>${bars(top(emo, 12).map(([e, v]) => ({lbl:e, v, bg:"linear-gradient(90deg,color-mix(in srgb,var(--accent) 70%,#000),color-mix(in srgb,var(--accent) 80%,#fff))"})), {emo:true})}</div>
-        <div class="bx-card"><h3>Самые частые пары</h3><p class="hint">Кто → кому ставит больше всего</p>${bars(top(pair, 10).map(([k, v]) => { const [a, b] = k.split(">"); return {lbl:`${esc(nm(a))} → ${esc(nm(b))}`, v, c:col(a)}; }))}</div>
-      </div>`;
+      <h2>Самые частые пары</h2>
+      <p class="hint">Направление пары: отправитель реакции → автор сообщения.</p>
+      ${bars(topPairs, {empty:"Нет записей с известными отправителем и получателем"})}`;
     out.querySelector("#re-pk")?.addEventListener("change", e => { RS.pk = e.target.value; save(); renderReactions(); });
     save();
   }
   document.addEventListener("click", e => {
-    const p = e.target.closest?.("[data-re-per]"); if (p) { RS.per = p.dataset.rePer; renderReactions(); return; }
     const s = e.target.closest?.("[data-re-sort]"); if (s) { RS.sort = s.dataset.reSort; renderReactions(); }
   });
 
