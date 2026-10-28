@@ -1525,21 +1525,20 @@ document.body.classList.add("beta-re");
       <label class="checkline"><input type="checkbox" id="hide-left-participants">Убрать вышедших</label>
       <label class="checkline"><input type="checkbox" id="compare-participants">Сравнение</label>
       <label class="checkline"><input type="checkbox" id="stats-participants" checked>Среднее и медиана</label>
-      <div class="field"><label for="participants-top">Количество участников</label>
-        <select id="participants-top">
-          <option value="5">Топ-5 участников</option>
-          <option value="10">Топ-10 участников</option>
-          <option value="20" selected>Топ-20 участников</option>
-          <option value="all">Все участники</option>
-        </select>
-      </div>
       <div class="table-export-actions filters-export-actions"><button class="mini copy-btn" id="copy-participants-image" title="Копировать как изображение">Копировать</button><span class="hint" id="copy-participants-status"></span></div>
     </div>
+    <select id="participants-top" hidden aria-hidden="true" tabindex="-1">
+      <option value="5">Топ-5 участников</option>
+      <option value="10">Топ-10 участников</option>
+      <option value="20" selected>Топ-20 участников</option>
+      <option value="all">Все участники</option>
+    </select>
     <div id="quiet-box" hidden></div>
     <div class="excluded-rows-host" id="participants-excluded-controls" hidden></div>
     <div class="table-export-row">
       <h2 id="participants-period-title">Рейтинг участников за выбранный период</h2>
     </div>
+    <p class="hint">«Полученные реакции» и «Отправленные реакции» показывают значения за всю доступную историю: API реакций не содержит даты, поэтому эти два столбца не зависят от выбранного периода.</p>
     <div class="wrap">
       <table id="participants-table">
         <thead><tr id="head"></tr></thead>
@@ -2168,6 +2167,8 @@ const COLS = [
   {k:"video", t:"Видеосообщения"},
   {k:"stick", t:"Стикеры"},
   ...(RX_ON ? [{k:"rgive", t:"Поставил(а) реакций"}, {k:"rgot", t:"Получил(а) реакций"}] : []),
+  {k:"rgotAll", t:"Полученные реакции", title:"За всю доступную историю, независимо от выбранного периода: API не передаёт даты реакций"},
+  {k:"rgiveAll", t:"Отправленные реакции", title:"За всю доступную историю, независимо от выбранного периода: API не передаёт даты реакций"},
 ];
 const $ = id => document.getElementById(id);
 const CHART_BG_KEY = "chatstats.chartBackground.v1";
@@ -2834,6 +2835,16 @@ function participantsPeriodTitle(){
 }
 function render(){
   const rawPM = aggregateParticipants(rows), map = normMap(rawPM);
+  const rxApi = window.__beta?.react;
+  const rxApiStatus = rxApi?.status?.() || {ready:false, error:""};
+  // Эти два столбца — за всю доступную историю, потому что API реакций не сообщает дату.
+  // Не показываем фиктивные нули до загрузки API или при ошибке запроса.
+  map.forEach((u, key) => {
+    let totals = null;
+    try { if (rxApiStatus.ready && rxApi?.totals) totals = rxApi.totals(String(key)); } catch (e) {}
+    u.rgotAll = totals ? (Number(totals.got) || 0) : null;
+    u.rgiveAll = totals ? (Number(totals.given) || 0) : null;
+  });
   const compareOn = comparisonEnabled && mode !== "all" && Array.isArray(comparisonRows) && !comparisonError;
   const priorMap = compareOn ? normMap(aggregateParticipants(comparisonRows)) : new Map();
   // Top-N is based on message count; header sorting rearranges only the selected top participants.
@@ -2850,7 +2861,7 @@ function render(){
   if (title) title.textContent = participantsPeriodTitle() + normSuffix();
 
   $("head").innerHTML = COLS.map(c =>
-    `<th tabindex="0" data-k="${c.k}" class="${sort.k===c.k?"sorted":""}">${c.t}${sort.k===c.k?(sort.dir<0?" ↓":" ↑"):""}</th>`).join("");
+    `<th tabindex="0" data-k="${c.k}"${c.title ? ` title="${c.title}"` : ""} class="${sort.k===c.k?"sorted":""}">${c.t}${sort.k===c.k?(sort.dir<0?" ↓":" ↑"):""}</th>`).join("");
   document.querySelectorAll("#head th").forEach(th => {
     const go = () => { const k = th.dataset.k; if (k === "place") return; sort = {k, dir: sort.k===k ? -sort.dir : -1}; render(); };
     th.onclick = go; th.onkeydown = e => { if (e.key === "Enter") go(); };
@@ -2858,18 +2869,20 @@ function render(){
 
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const cell = (u,k) => displayedCell(Number(u[k])||0, Number((priorMap.get(u.key)||{})[k])||0, compareOn, priorMap.has(u.key));
+  const totalRxCell = v => `<td class="${v == null || !Number(v) ? "zero" : ""}">${v == null ? "—" : fmt(Number(v) || 0)}</td>`;
   $("body").innerHTML = list.length
-    ? list.map((u, i) => `<tr data-row-entity="participants" data-row-key="${esc(u.key)}"><td class="${i < 3 ? "medal-" + (i + 1) : ""}">${i + 1}</td><td><div class="row-name-with-action"><span class="pname" data-open-profile="${esc(u.key)}">${esc(u.name)}</span>${goalMini(u.key, rawPM.get(u.key))}<button type="button" class="row-exclude-btn" data-no-export="true" data-exclude-row="participants" data-row-key="${esc(u.key)}" data-row-name="${esc(u.name)}" title="Исключить из таблицы" aria-label="Исключить ${esc(u.name)} из таблицы">×</button></div></td>${cell(u,"msgs")}${cell(u,"voice")}${cell(u,"video")}${cell(u,"stick")}${RX_KEYS.map(k => cell(u, k)).join("")}</tr>`).join("")
+    ? list.map((u, i) => `<tr data-row-entity="participants" data-row-key="${esc(u.key)}"><td class="${i < 3 ? "medal-" + (i + 1) : ""}">${i + 1}</td><td><div class="row-name-with-action"><span class="pname" data-open-profile="${esc(u.key)}">${esc(u.name)}</span>${goalMini(u.key, rawPM.get(u.key))}<button type="button" class="row-exclude-btn" data-no-export="true" data-exclude-row="participants" data-row-key="${esc(u.key)}" data-row-name="${esc(u.name)}" title="Исключить из таблицы" aria-label="Исключить ${esc(u.name)} из таблицы">×</button></div></td>${cell(u,"msgs")}${cell(u,"voice")}${cell(u,"video")}${cell(u,"stick")}${RX_KEYS.map(k => cell(u, k)).join("")}${totalRxCell(u.rgotAll)}${totalRxCell(u.rgiveAll)}</tr>`).join("")
     : `<tr><td colspan="${COLS.length}" style="text-align:center;color:var(--muted)">${EXCLUDED_TABLE_ROWS.participants.size ? "Нет строк: участники исключены из таблицы" : "Нет данных за выбранный период"}</td></tr>`;
 
   $("foot").innerHTML = list.length
-    ? (NORM === "day" ? "" : `<tr><td colspan="2">Всего (${list.length})</td>${["msgs","voice","video","stick", ...RX_KEYS].map(k => displayedCell(sumMapMetric(visibleMap,k), sumMapMetric(visiblePriorMap,k), compareOn, visiblePriorMap.size > 0)).join("")}</tr>`)
-      + statRows(list, ["msgs","voice","video","stick", ...RX_KEYS], label => `<td colspan="2">${label}</td>`) : "";
+    ? (NORM === "day" ? "" : `<tr><td colspan="2">Всего (${list.length})</td>${["msgs","voice","video","stick", ...RX_KEYS].map(k => displayedCell(sumMapMetric(visibleMap,k), sumMapMetric(visiblePriorMap,k), compareOn, visiblePriorMap.size > 0)).join("")}${totalRxCell(rxApiStatus.ready ? sumMapMetric(visibleMap,"rgotAll") : null)}${totalRxCell(rxApiStatus.ready ? sumMapMetric(visibleMap,"rgiveAll") : null)}</tr>`)
+      + statRows(list, ["msgs","voice","video","stick", ...RX_KEYS, "rgotAll", "rgiveAll"], label => `<td colspan="2">${label}</td>`) : "";
 
   let statusText = hideLeft && leftFilterError ? `Не удалось получить статусы участников: ${leftFilterError}. Вышедшие не отфильтрованы.` : "";
+  if (rxApiStatus.error) statusText = [statusText, `Не удалось загрузить реакции для столбцов статистики: ${rxApiStatus.error}`].filter(Boolean).join(" ");
   if (comparisonEnabled && mode === "all") statusText = [statusText, "Сравнение недоступно для режима «Все данные». Выберите день, неделю, месяц или год."].filter(Boolean).join(" ");
   else if (comparisonEnabled && comparisonError && ["participants","chats"].includes(activeDataTab())) statusText = [statusText, `Не удалось загрузить предыдущий период: ${comparisonError}`].filter(Boolean).join(" ");
-  setStatus(statusText, Boolean(comparisonEnabled && comparisonError));
+  setStatus(statusText, Boolean(rxApiStatus.error || (comparisonEnabled && comparisonError)));
   renderExcludedRowsControls("participants");
   try { renderQuiet(); } catch (e) {}
   if ($("tab-chats").classList.contains("active")) renderChatRank();
@@ -10084,7 +10097,11 @@ function normChartList(list, metric){
 function statRows(list, keys, lead){
   if (list.length < 2 || SHOW_STATROWS === false) return "";
   const med = a => { const s2 = [...a].sort((x, y) => x - y), m = s2.length >> 1; return s2.length % 2 ? s2[m] : (s2[m - 1] + s2[m]) / 2; };
-  const row = (label, f) => `<tr class="foot-stat">${lead(label)}${keys.map(k => { const v = f(list.map(u => Number(u[k]) || 0)); return `<td>${fmt(r1(v))}${NORM === "share" ? "%" : ""}</td>`; }).join("")}</tr>`;
+  const row = (label, f) => `<tr class="foot-stat">${lead(label)}${keys.map(k => {
+    if ((k === "rgotAll" || k === "rgiveAll") && list.some(u => u[k] == null)) return "<td>—</td>";
+    const v = f(list.map(u => Number(u[k]) || 0));
+    return `<td>${fmt(r1(v))}${NORM === "share" && k !== "rgotAll" && k !== "rgiveAll" ? "%" : ""}</td>`;
+  }).join("")}</tr>`;
   return row("Среднее", a => a.reduce((s2, v) => s2 + v, 0) / a.length) + row("Медиана", med);
 }
 
@@ -16502,6 +16519,9 @@ body.tb-on .chart:has(svg.heatrows-svg){border:1.5px solid transparent;backgroun
 .hc-item span{flex:1 1 auto;min-width:0}
 .hc-pop .hc-item input{flex:0 0 16px!important;width:16px!important;min-width:0!important;max-width:16px!important;padding:0!important;height:16px;margin:0;accent-color:var(--accent)}
 .hc-item.off span{color:var(--muted);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--muted) 60%,transparent)}
+.hc-top-limit{display:flex;flex-direction:column;gap:5px;margin:0 4px 8px;padding:0 4px 9px;border-bottom:1px solid color-mix(in srgb,var(--text) 9%,transparent)}
+.hc-top-limit h4{margin:2px 0 3px}
+.hc-top-limit select{width:100%;min-width:0;height:34px;min-height:34px;padding:0 9px;border-radius:9px;background:var(--ctrl);color:var(--text);border:1px solid color-mix(in srgb,var(--text) 12%,transparent);font:inherit;font-size:13.5px}
 .hc-foot{display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid color-mix(in srgb,var(--text) 9%,transparent)}
 .hc-foot button{flex:1 1 auto;height:34px;border:0;border-radius:9px;background:color-mix(in srgb,var(--text) 7%,transparent);color:var(--text);font:inherit;font-size:13.5px;cursor:pointer}
 .hc-foot button:hover{background:color-mix(in srgb,var(--text) 12%,transparent)}
@@ -16609,7 +16629,7 @@ body.tb-on .chart:has(svg.heatrows-svg){border:1.5px solid transparent;backgroun
   let pending = 0;
   function scan(){
     pending = 0;
-    document.querySelectorAll("main table").forEach(t => { if (eligible(t)) attach(t); });
+    document.querySelectorAll("main table").forEach(t => { if (eligible(t)) { attach(t); applyTopLimit(t); } });
     // Убираем кнопки, чья таблица исчезла.
     document.querySelectorAll(".hc-bar").forEach(b => { const t = document.querySelector(`table[data-hc="${b.dataset.for}"]`); if (!t || (hostOf(t)?.previousElementSibling !== b && !b.classList.contains("hc-moved"))) b.remove(); });
     rules();
@@ -16619,10 +16639,50 @@ body.tb-on .chart:has(svg.heatrows-svg){border:1.5px solid transparent;backgroun
   let pop = null, popTable = null, popBtn = null;
   function closePop(){ if (pop) { pop.remove(); pop = null; } if (popBtn) popBtn.setAttribute("aria-expanded", "false"); popTable = popBtn = null; }
   function setHidden(t, names){ const k = t.dataset.hcKey; if (names.length) H[k] = names; else delete H[k]; save(); rules(); }
+  const TOP_LIMIT_TABLE_IDS = new Set(["participants-table", "ev-table", "ev-fc-table", "ev-all-table", "re-table"]);
+  const TOP_LIMIT_KEY = "chatstats.participantTableTop.v1";
+  let TOP_LIMITS = {};
+  try { const stored = JSON.parse(localStorage.getItem(TOP_LIMIT_KEY) || "{}"); if (stored && typeof stored === "object") TOP_LIMITS = stored; } catch (e) {}
+  const topLimitFor = t => {
+    if (!t || !TOP_LIMIT_TABLE_IDS.has(t.id)) return "all";
+    if (t.id === "participants-table") return document.getElementById("participants-top")?.value || "20";
+    return ["5", "10", "20", "all"].includes(String(TOP_LIMITS[t.id])) ? String(TOP_LIMITS[t.id]) : "20";
+  };
+  function applyTopLimit(t){
+    if (!t || !TOP_LIMIT_TABLE_IDS.has(t.id) || t.id === "participants-table") return;
+    const v = topLimitFor(t), limit = v === "all" ? Infinity : Math.max(1, Number(v) || 20);
+    for (const body of t.tBodies) {
+      const rows = [...body.rows];
+      const dataRows = rows.filter(r => !(r.cells.length === 1 && Number(r.cells[0].colSpan || 1) > 1));
+      rows.filter(r => !dataRows.includes(r)).forEach(r => { r.hidden = false; });
+      dataRows.forEach((r, i) => { r.hidden = i >= limit; });
+    }
+  }
+  function setTopLimit(t, value){
+    if (!t || !TOP_LIMIT_TABLE_IDS.has(t.id)) return;
+    value = ["5", "10", "20", "all"].includes(String(value)) ? String(value) : "20";
+    if (t.id === "participants-table") {
+      const source = document.getElementById("participants-top");
+      if (source && source.value !== value) {
+        source.value = value;
+        source.dispatchEvent(new Event("change", {bubbles:true}));
+      }
+      return;
+    }
+    TOP_LIMITS[t.id] = value;
+    try { localStorage.setItem(TOP_LIMIT_KEY, JSON.stringify(TOP_LIMITS)); } catch (e) {}
+    applyTopLimit(t);
+  }
+  function topLimitMarkup(t){
+    if (!t || !TOP_LIMIT_TABLE_IDS.has(t.id)) return "";
+    const v = topLimitFor(t);
+    const options = [["5", "Топ-5 участников"], ["10", "Топ-10 участников"], ["20", "Топ-20 участников"], ["all", "Все участники"]];
+    return `<div class="hc-top-limit"><h4>Количество участников</h4><select data-hc-top-limit aria-label="Количество участников">${options.map(([value,label]) => `<option value="${value}"${v === value ? " selected" : ""}>${label}</option>`).join("")}</select></div>`;
+  }
   function drawPop(){
     const t = popTable, cols = colsOf(t); if (!cols) { closePop(); return; }
     const set = new Set(H[t.dataset.hcKey] || []), shown = cols.filter(n => !set.has(n)).length;
-    pop.innerHTML = `<h4>Столбцы таблицы</h4><div class="hc-list">${cols.map((n, i) => {
+    pop.innerHTML = `${topLimitMarkup(t)}<h4>Столбцы таблицы</h4><div class="hc-list">${cols.map((n, i) => {
       const on = !set.has(n), last = on && shown === 1;
       return `<label class="hc-item${on ? "" : " off"}"${last ? ' title="Последний видимый столбец скрыть нельзя"' : ""}><input type="checkbox" data-hc-col="${i}"${on ? " checked" : ""}${last ? " disabled" : ""}><span>${escH(n)}</span></label>`;
     }).join("")}</div><div class="hc-foot"><button type="button" data-hc-all${set.size ? "" : " disabled"}>Показать все</button></div>`;
@@ -16642,6 +16702,7 @@ body.tb-on .chart:has(svg.heatrows-svg){border:1.5px solid transparent;backgroun
     pop = document.createElement("div"); pop.className = "hc-pop"; pop.setAttribute("role", "dialog"); pop.setAttribute("aria-label", "Настройка таблицы");
     document.body.appendChild(pop); drawPop(); place();
     pop.addEventListener("change", e => {
+      if (e.target.matches?.("[data-hc-top-limit]")) { setTopLimit(popTable, e.target.value); return; }
       const i = Number(e.target.dataset.hcCol); if (!Number.isFinite(i)) return;
       const cols = colsOf(popTable), set = new Set(H[popTable.dataset.hcKey] || []);
       if (e.target.checked) set.delete(cols[i]); else set.add(cols[i]);
@@ -16668,6 +16729,7 @@ body.tb-on .chart:has(svg.heatrows-svg){border:1.5px solid transparent;backgroun
   const root = document.querySelector("main") || document.body;
   new MutationObserver(ms => { if (ms.some(m => !(m.target.closest && m.target.closest(".hc-bar, .hc-pop")))) later(); }).observe(root, {childList:true, subtree:true});
   scan();
+  window.__participantTableLimit = { apply: applyTopLimit, get: topLimitFor, set: setTopLimit };
 })();
 
 /* ===================== Топ месяцев и дней: топ-25, поиск, «показать все» ===================== */
@@ -20080,9 +20142,19 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     return all;
   }
   async function loadReactApi(){
-    // Реакции загружаются независимо от основной истории сообщений; сопоставление ID обновится автоматически,
-    // если справочник пользователей сайта станет доступен позже.
-    return fetchApiItems(apiUrl(K_RA), "реакций");
+    // Реакции загружаются независимо от основной истории сообщений.
+    // Перед сопоставлением Telegram ID подгружаем справочник метрик участников,
+    // если он ещё не загружен: обычно именно в нём есть связка telegram_user_id ↔ user_pk.
+    const items = await fetchApiItems(apiUrl(K_RA), "реакций");
+    try {
+      if (typeof ensureUserMetrics === "function" &&
+          (typeof userMetricRows === "undefined" || !Array.isArray(userMetricRows) || !userMetricRows.length)) {
+        await ensureUserMetrics();
+      }
+    } catch (e) {
+      // Статистика реакций останется доступной по Telegram ID, если справочник недоступен.
+    }
+    return items;
   }
   function rxAll(){
     if (RX_RAW !== null) {
@@ -20135,7 +20207,8 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
       let given = 0, got = 0;
       rxAll().forEach(x => { if (x.f === pk) given += x.n; if (x.t === pk) got += x.n; });
       return {given, got};
-    }
+    },
+    status(){ return {ready:RX_RAW !== null && !RX_ERR, error:RX_ERR}; }
   };
 
   /* ---------- События ---------- */
@@ -20203,7 +20276,8 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
       const ranksMap = rankByEvent.get(id) || new Map();
       const ranks = [...ranksMap.entries()].sort((a,b) => a[0] - b[0]).map(([level, name]) => [level, name]);
       const maxRank = ranks.length ? Math.max(...ranks.map(r => r[0])) : 7;
-      const ach = {name:"Достижение события", icon:"star", desc:`Уровень достижения в событии «${title}»`, th:eventThresholds(maxRank)};
+      const achName = normTitle(title).includes("греческая мифология") ? "Гречка" : "Достижение события";
+      const ach = {name:achName, icon:"star", desc:`Уровень достижения в событии «${title}»`, th:eventThresholds(maxRank)};
       return {id, title, start:validIsoDate(start) ? start : "", end:validIsoDate(end) ? end : "", apiStatus:String(e?.status ?? "").toLowerCase(), c1, c2, icon:"column", ach, ranks};
     });
     EVENTS.splice(0, EVENTS.length, ...hydrated);
@@ -20460,7 +20534,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     }).join("")}</tbody><tfoot><tr><td colspan="2">Итого</td><td>${fmtN(total)}</td><td>${fmtN(sumMap(got))}</td><td>—</td><td>${fmtN(allMessages)}</td><td>${fmtN(chats.size)}</td></tr></tfoot></table></div>`;
 
     const chatList = [...chats.values()].sort((a,b) => b.count-a.count || a.title.localeCompare(b.title,"ru"));
-    const chatTable = `<div class="wrap"><table><thead><tr><th>Чат</th><th>Реакций</th><th>Отправителей</th><th>Получателей</th><th>Сообщений</th><th>Без автора</th></tr></thead><tbody>${chatList.map(ch => `<tr><td style="text-align:left;white-space:normal">${esc(ch.title)}</td><td>${fmtN(ch.count)}</td><td>${fmtN(ch.givers.size)}</td><td>${fmtN(ch.receivers.size)}</td><td>${fmtN(ch.messages.size)}</td><td>${fmtN(ch.unknownReceivers)}</td></tr>`).join("")}</tbody></table></div>`;
+    const chatTable = `<div class="wrap"><table id="re-chat-table"><thead><tr><th>Чат</th><th>Реакций</th><th>Отправителей</th><th>Получателей</th><th>Сообщений</th><th>Без автора</th></tr></thead><tbody>${chatList.map(ch => `<tr><td style="text-align:left;white-space:normal">${esc(ch.title)}</td><td>${fmtN(ch.count)}</td><td>${fmtN(ch.givers.size)}</td><td>${fmtN(ch.receivers.size)}</td><td>${fmtN(ch.messages.size)}</td><td>${fmtN(ch.unknownReceivers)}</td></tr>`).join("")}</tbody></table></div>`;
 
     const me = RS.pk, toM = new Map(), fromM = new Map(), myChats = new Map();
     const myMessageSet = new Set(), myReceivedMessageSet = messagesByReceiver.get(me) || new Set();
@@ -20493,10 +20567,10 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
         ${tile("Неизвестен автор", fmtN(unknownReceivers), "записей не распределено по получателям")}
         ${tile("Неизвестен отправитель", fmtN(unknownGivers), "записей без идентификатора отправителя")}
       </div>
-      <h2>Кто сколько ставит и получает</h2>
+      <div class="section-head"><h2>Кто сколько ставит и получает</h2><div class="table-export-actions"><button class="mini copy-btn" type="button" data-copy-image-table="re-table" data-copy-image-title="Реакции · участники" data-copy-image-status="re-table-copy-status">Копировать как изображение</button><span class="hint" id="re-table-copy-status" role="status" aria-live="polite"></span></div></div>
       <p class="hint">Баланс = получено − поставлено. «Сообщений с реакциями» — число уникальных сообщений пользователя, на которые поставили реакции.</p>
       ${table}
-      <h2>Статистика по чатам</h2>
+      <div class="section-head"><h2>Статистика по чатам</h2><div class="table-export-actions"><button class="mini copy-btn" type="button" data-copy-image-table="re-chat-table" data-copy-image-title="Реакции · по чатам" data-copy-image-status="re-chat-table-copy-status">Копировать как изображение</button><span class="hint" id="re-chat-table-copy-status" role="status" aria-live="polite"></span></div></div>
       ${chatTable}
       <h2>Лично</h2>
       <div class="re-person"><label class="hint" for="re-pk">Участник</label><select id="re-pk">${opts}</select></div>
@@ -20588,7 +20662,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
           ${tile("Максимальный уровень", String(mx), rows[0] ? esc(nm(rows[0][0])) + " · " + esc(rankName(ev, mx)) : "")}
           ${tile(`Достижение «${esc(ev.ach.name)}»`, fmtN(rows.filter(([, v]) => v.level >= th[0]).length), `получили · максимум (ур. ${th[th.length - 1]}+): ${fmtN(rows.filter(([, v]) => v.level >= th[th.length - 1]).length)}`)}
         </div>
-        <h2>Уровни участников — ${esc(ev.title)}</h2>
+        <div class="section-head"><h2>Уровни участников — ${esc(ev.title)}</h2><div class="table-export-actions"><button class="mini copy-btn" type="button" data-copy-image-table="ev-table" data-copy-image-title="Событие · ${esc(ev.title)} · уровни участников" data-copy-image-status="ev-table-copy-status">Копировать как изображение</button><span class="hint" id="ev-table-copy-status" role="status" aria-live="polite"></span></div></div>
         <div class="wrap"><table id="ev-table"><thead><tr><th>Место</th><th>Участник</th><th>Уровень</th><th>Звание</th><th>Опыт</th><th>«${esc(ev.ach.name)}»</th></tr></thead><tbody>${rows.map(([k, v], i) => {
           const tl = th.filter(x => v.level >= x).length;
           const bar = v.progress == null ? Math.min(100, v.level / Math.max(1, mx) * 100) : v.progress;
@@ -20605,7 +20679,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
         const move = x => { const d = x.was - x.place; return d > 0 ? `<span style="color:#4ade80">▲ ${d}</span>` : d < 0 ? `<span style="color:#f87171">▼ ${-d}</span>` : `<span class="hint">—</span>`; };
         const trend = f => f >= 1.15 ? `<span title="последние 2 недели пишет активнее обычного" style="color:#4ade80">↗ ускоряется</span>` : f <= .85 ? `<span title="последние 2 недели пишет меньше обычного" style="color:#f87171">↘ сбавляет темп</span>` : `<span class="hint">→ ровно</span>`;
         const w = FC.list[0], newTiers = FC.list.filter(x => tierOf(x.end) > tierOf(x.now)).length, maxers = FC.list.filter(x => x.end >= thE[thE.length - 1]).length;
-        body += `<h2>Прогноз на конец события</h2>
+        body += `<div class="section-head"><h2>Прогноз на конец события</h2><div class="table-export-actions"><button class="mini copy-btn" type="button" data-copy-image-table="ev-fc-table" data-copy-image-title="Событие · прогноз на конец" data-copy-image-status="ev-fc-table-copy-status">Копировать как изображение</button><span class="hint" id="ev-fc-table-copy-status" role="status" aria-live="polite"></span></div></div>
           <p class="hint">До ${fd(ev.end)} осталось ${fmtN(FC.left)} ${wf2(FC.left, ["день", "дня", "дней"])}. Опыт продлевается текущим темпом каждого участника с поправкой на то, как он пишет последние две недели; диапазон — от спокойного до активного сценария.</p>
           <div class="tiles">
             ${tile("Ожидаемый победитель", w ? esc(nm(w.k)) : "—", w ? `ур. ${w.end} · ${esc(rankName(ev, w.end))}` : "")}
@@ -20622,7 +20696,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     // сводная по всем событиям
     const ppl = events.people().filter(k => list.some(e2 => (L.get(e2.id) || new Map()).has(k)));
     const sum = k => list.reduce((s, e2) => s + ((L.get(e2.id) || new Map()).get(k)?.level || 0), 0);
-    const all = `<h2>Все события вместе</h2><p class="hint">Уровни каждого участника во всех событиях и сумма уровней.</p>
+    const all = `<div class="section-head"><h2>Все события вместе</h2><div class="table-export-actions"><button class="mini copy-btn" type="button" data-copy-image-table="ev-all-table" data-copy-image-title="События · все события вместе" data-copy-image-status="ev-all-table-copy-status">Копировать как изображение</button><span class="hint" id="ev-all-table-copy-status" role="status" aria-live="polite"></span></div></div><p class="hint">Уровни каждого участника во всех событиях и сумма уровней.</p>
       <div class="wrap"><table id="ev-all-table"><thead><tr><th>Место</th><th>Участник</th>${list.map(e2 => `<th>${esc(e2.title)}</th>`).join("")}<th>Сумма уровней</th></tr></thead><tbody>${ppl.sort((a, b) => sum(b) - sum(a)).map((k, i) => `<tr><td>${i + 1}</td><td>${personHtml(k)}</td>${list.map(e2 => { const v = (L.get(e2.id) || new Map()).get(k); return `<td>${v ? v.level : '<span class="hint">—</span>'}</td>`; }).join("")}<td><b>${sum(k)}</b></td></tr>`).join("")}</tbody></table></div>`;
     out.innerHTML = `<div class="bx-head"><h2>События</h2></div>
       ${EV_ERR ? `<p class="status err">Не удалось загрузить API событий: ${esc(EV_ERR)}</p>` : ""}
@@ -20649,6 +20723,15 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
       renderEvents();
     }
   };
+
+  // Копирование таблиц событий/реакций использует тот же PNG-рендерер, что и остальные вкладки.
+  document.addEventListener("click", e => {
+    const b = e.target.closest?.("[data-copy-image-table]");
+    if (!b) return;
+    e.preventDefault();
+    e.stopPropagation();
+    copyTableImage(b.dataset.copyImageTable, b.dataset.copyImageTitle || "Таблица", b.dataset.copyImageStatus);
+  });
 
   /* ---------- Загрузка при открытии вкладки ---------- */
   async function open(t){
