@@ -1574,7 +1574,7 @@ if (!window.__betaOn) document.querySelectorAll("nav .beta-re-btn").forEach(b =>
       <div class="field"><label for="dm-to">По</label><input type="date" id="dm-to"></div>
       <div class="field"><label>Быстрый выбор</label><div class="seg" id="dm-quick"><button data-q="7">7 дней</button><button data-q="14">14 дней</button><button data-q="30">30 дней</button><button data-q="90">90 дней</button><button data-q="182" title="Включает режим «По неделям»">Полгода</button><button data-q="month">Этот месяц</button><button data-q="prev">Прошлый месяц</button></div></div>
       <div class="field" data-fr-keep><label for="dm-chat">Чат</label><select id="dm-chat"><option value="">Все чаты</option></select></div>
-      <div class="field" data-fr-keep><label for="dm-metric">Показатель</label><select id="dm-metric"><option value="msgs">Сообщения</option><option value="stick">Стикеры</option><option value="voice">Голосовые</option><option value="video">Видеосообщения</option></select></div>
+      <div class="field" data-fr-keep><label for="dm-metric">Показатель</label><select id="dm-metric"><option value="msgs">Сообщения</option><option value="stick">Стикеры</option><option value="voice">Голосовые</option><option value="video">Видеосообщения</option><option value="rgive" class="rx-opt">Поставленные реакции</option><option value="rgot" class="rx-opt">Полученные реакции</option></select></div>
       <div class="field"><label for="dm-top">Участники</label><select id="dm-top"><option value="10">Топ-10</option><option value="20">Топ-20</option><option value="all">Все</option></select></div>
       <div class="field"><label for="dm-min" title="Скрыть тех, кто был активен меньше указанного числа дней за период">Малоактивные</label><select id="dm-min"><option value="0">Показывать всех</option><option value="2">Скрыть: меньше 2 дней</option><option value="3">Скрыть: меньше 3 дней</option><option value="5">Скрыть: меньше 5 дней</option><option value="10">Скрыть: меньше 10 дней</option></select></div>
       <div class="field" title="Скрыть тех, у кого за выбранный период меньше указанного количества (сообщений, стикеров — по выбранному показателю). Пусто или 0 — показывать всех"><label for="dm-min-msgs">Скрыть, если меньше</label><input type="number" id="dm-min-msgs" min="0" step="1" inputmode="numeric" placeholder="0" style="min-width:110px"></div>
@@ -1624,6 +1624,7 @@ if (!window.__betaOn) document.querySelectorAll("nav .beta-re-btn").forEach(b =>
         <select id="metric">
           <option value="msgs">Сообщения</option><option value="stick">Стикеры</option>
           <option value="voice">Голосовые</option><option value="video">Видеосообщения</option>
+          <option value="rgive" class="rx-opt">Поставленные реакции</option><option value="rgot" class="rx-opt">Полученные реакции</option>
         </select>
       </div>
       <div class="field" id="heat-scale-field" hidden><label for="heat-scale">Шкала цвета</label>
@@ -1761,7 +1762,7 @@ if (!window.__betaOn) document.querySelectorAll("nav .beta-re-btn").forEach(b =>
     <div class="seg group-tabs" data-group-seg="other"><button type="button" data-gtab="records" class="">Рекорды</button><button type="button" data-gtab="months" class="">Топ месяцев</button><button type="button" data-gtab="days" class="">Топ дней</button><button type="button" data-gtab="forecast" class="">Прогноз</button><button type="button" data-gtab="marathons" class="active">Марафоны</button><button type="button" data-gtab="time" class="">Время</button><button type="button" data-gtab="yearreview" class="">Итоги года</button><button type="button" data-gtab="chronicle" class="">Хроника</button><button type="button" data-gtab="birthdays" class="">Дни рождения</button><button type="button" data-gtab="selfie" class="">Селфи</button><button type="button" data-gtab="usermap" class="">Карта</button><button type="button" data-gtab="vk" class="">VK</button></div>
     <div class="filters">
       <div class="field"><label for="mr-select">Марафон</label><select id="mr-select" style="min-width:260px"></select></div>
-      <div class="field"><label for="mr-metric">Показатель</label><select id="mr-metric"><option value="msgs">Сообщения</option><option value="stick">Стикеры</option><option value="voice">Голосовые</option><option value="video">Видеосообщения</option></select></div>
+      <div class="field"><label for="mr-metric">Показатель</label><select id="mr-metric"><option value="msgs">Сообщения</option><option value="stick">Стикеры</option><option value="voice">Голосовые</option><option value="video">Видеосообщения</option><option value="rgive" class="rx-opt">Поставленные реакции</option><option value="rgot" class="rx-opt">Полученные реакции</option></select></div>
       <div class="field"><label for="mr-chat">Чат</label><select id="mr-chat"><option value="">Все чаты</option></select></div>
       <div class="field"><label>Управление</label><div class="pbtn"><button class="mini" id="mr-new" type="button">+ Новый марафон</button><button class="mini" id="mr-edit" type="button">Изменить</button><button class="mini" id="mr-delete" type="button">Удалить</button></div></div>
     </div>
@@ -1828,7 +1829,7 @@ if (!window.__betaOn) document.querySelectorAll("nav .beta-re-btn").forEach(b =>
     <div class="top-tools"><label class="top-search"><span aria-hidden="true">🔍</span><input type="search" id="m-q" placeholder="Найти месяц: март, 2024, 03.2024" autocomplete="off" aria-label="Поиск месяца"></label></div>
     <p class="status" id="m-status"></p>
     <div class="wrap"><table id="months-table">
-      <thead><tr><th style="text-align:center">Место</th><th style="text-align:left">Месяц</th><th>Сообщения</th><th>Стикеры</th><th>Голосовые</th><th>Видеосообщения</th></tr></thead>
+      <thead><tr><th style="text-align:center">Место</th><th style="text-align:left">Месяц</th><th>Сообщения</th><th>Стикеры</th><th>Голосовые</th><th>Видеосообщения</th><th class="rx-th">Поставлено реакций</th><th class="rx-th">Получено реакций</th></tr></thead>
       <tbody id="m-body"></tbody>
     </table></div>
     <div class="top-more" id="m-more"></div>
@@ -1853,7 +1854,7 @@ if (!window.__betaOn) document.querySelectorAll("nav .beta-re-btn").forEach(b =>
     <div class="top-tools"><label class="top-search"><span aria-hidden="true">🔍</span><input type="search" id="d-q" placeholder="Найти день: 15 марта, 15.03.2024, пятница" autocomplete="off" aria-label="Поиск дня"></label></div>
     <p class="status" id="d-status"></p>
     <div class="wrap"><table id="days-table">
-      <thead><tr><th style="text-align:center">Место</th><th style="text-align:left">День</th><th>Сообщения</th><th>Стикеры</th><th>Голосовые</th><th>Видеосообщения</th></tr></thead>
+      <thead><tr><th style="text-align:center">Место</th><th style="text-align:left">День</th><th>Сообщения</th><th>Стикеры</th><th>Голосовые</th><th>Видеосообщения</th><th class="rx-th">Поставлено реакций</th><th class="rx-th">Получено реакций</th></tr></thead>
       <tbody id="d-body"></tbody>
     </table></div>
     <div class="top-more" id="d-more"></div>
@@ -1897,6 +1898,7 @@ if (!window.__betaOn) document.querySelectorAll("nav .beta-re-btn").forEach(b =>
         <select id="fc-metric">
           <option value="msgs">Сообщения</option><option value="stick">Стикеры</option>
           <option value="voice">Голосовые</option><option value="video">Видеосообщения</option>
+          <option value="rgive" class="rx-opt">Поставленные реакции</option><option value="rgot" class="rx-opt">Полученные реакции</option>
         </select>
       </div>
       <label class="checkline"><input type="checkbox" id="hide-left-forecast">Убрать вышедших</label>
@@ -2071,6 +2073,7 @@ if (!window.__betaOn) document.querySelectorAll("nav .beta-re-btn").forEach(b =>
     <div id="api-fields"></div>
   </section>
 </main>
+<script>if (!window.__betaOn) document.querySelectorAll(".rx-opt, .rx-th").forEach(o => o.remove());</script>
 <footer id="app-ver" class="app-ver"><span id="app-ver-text"></span><button class="mini" id="app-ver-reload" type="button" hidden>Обновить страницу</button></footer>
 
 
@@ -2119,6 +2122,8 @@ const CONFIG = {
 
 // Названия полей в ответе API. Можно указать несколько вариантов — подойдёт первый найденный.
 let lineMeta = null, lineSeriesInfo = null; const hiddenSeries = new Set();
+// Бета «Реакции и события»: два новых показателя — rgive (поставленные реакции) и rgot (полученные)
+const RX_ON = !!window.__betaOn, RX_KEYS = RX_ON ? ["rgive", "rgot"] : [];
 const F = {
   date:   "stat_date",
   chat:   "chat_title",
@@ -2141,6 +2146,7 @@ const NAMES = {
 const PAT = {msgs:/msg|message|text/i, stick:/sticker/i, voice:/voice/i, video:/video|circle|round/i};
 const resolved = {};
 const g = (x, k) => {
+  if (k === "rgive" || k === "rgot") return RX_ON && window.__betaReactCell ? window.__betaReactCell(x, k) : 0;
   if (!resolved[k] || x[resolved[k]] === undefined) {
     let key = [].concat(F[k]).find(n => x[n] !== undefined);
     if (!key) {
@@ -2162,6 +2168,7 @@ const COLS = [
   {k:"voice", t:"Голосовые"},
   {k:"video", t:"Видеосообщения"},
   {k:"stick", t:"Стикеры"},
+  ...(RX_ON ? [{k:"rgive", t:"Поставил(а) реакций"}, {k:"rgot", t:"Получил(а) реакций"}] : []),
 ];
 const $ = id => document.getElementById(id);
 const CHART_BG_KEY = "chatstats.chartBackground.v1";
@@ -2797,8 +2804,8 @@ function aggregateParticipants(sourceRows){
   src.forEach(x => {
     const key = String(x[F.userId] ?? x[F.name]);
     if (!isVisibleUser(key)) return;
-    const u = map.get(key) || {key, name:NAMES[x[F.userId]] || x[F.name] || "—", msgs:0, voice:0, video:0, stick:0, days:new Set()};
-    let any = 0; ["msgs","voice","video","stick"].forEach(k => { const v = Number(g(x, k)) || 0; u[k] += v; any += v; });
+    const u = map.get(key) || {key, name:NAMES[x[F.userId]] || x[F.name] || "—", msgs:0, voice:0, video:0, stick:0, rgive:0, rgot:0, days:new Set()};
+    let any = 0; ["msgs","voice","video","stick", ...RX_KEYS].forEach(k => { const v = Number(g(x, k)) || 0; u[k] += v; any += v; });
     if (any) u.days.add(String(x[F.date] ?? "").slice(0, 10));
     map.set(key, u);
   });
@@ -2853,12 +2860,12 @@ function render(){
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const cell = (u,k) => displayedCell(Number(u[k])||0, Number((priorMap.get(u.key)||{})[k])||0, compareOn, priorMap.has(u.key));
   $("body").innerHTML = list.length
-    ? list.map((u, i) => `<tr data-row-entity="participants" data-row-key="${esc(u.key)}"><td class="${i < 3 ? "medal-" + (i + 1) : ""}">${i + 1}</td><td><div class="row-name-with-action"><span class="pname" data-open-profile="${esc(u.key)}">${esc(u.name)}</span>${goalMini(u.key, rawPM.get(u.key))}<button type="button" class="row-exclude-btn" data-no-export="true" data-exclude-row="participants" data-row-key="${esc(u.key)}" data-row-name="${esc(u.name)}" title="Исключить из таблицы" aria-label="Исключить ${esc(u.name)} из таблицы">×</button></div></td>${cell(u,"msgs")}${cell(u,"voice")}${cell(u,"video")}${cell(u,"stick")}</tr>`).join("")
-    : `<tr><td colspan="6" style="text-align:center;color:var(--muted)">${EXCLUDED_TABLE_ROWS.participants.size ? "Нет строк: участники исключены из таблицы" : "Нет данных за выбранный период"}</td></tr>`;
+    ? list.map((u, i) => `<tr data-row-entity="participants" data-row-key="${esc(u.key)}"><td class="${i < 3 ? "medal-" + (i + 1) : ""}">${i + 1}</td><td><div class="row-name-with-action"><span class="pname" data-open-profile="${esc(u.key)}">${esc(u.name)}</span>${goalMini(u.key, rawPM.get(u.key))}<button type="button" class="row-exclude-btn" data-no-export="true" data-exclude-row="participants" data-row-key="${esc(u.key)}" data-row-name="${esc(u.name)}" title="Исключить из таблицы" aria-label="Исключить ${esc(u.name)} из таблицы">×</button></div></td>${cell(u,"msgs")}${cell(u,"voice")}${cell(u,"video")}${cell(u,"stick")}${RX_KEYS.map(k => cell(u, k)).join("")}</tr>`).join("")
+    : `<tr><td colspan="${COLS.length}" style="text-align:center;color:var(--muted)">${EXCLUDED_TABLE_ROWS.participants.size ? "Нет строк: участники исключены из таблицы" : "Нет данных за выбранный период"}</td></tr>`;
 
   $("foot").innerHTML = list.length
-    ? (NORM === "day" ? "" : `<tr><td colspan="2">Всего (${list.length})</td>${["msgs","voice","video","stick"].map(k => displayedCell(sumMapMetric(visibleMap,k), sumMapMetric(visiblePriorMap,k), compareOn, visiblePriorMap.size > 0)).join("")}</tr>`)
-      + statRows(list, ["msgs","voice","video","stick"], label => `<td colspan="2">${label}</td>`) : "";
+    ? (NORM === "day" ? "" : `<tr><td colspan="2">Всего (${list.length})</td>${["msgs","voice","video","stick", ...RX_KEYS].map(k => displayedCell(sumMapMetric(visibleMap,k), sumMapMetric(visiblePriorMap,k), compareOn, visiblePriorMap.size > 0)).join("")}</tr>`)
+      + statRows(list, ["msgs","voice","video","stick", ...RX_KEYS], label => `<td colspan="2">${label}</td>`) : "";
 
   let statusText = hideLeft && leftFilterError ? `Не удалось получить статусы участников: ${leftFilterError}. Вышедшие не отфильтрованы.` : "";
   if (comparisonEnabled && mode === "all") statusText = [statusText, "Сравнение недоступно для режима «Все данные». Выберите день, неделю, месяц или год."].filter(Boolean).join(" ");
@@ -3046,6 +3053,7 @@ function renderProfile(){
     ${radarHtml(pk, pColor)}
     ${selfieProfileHtml(pk)}
     <h2>Стикеры, голосовые, видеосообщения</h2>${mediaTbl}
+    ${RX_ON && window.__beta?.profileHtml ? window.__beta.profileHtml(pk, pColor) : ""}
     <h2>По чатам, за всё время</h2><div style="--p-color:${pColor}">${chatTbl}</div>`;
   fcStyleAll();
   if (pFcSettingsOpen) renderFcSettings("p-fc-settings-content");
@@ -3122,7 +3130,7 @@ function renderYearLegend(hostId, yearTotals, active, onPick){
 
 /* ---------- Общие функции ---------- */
 const MONTHS = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
-const MLBL = {msgs:"Сообщения", stick:"Стикеры", voice:"Голосовые", video:"Видеосообщения"};
+const MLBL = {msgs:"Сообщения", stick:"Стикеры", voice:"Голосовые", video:"Видеосообщения", rgive:"Поставленные реакции", rgot:"Полученные реакции"};
 const who = x => NAMES[x[F.userId]] || x[F.name] || "—";
 // Строки chat_pk = 0 — «все чаты»; иначе строки нужного чата; если «нулевых» нет — все строки
 function pick(arr, chat){
@@ -3257,8 +3265,8 @@ function monthsData(){
   const m = new Map();
   pick(allRows, $("m-chat").value).forEach(x => {
     const k = String(x[F.date] ?? "").slice(0,7); if (!/^\d{4}-\d{2}$/.test(k)) return;
-    const u = m.get(k) || {msgs:0, stick:0, voice:0, video:0};
-    MET.forEach(t => u[t] += Number(g(x, t)) || 0);
+    const u = m.get(k) || {msgs:0, stick:0, voice:0, video:0, rgive:0, rgot:0};
+    [...MET, ...RX_KEYS].forEach(t => u[t] += Number(g(x, t)) || 0);
     m.set(k, u);
   });
   // Фильтр «один месяц»: показываем, например, только октябри, а место берём из общего топа.
@@ -3270,7 +3278,7 @@ function monthsData(){
   const curMonth = iso(new Date()).slice(0, 7);
   const entries = [...m.entries()].filter(([k]) => (!mYear || k.startsWith(mYear)) && okM(k));
   const row = ([k, u]) => yearRowCells(k.slice(0, 4), place.get(k), `${MONTHS[+k.slice(5) - 1]}${k === curMonth ? '<span class="now-chip">сейчас</span>' : ""}`,
-    [u.msgs, u.stick, u.voice, u.video], (u.msgs / max * 100).toFixed(1));
+    [u.msgs, u.stick, u.voice, u.video, ...RX_KEYS.map(t => u[t])], (u.msgs / max * 100).toFixed(1));
   return {entries, yearTotals, row};
 }
 function renderMonths(){
@@ -3323,13 +3331,13 @@ function daysData(includeToday){
   pick(allRows, $("d-chat").value).forEach(x => {
     const k = String(x[F.date] ?? "").slice(0,10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(k) || vkDay(k)) return;
-    const u = byDay.get(k) || {msgs:0, stick:0, voice:0, video:0};
-    MET.forEach(t => u[t] += Number(g(x, t)) || 0);
+    const u = byDay.get(k) || {msgs:0, stick:0, voice:0, video:0, rgive:0, rgot:0};
+    [...MET, ...RX_KEYS].forEach(t => u[t] += Number(g(x, t)) || 0);
     byDay.set(k, u);
   });
   const today = iso(new Date());
   // The toggle must display today even if the API has not returned a row for it yet.
-  if (includeToday && !byDay.has(today)) byDay.set(today, {msgs:0, stick:0, voice:0, video:0});
+  if (includeToday && !byDay.has(today)) byDay.set(today, {msgs:0, stick:0, voice:0, video:0, rgive:0, rgot:0});
   // Фильтр «один день недели»: показываем, например, только понедельники, место — из общего топа.
   const wdSel = $("d-wd")?.value || "", okD = k => wdSel === "" || wdOf(k) === +wdSel;
   const yearTotals = new Map();
@@ -3344,7 +3352,7 @@ function daysData(includeToday){
     const [y, mo, d] = k.split("-");
     const wd = WDs[new Date(Date.UTC(+y, +mo - 1, +d)).getUTCDay()];
     const label = `${d} ${shortMonths[Number(mo) - 1] || mo}<span class="wd-mute">${wd}</span>${k === today ? '<span class="now-chip">сегодня</span>' : ""}`;
-    return yearRowCells(y, place.get(k), label, [u.msgs, u.stick, u.voice, u.video], (u.msgs / max * 100).toFixed(1), k === today ? " is-today" : "");
+    return yearRowCells(y, place.get(k), label, [u.msgs, u.stick, u.voice, u.video, ...RX_KEYS.map(t => u[t])], (u.msgs / max * 100).toFixed(1), k === today ? " is-today" : "");
   };
   return {entries, yearTotals, row, today, has: k => byDay.has(k) && okD(k), get: k => byDay.get(k)};
 }
@@ -8007,7 +8015,7 @@ function dmCellDetails(k, i){
     h += `<div><em>Активных дней</em><b>${days.size}</b></div>`;
     if (best) h += `<div><em>Лучший день</em><b>${fmt(best[1])} · ${sFmtDate(best[0])}</b></div>`;
   }
-  h += `</div><div class="dm-pop-sub">Все показатели${!L.chatsMode && DM.chat ? ` · чат «${escH(DM.chat)}»` : ""}</div><div class="dm-pop-grid">` + ["msgs", "stick", "voice", "video"].map(key => `<div class="${key === L.metric ? "on" : ""}"><em>${MLBL[key]}</em><b>${fmt(sumM(rowsCell, key))}</b></div>`).join("") + `</div>`;
+  h += `</div><div class="dm-pop-sub">Все показатели${!L.chatsMode && DM.chat ? ` · чат «${escH(DM.chat)}»` : ""}</div><div class="dm-pop-grid">` + ["msgs", "stick", "voice", "video", ...RX_KEYS].map(key => `<div class="${key === L.metric ? "on" : ""}"><em>${MLBL[key]}</em><b>${fmt(sumM(rowsCell, key))}</b></div>`).join("") + `</div>`;
   // Разбивка: для участника — по всем чатам, для чата — по участникам.
   const groups = new Map();
   (L.chatsMode ? chatRows.filter(x => keyC(x) === k && isVisibleUser(keyU(x))) : chatRows.filter(x => keyU(x) === k)).forEach(x => {
@@ -8753,6 +8761,17 @@ function yrAwards(S, C, cutoff){
   metricCard("Король стикеров", "больше всех стикеров", "stick", "стикеров", "#e0af68");
   metricCard("Голос в эфире", "больше всех голосовых", "voice", "голосовых", "#bb9af7");
   metricCard("Режиссёр", "больше всех видеосообщений", "video", "видео", "#2ac3de");
+  if (RX_ON && window.__beta) {
+    const rS = window.__beta.react.range(S.from, S.lim), rC = C ? window.__beta.react.range(C.from, C.lim) : null;
+    const best = (m) => [...m.entries()].filter(([k]) => isVisibleUser(k)).sort((a, b) => b[1] - a[1])[0];
+    [["Ценитель года", "больше всех поставил(а) реакций", "given", "#f7768e"], ["Звезда года", "больше всех получил(а) реакций", "got", "#ffd166"]].forEach(([title, sub, k, acc]) => {
+      const u = best(rS[k]), p = rC ? best(rC[k]) : null;
+      if (u) cards.push({title, sub, acc, name:NAMES[u[0]] || u[0], value:`${fmt(u[1])} реакций`, prev:p ? `${NAMES[p[0]] || p[0]} · ${fmt(p[1])}` : null});
+    });
+    window.__beta.events.inRange(S.from, S.lim).forEach(ev => {
+      if (ev.leader) cards.push({title:`Событие «${ev.title}»`, sub:ev.status === "live" ? "лидер идущего события" : "победитель события", acc:ev.c2, name:NAMES[ev.leader.pk] || ev.leader.pk, value:`ур. ${ev.leader.level} · ${ev.rank}`, prev:null});
+    });
+  }
   { const u = top(S.list, "days"), p = C ? top(C.list, "days") : null;
     cards.push({title:"Самый постоянный", sub:"больше всех активных дней", acc:"#9ece6a", name:u?.name, value:u ? `${yrPlural(u.days, ["день","дня","дней"])} из ${fmt(S.span)}` : "", prev:p ? `${p.name} · ${fmt(p.days)}` : null}); }
   { const u = top(S.list, x => x.best?.v || 0), p = C ? top(C.list, x => x.best?.v || 0) : null;
@@ -8817,6 +8836,8 @@ function renderYearReviewSync(){
     tile("Активных участников", S.list.length, C?.list.length), tile("Активных дней", S.activeDays, C?.activeDays, fmt, `из ${fmt(S.span)}`),
     tile("В среднем в день", avg(S), C ? avg(C) : null, fmtR), tile("Новых участников", newbies(S), C ? newbies(C) : null),
     ...(sfS || sfC ? [tile("Селфи", sfS?.total || 0, sfC ? sfC.total : (C ? 0 : null), fmt, sfS ? `${sfS.days.length} пятниц` : "")] : []),
+    ...(RX_ON && window.__beta ? (() => { const rS = window.__beta.react.range(S.from, S.lim), rC = C ? window.__beta.react.range(C.from, C.lim) : null;
+      return rS.total || rC?.total ? [tile("Реакций", rS.total, rC ? rC.total : null, fmt, rS.topEmoji ? `чаще всего ${rS.topEmoji}` : "")] : []; })() : []),
   ].join("");
   // Топ участников
   const prevRank = C ? new Map(C.list.map((u, i) => [u.pk, i + 1])) : null, total = S.T.msgs;
@@ -9475,6 +9496,16 @@ function cmpModel(){
       ["В среднем за активный день", A.st.activeDays ? A.t.msgs / A.st.activeDays : 0, B.st.activeDays ? B.t.msgs / B.st.activeDays : 0, fmtR, "", "", "среднего за день"],
       ["Лучший день", A.st.best?.v || 0, B.st.best?.v || 0, fmt, A.st.best ? sFmtDate(A.st.best.d) : "", B.st.best ? sFmtDate(B.st.best.d) : "", "лучшего дня"],
       ["Самая длинная серия дней", A.st.maxStreak, B.st.maxStreak, fmt, "", "", "серии дней"]);
+    if (RX_ON && window.__beta) {
+      const [rf, rt] = cmpRange(), R = window.__beta.react, ra = R.between(String(CMP.a), String(CMP.b), rf, rt);
+      const ta = R.totalsIn(String(CMP.a), rf, rt), tb = R.totalsIn(String(CMP.b), rf, rt);
+      metrics.push(["Поставил(а) реакций", ta.given, tb.given, fmt, "", "", "поставленных реакций"], ["Получил(а) реакций", ta.got, tb.got, fmt, "", "", "полученных реакций"],
+        ["Реакций друг другу", ra.ab, ra.ba, fmt, "", "", "реакций друг другу"]);
+      window.__beta.events.inRange(rf, rt).forEach(ev => {
+        const la = window.__beta.events.levelOf(ev.id, CMP.a), lb = window.__beta.events.levelOf(ev.id, CMP.b);
+        if (la || lb) metrics.push([`Уровень в событии «${ev.title}»`, la, lb, fmt, la ? ev.rankOf(la) : "", lb ? ev.rankOf(lb) : "", `уровня в событии «${ev.title}»`]);
+      });
+    }
     if (A.selfie || B.selfie) {
       metrics.push(["Селфи", A.selfie?.count || 0, B.selfie?.count || 0, fmt, "", "", "селфи"]);
       metrics.push(["Посещаемость селфи", Math.round((A.selfie?.att || 0) * 100), Math.round((B.selfie?.att || 0) * 100), v => v + "%", "", "", "посещаемости селфи"]);
@@ -10019,7 +10050,7 @@ function normSuffix(){ return NORM === "day" ? " · на активный ден
 function fmtN(v){ return fmt(NORM === "day" || NORM === "share" ? r1(v) : v) + (NORM === "share" ? "%" : ""); }
 function normMap(map){
   if ((NORM !== "day" && NORM !== "share") || !map) return map;
-  const keys = ["msgs", "stick", "voice", "video"], tot = {};
+  const keys = ["msgs", "stick", "voice", "video", ...RX_KEYS], tot = {};
   keys.forEach(k => tot[k] = [...map.values()].reduce((s2, u) => s2 + (Number(u[k]) || 0), 0));
   const out = new Map();
   map.forEach((u, id) => {
@@ -11458,7 +11489,7 @@ function giniChart(){
   const cMain = chartSeriesStyle("g", "main").c[0], cTop = chartSeriesStyle("g", "top").c[0];
   const sum = G.sum, desc = [...G.v].reverse(), share = k => desc.slice(0, k).reduce((a, b) => a + b, 0) / sum;
   let half = 0, acc = 0; while (acc < sum / 2) acc += desc[half++];
-  const W = 900, who = D.chats ? "чатов" : "участников", mGen = {msgs:"сообщений", stick:"стикеров", voice:"голосовых", video:"видеосообщений"}[D.metric];
+  const W = 900, who = D.chats ? "чатов" : "участников", mGen = {msgs:"сообщений", stick:"стикеров", voice:"голосовых", video:"видеосообщений", rgive:"поставленных реакций", rgot:"полученных реакций"}[D.metric];
   let o = head(cPeriodLabel(), `${MLBL[D.metric]} · насколько активность сосредоточена у немногих ${who}${!D.chats && $("chat").value ? " · " + $("chat").value : ""}`);
   // Кривая Лоренца
   const PX = 70, PY = 110, PS = 360, sx = f => PX + f * PS, sy = f => PY + PS - f * PS;
@@ -12087,6 +12118,18 @@ function multiplesChart(){
     const sel = A("selfie"), sm = new Map();
     SELFIE.forEach(r => { let m = sm.get(r.pk); if (!m) sm.set(r.pk, m = new Map()); m.set(r.date, (m.get(r.date) || 0) + r.count); });
     sm.forEach((m, pk) => { if (NAMES[pk] && isVisibleUser(pk)) cum(pk, sel, m); });
+    // бета: реакции (по дням) и события (уровень засчитывается в день окончания события)
+    if (RX_ON && window.__beta) {
+      const rg = new Map(), rr = new Map(), put = (M, pk, d, n) => { let m = M.get(pk); if (!m) M.set(pk, m = new Map()); m.set(d, (m.get(d) || 0) + n); };
+      window.__beta.react.rows().forEach(x => { put(rg, x.f, x.d, x.n); put(rr, x.t, x.d, x.n); });
+      rg.forEach((m, pk) => { if (NAMES[pk] && isVisibleUser(pk)) cum(pk, A("rgive"), m); });
+      rr.forEach((m, pk) => { if (NAMES[pk] && isVisibleUser(pk)) cum(pk, A("rgot"), m); });
+      const E = window.__beta.events;
+      E.list().filter(ev => ev.status === "done").forEach(ev => {
+        const a = {id:"ev-" + ev.id, name:ev.ach.name, icon:ev.ach.icon, th:ev.ach.th};
+        E.people().forEach(pk => { if (!NAMES[pk] || !isVisibleUser(pk)) return; const l = a.th.filter(t => E.levelOf(ev.id, pk) >= t).length; for (let i = 1; i <= l; i++) add(pk, a, i, ev.end); });
+      });
+    }
     return out;
   }
   window.__achApi = {recent:recentAch, score:pk => stats(pk).score, full:pk => stats(pk), rank:sc => rankOf(sc)};
@@ -14510,7 +14553,9 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.10.28-4", date:"2026-10-28", title:"Новая навигация, иконки и плавность", items:[
+  {v:"2026.10.28-5", date:"2026-10-28", title:"Новая навигация, иконки и плавность", items:[
+    {tag:"new", area:"Бета", text:"Поставленные и полученные реакции — новые показатели: столбцы в Статистике и Топах, выбор в Графиках, Матрице, Марафонах и Прогнозе."},
+    {tag:"new", area:"Бета", text:"Реакции и события в Итогах года (плитка, «Ценитель года», «Звезда года», победители событий), в Сравнении участников и в Профиле; новые достижения — в Хронике и Хабе."},
     {tag:"fix", area:"Бета", text:"Реакции: убрана светлая полоса на первой строке таблицы; вместо часов — графики по дням (или месяцам) и по дням недели, «Пик активности» заменён на «Самый активный день»."},
     {tag:"new", area:"Бета", text:"«Реакции и события (бета)» в Настройках → Данные: вкладки «Реакции» (кто, кому, когда и какие реакции ставит) и «События» (тематические события бота, уровни и звания участников). Пока на тестовых данных."},
     {tag:"new", area:"Бета", text:"С бетой «Топ месяцев» и «Топ дней» объединены во вкладку «Топы», «Селфи», «Время» и «Дни рождения» переехали в Хаб, у Достижений появились «Общие | По событиям» и достижения «Ценитель» и «Звезда»."},
@@ -19808,31 +19853,63 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
   /* ---------- Реакции ---------- */
   const EMOJI = [["👍", 22], ["❤️", 18], ["😂", 16], ["🔥", 11], ["😁", 7], ["👏", 5], ["🤔", 4], ["💯", 4], ["🥰", 4], ["😢", 3], ["🤡", 3], ["😱", 2], ["🙏", 2], ["💔", 1.5], ["🤝", 1.5]];
   let RX = null, RX_API = null, RX_LOADING = null;
+  // Тестовые реакции строятся от истории сообщений: в день ставят реакции только те, кто писал,
+  // и их число пропорционально активности дня.
   function mockReactions(){
-    const P = people(); if (!P.length) return [];
-    const r = rng(20251215), out = new Map();
-    const giv = P.map(p => ({pk:p.pk, p:Math.pow(p.w, .75) * (.4 + (hash("g" + p.pk) % 100) / 60)}));
-    const rec = P.map(p => ({pk:p.pk, p:Math.pow(p.w, .85) * (.5 + (hash("r" + p.pk) % 100) / 70)}));
-    const aff = new Map(); // «любимчики»: у каждого 3 человека, которым он ставит чаще
-    P.forEach(p => { const rr = rng(hash("a" + p.pk)); const fav = new Set(); while (fav.size < Math.min(3, P.length - 1)) { const q = P[Math.floor(rr() * P.length)].pk; if (q !== p.pk) fav.add(q); } aff.set(p.pk, fav); });
-    const emo = EMOJI.map(([e, p]) => ({e, p}));
-    const start = dI("2025-01-01"), end = dI(today());
-    for (let di = start; di <= end; di++) {
-      const d = isoD(new Date(di * 864e5)), wd = new Date(di * 864e5).getUTCDay();
-      const n = Math.round((48 + r() * 50) * (wd === 0 || wd === 6 ? 1.25 : 1) * (1 + (di - start) / (end - start) * .5));
+    const rowsA = AR() || []; if (!rowsA.length) return [];
+    const hasTot = rowsA.some(x => Number(x[F.chatPk]) === 0);
+    const day = new Map();
+    rowsA.forEach(x => {
+      if (hasTot && Number(x[F.chatPk]) !== 0) return;
+      const d = String(x[F.date] ?? "").slice(0, 10), u = String(x[F.userId] ?? "");
+      if (d < "2025-01-01" || !u || !NAMES[u] || (typeof vkDay === "function" && vkDay(d))) return;
+      const v = Number(g(x, "msgs")) || 0; if (!v) return;
+      let m = day.get(d); if (!m) day.set(d, m = new Map()); m.set(u, (m.get(u) || 0) + v);
+    });
+    const r = rng(20251215), out = new Map(), emo = EMOJI.map(([e, p]) => ({e, p}));
+    const fg = pk => .4 + (hash("g" + pk) % 100) / 60, fr = pk => .5 + (hash("r" + pk) % 100) / 70;
+    const favOf = new Map(), allP = [...new Set([...day.values()].flatMap(m => [...m.keys()]))];
+    allP.forEach(p => { const rr = rng(hash("a" + p)); const fav = new Set(); let t = 0; while (fav.size < Math.min(3, allP.length - 1) && t++ < 50) { const q = allP[Math.floor(rr() * allP.length)]; if (q !== p) fav.add(q); } favOf.set(p, fav); });
+    [...day.keys()].sort().forEach(d => {
+      const m = day.get(d); if (m.size < 2) return;
+      const tot = [...m.values()].reduce((a, b) => a + b, 0);
+      const giv = [...m].map(([pk, v]) => ({pk, p:Math.pow(v, .8) * fg(pk)})), rec = [...m].map(([pk, v]) => ({pk, p:Math.pow(v, .9) * fr(pk)}));
+      const n = Math.round(tot * .07 * (.8 + r() * .4));
       for (let i = 0; i < n; i++) {
         const a = pick(giv, r).pk; let b = null;
-        const fav = [...aff.get(a)];
-        if (r() < .35) b = fav[Math.floor(r() * fav.length)];
+        const fav = [...(favOf.get(a) || [])].filter(q => m.has(q));
+        if (fav.length && r() < .35) b = fav[Math.floor(r() * fav.length)];
         for (let t = 0; t < 6 && (!b || b === a); t++) b = pick(rec, r).pk;
         if (!b || b === a) continue;
         const e = (hash(a) % 4 === 0 && r() < .3) ? ["🔥", "🤡", "💯", "🥰"][hash(a) % 4] : pick(emo, r).e;
         const key = `${d}|${a}|${b}|${e}`;
         out.set(key, (out.get(key) || 0) + 1);
       }
-    }
+    });
     return [...out.entries()].map(([k, n]) => { const [d, a, b, e] = k.split("|"); return {d, f:a, t:b, e, n}; });
   }
+  // Показатели rgive/rgot для строк истории: реакции участника за день «живут» в одной его строке —
+  // в строке «все чаты» (chat_pk 0), а если её нет — в чате, где он больше всего писал в тот день.
+  let CELL = null;
+  function cellIndex(){
+    const rx = rxAll(), rowsA = AR();
+    if (CELL && CELL.rx === rx && CELL.rows === rowsA) return CELL;
+    const du = new Map(), dc = new Map();
+    rx.forEach(x => { let a = du.get(x.d + "|" + x.f); if (!a) du.set(x.d + "|" + x.f, a = {rgive:0, rgot:0}); a.rgive += x.n; let b = du.get(x.d + "|" + x.t); if (!b) du.set(x.d + "|" + x.t, b = {rgive:0, rgot:0}); b.rgot += x.n; });
+    const hasTot = (rowsA || []).some(x => Number(x[F.chatPk]) === 0), best = new Map();
+    (rowsA || []).forEach(x => {
+      const k = String(x[F.date] ?? "").slice(0, 10) + "|" + String(x[F.userId] ?? ""), c = String(x[F.chatPk] ?? x[F.chat] ?? "");
+      if (hasTot) { if (Number(x[F.chatPk]) === 0) dc.set(k, c); return; }
+      const v = Number(g(x, "msgs")) || 0, b = best.get(k);
+      if (!b || v > b) { best.set(k, v); dc.set(k, c); }
+    });
+    return CELL = {rx, rows:rowsA, du, dc};
+  }
+  window.__betaReactCell = (x, k) => {
+    const C = cellIndex(), key = String(x[F.date] ?? "").slice(0, 10) + "|" + String(x[F.userId] ?? "");
+    if (C.dc.get(key) !== String(x[F.chatPk] ?? x[F.chat] ?? "")) return 0;
+    return C.du.get(key)?.[k] || 0;
+  };
   async function loadReactApi(){
     const url = ls(K_RA); if (!url) return null;
     const res = await fetch(url, {cache:"no-store"}); if (!res.ok) throw new Error("HTTP " + res.status);
@@ -19846,7 +19923,13 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     return RX.rows;
   }
   let RX_ERR = "";
+  const inR = (x, from, to) => (!from || x.d >= from) && (!to || x.d <= to);
   const react = {
+    range(from, to){ const given = new Map(), got = new Map(), emo = new Map(); let total = 0;
+      rxAll().forEach(x => { if (!inR(x, from, to)) return; total += x.n; given.set(x.f, (given.get(x.f) || 0) + x.n); got.set(x.t, (got.get(x.t) || 0) + x.n); emo.set(x.e, (emo.get(x.e) || 0) + x.n); });
+      return {total, given, got, emo, topEmoji:[...emo.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || ""}; },
+    between(a, b, from, to){ let ab = 0, ba = 0; rxAll().forEach(x => { if (!inR(x, from, to)) return; if (x.f === a && x.t === b) ab += x.n; else if (x.f === b && x.t === a) ba += x.n; }); return {ab, ba}; },
+    totalsIn(pk, from, to){ let given = 0, got = 0; rxAll().forEach(x => { if (!inR(x, from, to)) return; if (x.f === pk) given += x.n; if (x.t === pk) got += x.n; }); return {given, got}; },
     rows:rxAll,
     totals(pk){ pk = String(pk); let given = 0, got = 0; rxAll().forEach(x => { if (x.f === pk) given += x.n; if (x.t === pk) got += x.n; }); return {given, got}; },
     isMock:() => !ls(K_RA)
@@ -19909,9 +19992,46 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     list:() => EVENTS.map(ev => ({...ev, status:statusOf(ev)})),
     levelOf:(id, pk) => evLevels().get(id)?.get(String(pk))?.level || 0,
     people:() => people().map(p => p.pk),
-    isMock:() => !ls(K_EA)
+    isMock:() => !ls(K_EA),
+    inRange(from, to){
+      return EVENTS.filter(ev => ev.start <= to && ev.end >= from && ev.start <= today()).map(ev => {
+        const m = evLevels().get(ev.id) || new Map(), lead = [...m.entries()].filter(([k]) => typeof isVisibleUser !== "function" || isVisibleUser(k)).sort((a, b) => b[1].xp - a[1].xp)[0];
+        return {...ev, status:statusOf(ev), leader:lead ? {pk:lead[0], level:lead[1].level} : null, rank:lead ? rankName(ev, lead[1].level) : "", rankOf:l => rankName(ev, l)};
+      });
+    }
   };
   window.__beta = {react, events};
+  /* ---------- Профиль участника: реакции и события ---------- */
+  window.__beta.profileHtml = (pk, color) => {
+    pk = String(pk);
+    const t = today(), P = [["Сегодня", t, t], ["Этот месяц", t.slice(0, 7) + "-01", t], ["Этот год", t.slice(0, 4) + "-01-01", t], ["За всё время", "", ""]];
+    const place = (m, v) => { if (!v) return "—"; let better = 0, n = 0; m.forEach((x, k) => { if (typeof isVisibleUser === "function" && !isVisibleUser(k)) return; if (x > 0) n++; if (x > v) better++; }); return `${better + 1} из ${n}`; };
+    const rowsT = P.map(([l, f, to]) => { const R = react.range(f, to), gv = R.given.get(pk) || 0, gt = R.got.get(pk) || 0;
+      return `<tr><td style="text-align:left">${l}</td><td><b>${fmtN(gv)}</b> <small class="hint">${place(R.given, gv)}</small></td><td><b>${fmtN(gt)}</b> <small class="hint">${place(R.got, gt)}</small></td></tr>`; }).join("");
+    const toM = new Map(), fromM = new Map(), emo = new Map();
+    rxAll().forEach(x => { if (x.f === pk) { toM.set(x.t, (toM.get(x.t) || 0) + x.n); emo.set(x.e, (emo.get(x.e) || 0) + x.n); } if (x.t === pk) fromM.set(x.f, (fromM.get(x.f) || 0) + x.n); });
+    const top = (m, n) => [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n);
+    const L = evLevels();
+    const evCards = EVENTS.filter(ev => ev.start <= t).map(ev => {
+      const m = L.get(ev.id) || new Map(), me = m.get(pk), st = statusOf(ev);
+      const order = [...m.entries()].sort((a, b) => b[1].xp - a[1].xp), pl = order.findIndex(([k]) => k === pk) + 1, tl = me ? ev.ach.th.filter(x => me.level >= x).length : 0;
+      const ROM = ["—", "I", "II", "III", "IV", "V", "VI", "VII"], TC = l => l <= 0 ? "#4a5060" : l <= 3 ? "#e3a36b" : l <= 6 ? "#c0c6d4" : "#ffd166";
+      return `<div class="ev-card" data-ev-open="${esc(ev.id)}" style="--ec1:${ev.c1};--ec2:${ev.c2}"><h3>${evSvg(ev.icon)}${esc(ev.title)}</h3><p class="hint">${fd(ev.start)} — ${fd(ev.end)}${st === "live" ? " · идёт" : ""}</p>
+        ${me ? `<div class="ev-meta"><span>Уровень: <b>${me.level}</b></span><span>${esc(rankName(ev, me.level))}</span></div><div class="ev-meta"><span>Место: <b>${pl}</b> из ${m.size}</span><span>«${esc(ev.ach.name)}»: <span class="ev-tier" style="--tc:${TC(tl)}">${ROM[tl]}</span></span></div>` : `<div class="ev-meta"><span>Не участвовал(а)</span></div>`}</div>`;
+    }).join("");
+    return `<h2>Реакции ${mockNote(react.isMock())}</h2>
+      <div class="wrap"><table class="re-prof"><thead><tr><th style="text-align:left">Период</th><th>Поставил(а)</th><th>Получил(а)</th></tr></thead><tbody>${rowsT}</tbody></table></div>
+      <div class="bx-grid">
+        <div class="bx-card"><h3>Кому ставит реакции</h3><p class="hint">Топ-5 за всё время</p>${bars(top(toM, 5).map(([k, v]) => ({lbl:esc(nm(k)), v, c:col(k)})), {empty:"Реакций не ставил(а)"})}</div>
+        <div class="bx-card"><h3>Кто ставит реакции</h3><p class="hint">Топ-5 за всё время</p>${bars(top(fromM, 5).map(([k, v]) => ({lbl:esc(nm(k)), v, c:col(k)})), {empty:"Реакций не получал(а)"})}</div>
+        <div class="bx-card"><h3>Любимые реакции</h3><p class="hint">Что ставит чаще всего</p>${bars(top(emo, 5).map(([e, v]) => ({lbl:e, v, bg:grad(color || col(pk))})), {emo:true})}</div>
+      </div>
+      <h2>События ${mockNote(events.isMock())}</h2><div class="ev-timeline">${evCards}</div>`;
+  };
+  document.addEventListener("click", e => {
+    const c = e.target.closest?.("[data-ev-open]"); if (!c) return;
+    EVSEL = c.dataset.evOpen; ls("chatstats.eventSel.v1", EVSEL); nav.querySelector('button[data-tab="events"]')?.click();
+  });
 
   /* ---------- Навигация: «Топы», Селфи/Время/ДР в Хабе, новые вкладки ---------- */
   const nav = document.querySelector("nav");
@@ -20183,6 +20303,8 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
   }
   function rerender(){
     const t = curTab();
+    CELL = null;
+    try { if (t === "stats" && typeof render === "function") render(); if (t === "charts" && typeof renderCharts === "function") renderCharts(); } catch (e) {}
     if (t === "reactions") renderReactions();
     if (t === "events") renderEvents();
     if (t === "achievements" && window.renderAchievements) window.renderAchievements();
