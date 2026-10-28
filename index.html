@@ -1438,6 +1438,8 @@ body.fx-pulse .fx-pulse-dot{display:inline;animation:fxPulse 1.6s ease-out infin
     <button data-tab="compare">Сравнение</button>
     <button data-tab="daymatrix">Матрица</button>
     <button data-tab="charts">Графики</button>
+    <button data-tab="reactions" class="beta-re-btn">Реакции</button>
+    <button data-tab="events" class="beta-re-btn">События</button>
     <button data-tab="marathons" data-group="other">Другое</button>
     <button data-tab="settings">Настройки</button>
     <button data-tab="records" class="nav-hidden">Рекорды</button>
@@ -1456,6 +1458,12 @@ body.fx-pulse .fx-pulse-dot{display:inline;animation:fxPulse 1.6s ease-out infin
     <button data-tab="vk" class="nav-hidden">VK</button>
   </nav>
 </header>
+<script id="beta-re-flag">
+/* «Реакции и события (бета)»: без флага новые вкладки убираются из навигации ещё до запуска остальных скриптов */
+window.__betaOn = (() => { try { return localStorage.getItem("chatstats.betaRE.v1") === "1"; } catch (e) { return false; } })();
+document.body.classList.toggle("beta-re", window.__betaOn);
+if (!window.__betaOn) document.querySelectorAll("nav .beta-re-btn").forEach(b => b.remove());
+</script>
 <main>
   <div id="shared">
     <div class="filters">
@@ -1952,6 +1960,14 @@ body.fx-pulse .fx-pulse-dot{display:inline;animation:fxPulse 1.6s ease-out infin
     <div id="yr-out"></div>
   </section>
 
+  <section class="tab" id="tab-reactions">
+    <div id="re-out"></div>
+  </section>
+
+  <section class="tab" id="tab-events">
+    <div id="ev-out"></div>
+  </section>
+
   <section class="tab" id="tab-settings">
     <h2>Тема оформления</h2>
     <p class="hint">Все темы тёмные: тема задаёт цвет акцентов (кнопки, подсветка, ссылки), а «Фон» — оттенок тёмной основы. Меняет цвета всего сайта и таблиц, в том числе в скопированных картинках. Цвета графиков настраиваются отдельно через «⚙ Настройка».</p>
@@ -2008,6 +2024,13 @@ body.fx-pulse .fx-pulse-dot{display:inline;animation:fxPulse 1.6s ease-out infin
     <h2>Кэш истории</h2>
     <p class="hint">История сообщений хранится в этом браузере, а с сервера догружаются только последние дни. Поэтому вкладки с полной историей открываются быстро.</p>
     <div class="pbtn"><button class="mini" id="cache-reset" type="button">Очистить кэш и загрузить заново</button><span class="hint" id="cache-info"></span></div>
+    <h2>Реакции и события (бета)</h2>
+    <p class="hint">Новые вкладки «Реакции» и «События», достижения за реакции и за события. Вместе с ними меняется раскладка: «Топ месяцев» и «Топ дней» объединяются во вкладку «Топы», а «Селфи», «Время» и «Дни рождения» переезжают в Хаб. Пока API нет, показываются тестовые данные. После переключения страница перезагрузится.</p>
+    <div class="filters"><label class="checkline"><input type="checkbox" id="set-beta-re">Реакции и события (бета)</label></div>
+    <div class="filters" id="beta-api-fields">
+      <div class="field"><label for="beta-api-react">API реакций</label><input type="url" id="beta-api-react" placeholder="Пусто — тестовые данные" autocomplete="off"></div>
+      <div class="field"><label for="beta-api-events">API событий</label><input type="url" id="beta-api-events" placeholder="Пусто — тестовые данные" autocomplete="off"></div>
+    </div>
     <h2>Перенос настроек между компьютерами</h2>
     <p class="hint">Экспорт включает все сохранённые настройки дашборда: цвета и пороги графиков, размеры ячеек, оформление текста, палитры, параметры таблиц и выбранные режимы вкладок. Статистика и API-ключ не включаются. Можно скопировать настройки в буфер или скачать JSON-файл.</p>
     <div class="filters" id="settings-transfer-controls">
@@ -11915,6 +11938,11 @@ function multiplesChart(){
     flame:'<path d="M12 2c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z"/>',
     home:'<path d="M3 11l9-8 9 8v10H3z"/><path d="M9 21v-6h6v6"/>',
     camera:'<path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="4"/>',
+    heart:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/><path d="M19.5 2.5v3M18 4h3"/>',
+    star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+    wand:'<path d="M4 20 15 9"/><path d="M14 5l1-2 1 2 2 1-2 1-1 2-1-2-2-1z"/><path d="M19 11l.6 1.4L21 13l-1.4.6L19 15l-.6-1.4L17 13l1.4-.6z"/>',
+    shuriken:'<path d="M12 2l2 7 7-2-5 5 5 5-7-2-2 7-2-7-7 2 5-5-5-5 7 2z"/><circle cx="12" cy="12" r="1.6"/>',
+    column:'<path d="M4 5h16M5 8h14M4 21h16M5 18h14"/><path d="M7 8v10M10.3 8v10M13.7 8v10M17 8v10"/><path d="M6 5c0-1 1-2 2-2h8c1 0 2 1 2 2"/>',
     skull:'<path d="M12 3a8 8 0 0 0-8 8c0 3 1.5 4.5 3 5.5V20h10v-3.5c1.5-1 3-2.5 3-5.5a8 8 0 0 0-8-8z"/><circle cx="9" cy="11" r="1.4"/><circle cx="15" cy="11" r="1.4"/><path d="M10 20v-2M14 20v-2"/>',
   };
   const wf = (v, a) => wordForm(v, a);
@@ -11940,6 +11968,12 @@ function multiplesChart(){
     {id:"corpse", name:"Труп", icon:"skull", desc:"Не писать в чат определённое количество дней подряд", th:[30,60,100,150,250,400,550,700,850,1000],
       val:d => d.maxSilence, show:v => fmt(Math.round(v)), unit:v => wf(v, ["день", "дня", "дней"]) + " молчания подряд", note:d => d.curSilence > 1 ? `сейчас молчит ${fmt(d.curSilence)} ${wf(d.curSilence, ["день", "дня", "дней"])}` : ""},
   ];
+  // Бета: достижения за реакции (данные — window.__beta.react)
+  if (window.__betaOn) ACH.push(
+    {id:"rgive", name:"Ценитель", icon:"heart", desc:"Поставить определённое количество реакций", th:[100,300,700,1500,3000,5000,7000,10000,12000,15000],
+      val:d => d.reactGiven, show:v => fmt(Math.round(v)), unit:v => wf(v, ["реакция", "реакции", "реакций"]) + " поставлено", note:() => "за всё время · бета"},
+    {id:"rgot", name:"Звезда", icon:"star", desc:"Получить определённое количество реакций", th:[100,300,700,1500,3000,5000,7000,10000,12000,15000],
+      val:d => d.reactGot, show:v => fmt(Math.round(v)), unit:v => wf(v, ["реакция", "реакции", "реакций"]) + " получено", note:() => "за всё время · бета"});
   const RANKS = [[0, "Новичок", "🌱"], [10, "Житель колонии", "🏠"], [25, "Старожил", "🧭"], [45, "Активист", "⚡"], [65, "Легенда колонии", "👑"], [85, "Бессмертный", "💎"]];
   const rankOf = score => { let r = RANKS[0]; RANKS.forEach(x => { if (score >= x[0]) r = x; }); return r; };
 
@@ -11980,6 +12014,7 @@ function multiplesChart(){
     const d = {pk, msgs:u.msgs, stick:u.stick, voice:u.voice, video:u.video, maxDay, maxDayDate, winStreak, winStart, winEnd,
       maxStreak:st.maxStreak, streakStart:st.maxStart, streakEnd:st.maxEnd, maxSilence:st.maxSilence, curSilence:Math.max(0, (st.sinceLast ?? 0) - 1),
       since, years, selfie:sp ? sp.total : 0, active:u.msgs > 0};
+    if (window.__betaOn) { const rt = window.__beta?.react.totals(pk) || {given:0, got:0}; d.reactGiven = rt.given; d.reactGot = rt.got; }
     const items = ACH.map(a => {
       const v = Number(a.val(d)) || 0;
       let level, prevTh, nextTh;
@@ -12083,7 +12118,7 @@ function multiplesChart(){
   function heroHtml(res, name, color){
     const r = rankOf(res.score);
     return `<div class="ach-hero" style="--hc:${color}"><div class="ach-avatar">${window.AVATAR ? AVATAR.inner(LAST.pk, String(name).replace(/^[«"]/, "").slice(0, 1).toUpperCase()) : escH(String(name).replace(/^[«"]/, "").slice(0, 1).toUpperCase())}</div>
-      <div><div class="ach-hname">${escH(name)}</div><div class="ach-hrank">${r[2]} ${r[1]}</div><div class="ach-score-bar"><i style="width:${res.score}%"></i></div><div class="ach-score-lbl">Очки: ${res.score} из 100 (уровни всех достижений, у «Колониста» максимум 10)</div></div>
+      <div><div class="ach-hname">${escH(name)}</div><div class="ach-hrank">${r[2]} ${r[1]}</div><div class="ach-score-bar"><i style="width:${Math.min(100, res.score / (ACH.length * 10) * 100)}%"></i></div><div class="ach-score-lbl">Очки: ${res.score} из ${ACH.length * 10} (уровни всех достижений, у «Колониста» максимум 10)</div></div>
       <div class="ach-hstats"><div class="ach-hstat"><b>${res.score}</b><span>очков</span></div><div class="ach-hstat"><b>${res.got}/${ACH.length}</b><span>получено</span></div><div class="ach-hstat"><b>${res.maxCnt}</b><span>максимум</span></div></div></div>`;
   }
   function boardHtml(pk){
@@ -12118,8 +12153,32 @@ function multiplesChart(){
     const res = stats(pk), name = NAMES[pk] || `ID ${pk}`, color = getStyle("u", pk).c[0];
     LAST = {pk, res, name, color};
     const legend = `<div class="ach-legend">${Object.entries(TIER_NAMES).map(([k, n]) => `<span><i style="background:${TIERS[k]}"></i>${n}</span>`).join("")}<span><i style="background:${TIERS.none}"></i>Не получено</span></div>`;
-    $("ach-out").innerHTML = heroHtml(res, name, color) + `<div class="ach-grid">${res.items.map(cardHtml).join("")}</div>${legend}` + boardHtml(pk);
+    let view = "main"; try { view = localStorage.getItem("chatstats.achView.v1") || "main"; } catch (e) {}
+    if (!window.__betaOn || !window.__beta) view = "main";
+    const seg = window.__betaOn ? `<div class="seg ach-view-seg" role="tablist"><button type="button" data-ach-view="main" class="${view === "main" ? "active" : ""}">Общие</button><button type="button" data-ach-view="events" class="${view === "events" ? "active" : ""}">По событиям</button></div>` : "";
+    $("ach-out").innerHTML = heroHtml(res, name, color) + seg + (view === "events" ? eventsAchHtml(pk) + legend : `<div class="ach-grid">${res.items.map(cardHtml).join("")}</div>${legend}` + boardHtml(pk));
   }
+  // Бета: достижения по событиям — у каждого события своё, 7 уровней по достигнутому уровню в событии
+  function eventsAchHtml(pk){
+    const E = window.__beta.events, list = E.list();
+    const items = list.map(ev => {
+      const v = E.levelOf(ev.id, pk), th = ev.ach.th;
+      const level = th.filter(t => v >= t).length, prevTh = level ? th[level - 1] : 0, nextTh = level < th.length ? th[level] : null, maxed = level >= th.length;
+      const a = {id:"ev-" + ev.id, name:ev.ach.name, icon:ev.ach.icon, desc:ev.ach.desc, th, show:v2 => v2 ? String(v2) : "—", unit:v2 => v2 ? "уровень в событии" : "не участвовал(а)",
+        note:() => `${formatMetricDate(ev.start)} — ${formatMetricDate(ev.end)}${ev.status === "live" ? " · идёт" : ""}`};
+      return {a, v, level, prevTh, nextTh, maxed, pr:maxed ? 1 : Math.max(0, Math.min(1, (v - prevTh) / ((nextTh - prevTh) || 1))), tier:tierOfLevel(level)};
+    });
+    const rows = E.people().map(p2 => ({p:p2, lv:list.map(ev => E.levelOf(ev.id, p2))})).filter(r => r.lv.some(x => x > 0))
+      .map(r => ({...r, tiers:r.lv.map((x, i) => list[i].ach.th.filter(t => x >= t).length)})).sort((a, b) => b.tiers.reduce((s2, x) => s2 + x, 0) - a.tiers.reduce((s2, x) => s2 + x, 0) || b.lv.reduce((s2, x) => s2 + x, 0) - a.lv.reduce((s2, x) => s2 + x, 0));
+    const cell = (lv, t) => lv ? `<span class="ev-tier" style="--tc:${TIERS[tierOfLevel(t)]}">${t ? ROMAN[t] : "—"}</span> <small class="hint">ур. ${lv}</small>` : `<span class="hint">—</span>`;
+    const board = `<h2>Рейтинг по событиям</h2><div class="wrap"><table id="ach-ev-table"><thead><tr><th>Место</th><th style="text-align:left">Участник</th>${list.map(ev => `<th>${escH(ev.ach.name)}</th>`).join("")}<th>Уровней достижений</th></tr></thead><tbody>${rows.map((r, i) => `<tr${r.p === String(pk) ? ' class="me"' : ""}><td>${i + 1}</td><td style="text-align:left">${escH(NAMES[r.p] || "ID " + r.p)}</td>${r.lv.map((lv, j) => `<td>${cell(lv, r.tiers[j])}</td>`).join("")}<td><b>${r.tiers.reduce((s2, x) => s2 + x, 0)}</b></td></tr>`).join("")}</tbody></table></div>`;
+    return `<div class="ach-grid">${items.map(cardHtml).join("")}</div>` + board;
+  }
+  document.addEventListener("click", e => {
+    const b = e.target.closest && e.target.closest("[data-ach-view]"); if (!b) return;
+    try { localStorage.setItem("chatstats.achView.v1", b.dataset.achView); } catch (err) {}
+    render();
+  });
   window.loadAchievements = async function(){
     const st = $("ach-status");
     if (!allRows) $("ach-out").innerHTML = `<div class="sk sk-poster" style="height:130px"></div>` + skPage(4, 2);
@@ -14451,7 +14510,9 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.10.28-2", date:"2026-10-28", title:"Новая навигация, иконки и плавность", items:[
+  {v:"2026.10.28-3", date:"2026-10-28", title:"Новая навигация, иконки и плавность", items:[
+    {tag:"new", area:"Бета", text:"«Реакции и события (бета)» в Настройках → Данные: вкладки «Реакции» (кто, кому, когда и какие реакции ставит) и «События» (тематические события бота, уровни и звания участников). Пока на тестовых данных."},
+    {tag:"new", area:"Бета", text:"С бетой «Топ месяцев» и «Топ дней» объединены во вкладку «Топы», «Селфи», «Время» и «Дни рождения» переехали в Хаб, у Достижений появились «Общие | По событиям» и достижения «Ценитель» и «Звезда»."},
     {tag:"imp", area:"ПК", text:"Боковое меню — и свёрнутое при наведении, и закреплённое — шириной ровно по самой длинной подписи и меньше заходит на страницу."},
     {tag:"imp", area:"Везде", text:"Все кнопки, переключатели и выпадающие списки оформлены как боковая навигация: полупрозрачная панель, выбранный пункт — светлая подложка с тонкой рамкой."},
     {tag:"imp", area:"Вкладки", text:"Топ месяцев и дней: копирование и «Карточки / Таблица» — справа от поиска, годы — строкой ниже. В Рекордах, Времени, Марафонах и Днях рождения кнопки стоят в строке заголовка таблицы. Убрано длинное описание в Топе дней."},
@@ -16287,7 +16348,7 @@ body.tb-on .chart:has(svg.heatrows-svg){border:1.5px solid transparent;backgroun
     {k:"fx", ic:"✨", c:"#bf5af2", t:"Эффекты", d:"Анимации, частицы на фоне, рамка таблиц и графиков", h:["Эффекты"]},
     {k:"filters", ic:"🎛️", c:"#34c759", t:"Фильтры и таблицы", d:"Вид фильтров и дополнения к таблицам", h:["Фильтры", "Экспериментально"]},
     {k:"people", ic:"👥", c:"#ff9f0a", t:"Участники", d:"Имена, цвета, дни рождения, города и аватарки", h:["Участники", "Дни рождения", "Аватарки"]},
-    {k:"data", ic:"🗄️", c:"#30b0c7", t:"Данные", d:"Ultimate, кэш, автообновление и сервер", h:["Colony Ultimate", "Кэш истории", "Автообновление", "Адрес сервера", "Поля API"]},
+    {k:"data", ic:"🗄️", c:"#30b0c7", t:"Данные", d:"Ultimate, кэш, автообновление, сервер и бета-функции", h:["Colony Ultimate", "Кэш истории", "Автообновление", "Адрес сервера", "Поля API", "Реакции и события"]},
     {k:"site", ic:"ℹ️", c:"#8e8e93", t:"Перенос и версия", d:"Экспорт и импорт настроек, версия сайта, история обновлений", h:["Перенос настроек", "О сайте"]},
   ];
   const catOfH2 = txt => { txt = txt.trim(); const c = CATS.find(c => c.h.some(p => txt.startsWith(p))); return c ? c.k : null; };
@@ -18797,6 +18858,12 @@ html[data-site-font]:not([data-site-font="samsung"]) body :is(svg,svg text,svg t
   /* ---------- Переводы новых подписей ---------- */
   const D = window.__I18N_DICT;
   if (D) Object.assign(D, {
+    "Реакции":["Reactions","Реакції","Рэакцыі","Реакциялар","Réactions","Reakcje"],
+    "События":["Events","Події","Падзеі","Оқиғалар","Événements","Wydarzenia"],
+    "Топы":["Tops","Топи","Топы","Топтар","Tops","Topy"],
+    "Реакции и события (бета)":["Reactions and events (beta)","Реакції та події (бета)","Рэакцыі і падзеі (бэта)","Реакциялар мен оқиғалар (бета)","Réactions et événements (bêta)","Reakcje i wydarzenia (beta)"],
+    "Общие":["General","Загальні","Агульныя","Жалпы","Générales","Ogólne"],
+    "По событиям":["By events","За подіями","Па падзеях","Оқиғалар бойынша","Par événement","Według wydarzeń"],
     "Топ-10":["Top 10","Топ-10","Топ-10","Топ-10","Top 10","Top 10"],
     "Топ-20":["Top 20","Топ-20","Топ-20","Топ-20","Top 20","Top 20"],
     "Копировать топ-10":["Copy top 10","Копіювати топ-10","Капіяваць топ-10","Топ-10 көшіру","Copier le top 10","Kopiuj top 10"],
@@ -19200,6 +19267,9 @@ body.side-nav nav button[data-tab]::before{content:""!important;display:inline-b
   /* ---------- Набор иконок: 24×24, линия 1.8, скруглённые концы ---------- */
   const P = {
     home:["M3 10.5 12 3l9 7.5","M5 9v11h5v-6h4v6h5V9"],
+    react:["M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z","M19.5 2.5v3","M18 4h3"],
+    levelup:["M12 2.5l8 4.6v9.8l-8 4.6-8-4.6V7.1z","M8.5 12.5 12 9l3.5 3.5","M8.5 16.5 12 13l3.5 3.5"],
+    tops:["M8 21h8","M12 17v4","M7 4h10v5a5 5 0 0 1-10 0z","M10.5 8.5 12 7v5"],
     compass:["c:12 12 9","M15.5 8.5 13.3 13.3 8.5 15.5 10.7 10.7z"],
     user:["c:12 8 4","M4 21c.8-3.9 4.2-6.5 8-6.5s7.2 2.6 8 6.5"],
     users:["c:9 8 3.5","M2.5 20c.6-3.4 3.3-5.6 6.5-5.6s5.9 2.2 6.5 5.6","M16 4.6a3.5 3.5 0 0 1 0 6.8","M18.4 14.6c1.7.7 2.8 2.6 3.1 5.4"],
@@ -19275,7 +19345,7 @@ body.side-nav nav button[data-tab]::before{content:""!important;display:inline-b
   };
   // Эмодзи → иконка (вариационный селектор U+FE0F отбрасывается)
   const E = {"🧭":"compass","🏠":"home","👤":"user","👥":"users","📊":"bars","📈":"trend","📉":"trend","⚖":"scale","🗓":"grid","📅":"calendar","📆":"caldays","🈷":"calendar","⚙":"gear","🏆":"trophy","🥇":"medal","🏅":"medal","🎖":"medal","🔮":"sparkles","✨":"sparkles","🏁":"flag","⏳":"hourglass","⌛":"hourglass","🎬":"film","📜":"list","📋":"list","🎂":"cake","📸":"camera","📷":"camera","🗺":"map","🅥":"vk","🎨":"palette","📱":"phone","🎛":"sliders","🗄":"database","💾":"database","ℹ":"info","🔥":"flame","💬":"chat","🔔":"bell","🔕":"belloff","⬇":"download","📥":"download","📤":"upload","🎯":"target","⏱":"clock","🕐":"clock","🔍":"search","👁":"eye","↕":"sort","🔃":"sort","⟳":"refresh","🔄":"refresh","🖼":"image","🛠":"wrench","🔧":"wrench","📍":"pin","💤":"sleep","🚪":"door","🚫":"ban","☁":"cloud","🔢":"hash","⚡":"bolt","🌡":"thermo","📏":"ruler","🔦":"torch","⬆":"up","🧩":"puzzle","🪞":"copy","🗂":"folder","📁":"folder","➗":"divide","⏮":"prev","⏭":"next","🔗":"link","🎈":"balloon","🎉":"party","🥳":"party","⭐":"star","🌟":"star","❤":"heart","🎤":"mic","🎙":"mic","🎥":"video","📹":"video","🖼️":"image","🔒":"lock","🎁":"gift","🚀":"rocket","🗑":"trash","✅":"check","🔀":"swap","📲":"phone"};
-  const TAB = {hub:"home", profile:"user", stats:"bars", compare:"scale", daymatrix:"grid", charts:"trend", settings:"gear", records:"trophy", months:"medal", days:"caldays", forecast:"sparkles", marathons:"flag", time:"hourglass", yearreview:"film", achievements:"medal", chronicle:"list", birthdays:"cake", selfie:"camera", usermap:"map", vk:"vk", menu:"grid"};
+  const TAB = {reactions:"react", events:"levelup", hub:"home", profile:"user", stats:"bars", compare:"scale", daymatrix:"grid", charts:"trend", settings:"gear", records:"trophy", months:"medal", days:"caldays", forecast:"sparkles", marathons:"flag", time:"hourglass", yearreview:"film", achievements:"medal", chronicle:"list", birthdays:"cake", selfie:"camera", usermap:"map", vk:"vk", menu:"grid"};
   const shape = (s, stroke) => {
     if (s.startsWith("c:")) { const [cx, cy, r] = s.slice(2).split(" "); return `<circle cx="${cx}" cy="${cy}" r="${r}"/>`; }
     if (s.startsWith("e:")) { const [cx, cy, rx, ry] = s.slice(2).split(" "); return `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}"/>`; }
@@ -19622,6 +19692,498 @@ html body:not(.nv-off) :is(main,#filter-drawer) :is(input[type=text],input[type=
   document.addEventListener("dblclick", e => { if (e.target.id === "side-resizer") setTimeout(later, 30); });
 })();
 </script>
+<style id="v42-ui">
+/* ===================== v42 (бета): Реакции и События, «Топы», Селфи/Время/ДР в Хабе ===================== */
+html body.beta-re nav button.beta-hide{display:none!important}
+html body.beta-re :is(.group-tabs,.seg) > button.beta-hide{display:none!important}
+html body.beta-re section.tab > .seg.group-tabs[data-group-seg="other"].beta-hide{display:none!important}
+.beta-badge{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:600;letter-spacing:.02em;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);vertical-align:middle}
+.bx-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 14px}
+.bx-head h2{margin:0 auto 0 0!important}
+.bx-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:14px;margin:0 0 18px}
+.bx-card{padding:16px 16px 12px;border-radius:16px;background:var(--nv-fill,var(--panel));border:1px solid var(--nv-line,var(--line));box-shadow:inset 0 1px 0 var(--glass-hi,transparent);min-width:0}
+body.glass-ui .bx-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur)}
+.bx-card h3{margin:0 0 4px;font-size:15px}
+.bx-card > .hint{margin:0 0 12px;font-size:12.5px}
+.bx-list{display:flex;flex-direction:column;gap:7px}
+.bx-row{display:grid;grid-template-columns:minmax(70px,140px) 1fr auto;align-items:center;gap:10px;font-size:13.5px}
+.bx-row > span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bx-row .bx-bar{height:12px;border-radius:6px;background:color-mix(in srgb,var(--text) 6%,transparent);overflow:hidden}
+.bx-row .bx-bar > i{display:block;height:100%;border-radius:6px;min-width:3px}
+.bx-row b{font-variant-numeric:tabular-nums;min-width:44px;text-align:right}
+.bx-row.emo{grid-template-columns:30px 1fr auto}
+.bx-row.emo > span:first-child{font-size:20px;line-height:1}
+.bx-empty{color:var(--muted);font-size:13px;padding:8px 0}
+.re-heat{display:grid;grid-template-columns:28px repeat(24,minmax(0,1fr));gap:3px;font-size:10.5px;color:var(--muted)}
+.re-heat > i{aspect-ratio:1;border-radius:4px;background:color-mix(in srgb,var(--accent) calc(var(--v,0) * 100%),color-mix(in srgb,var(--text) 5%,transparent))}
+.re-heat > span{display:flex;align-items:center;justify-content:center}
+.re-heat > span.l{justify-content:flex-start}
+.re-hours{display:flex;align-items:flex-end;gap:3px;height:210px;margin-top:4px}
+.re-hours > div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px;height:100%;min-width:0}
+.re-hours > div > i{width:100%;border-radius:4px 4px 2px 2px;background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 80%,#fff),color-mix(in srgb,var(--accent) 70%,#000));min-height:2px}
+.re-hours > div > small{font-size:10px;color:var(--muted)}
+.re-person{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:6px 0 14px}
+.re-person select{min-width:200px}
+.re-mutual{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.re-mutual span{padding:5px 10px;border-radius:10px;background:color-mix(in srgb,var(--text) 6%,transparent);font-size:13px}
+.ev-timeline{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:14px;margin:0 0 20px}
+.ev-card{position:relative;padding:16px;border-radius:16px;background:var(--nv-fill,var(--panel));border:1px solid var(--nv-line,var(--line));cursor:pointer;overflow:hidden;transition:border-color .15s,transform .15s}
+body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur)}
+.ev-card::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,var(--ec1),var(--ec2))}
+.ev-card:hover{transform:translateY(-1px)}
+.ev-card.on{border-color:color-mix(in srgb,var(--ec2) 70%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--ec2) 40%,transparent),0 14px 30px -18px var(--ec1)}
+.ev-card h3{margin:2px 0 4px;font-size:17px;display:flex;align-items:center;gap:8px}
+.ev-card h3 svg{width:20px;height:20px;color:var(--ec2);flex:0 0 auto}
+.ev-card .hint{margin:0;font-size:12.5px}
+.ev-st{display:inline-block;margin-top:10px;padding:2px 9px;border-radius:999px;font-size:12px;background:color-mix(in srgb,var(--text) 8%,transparent)}
+.ev-st.live{color:#4ade80;background:color-mix(in srgb,#4ade80 14%,transparent)}
+.ev-prog{height:6px;border-radius:3px;margin-top:10px;background:color-mix(in srgb,var(--text) 8%,transparent);overflow:hidden}
+.ev-prog > i{display:block;height:100%;background:linear-gradient(90deg,var(--ec1),var(--ec2))}
+.ev-meta{display:flex;gap:14px;margin-top:10px;font-size:12.5px;color:var(--muted)}
+.ev-meta b{color:var(--text)}
+.ev-tier{display:inline-block;min-width:26px;padding:1px 6px;border-radius:8px;font-weight:700;font-size:12px;color:var(--tc);border:1px solid color-mix(in srgb,var(--tc) 55%,transparent);background:color-mix(in srgb,var(--tc) 12%,transparent)}
+.ev-rank{font-size:12.5px;color:var(--muted)}
+.ev-lv{display:inline-flex;align-items:center;gap:8px}
+.ev-lv i{display:inline-block;width:80px;height:6px;border-radius:3px;background:color-mix(in srgb,var(--text) 8%,transparent);overflow:hidden}
+.ev-lv i > em{display:block;height:100%;background:linear-gradient(90deg,var(--ec1),var(--ec2))}
+.ach-view-seg{margin:0 0 16px!important}
+#tab-achievements.active > #ach-out > .ach-view-seg{flex:0 0 auto!important;max-width:max-content}
+tr.me > td{background:color-mix(in srgb,var(--accent) 10%,transparent)!important}
+@media (max-width:720px){
+  .bx-row{grid-template-columns:minmax(60px,110px) 1fr auto}
+  .re-heat{gap:2px;font-size:9px;grid-template-columns:22px repeat(24,minmax(0,1fr))}
+}
+</style>
+<script id="v42-js">
+/* ===================== Бета: «Реакции и события» =====================
+   Пока API не подключены, данные — тестовые (детерминированные, от имён участников и их активности).
+   Ожидаемые форматы API (задаются в «Настройки → Данные»):
+   • реакции: {items:[{date:"YYYY-MM-DD", hour:0-23, from_user_pk, to_user_pk, emoji, count}]}
+   • события: {events:[{id, title, start:"YYYY-MM-DD", end:"YYYY-MM-DD", ranks:[[уровень, "название"], …]}],
+               levels:[{event_id, user_pk, level, xp}]} */
+(() => {
+  const KEY = "chatstats.betaRE.v1", K_RA = "chatstats.betaApiReact.v1", K_EA = "chatstats.betaApiEvents.v1";
+  const ls = (k, v) => { try { if (v === undefined) return localStorage.getItem(k) || ""; if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) { return ""; } };
+
+  /* ---------- Переключатель в настройках ---------- */
+  const cb = document.getElementById("set-beta-re");
+  if (cb) {
+    cb.checked = !!window.__betaOn;
+    cb.addEventListener("change", () => { ls(KEY, cb.checked ? "1" : ""); setTimeout(() => location.reload(), 150); });
+  }
+  [["beta-api-react", K_RA], ["beta-api-events", K_EA]].forEach(([id, k]) => {
+    const el = document.getElementById(id); if (!el) return;
+    el.value = ls(k); el.addEventListener("change", () => { ls(k, el.value.trim()); if (window.__betaOn) location.reload(); });
+  });
+  const f = document.getElementById("beta-api-fields"); if (f) f.hidden = !window.__betaOn;
+  if (!window.__betaOn) return;
+
+  const AR = () => (typeof allRows !== "undefined" ? allRows : null);
+  const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;"}[c]));
+  const nm = pk => NAMES[pk] || `ID ${pk}`;
+  const col = pk => { try { return getStyle("u", pk).c[0]; } catch (e) { return "#7aa2f7"; } };
+  const grad = c => { try { if (window.SOFT_GRAD) { const [a, z] = softPair(c); return `linear-gradient(90deg,${a},${z})`; } } catch (e) {} return c; };
+  const isoD = d => d.toISOString().slice(0, 10);
+  const today = () => isoD(new Date());
+  const dI = d => Math.floor(Date.parse(d + "T00:00:00Z") / 864e5);
+  const fmtN = v => (typeof fmt === "function" ? fmt(v) : String(v));
+  const fd = d => (typeof formatMetricDate === "function" ? formatMetricDate(d) : d);
+  const wf2 = (n, f) => (typeof wordForm === "function" ? wordForm(n, f) : f[2]);
+  const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const hash = s => { let h = 2166136261; for (const ch of String(s)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return h >>> 0; };
+
+  /* ---------- Участники и их «вес» — из истории сообщений ---------- */
+  let PEOPLE = null;
+  function people(){
+    if (PEOPLE && PEOPLE.src === AR()) return PEOPLE.list;
+    const w = new Map();
+    (AR() || []).forEach(x => { const k = String(x[F.userId] ?? ""); if (!k || !NAMES[k]) return; w.set(k, (w.get(k) || 0) + (Number(g(x, "msgs")) || 0)); });
+    if (!w.size) Object.keys(NAMES).forEach(k => w.set(String(k), 1000 + hash(k) % 5000));
+    const list = [...w.entries()].filter(([k]) => typeof isVisibleUser !== "function" || isVisibleUser(k)).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({pk:k, w:v}));
+    PEOPLE = {src:AR(), list};
+    return list;
+  }
+  const pick = (list, r) => { let s = 0; for (const x of list) s += x.p; let t = r() * s; for (const x of list) { t -= x.p; if (t <= 0) return x; } return list[list.length - 1]; };
+
+  /* ---------- Реакции ---------- */
+  const EMOJI = [["👍", 22], ["❤️", 18], ["😂", 16], ["🔥", 11], ["😁", 7], ["👏", 5], ["🤔", 4], ["💯", 4], ["🥰", 4], ["😢", 3], ["🤡", 3], ["😱", 2], ["🙏", 2], ["💔", 1.5], ["🤝", 1.5]];
+  const HOUR_W = [3,2,1.2,.7,.4,.3,.5,1.2,2.4,3.4,4,4.4,5,5.2,5,5.1,5.4,6,7,8.2,9.4,10,8.6,5.6];
+  let RX = null, RX_API = null, RX_LOADING = null;
+  function mockReactions(){
+    const P = people(); if (!P.length) return [];
+    const r = rng(20251215), out = new Map();
+    const giv = P.map(p => ({pk:p.pk, p:Math.pow(p.w, .75) * (.4 + (hash("g" + p.pk) % 100) / 60)}));
+    const rec = P.map(p => ({pk:p.pk, p:Math.pow(p.w, .85) * (.5 + (hash("r" + p.pk) % 100) / 70)}));
+    const aff = new Map(); // «любимчики»: у каждого 3 человека, которым он ставит чаще
+    P.forEach(p => { const rr = rng(hash("a" + p.pk)); const fav = new Set(); while (fav.size < Math.min(3, P.length - 1)) { const q = P[Math.floor(rr() * P.length)].pk; if (q !== p.pk) fav.add(q); } aff.set(p.pk, fav); });
+    const emo = EMOJI.map(([e, p]) => ({e, p})), hrs = HOUR_W.map((p, h) => ({h, p}));
+    const start = dI("2025-01-01"), end = dI(today());
+    for (let di = start; di <= end; di++) {
+      const d = isoD(new Date(di * 864e5)), wd = new Date(di * 864e5).getUTCDay();
+      const n = Math.round((48 + r() * 50) * (wd === 0 || wd === 6 ? 1.25 : 1) * (1 + (di - start) / (end - start) * .5));
+      for (let i = 0; i < n; i++) {
+        const a = pick(giv, r).pk; let b = null;
+        const fav = [...aff.get(a)];
+        if (r() < .35) b = fav[Math.floor(r() * fav.length)];
+        for (let t = 0; t < 6 && (!b || b === a); t++) b = pick(rec, r).pk;
+        if (!b || b === a) continue;
+        const e = (hash(a) % 4 === 0 && r() < .3) ? ["🔥", "🤡", "💯", "🥰"][hash(a) % 4] : pick(emo, r).e;
+        const h = pick(hrs, r).h, key = `${d}|${h}|${a}|${b}|${e}`;
+        out.set(key, (out.get(key) || 0) + 1);
+      }
+    }
+    return [...out.entries()].map(([k, n]) => { const [d, h, a, b, e] = k.split("|"); return {d, h:+h, f:a, t:b, e, n}; });
+  }
+  async function loadReactApi(){
+    const url = ls(K_RA); if (!url) return null;
+    const res = await fetch(url, {cache:"no-store"}); if (!res.ok) throw new Error("HTTP " + res.status);
+    const j = await res.json(), items = Array.isArray(j) ? j : (j.items || j.data || []);
+    return items.map(x => ({d:String(x.date ?? x.stat_date ?? "").slice(0, 10), h:Number(x.hour ?? 0) || 0, f:String(x.from_user_pk ?? x.from ?? x.user_pk ?? ""), t:String(x.to_user_pk ?? x.to ?? ""), e:String(x.emoji ?? x.reaction ?? "👍"), n:Number(x.count ?? 1) || 1})).filter(x => x.d && x.f && x.t);
+  }
+  function rxAll(){
+    if (RX_API) return RX_API;
+    if (ls(K_RA)) { if (!RX_LOADING) RX_LOADING = loadReactApi().then(v => { RX_API = v || []; rerender(); }).catch(e => { RX_API = []; RX_ERR = e.message; rerender(); }); return []; }
+    if (!RX || RX.src !== AR()) RX = {src:AR(), rows:mockReactions()};
+    return RX.rows;
+  }
+  let RX_ERR = "";
+  const react = {
+    rows:rxAll,
+    totals(pk){ pk = String(pk); let given = 0, got = 0; rxAll().forEach(x => { if (x.f === pk) given += x.n; if (x.t === pk) got += x.n; }); return {given, got}; },
+    isMock:() => !ls(K_RA)
+  };
+
+  /* ---------- События ---------- */
+  const EVENTS = [
+    {id:"hp", title:"Гарри Поттер", start:"2025-12-15", end:"2026-03-20", c1:"#7a1f2b", c2:"#f2c14e", icon:"wand",
+      ach:{name:"Волшебник", icon:"wand", desc:"Достигнуть уровня в событии по Гарри Поттеру", th:[10,15,20,25,30,35,40]},
+      ranks:[[1, "Маггл"], [5, "Первокурсник"], [10, "Ученик Хогвартса"], [15, "Староста"], [20, "Мракоборец"], [25, "Член Ордена Феникса"], [30, "Профессор"], [35, "Директор Хогвартса"], [40, "Великий волшебник"]]},
+    {id:"naruto", title:"Наруто", start:"2026-03-21", end:"2026-09-11", c1:"#c2410c", c2:"#fb923c", icon:"shuriken",
+      ach:{name:"Шиноби", icon:"shuriken", desc:"Достигнуть уровня в событии по Наруто", th:[10,15,20,25,30,35,40]},
+      ranks:[[1, "Ученик академии"], [5, "Генин"], [10, "Чунин"], [15, "Токубецу-джонин"], [20, "Джонин"], [25, "АНБУ"], [30, "Саннин"], [35, "Каге"], [40, "Мудрец шести путей"]]},
+    {id:"greek", title:"Греческая мифология", start:"2026-09-12", end:"2026-12-11", c1:"#1d4ed8", c2:"#a5f3fc", icon:"column",
+      ach:{name:"Гречка", icon:"column", desc:"Достигнуть уровня в событии по греческой мифологии", th:[10,15,20,25,30,35,40]},
+      ranks:[[1, "Смертный"], [5, "Герой"], [10, "Аргонавт"], [15, "Полубог"], [20, "Оракул"], [25, "Титан"], [30, "Олимпиец"], [35, "Бог Олимпа"], [40, "Владыка Олимпа"]]},
+  ];
+  const EV_ICON = {
+    wand:'<path d="M4 20 15 9"/><path d="M14 5l1-2 1 2 2 1-2 1-1 2-1-2-2-1z"/><path d="M19 11l.6 1.4L21 13l-1.4.6L19 15l-.6-1.4L17 13l1.4-.6z"/>',
+    shuriken:'<path d="M12 2l2 7 7-2-5 5 5 5-7-2-2 7-2-7-7 2 5-5-5-5 7 2z"/><circle cx="12" cy="12" r="1.6"/>',
+    column:'<path d="M4 5h16M5 8h14M4 21h16M5 18h14"/><path d="M7 8v10M10.3 8v10M13.7 8v10M17 8v10"/>'};
+  const evSvg = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${EV_ICON[k] || ""}</svg>`;
+  let EVD = null, EV_API = null, EV_LOADING = null;
+  const xpFor = lv => Math.round(50 * lv * lv + 150 * lv);
+  function mockEvents(){
+    const P = people(), t = today(), lv = new Map();
+    EVENTS.forEach(ev => {
+      const r = rng(hash(ev.id)), m = new Map();
+      const total = dI(ev.end) - dI(ev.start) + 1, done = Math.max(0, Math.min(total, dI(t) - dI(ev.start) + 1)), frac = done / total;
+      if (frac <= 0) { lv.set(ev.id, m); return; }
+      const maxW = P[0]?.w || 1;
+      P.forEach((p, i) => {
+        if (r() < .18 + i / P.length * .25) return; // не все участвуют
+        const base = 4 + 42 * Math.pow(1 - i / P.length, 1.1) * (.7 + r() * .6) * (.6 + Math.pow(p.w / maxW, .5) * .4);
+        const level = Math.max(1, Math.min(45, Math.round(base * Math.sqrt(frac))));
+        m.set(p.pk, {level, xp:xpFor(level) + Math.floor(r() * (xpFor(level + 1) - xpFor(level)))});
+      });
+      lv.set(ev.id, m);
+    });
+    return lv;
+  }
+  async function loadEventsApi(){
+    const url = ls(K_EA); if (!url) return null;
+    const res = await fetch(url, {cache:"no-store"}); if (!res.ok) throw new Error("HTTP " + res.status);
+    const j = await res.json(), lv = new Map();
+    (j.events || []).forEach(e => { const ex = EVENTS.find(x => x.id === String(e.id)); const ev = ex || {id:String(e.id), c1:"#6366f1", c2:"#c4b5fd", icon:"column", ach:{name:e.title, icon:"star", desc:`Достигнуть уровня в событии «${e.title}»`, th:[10,15,20,25,30,35,40]}}; Object.assign(ev, {title:e.title ?? ev.title, start:e.start ?? ev.start, end:e.end ?? ev.end}); if (e.ranks) ev.ranks = e.ranks; if (!ex) EVENTS.push(ev); });
+    (j.levels || []).forEach(x => { const id = String(x.event_id); if (!lv.has(id)) lv.set(id, new Map()); lv.get(id).set(String(x.user_pk), {level:Number(x.level) || 0, xp:Number(x.xp) || 0}); });
+    return lv;
+  }
+  function evLevels(){
+    if (EV_API) return EV_API;
+    if (ls(K_EA)) { if (!EV_LOADING) EV_LOADING = loadEventsApi().then(v => { EV_API = v || new Map(); rerender(); }).catch(e => { EV_API = new Map(); EV_ERR = e.message; rerender(); }); return new Map(); }
+    if (!EVD || EVD.src !== AR()) EVD = {src:AR(), lv:mockEvents()};
+    return EVD.lv;
+  }
+  let EV_ERR = "";
+  const statusOf = ev => { const t = today(); return t < ev.start ? "soon" : t > ev.end ? "done" : "live"; };
+  const rankName = (ev, level) => { let n = ev.ranks?.[0]?.[1] || ""; (ev.ranks || []).forEach(([l, name]) => { if (level >= l) n = name; }); return n; };
+  const events = {
+    list:() => EVENTS.map(ev => ({...ev, status:statusOf(ev)})),
+    levelOf:(id, pk) => evLevels().get(id)?.get(String(pk))?.level || 0,
+    people:() => people().map(p => p.pk),
+    isMock:() => !ls(K_EA)
+  };
+  window.__beta = {react, events};
+
+  /* ---------- Навигация: «Топы», Селфи/Время/ДР в Хабе, новые вкладки ---------- */
+  const nav = document.querySelector("nav");
+  const HUB_SUB = ["selfie", "time", "birthdays"], TOPS = ["months", "days"];
+  const hideBtns = () => {
+    nav.querySelectorAll("button[data-tab]").forEach(b => {
+      const t = b.dataset.tab;
+      if (b.classList.contains("nav-hidden") && (t === "days" || HUB_SUB.includes(t))) b.classList.add("beta-hide");
+      if (b.classList.contains("nav-hidden") && t === "months") { b.textContent = "Топы"; b.title = "Топы"; b.dataset.betaTops = "1"; }
+      if (t === "reactions") b.style.order = "20";
+      if (t === "events") b.style.order = "21";
+    });
+  };
+  hideBtns();
+  // В переключателях «Другое» (верхнее меню): одна кнопка «Топы», без перенесённых в Хаб
+  document.querySelectorAll('.seg.group-tabs[data-group-seg="other"]').forEach(seg => {
+    seg.querySelectorAll("button[data-gtab]").forEach(b => { const t = b.dataset.gtab; if (t === "days" || HUB_SUB.includes(t)) b.classList.add("beta-hide"); if (t === "months") { b.textContent = "Топы"; b.dataset.betaTops = "1"; } });
+    const sec = seg.closest("section.tab");
+    if (sec && HUB_SUB.includes(sec.id.slice(4))) seg.classList.add("beta-hide");
+    if (sec && TOPS.includes(sec.id.slice(4))) { const b = seg.querySelector('[data-beta-tops]'); if (b) b.classList.add("active"); }
+  });
+  // «Топ месяцев | Топ дней» внутри вкладки «Топы»
+  TOPS.forEach(t => {
+    const sec = document.getElementById("tab-" + t); if (!sec || sec.querySelector(".tops-seg")) return;
+    const seg = document.createElement("div"); seg.className = "seg group-tabs tops-seg";
+    seg.innerHTML = TOPS.map(x => `<button type="button" data-gtab="${x}" class="${x === t ? "active" : ""}">${x === "months" ? "Топ месяцев" : "Топ дней"}</button>`).join("");
+    const after = sec.querySelector(':scope > .seg.group-tabs[data-group-seg="other"]');
+    after ? after.after(seg) : sec.prepend(seg);
+  });
+  // Хаб: Хаб | Селфи | Время | Дни рождения | История обновлений
+  const hubSeg = document.getElementById("hub-seg");
+  if (hubSeg && !hubSeg.querySelector("[data-gtab]")) {
+    const log = hubSeg.querySelector('[data-hub-view="log"]');
+    HUB_SUB.forEach(t => { const b = document.createElement("button"); b.type = "button"; b.dataset.gtab = t; b.textContent = {selfie:"Селфи", time:"Время", birthdays:"Дни рождения"}[t]; hubSeg.insertBefore(b, log); });
+  }
+  HUB_SUB.forEach(t => {
+    const sec = document.getElementById("tab-" + t); if (!sec || sec.querySelector(".hubsub-seg")) return;
+    const seg = document.createElement("div"); seg.className = "seg group-tabs hubsub-seg";
+    seg.innerHTML = `<button type="button" data-hub-jump="main">Хаб</button>` + HUB_SUB.map(x => `<button type="button" data-gtab="${x}" class="${x === t ? "active" : ""}">${{selfie:"Селфи", time:"Время", birthdays:"Дни рождения"}[x]}</button>`).join("") + `<button type="button" data-hub-jump="log">История обновлений</button>`;
+    sec.prepend(seg);
+  });
+  document.addEventListener("click", e => {
+    const j = e.target.closest?.("[data-hub-jump]"); if (!j) return;
+    const hb = nav.querySelector('button[data-tab="hub"]:not(.nav-hidden)') || nav.querySelector('button[data-tab="hub"]');
+    hb?.click(); setTimeout(() => document.querySelector(`#hub-seg [data-hub-view="${j.dataset.hubJump}"]`)?.click(), 30);
+  });
+  // Подсветка: на Селфи/Времени/ДР — «Хаб», на Топах — «Топы»
+  const curTab = () => document.querySelector("main > section.tab.active")?.id.slice(4) || "";
+  function syncNav(){
+    const t = curTab();
+    const hub = nav.querySelector('button[data-tab="hub"]:not(.nav-hidden)'), tops = nav.querySelector("button[data-beta-tops]");
+    if (HUB_SUB.includes(t) && hub) {
+      nav.querySelectorAll("button.active").forEach(b => { if (b !== hub) b.classList.remove("active"); });
+      hub.classList.add("active");
+      nav.querySelectorAll("button.side-active").forEach(b => { if (b !== hub) b.classList.remove("side-active"); });
+      if (document.body.classList.contains("side-nav")) hub.classList.add("side-active");
+    }
+    if (TOPS.includes(t) && tops && document.body.classList.contains("side-nav")) {
+      nav.querySelectorAll("button.side-active").forEach(b => { if (b !== tops) b.classList.remove("side-active"); });
+      tops.classList.add("side-active");
+    }
+    if (hubSeg) hubSeg.querySelectorAll("[data-gtab]").forEach(b => b.classList.remove("active"));
+  }
+  const later = () => { setTimeout(syncNav, 20); setTimeout(syncNav, 120); };
+  document.addEventListener("click", later);
+  new MutationObserver(later).observe(document.querySelector("main"), {attributes:true, subtree:true, attributeFilter:["class"], attributeOldValue:false});
+  later();
+
+  /* ---------- Телефон: меню ---------- */
+  const maMenu = document.getElementById("ma-menu");
+  function fixMenu(){
+    if (!maMenu) return;
+    maMenu.querySelectorAll("[data-ma-go]").forEach(r => {
+      const t = r.dataset.maGo;
+      if (t === "days" || HUB_SUB.includes(t)) r.hidden = true;
+      if (t === "months") { const sp = r.querySelector(".ma-txt > span"); if (sp && sp.lastChild && sp.lastChild.nodeValue !== "Топы") { if (sp.lastChild.nodeType === 3) sp.lastChild.nodeValue = "Топы"; else sp.append("Топы"); } }
+    });
+    const first = maMenu.querySelector('[data-ma-go="records"]');
+    if (first && !maMenu.querySelector('[data-ma-go="reactions"]')) {
+      ["reactions", "events"].forEach(t => {
+        const c = first.cloneNode(true); c.dataset.maGo = t; c.classList.remove("cur");
+        const ic = c.querySelector(".ma-ico"); if (ic) { ic.innerHTML = window.__lineIcon?.forTab(t) || "•"; ic.style.setProperty("--c", t === "reactions" ? "#ff375f" : "#bf5af2"); }
+        const sp = c.querySelector(".ma-txt > span"); if (sp) sp.innerHTML = (sp.querySelector(".li-lead")?.outerHTML || "") + (t === "reactions" ? "Реакции" : "События");
+        first.before(c);
+      });
+    }
+  }
+  if (maMenu) new MutationObserver(() => { if (!maMenu.__fx) { maMenu.__fx = 1; fixMenu(); maMenu.__fx = 0; } }).observe(maMenu, {childList:true, subtree:true});
+  document.addEventListener("click", e => { const r = e.target.closest?.('#ma-menu [data-ma-go="reactions"], #ma-menu [data-ma-go="events"]'); if (r) { e.stopPropagation(); nav.querySelector(`button[data-tab="${r.dataset.maGo}"]`)?.click(); document.getElementById("ma-menu")?.classList.remove("open"); } }, true);
+
+  /* ---------- Общие куски разметки ---------- */
+  const tile = (lbl, num, place) => `<div class="tile"><div class="lbl">${esc(lbl)}</div><div class="num">${num}</div><div class="place">${place || ""}</div></div>`;
+  const bars = (list, opt = {}) => {
+    if (!list.length) return `<div class="bx-empty">${esc(opt.empty || "Нет данных")}</div>`;
+    const mx = Math.max(...list.map(x => x.v)) || 1;
+    return `<div class="bx-list">${list.map(x => `<div class="bx-row${opt.emo ? " emo" : ""}" title="${esc(x.title || "")}"><span>${x.lbl}</span><div class="bx-bar"><i style="width:${(x.v / mx * 100).toFixed(1)}%;background:${x.bg || grad(x.c || "#7aa2f7")}"></i></div><b>${fmtN(x.v)}</b></div>`).join("")}</div>`;
+  };
+  const mockNote = isMock => isMock ? `<span class="beta-badge">тестовые данные</span>` : `<span class="beta-badge">бета</span>`;
+  const loading = id => { const o = document.getElementById(id); if (o) o.innerHTML = `<div class="sk sk-poster" style="height:120px"></div>`; };
+
+  /* ---------- Вкладка «Реакции» ---------- */
+  const RS = {per:"90", pk:"", sort:"given"};
+  try { Object.assign(RS, JSON.parse(ls("chatstats.reactUi.v1") || "{}")); } catch (e) {}
+  const PERIODS = [["7", "7 дней"], ["30", "30 дней"], ["90", "90 дней"], ["365", "Год"], ["all", "Всё время"]];
+  const WD = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+  function renderReactions(){
+    const out = document.getElementById("re-out"); if (!out) return;
+    if (ls(K_RA) && !RX_API) { loading("re-out"); rxAll(); return; }
+    const all = rxAll(), t = today(), from = RS.per === "all" ? "" : isoD(new Date(Date.parse(t + "T00:00:00Z") - (Number(RS.per) - 1) * 864e5));
+    const rows = from ? all.filter(x => x.d >= from && x.d <= t) : all;
+    const days = new Set(rows.map(x => x.d)).size || 1;
+    const given = new Map(), got = new Map(), emo = new Map(), pair = new Map(), hm = Array.from({length:7}, () => new Array(24).fill(0)), favE = new Map();
+    let total = 0;
+    rows.forEach(x => {
+      total += x.n;
+      given.set(x.f, (given.get(x.f) || 0) + x.n); got.set(x.t, (got.get(x.t) || 0) + x.n);
+      emo.set(x.e, (emo.get(x.e) || 0) + x.n);
+      const pk = x.f + ">" + x.t; pair.set(pk, (pair.get(pk) || 0) + x.n);
+      const wd = (new Date(x.d + "T00:00:00Z").getUTCDay() + 6) % 7; hm[wd][x.h] += x.n;
+      let m = favE.get(x.f); if (!m) favE.set(x.f, m = new Map()); m.set(x.e, (m.get(x.e) || 0) + x.n);
+    });
+    const ppl = [...new Set([...given.keys(), ...got.keys()])].filter(k => typeof isVisibleUser !== "function" || isVisibleUser(k));
+    const top = (m, n) => [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n);
+    const gTop = top(given, 1)[0], rTop = top(got, 1)[0], eTop = top(emo, 1)[0];
+    const fav = k => top(favE.get(k) || new Map(), 1)[0]?.[0] || "—";
+    if (!RS.pk || !ppl.includes(RS.pk)) RS.pk = gTop ? gTop[0] : (ppl[0] || "");
+    const save = () => ls("chatstats.reactUi.v1", JSON.stringify(RS));
+
+    // таблица
+    const sortKey = {given:k => given.get(k) || 0, got:k => got.get(k) || 0, bal:k => (got.get(k) || 0) - (given.get(k) || 0)}[RS.sort] || (k => given.get(k) || 0);
+    const list = ppl.slice().sort((a, b) => sortKey(b) - sortKey(a));
+    const th = (k, l) => `<th data-re-sort="${k}" style="cursor:pointer"${RS.sort === k ? ' class="sorted"' : ""}>${l}${RS.sort === k ? " ↓" : ""}</th>`;
+    const table = `<div class="wrap"><table id="re-table"><thead><tr><th>Место</th><th>Участник</th>${th("given", "Поставил(а)")}${th("got", "Получил(а)")}${th("bal", "Баланс")}<th>В день</th><th>Любимая реакция</th></tr></thead><tbody>${list.map((k, i) => {
+      const gv = given.get(k) || 0, gt = got.get(k) || 0, b = gt - gv;
+      return `<tr${k === RS.pk ? ' class="me"' : ""}><td>${i + 1}</td><td><span class="pname" data-open-profile="${esc(k)}">${esc(nm(k))}</span></td><td>${fmtN(gv)}</td><td>${fmtN(gt)}</td><td style="color:${b > 0 ? "#4ade80" : b < 0 ? "#f87171" : "inherit"}">${b > 0 ? "+" : ""}${fmtN(b)}</td><td>${(gv / days).toFixed(1).replace(".", ",")}</td><td style="font-size:18px">${fav(k)}</td></tr>`;
+    }).join("")}</tbody></table></div>`;
+
+    // по часам и дням недели
+    const hrs = new Array(24).fill(0); hm.forEach(r => r.forEach((v, h) => hrs[h] += v));
+    const hmx = Math.max(...hrs) || 1, peakH = hrs.indexOf(Math.max(...hrs));
+    const cmx = Math.max(...hm.flat()) || 1;
+    const heat = `<div class="re-heat"><span></span>${Array.from({length:24}, (_, h) => `<span>${h % 3 === 0 ? h : ""}</span>`).join("")}${hm.map((r, wd) => `<span class="l">${WD[wd]}</span>${r.map((v, h) => `<i style="--v:${(v / cmx).toFixed(3)}" title="${WD[wd]}, ${h}:00–${h}:59 — ${fmtN(v)}"></i>`).join("")}`).join("")}</div>`;
+    const hours = `<div class="re-hours">${hrs.map((v, h) => `<div title="${h}:00 — ${fmtN(v)}"><i style="height:${(v / hmx * 100).toFixed(1)}%"></i><small>${h % 3 === 0 ? h : ""}</small></div>`).join("")}</div>`;
+
+    // лично
+    const me = RS.pk, toM = new Map(), fromM = new Map();
+    rows.forEach(x => { if (x.f === me) toM.set(x.t, (toM.get(x.t) || 0) + x.n); if (x.t === me) fromM.set(x.f, (fromM.get(x.f) || 0) + x.n); });
+    const mine = (m) => top(m, 10).map(([k, v]) => ({lbl:esc(nm(k)), v, c:col(k)}));
+    let mutual = null; toM.forEach((v, k) => { const back = fromM.get(k) || 0, s = Math.min(v, back); if (!mutual || s > mutual.s) mutual = {k, s, v, back}; });
+    const opts = ppl.slice().sort((a, b) => nm(a).localeCompare(nm(b), "ru")).map(k => `<option value="${esc(k)}"${k === me ? " selected" : ""}>${esc(nm(k))}</option>`).join("");
+    const meE = top(favE.get(me) || new Map(), 6).map(([e, v]) => ({lbl:e, v, bg:grad(col(me))}));
+
+    out.innerHTML = `
+      <div class="bx-head"><h2>Реакции ${mockNote(react.isMock())}</h2>
+        <div class="seg" role="tablist">${PERIODS.map(([k, l]) => `<button type="button" data-re-per="${k}" class="${RS.per === k ? "active" : ""}">${l}</button>`).join("")}</div></div>
+      ${RX_ERR ? `<p class="status err">Не удалось загрузить API реакций: ${esc(RX_ERR)}</p>` : ""}
+      <div class="tiles">
+        ${tile("Всего реакций", fmtN(total), `≈ ${fmtN(Math.round(total / days))} в день`)}
+        ${tile("Ставит больше всех", gTop ? esc(nm(gTop[0])) : "—", gTop ? `${fmtN(gTop[1])} ${wf2(gTop[1], ["реакция", "реакции", "реакций"])}` : "")}
+        ${tile("Получает больше всех", rTop ? esc(nm(rTop[0])) : "—", rTop ? `${fmtN(rTop[1])} ${wf2(rTop[1], ["реакция", "реакции", "реакций"])}` : "")}
+        ${tile("Любимая реакция чата", eTop ? `<span style="font-size:36px">${eTop[0]}</span>` : "—", eTop ? `${Math.round(eTop[1] / (total || 1) * 100)}% всех реакций` : "")}
+        ${tile("Пик активности", `${peakH}:00`, "больше всего реакций в этот час")}
+      </div>
+      <h2>Кто сколько ставит и получает</h2>
+      <p class="hint">Баланс — сколько реакций человек получил минус сколько поставил сам. Нажми на заголовок столбца, чтобы отсортировать.</p>
+      ${table}
+      <h2>Лично</h2>
+      <div class="re-person"><label class="hint" for="re-pk">Участник</label><select id="re-pk">${opts}</select></div>
+      ${mutual && mutual.s ? `<div class="re-mutual"><span>Самая взаимная пара: <b>${esc(nm(me))}</b> ⇄ <b>${esc(nm(mutual.k))}</b> — ${fmtN(mutual.v)} и ${fmtN(mutual.back)}</span><span>Поставил(а): <b>${fmtN(given.get(me) || 0)}</b></span><span>Получил(а): <b>${fmtN(got.get(me) || 0)}</b></span></div>` : ""}
+      <div class="bx-grid">
+        <div class="bx-card"><h3>Кому ${esc(nm(me))} ставит реакции</h3><p class="hint">Топ-10 за выбранный период</p>${bars(mine(toM), {empty:"Реакций не ставил(а)"})}</div>
+        <div class="bx-card"><h3>Кто ставит реакции ${esc(nm(me))}</h3><p class="hint">Топ-10 за выбранный период</p>${bars(mine(fromM), {empty:"Реакций не получал(а)"})}</div>
+        <div class="bx-card"><h3>Любимые реакции ${esc(nm(me))}</h3><p class="hint">Какие смайлы ставит чаще всего</p>${bars(meE, {emo:true})}</div>
+      </div>
+      <h2>Когда ставят реакции</h2>
+      <div class="bx-grid">
+        <div class="bx-card"><h3>По часам</h3><p class="hint">Все реакции за период по часу суток</p>${hours}</div>
+        <div class="bx-card"><h3>День недели × час</h3><p class="hint">Чем ярче клетка, тем больше реакций</p>${heat}</div>
+      </div>
+      <h2>Реакции и пары</h2>
+      <div class="bx-grid">
+        <div class="bx-card"><h3>Популярные реакции</h3><p class="hint">Сколько раз поставили каждую</p>${bars(top(emo, 12).map(([e, v]) => ({lbl:e, v, bg:"linear-gradient(90deg,color-mix(in srgb,var(--accent) 70%,#000),color-mix(in srgb,var(--accent) 80%,#fff))"})), {emo:true})}</div>
+        <div class="bx-card"><h3>Самые частые пары</h3><p class="hint">Кто → кому ставит больше всего</p>${bars(top(pair, 10).map(([k, v]) => { const [a, b] = k.split(">"); return {lbl:`${esc(nm(a))} → ${esc(nm(b))}`, v, c:col(a)}; }))}</div>
+      </div>`;
+    out.querySelector("#re-pk")?.addEventListener("change", e => { RS.pk = e.target.value; save(); renderReactions(); });
+    save();
+  }
+  document.addEventListener("click", e => {
+    const p = e.target.closest?.("[data-re-per]"); if (p) { RS.per = p.dataset.rePer; renderReactions(); return; }
+    const s = e.target.closest?.("[data-re-sort]"); if (s) { RS.sort = s.dataset.reSort; renderReactions(); }
+  });
+
+  /* ---------- Вкладка «События» ---------- */
+  let EVSEL = ls("chatstats.eventSel.v1");
+  function renderEvents(){
+    const out = document.getElementById("ev-out"); if (!out) return;
+    if (ls(K_EA) && !EV_API) { loading("ev-out"); evLevels(); return; }
+    const L = evLevels(), list = events.list(), t = today();
+    if (!list.some(ev => ev.id === EVSEL)) EVSEL = (list.find(ev => ev.status === "live") || list[list.length - 1])?.id || "";
+    const cards = list.map(ev => {
+      const m = L.get(ev.id) || new Map(), tot = dI(ev.end) - dI(ev.start) + 1, done = Math.max(0, Math.min(tot, dI(t) - dI(ev.start) + 1));
+      const lead = [...m.entries()].sort((a, b) => b[1].xp - a[1].xp)[0];
+      const st = ev.status === "live" ? `<span class="ev-st live">● идёт · осталось ${fmtN(tot - done)} ${wf2(tot - done, ["день", "дня", "дней"])}</span>` : ev.status === "done" ? `<span class="ev-st">завершено</span>` : `<span class="ev-st">скоро</span>`;
+      return `<div class="ev-card${ev.id === EVSEL ? " on" : ""}" data-ev="${esc(ev.id)}" style="--ec1:${ev.c1};--ec2:${ev.c2}" role="button" tabindex="0">
+        <h3>${evSvg(ev.icon)}${esc(ev.title)}</h3><p class="hint">${fd(ev.start)} — ${fd(ev.end)} · ${fmtN(tot)} ${wf2(tot, ["день", "дня", "дней"])}</p>
+        ${st}${ev.status === "live" ? `<div class="ev-prog"><i style="width:${(done / tot * 100).toFixed(1)}%"></i></div>` : ""}
+        <div class="ev-meta"><span>Участников: <b>${fmtN(m.size)}</b></span>${lead ? `<span>Лидер: <b>${esc(nm(lead[0]))}</b> · ур. ${lead[1].level}</span>` : ""}</div></div>`;
+    }).join("");
+    const ev = list.find(x => x.id === EVSEL);
+    let body = "";
+    if (ev) {
+      const m = L.get(ev.id) || new Map();
+      const rows = [...m.entries()].filter(([k]) => typeof isVisibleUser !== "function" || isVisibleUser(k)).sort((a, b) => b[1].xp - a[1].xp || b[1].level - a[1].level);
+      const avg = rows.length ? rows.reduce((s, [, v]) => s + v.level, 0) / rows.length : 0, mx = rows[0]?.[1].level || 0;
+      const th = ev.ach.th, ROM = ["—", "I", "II", "III", "IV", "V", "VI", "VII"], TC = l => l <= 0 ? "#4a5060" : l <= 3 ? "#e3a36b" : l <= 6 ? "#c0c6d4" : "#ffd166";
+      const dist = (ev.ranks || []).map(([l, name], i) => { const hi = ev.ranks[i + 1]?.[0] ?? Infinity; return {lbl:`${esc(name)} <small class="hint">${l}${hi === Infinity ? "+" : "–" + (hi - 1)}</small>`, v:rows.filter(([, v]) => v.level >= l && v.level < hi).length, bg:`linear-gradient(90deg,${ev.c1},${ev.c2})`}; }).filter(x => x.v > 0);
+      const tiers = th.map((t2, i) => ({lbl:`Ур. ${ROM[i + 1]} <small class="hint">${t2}+</small>`, v:rows.filter(([, v]) => v.level >= t2).length, bg:`linear-gradient(90deg,${TC(i + 1)}88,${TC(i + 1)})`}));
+      body = `
+        <div class="tiles">
+          ${tile("Участников", fmtN(rows.length), ev.status === "live" ? "набирают опыт прямо сейчас" : "дошли до конца события")}
+          ${tile("Средний уровень", avg.toFixed(1).replace(".", ","), "")}
+          ${tile("Максимальный уровень", String(mx), rows[0] ? esc(nm(rows[0][0])) + " · " + esc(rankName(ev, mx)) : "")}
+          ${tile(`Достижение «${esc(ev.ach.name)}»`, fmtN(rows.filter(([, v]) => v.level >= th[0]).length), `получили · максимум (ур. ${th[th.length - 1]}+): ${fmtN(rows.filter(([, v]) => v.level >= th[th.length - 1]).length)}`)}
+        </div>
+        <h2>Уровни участников — ${esc(ev.title)}</h2>
+        <div class="wrap"><table id="ev-table"><thead><tr><th>Место</th><th>Участник</th><th>Уровень</th><th>Звание</th><th>Опыт</th><th>«${esc(ev.ach.name)}»</th></tr></thead><tbody>${rows.map(([k, v], i) => {
+          const tl = th.filter(x => v.level >= x).length;
+          return `<tr style="--ec1:${ev.c1};--ec2:${ev.c2}"><td>${i + 1}</td><td><span class="pname" data-open-profile="${esc(k)}">${esc(nm(k))}</span></td><td><span class="ev-lv"><b>${v.level}</b><i><em style="width:${Math.min(100, v.level / Math.max(40, mx) * 100).toFixed(1)}%"></em></i></span></td><td class="ev-rank">${esc(rankName(ev, v.level))}</td><td>${fmtN(v.xp)}</td><td><span class="ev-tier" style="--tc:${TC(tl)}">${ROM[tl]}</span></td></tr>`;
+        }).join("")}</tbody></table></div>
+        <div class="bx-grid">
+          <div class="bx-card"><h3>Сколько людей на каждом звании</h3><p class="hint">Звания события и диапазоны уровней</p>${bars(dist)}</div>
+          <div class="bx-card"><h3>Уровни достижения «${esc(ev.ach.name)}»</h3><p class="hint">Сколько участников дошли до каждого уровня</p>${bars(tiers)}</div>
+        </div>`;
+    }
+    // сводная по всем событиям
+    const ppl = events.people().filter(k => list.some(e2 => (L.get(e2.id) || new Map()).has(k)));
+    const sum = k => list.reduce((s, e2) => s + ((L.get(e2.id) || new Map()).get(k)?.level || 0), 0);
+    const all = `<h2>Все события вместе</h2><p class="hint">Уровни каждого участника во всех событиях и сумма уровней.</p>
+      <div class="wrap"><table id="ev-all-table"><thead><tr><th>Место</th><th>Участник</th>${list.map(e2 => `<th>${esc(e2.title)}</th>`).join("")}<th>Сумма уровней</th></tr></thead><tbody>${ppl.sort((a, b) => sum(b) - sum(a)).map((k, i) => `<tr><td>${i + 1}</td><td><span class="pname" data-open-profile="${esc(k)}">${esc(nm(k))}</span></td>${list.map(e2 => { const v = (L.get(e2.id) || new Map()).get(k); return `<td>${v ? v.level : '<span class="hint">—</span>'}</td>`; }).join("")}<td><b>${sum(k)}</b></td></tr>`).join("")}</tbody></table></div>`;
+    out.innerHTML = `<div class="bx-head"><h2>События ${mockNote(events.isMock())}</h2></div>
+      ${EV_ERR ? `<p class="status err">Не удалось загрузить API событий: ${esc(EV_ERR)}</p>` : ""}
+      <p class="hint">Тематические события бота: за сообщения начисляется опыт, с ним растёт уровень, у каждого уровня — своё звание. Нажми на событие, чтобы посмотреть его участников.</p>
+      <div class="ev-timeline">${cards}</div>${body}${all}`;
+  }
+  document.addEventListener("click", e => {
+    const c = e.target.closest?.("[data-ev]"); if (!c) return;
+    EVSEL = c.dataset.ev; ls("chatstats.eventSel.v1", EVSEL); renderEvents();
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.matches?.("[data-ev]")) e.target.click(); });
+
+  /* ---------- Загрузка при открытии вкладки ---------- */
+  async function open(t){
+    const id = t === "reactions" ? "re-out" : "ev-out", o = document.getElementById(id);
+    if (!AR() && o && !o.children.length) loading(id);
+    try { await getHistory(); } catch (e) { if (o) o.innerHTML = `<p class="status err">Не удалось загрузить данные: ${esc(e.message)}</p>`; return; }
+    t === "reactions" ? renderReactions() : renderEvents();
+  }
+  function rerender(){
+    const t = curTab();
+    if (t === "reactions") renderReactions();
+    if (t === "events") renderEvents();
+    if (t === "achievements" && window.renderAchievements) window.renderAchievements();
+  }
+  let lastT = "";
+  new MutationObserver(() => { const t = curTab(); if (t !== lastT) { lastT = t; if (t === "reactions" || t === "events") open(t); } }).observe(document.querySelector("main"), {attributes:true, subtree:true, attributeFilter:["class"]});
+  if (curTab() === "reactions" || curTab() === "events") open(curTab());
+  // заранее подгружаем API, чтобы достижения сразу видели реальные данные
+  if (ls(K_RA)) rxAll(); if (ls(K_EA)) evLevels();
+})();
+</script>
+
 <script id="i18n-js">
 /* ===================== Языки интерфейса: ru (по умолчанию), uk, be, kk, en ===================== */
 (function(){
