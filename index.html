@@ -12171,7 +12171,7 @@ function multiplesChart(){
     const rows = E.people().map(p2 => ({p:p2, lv:list.map(ev => E.levelOf(ev.id, p2))})).filter(r => r.lv.some(x => x > 0))
       .map(r => ({...r, tiers:r.lv.map((x, i) => list[i].ach.th.filter(t => x >= t).length)})).sort((a, b) => b.tiers.reduce((s2, x) => s2 + x, 0) - a.tiers.reduce((s2, x) => s2 + x, 0) || b.lv.reduce((s2, x) => s2 + x, 0) - a.lv.reduce((s2, x) => s2 + x, 0));
     const cell = (lv, t) => lv ? `<span class="ev-tier" style="--tc:${TIERS[tierOfLevel(t)]}">${t ? ROMAN[t] : "—"}</span> <small class="hint">ур. ${lv}</small>` : `<span class="hint">—</span>`;
-    const board = `<h2>Рейтинг по событиям</h2><div class="wrap"><table id="ach-ev-table"><thead><tr><th>Место</th><th style="text-align:left">Участник</th>${list.map(ev => `<th>${escH(ev.ach.name)}</th>`).join("")}<th>Уровней достижений</th></tr></thead><tbody>${rows.map((r, i) => `<tr${r.p === String(pk) ? ' class="me"' : ""}><td>${i + 1}</td><td style="text-align:left">${escH(NAMES[r.p] || "ID " + r.p)}</td>${r.lv.map((lv, j) => `<td>${cell(lv, r.tiers[j])}</td>`).join("")}<td><b>${r.tiers.reduce((s2, x) => s2 + x, 0)}</b></td></tr>`).join("")}</tbody></table></div>`;
+    const board = `<h2>Рейтинг по событиям</h2><div class="wrap"><table id="ach-ev-table"><thead><tr><th>Место</th><th style="text-align:left">Участник</th>${list.map(ev => `<th>${escH(ev.ach.name)}</th>`).join("")}<th>Уровней достижений</th></tr></thead><tbody>${rows.map((r, i) => `<tr><td>${i + 1}</td><td style="text-align:left">${escH(NAMES[r.p] || "ID " + r.p)}</td>${r.lv.map((lv, j) => `<td>${cell(lv, r.tiers[j])}</td>`).join("")}<td><b>${r.tiers.reduce((s2, x) => s2 + x, 0)}</b></td></tr>`).join("")}</tbody></table></div>`;
     return `<div class="ach-grid">${items.map(cardHtml).join("")}</div>` + board;
   }
   document.addEventListener("click", e => {
@@ -14510,7 +14510,8 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.10.28-3", date:"2026-10-28", title:"Новая навигация, иконки и плавность", items:[
+  {v:"2026.10.28-4", date:"2026-10-28", title:"Новая навигация, иконки и плавность", items:[
+    {tag:"fix", area:"Бета", text:"Реакции: убрана светлая полоса на первой строке таблицы; вместо часов — графики по дням (или месяцам) и по дням недели, «Пик активности» заменён на «Самый активный день»."},
     {tag:"new", area:"Бета", text:"«Реакции и события (бета)» в Настройках → Данные: вкладки «Реакции» (кто, кому, когда и какие реакции ставит) и «События» (тематические события бота, уровни и звания участников). Пока на тестовых данных."},
     {tag:"new", area:"Бета", text:"С бетой «Топ месяцев» и «Топ дней» объединены во вкладку «Топы», «Селфи», «Время» и «Дни рождения» переехали в Хаб, у Достижений появились «Общие | По событиям» и достижения «Ценитель» и «Звезда»."},
     {tag:"imp", area:"ПК", text:"Боковое меню — и свёрнутое при наведении, и закреплённое — шириной ровно по самой длинной подписи и меньше заходит на страницу."},
@@ -19718,10 +19719,10 @@ body.glass-ui .bx-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
 .re-heat > i{aspect-ratio:1;border-radius:4px;background:color-mix(in srgb,var(--accent) calc(var(--v,0) * 100%),color-mix(in srgb,var(--text) 5%,transparent))}
 .re-heat > span{display:flex;align-items:center;justify-content:center}
 .re-heat > span.l{justify-content:flex-start}
-.re-hours{display:flex;align-items:flex-end;gap:3px;height:210px;margin-top:4px}
-.re-hours > div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px;height:100%;min-width:0}
+.re-hours{display:flex;align-items:flex-end;gap:3px;height:220px;margin-top:4px}
+.re-hours > div{position:relative;flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;min-width:0;padding-bottom:18px;box-sizing:border-box}
 .re-hours > div > i{width:100%;border-radius:4px 4px 2px 2px;background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 80%,#fff),color-mix(in srgb,var(--accent) 70%,#000));min-height:2px}
-.re-hours > div > small{font-size:10px;color:var(--muted)}
+.re-hours > div > small{position:absolute;left:50%;bottom:0;transform:translateX(-50%);font-size:10px;line-height:14px;color:var(--muted);white-space:nowrap}
 .re-person{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:6px 0 14px}
 .re-person select{min-width:200px}
 .re-mutual{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
@@ -19748,7 +19749,6 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
 .ev-lv i > em{display:block;height:100%;background:linear-gradient(90deg,var(--ec1),var(--ec2))}
 .ach-view-seg{margin:0 0 16px!important}
 #tab-achievements.active > #ach-out > .ach-view-seg{flex:0 0 auto!important;max-width:max-content}
-tr.me > td{background:color-mix(in srgb,var(--accent) 10%,transparent)!important}
 @media (max-width:720px){
   .bx-row{grid-template-columns:minmax(60px,110px) 1fr auto}
   .re-heat{gap:2px;font-size:9px;grid-template-columns:22px repeat(24,minmax(0,1fr))}
@@ -19758,7 +19758,7 @@ tr.me > td{background:color-mix(in srgb,var(--accent) 10%,transparent)!important
 /* ===================== Бета: «Реакции и события» =====================
    Пока API не подключены, данные — тестовые (детерминированные, от имён участников и их активности).
    Ожидаемые форматы API (задаются в «Настройки → Данные»):
-   • реакции: {items:[{date:"YYYY-MM-DD", hour:0-23, from_user_pk, to_user_pk, emoji, count}]}
+   • реакции: {items:[{date:"YYYY-MM-DD", from_user_pk, to_user_pk, emoji, count}]} — по дням, без часов
    • события: {events:[{id, title, start:"YYYY-MM-DD", end:"YYYY-MM-DD", ranks:[[уровень, "название"], …]}],
                levels:[{event_id, user_pk, level, xp}]} */
 (() => {
@@ -19807,7 +19807,6 @@ tr.me > td{background:color-mix(in srgb,var(--accent) 10%,transparent)!important
 
   /* ---------- Реакции ---------- */
   const EMOJI = [["👍", 22], ["❤️", 18], ["😂", 16], ["🔥", 11], ["😁", 7], ["👏", 5], ["🤔", 4], ["💯", 4], ["🥰", 4], ["😢", 3], ["🤡", 3], ["😱", 2], ["🙏", 2], ["💔", 1.5], ["🤝", 1.5]];
-  const HOUR_W = [3,2,1.2,.7,.4,.3,.5,1.2,2.4,3.4,4,4.4,5,5.2,5,5.1,5.4,6,7,8.2,9.4,10,8.6,5.6];
   let RX = null, RX_API = null, RX_LOADING = null;
   function mockReactions(){
     const P = people(); if (!P.length) return [];
@@ -19816,7 +19815,7 @@ tr.me > td{background:color-mix(in srgb,var(--accent) 10%,transparent)!important
     const rec = P.map(p => ({pk:p.pk, p:Math.pow(p.w, .85) * (.5 + (hash("r" + p.pk) % 100) / 70)}));
     const aff = new Map(); // «любимчики»: у каждого 3 человека, которым он ставит чаще
     P.forEach(p => { const rr = rng(hash("a" + p.pk)); const fav = new Set(); while (fav.size < Math.min(3, P.length - 1)) { const q = P[Math.floor(rr() * P.length)].pk; if (q !== p.pk) fav.add(q); } aff.set(p.pk, fav); });
-    const emo = EMOJI.map(([e, p]) => ({e, p})), hrs = HOUR_W.map((p, h) => ({h, p}));
+    const emo = EMOJI.map(([e, p]) => ({e, p}));
     const start = dI("2025-01-01"), end = dI(today());
     for (let di = start; di <= end; di++) {
       const d = isoD(new Date(di * 864e5)), wd = new Date(di * 864e5).getUTCDay();
@@ -19828,17 +19827,17 @@ tr.me > td{background:color-mix(in srgb,var(--accent) 10%,transparent)!important
         for (let t = 0; t < 6 && (!b || b === a); t++) b = pick(rec, r).pk;
         if (!b || b === a) continue;
         const e = (hash(a) % 4 === 0 && r() < .3) ? ["🔥", "🤡", "💯", "🥰"][hash(a) % 4] : pick(emo, r).e;
-        const h = pick(hrs, r).h, key = `${d}|${h}|${a}|${b}|${e}`;
+        const key = `${d}|${a}|${b}|${e}`;
         out.set(key, (out.get(key) || 0) + 1);
       }
     }
-    return [...out.entries()].map(([k, n]) => { const [d, h, a, b, e] = k.split("|"); return {d, h:+h, f:a, t:b, e, n}; });
+    return [...out.entries()].map(([k, n]) => { const [d, a, b, e] = k.split("|"); return {d, f:a, t:b, e, n}; });
   }
   async function loadReactApi(){
     const url = ls(K_RA); if (!url) return null;
     const res = await fetch(url, {cache:"no-store"}); if (!res.ok) throw new Error("HTTP " + res.status);
     const j = await res.json(), items = Array.isArray(j) ? j : (j.items || j.data || []);
-    return items.map(x => ({d:String(x.date ?? x.stat_date ?? "").slice(0, 10), h:Number(x.hour ?? 0) || 0, f:String(x.from_user_pk ?? x.from ?? x.user_pk ?? ""), t:String(x.to_user_pk ?? x.to ?? ""), e:String(x.emoji ?? x.reaction ?? "👍"), n:Number(x.count ?? 1) || 1})).filter(x => x.d && x.f && x.t);
+    return items.map(x => ({d:String(x.date ?? x.stat_date ?? "").slice(0, 10), f:String(x.from_user_pk ?? x.from ?? x.user_pk ?? ""), t:String(x.to_user_pk ?? x.to ?? ""), e:String(x.emoji ?? x.reaction ?? "👍"), n:Number(x.count ?? 1) || 1})).filter(x => x.d && x.f && x.t);
   }
   function rxAll(){
     if (RX_API) return RX_API;
@@ -20024,14 +20023,14 @@ tr.me > td{background:color-mix(in srgb,var(--accent) 10%,transparent)!important
     const all = rxAll(), t = today(), from = RS.per === "all" ? "" : isoD(new Date(Date.parse(t + "T00:00:00Z") - (Number(RS.per) - 1) * 864e5));
     const rows = from ? all.filter(x => x.d >= from && x.d <= t) : all;
     const days = new Set(rows.map(x => x.d)).size || 1;
-    const given = new Map(), got = new Map(), emo = new Map(), pair = new Map(), hm = Array.from({length:7}, () => new Array(24).fill(0)), favE = new Map();
+    const given = new Map(), got = new Map(), emo = new Map(), pair = new Map(), byDay = new Map(), byWd = new Array(7).fill(0), favE = new Map();
     let total = 0;
     rows.forEach(x => {
       total += x.n;
       given.set(x.f, (given.get(x.f) || 0) + x.n); got.set(x.t, (got.get(x.t) || 0) + x.n);
       emo.set(x.e, (emo.get(x.e) || 0) + x.n);
       const pk = x.f + ">" + x.t; pair.set(pk, (pair.get(pk) || 0) + x.n);
-      const wd = (new Date(x.d + "T00:00:00Z").getUTCDay() + 6) % 7; hm[wd][x.h] += x.n;
+      byDay.set(x.d, (byDay.get(x.d) || 0) + x.n); byWd[(new Date(x.d + "T00:00:00Z").getUTCDay() + 6) % 7] += x.n;
       let m = favE.get(x.f); if (!m) favE.set(x.f, m = new Map()); m.set(x.e, (m.get(x.e) || 0) + x.n);
     });
     const ppl = [...new Set([...given.keys(), ...got.keys()])].filter(k => typeof isVisibleUser !== "function" || isVisibleUser(k));
@@ -20047,15 +20046,27 @@ tr.me > td{background:color-mix(in srgb,var(--accent) 10%,transparent)!important
     const th = (k, l) => `<th data-re-sort="${k}" style="cursor:pointer"${RS.sort === k ? ' class="sorted"' : ""}>${l}${RS.sort === k ? " ↓" : ""}</th>`;
     const table = `<div class="wrap"><table id="re-table"><thead><tr><th>Место</th><th>Участник</th>${th("given", "Поставил(а)")}${th("got", "Получил(а)")}${th("bal", "Баланс")}<th>В день</th><th>Любимая реакция</th></tr></thead><tbody>${list.map((k, i) => {
       const gv = given.get(k) || 0, gt = got.get(k) || 0, b = gt - gv;
-      return `<tr${k === RS.pk ? ' class="me"' : ""}><td>${i + 1}</td><td><span class="pname" data-open-profile="${esc(k)}">${esc(nm(k))}</span></td><td>${fmtN(gv)}</td><td>${fmtN(gt)}</td><td style="color:${b > 0 ? "#4ade80" : b < 0 ? "#f87171" : "inherit"}">${b > 0 ? "+" : ""}${fmtN(b)}</td><td>${(gv / days).toFixed(1).replace(".", ",")}</td><td style="font-size:18px">${fav(k)}</td></tr>`;
+      return `<tr><td>${i + 1}</td><td><span class="pname" data-open-profile="${esc(k)}">${esc(nm(k))}</span></td><td>${fmtN(gv)}</td><td>${fmtN(gt)}</td><td style="color:${b > 0 ? "#4ade80" : b < 0 ? "#f87171" : "inherit"}">${b > 0 ? "+" : ""}${fmtN(b)}</td><td>${(gv / days).toFixed(1).replace(".", ",")}</td><td style="font-size:18px">${fav(k)}</td></tr>`;
     }).join("")}</tbody></table></div>`;
 
-    // по часам и дням недели
-    const hrs = new Array(24).fill(0); hm.forEach(r => r.forEach((v, h) => hrs[h] += v));
-    const hmx = Math.max(...hrs) || 1, peakH = hrs.indexOf(Math.max(...hrs));
-    const cmx = Math.max(...hm.flat()) || 1;
-    const heat = `<div class="re-heat"><span></span>${Array.from({length:24}, (_, h) => `<span>${h % 3 === 0 ? h : ""}</span>`).join("")}${hm.map((r, wd) => `<span class="l">${WD[wd]}</span>${r.map((v, h) => `<i style="--v:${(v / cmx).toFixed(3)}" title="${WD[wd]}, ${h}:00–${h}:59 — ${fmtN(v)}"></i>`).join("")}`).join("")}</div>`;
-    const hours = `<div class="re-hours">${hrs.map((v, h) => `<div title="${h}:00 — ${fmtN(v)}"><i style="height:${(v / hmx * 100).toFixed(1)}%"></i><small>${h % 3 === 0 ? h : ""}</small></div>`).join("")}</div>`;
+    // по дням и дням недели (у реакций есть только дата, без времени)
+    const peakD = [...byDay.entries()].sort((a, b) => b[1] - a[1])[0];
+    const colBars = (arr, lab, tip) => { const mx = Math.max(...arr.map(x => x.v)) || 1; return `<div class="re-hours">${arr.map((x, i) => `<div title="${esc(tip(x))}"><i style="height:${(x.v / mx * 100).toFixed(1)}%"></i><small>${lab(x, i)}</small></div>`).join("")}</div>`; };
+    const tl = (() => {
+      const ds = [...byDay.keys()].sort(); if (!ds.length) return {title:"По дням", hint:"", html:`<div class="bx-empty">Нет данных</div>`};
+      const span = dI(ds[ds.length - 1]) - dI(ds[0]) + 1;
+      if (span <= 92) {
+        const arr = []; for (let k = dI(ds[0]); k <= dI(ds[ds.length - 1]); k++) { const d = isoD(new Date(k * 864e5)); arr.push({d, v:byDay.get(d) || 0}); }
+        const step = Math.max(1, Math.ceil(arr.length / 10));
+        return {title:"По дням", hint:"Сколько реакций поставили в каждый день периода", html:colBars(arr, (x, i) => i % step === 0 ? x.d.slice(8) + "." + x.d.slice(5, 7) : "", x => `${fd(x.d)} — ${fmtN(x.v)}`)};
+      }
+      const MN = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"], m = new Map();
+      byDay.forEach((v, d) => m.set(d.slice(0, 7), (m.get(d.slice(0, 7)) || 0) + v));
+      const arr = [...m.entries()].sort().map(([k, v]) => ({k, v})), step = Math.max(1, Math.ceil(arr.length / 12));
+      return {title:"По месяцам", hint:"Сколько реакций поставили за каждый месяц", html:colBars(arr, (x, i) => i % step === 0 ? MN[+x.k.slice(5) - 1] + (x.k.slice(5) === "01" || i === 0 ? " " + x.k.slice(2, 4) : "") : "", x => `${MN[+x.k.slice(5) - 1]} ${x.k.slice(0, 4)} — ${fmtN(x.v)}`)};
+    })();
+    const wdCnt = new Array(7).fill(0); byDay.forEach((v, d) => { wdCnt[(new Date(d + "T00:00:00Z").getUTCDay() + 6) % 7]++; });
+    const wdHtml = colBars(byWd.map((v, i) => ({v:wdCnt[i] ? Math.round(v / wdCnt[i]) : 0, i})), x => WD[x.i], x => `${WD[x.i]} — в среднем ${fmtN(x.v)} в день`);
 
     // лично
     const me = RS.pk, toM = new Map(), fromM = new Map();
@@ -20074,7 +20085,7 @@ tr.me > td{background:color-mix(in srgb,var(--accent) 10%,transparent)!important
         ${tile("Ставит больше всех", gTop ? esc(nm(gTop[0])) : "—", gTop ? `${fmtN(gTop[1])} ${wf2(gTop[1], ["реакция", "реакции", "реакций"])}` : "")}
         ${tile("Получает больше всех", rTop ? esc(nm(rTop[0])) : "—", rTop ? `${fmtN(rTop[1])} ${wf2(rTop[1], ["реакция", "реакции", "реакций"])}` : "")}
         ${tile("Любимая реакция чата", eTop ? `<span style="font-size:36px">${eTop[0]}</span>` : "—", eTop ? `${Math.round(eTop[1] / (total || 1) * 100)}% всех реакций` : "")}
-        ${tile("Пик активности", `${peakH}:00`, "больше всего реакций в этот час")}
+        ${tile("Самый активный день", peakD ? fd(peakD[0]) : "—", peakD ? `${fmtN(peakD[1])} ${wf2(peakD[1], ["реакция", "реакции", "реакций"])}` : "")}
       </div>
       <h2>Кто сколько ставит и получает</h2>
       <p class="hint">Баланс — сколько реакций человек получил минус сколько поставил сам. Нажми на заголовок столбца, чтобы отсортировать.</p>
@@ -20089,8 +20100,8 @@ tr.me > td{background:color-mix(in srgb,var(--accent) 10%,transparent)!important
       </div>
       <h2>Когда ставят реакции</h2>
       <div class="bx-grid">
-        <div class="bx-card"><h3>По часам</h3><p class="hint">Все реакции за период по часу суток</p>${hours}</div>
-        <div class="bx-card"><h3>День недели × час</h3><p class="hint">Чем ярче клетка, тем больше реакций</p>${heat}</div>
+        <div class="bx-card"><h3>${tl.title}</h3><p class="hint">${tl.hint}</p>${tl.html}</div>
+        <div class="bx-card"><h3>По дням недели</h3><p class="hint">Сколько реакций в среднем ставят в каждый день недели</p>${wdHtml}</div>
       </div>
       <h2>Реакции и пары</h2>
       <div class="bx-grid">
