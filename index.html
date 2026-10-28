@@ -1438,8 +1438,8 @@ body.fx-pulse .fx-pulse-dot{display:inline;animation:fxPulse 1.6s ease-out infin
     <button data-tab="compare">Сравнение</button>
     <button data-tab="daymatrix">Матрица</button>
     <button data-tab="charts">Графики</button>
-    <button data-tab="reactions" class="beta-re-btn">Реакции</button>
-    <button data-tab="events" class="beta-re-btn">События</button>
+    <button data-tab="reactions">Реакции</button>
+    <button data-tab="events">События</button>
     <button data-tab="marathons" data-group="other">Другое</button>
     <button data-tab="settings">Настройки</button>
     <button data-tab="records" class="nav-hidden">Рекорды</button>
@@ -1459,10 +1459,9 @@ body.fx-pulse .fx-pulse-dot{display:inline;animation:fxPulse 1.6s ease-out infin
   </nav>
 </header>
 <script id="beta-re-flag">
-/* «Реакции и события (бета)»: без флага новые вкладки убираются из навигации ещё до запуска остальных скриптов */
-window.__betaOn = (() => { try { return localStorage.getItem("chatstats.betaRE.v1") === "1"; } catch (e) { return false; } })();
-document.body.classList.toggle("beta-re", window.__betaOn);
-if (!window.__betaOn) document.querySelectorAll("nav .beta-re-btn").forEach(b => b.remove());
+/* Реакции и события включены постоянно; состояние не зависит от настроек браузера. */
+window.__betaOn = true;
+document.body.classList.add("beta-re");
 </script>
 <main>
   <div id="shared">
@@ -2026,12 +2025,10 @@ if (!window.__betaOn) document.querySelectorAll("nav .beta-re-btn").forEach(b =>
     <h2>Кэш истории</h2>
     <p class="hint">История сообщений хранится в этом браузере, а с сервера догружаются только последние дни. Поэтому вкладки с полной историей открываются быстро.</p>
     <div class="pbtn"><button class="mini" id="cache-reset" type="button">Очистить кэш и загрузить заново</button><span class="hint" id="cache-info"></span></div>
-    <h2>Реакции и события (бета)</h2>
-    <p class="hint">Новые вкладки «Реакции» и «События», достижения за реакции и за события. Вместе с ними меняется раскладка: «Топ месяцев» и «Топ дней» объединяются во вкладку «Топы», а «Селфи», «Время» и «Дни рождения» переезжают в Хаб. Пока API нет, показываются тестовые данные. После переключения страница перезагрузится.</p>
-    <div class="filters"><label class="checkline"><input type="checkbox" id="set-beta-re">Реакции и события (бета)</label></div>
+    <h2>Связь участников с Telegram</h2>
+    <p class="hint">Реакции и события автоматически загружаются из API Colony. Если в данных истории сообщений нет Telegram ID участника, соответствие можно указать вручную: telegram_user_id=user_pk, по одному на строку. Большинству пользователей это поле не требуется.</p>
     <div class="filters" id="beta-api-fields">
-      <div class="field"><label for="beta-api-react">API реакций</label><input type="url" id="beta-api-react" placeholder="Пусто — тестовые данные" autocomplete="off"></div>
-      <div class="field"><label for="beta-api-events">API событий</label><input type="url" id="beta-api-events" placeholder="Пусто — тестовые данные" autocomplete="off"></div>
+      <div class="field" style="flex:1 1 340px;min-width:min(320px,100%)"><label for="beta-api-user-map">Не сопоставленные Telegram ID → user_pk</label><textarea id="beta-api-user-map" rows="3" spellcheck="false" placeholder="telegram_user_id=user_pk" style="width:min(650px,80vw);min-width:180px;max-width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--ctrl);color:var(--text);font:inherit;line-height:1.45"></textarea><span class="hint">Автоматическое сопоставление имеет приоритет; поле нужно только для отсутствующих соответствий.</span></div>
     </div>
     <h2>Перенос настроек между компьютерами</h2>
     <p class="hint">Экспорт включает все сохранённые настройки дашборда: цвета и пороги графиков, размеры ячеек, оформление текста, палитры, параметры таблиц и выбранные режимы вкладок. Статистика и API-ключ не включаются. Можно скопировать настройки в буфер или скачать JSON-файл.</p>
@@ -14558,7 +14555,7 @@ window.CHANGELOG = [
     {tag:"new", area:"Бета", text:"Поставленные и полученные реакции — новые показатели: столбцы в Статистике и Топах, выбор в Графиках, Матрице, Марафонах и Прогнозе."},
     {tag:"new", area:"Бета", text:"Реакции и события в Итогах года (плитка, «Ценитель года», «Звезда года», победители событий), в Сравнении участников и в Профиле; новые достижения — в Хронике и Хабе."},
     {tag:"fix", area:"Бета", text:"Реакции: убрана светлая полоса на первой строке таблицы; вместо часов — графики по дням (или месяцам) и по дням недели, «Пик активности» заменён на «Самый активный день»."},
-    {tag:"new", area:"Бета", text:"«Реакции и события (бета)» в Настройках → Данные: вкладки «Реакции» (кто, кому, когда и какие реакции ставит) и «События» (тематические события бота, уровни и звания участников). Пока на тестовых данных."},
+    {tag:"new", area:"Бета", text:"«Реакции и события» в Настройках → Данные: вкладки «Реакции» и «События» используют реальные API реакций, списка событий и прогресса участников."},
     {tag:"new", area:"Бета", text:"С бетой «Топ месяцев» и «Топ дней» объединены во вкладку «Топы», «Селфи», «Время» и «Дни рождения» переехали в Хаб, у Достижений появились «Общие | По событиям» и достижения «Ценитель» и «Звезда»."},
     {tag:"imp", area:"ПК", text:"Боковое меню — и свёрнутое при наведении, и закреплённое — шириной ровно по самой длинной подписи и меньше заходит на страницу."},
     {tag:"imp", area:"Везде", text:"Все кнопки, переключатели и выпадающие списки оформлены как боковая навигация: полупрозрачная панель, выбранный пункт — светлая подложка с тонкой рамкой."},
@@ -19740,7 +19737,7 @@ html body:not(.nv-off) :is(main,#filter-drawer) :is(input[type=text],input[type=
 })();
 </script>
 <style id="v42-ui">
-/* ===================== v42 (бета): Реакции и События, «Топы», Селфи/Время/ДР в Хабе ===================== */
+/* ===================== Реакции и События, «Топы», Селфи/Время/ДР в Хабе ===================== */
 html body.beta-re nav button.beta-hide{display:none!important}
 html body.beta-re :is(.group-tabs,.seg) > button.beta-hide{display:none!important}
 html body.beta-re section.tab > .seg.group-tabs[data-group-seg="other"].beta-hide{display:none!important}
@@ -19801,32 +19798,89 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
 }
 </style>
 <script id="v42-js">
-/* ===================== Бета: «Реакции и события» =====================
-   Пока API не подключены, данные — тестовые (детерминированные, от имён участников и их активности).
-   Ожидаемые форматы API (задаются в «Настройки → Данные»):
-   • реакции: {items:[{date:"YYYY-MM-DD", from_user_pk, to_user_pk, emoji, count}]} — по дням, без часов
-   • события: {events:[{id, title, start:"YYYY-MM-DD", end:"YYYY-MM-DD", ranks:[[уровень, "название"], …]}],
-               levels:[{event_id, user_pk, level, xp}]} */
+/* ===================== «Реакции и события» =====================
+   Реальные источники: /api/v1/reactions, /api/v1/events и /api/v1/event-progress.
+   Используются только реальные API; при ошибке загрузки страница показывает ошибку,
+   не подставляя синтетические данные.
+   Telegram ID сопоставляются с внутренним user_pk автоматически при наличии обоих
+   идентификаторов в данных сайта или через настройки соответствий. */
 (() => {
-  const KEY = "chatstats.betaRE.v1", K_RA = "chatstats.betaApiReact.v1", K_EA = "chatstats.betaApiEvents.v1";
+  const K_RA = "chatstats.betaApiReact.v1", K_EA = "chatstats.betaApiEvents.v1", K_EP = "chatstats.betaApiProgress.v1", K_UM = "chatstats.betaTelegramUserMap.v1";
+  const DEFAULT_API = {
+    [K_RA]: "https://colony-taras.com/api/v1/reactions",
+    [K_EA]: "https://colony-taras.com/api/v1/events",
+    [K_EP]: "https://colony-taras.com/api/v1/event-progress"
+  };
   const ls = (k, v) => { try { if (v === undefined) return localStorage.getItem(k) || ""; if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) { return ""; } };
-
-  /* ---------- Переключатель в настройках ---------- */
-  const cb = document.getElementById("set-beta-re");
-  if (cb) {
-    cb.checked = !!window.__betaOn;
-    cb.addEventListener("change", () => { ls(KEY, cb.checked ? "1" : ""); setTimeout(() => location.reload(), 150); });
+  // Эндпоинты фиксированы: старые сохранённые адреса не могут вернуть тестовый режим.
+  const apiUrl = k => String(DEFAULT_API[k] || "").trim();
+  const mapEl = document.getElementById("beta-api-user-map");
+  if (mapEl) {
+    mapEl.value = ls(K_UM);
+    mapEl.addEventListener("change", () => { ls(K_UM, mapEl.value.trim()); location.reload(); });
   }
-  [["beta-api-react", K_RA], ["beta-api-events", K_EA]].forEach(([id, k]) => {
-    const el = document.getElementById(id); if (!el) return;
-    el.value = ls(k); el.addEventListener("change", () => { ls(k, el.value.trim()); if (window.__betaOn) location.reload(); });
-  });
-  const f = document.getElementById("beta-api-fields"); if (f) f.hidden = !window.__betaOn;
-  if (!window.__betaOn) return;
 
   const AR = () => (typeof allRows !== "undefined" ? allRows : null);
   const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;"}[c]));
-  const nm = pk => NAMES[pk] || `ID ${pk}`;
+  const normTitle = s => String(s ?? "").trim().toLocaleLowerCase("ru-RU").replace(/ё/g, "е");
+  let AUTO_MAP_HISTORY, AUTO_MAP_METRICS, AUTO_TG_TO_PK = new Map();
+  let SITE_PK_HISTORY, SITE_PK_METRICS, SITE_PKS = new Set();
+  let SITE_NAME_HISTORY, SITE_NAME_METRICS, SITE_NAMES = new Map();
+  let MANUAL_MAP_RAW, MANUAL_TG_TO_PK = new Map();
+  const TG_FIELDS = ["telegram_user_id", "telegram_id", "tg_user_id", "tg_id", "telegramId", "telegramUserId"];
+  function siteRowsRefs(){
+    const history = AR(); let metrics = null;
+    try { if (typeof userMetricRows !== "undefined" && Array.isArray(userMetricRows)) metrics = userMetricRows; } catch (e) {}
+    return {history, metrics};
+  }
+  function siteRows(){
+    const {history, metrics} = siteRowsRefs();
+    return [...(history || []), ...(metrics || [])];
+  }
+  function autoTelegramMap(){
+    const {history, metrics} = siteRowsRefs();
+    if (AUTO_MAP_HISTORY === history && AUTO_MAP_METRICS === metrics) return AUTO_TG_TO_PK;
+    const map = new Map();
+    [...(history || []), ...(metrics || [])].forEach(row => {
+      const pk = String(row?.[F.userId] ?? row?.user_pk ?? row?.userPk ?? row?.user_id ?? row?.userId ?? row?.member_id ?? "").trim();
+      if (!pk) return;
+      TG_FIELDS.forEach(k => { const tg = String(row?.[k] ?? "").trim(); if (tg && !map.has(tg)) map.set(tg, pk); });
+    });
+    AUTO_MAP_HISTORY = history; AUTO_MAP_METRICS = metrics; AUTO_TG_TO_PK = map; return map;
+  }
+  function manualTelegramMap(){
+    const raw = String(ls(K_UM) || "");
+    if (MANUAL_MAP_RAW === raw) return MANUAL_TG_TO_PK;
+    const map = new Map();
+    raw.split(/\r?\n/).forEach(line => {
+      const m = line.trim().match(/^(\d+)\s*(?:=|:|->|,|\t)\s*(\d+)$/);
+      if (m) map.set(m[1], m[2]);
+    });
+    MANUAL_MAP_RAW = raw; MANUAL_TG_TO_PK = map; return map;
+  }
+  function sitePks(){
+    const {history, metrics} = siteRowsRefs();
+    if (SITE_PK_HISTORY === history && SITE_PK_METRICS === metrics) return SITE_PKS;
+    const set = new Set(Object.keys(NAMES || {}).map(String));
+    [...(history || []), ...(metrics || [])].forEach(row => { const pk = row?.[F.userId] ?? row?.user_pk ?? row?.userPk; if (pk != null && pk !== "") set.add(String(pk)); });
+    SITE_PK_HISTORY = history; SITE_PK_METRICS = metrics; SITE_PKS = set; return set;
+  }
+  function resolveApiUserId(value, fieldName = ""){
+    const id = String(value ?? "").trim(); if (!id) return "";
+    const manual = manualTelegramMap(), automatic = autoTelegramMap();
+    if (/telegram|\btg\b/i.test(fieldName)) return manual.get(id) || automatic.get(id) || id;
+    if (sitePks().has(id)) return id;
+    return manual.get(id) || automatic.get(id) || id;
+  }
+  function nameMap(){
+    const {history, metrics} = siteRowsRefs();
+    if (SITE_NAME_HISTORY === history && SITE_NAME_METRICS === metrics) return SITE_NAMES;
+    const map = new Map();
+    [...(history || []), ...(metrics || [])].forEach(row => { const pk = String(row?.[F.userId] ?? row?.user_pk ?? row?.userPk ?? ""); const name = String(row?.[F.name] ?? row?.first_name ?? row?.display_name ?? row?.name ?? "").trim(); if (pk && name && !map.has(pk)) map.set(pk, name); });
+    SITE_NAME_HISTORY = history; SITE_NAME_METRICS = metrics; SITE_NAMES = map; return map;
+  }
+  const nm = pk => { const k = String(pk ?? ""); if (NAMES[k]) return NAMES[k]; const n = nameMap().get(k); if (n) return n; return /^\d{8,}$/.test(k) ? `Telegram ID ${k}` : `ID ${k}`; };
+  const personHtml = pk => { const k = String(pk); return sitePks().has(k) ? `<span class="pname" data-open-profile="${esc(k)}">${esc(nm(k))}</span>` : `<span>${esc(nm(k))}</span>`; };
   const col = pk => { try { return getStyle("u", pk).c[0]; } catch (e) { return "#7aa2f7"; } };
   const grad = c => { try { if (window.SOFT_GRAD) { const [a, z] = softPair(c); return `linear-gradient(90deg,${a},${z})`; } } catch (e) {} return c; };
   const isoD = d => d.toISOString().slice(0, 10);
@@ -19853,42 +19907,8 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
 
   /* ---------- Реакции ---------- */
   const EMOJI = [["👍", 22], ["❤️", 18], ["😂", 16], ["🔥", 11], ["😁", 7], ["👏", 5], ["🤔", 4], ["💯", 4], ["🥰", 4], ["😢", 3], ["🤡", 3], ["😱", 2], ["🙏", 2], ["💔", 1.5], ["🤝", 1.5]];
-  let RX = null, RX_API = null, RX_LOADING = null;
-  // Тестовые реакции строятся от истории сообщений: в день ставят реакции только те, кто писал,
-  // и их число пропорционально активности дня.
-  function mockReactions(){
-    const rowsA = AR() || []; if (!rowsA.length) return [];
-    const hasTot = rowsA.some(x => Number(x[F.chatPk]) === 0);
-    const day = new Map();
-    rowsA.forEach(x => {
-      if (hasTot && Number(x[F.chatPk]) !== 0) return;
-      const d = String(x[F.date] ?? "").slice(0, 10), u = String(x[F.userId] ?? "");
-      if (d < "2025-01-01" || !u || !NAMES[u] || (typeof vkDay === "function" && vkDay(d))) return;
-      const v = Number(g(x, "msgs")) || 0; if (!v) return;
-      let m = day.get(d); if (!m) day.set(d, m = new Map()); m.set(u, (m.get(u) || 0) + v);
-    });
-    const r = rng(20251215), out = new Map(), emo = EMOJI.map(([e, p]) => ({e, p}));
-    const fg = pk => .4 + (hash("g" + pk) % 100) / 60, fr = pk => .5 + (hash("r" + pk) % 100) / 70;
-    const favOf = new Map(), allP = [...new Set([...day.values()].flatMap(m => [...m.keys()]))];
-    allP.forEach(p => { const rr = rng(hash("a" + p)); const fav = new Set(); let t = 0; while (fav.size < Math.min(3, allP.length - 1) && t++ < 50) { const q = allP[Math.floor(rr() * allP.length)]; if (q !== p) fav.add(q); } favOf.set(p, fav); });
-    [...day.keys()].sort().forEach(d => {
-      const m = day.get(d); if (m.size < 2) return;
-      const tot = [...m.values()].reduce((a, b) => a + b, 0);
-      const giv = [...m].map(([pk, v]) => ({pk, p:Math.pow(v, .8) * fg(pk)})), rec = [...m].map(([pk, v]) => ({pk, p:Math.pow(v, .9) * fr(pk)}));
-      const n = Math.round(tot * .07 * (.8 + r() * .4));
-      for (let i = 0; i < n; i++) {
-        const a = pick(giv, r).pk; let b = null;
-        const fav = [...(favOf.get(a) || [])].filter(q => m.has(q));
-        if (fav.length && r() < .35) b = fav[Math.floor(r() * fav.length)];
-        for (let t = 0; t < 6 && (!b || b === a); t++) b = pick(rec, r).pk;
-        if (!b || b === a) continue;
-        const e = (hash(a) % 4 === 0 && r() < .3) ? ["🔥", "🤡", "💯", "🥰"][hash(a) % 4] : pick(emo, r).e;
-        const key = `${d}|${a}|${b}|${e}`;
-        out.set(key, (out.get(key) || 0) + 1);
-      }
-    });
-    return [...out.entries()].map(([k, n]) => { const [d, a, b, e] = k.split("|"); return {d, f:a, t:b, e, n}; });
-  }
+  let RX = null, RX_API = null, RX_RAW = null, RX_API_SRC = null, RX_API_METRICS_SRC = null, RX_LOADING = null;
+  /* Реакции поступают только из API; синтетические данные не создаются. */
   // Показатели rgive/rgot для строк истории: реакции участника за день «живут» в одной его строке —
   // в строке «все чаты» (chat_pk 0), а если её нет — в чате, где он больше всего писал в тот день.
   let CELL = null;
@@ -19911,17 +19931,79 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     if (C.dc.get(key) !== String(x[F.chatPk] ?? x[F.chat] ?? "")) return 0;
     return C.du.get(key)?.[k] || 0;
   };
+  function apiItems(payload, label){
+    if (Array.isArray(payload)) return payload;
+    for (const key of ["items", "data", "results", "events", "reactions", "progress"]) {
+      if (Array.isArray(payload?.[key])) return payload[key];
+      if (Array.isArray(payload?.[key]?.items)) return payload[key].items;
+    }
+    throw new Error(`Ответ API ${label} не содержит списка items`);
+  }
+  async function fetchJsonApi(url, label){
+    if (!url) throw new Error(`Не задан адрес API ${label}`);
+    const res = await fetch(url, {cache:"no-store", headers:{"Accept":"application/json"}});
+    if (!res.ok) throw new Error(`HTTP ${res.status} (${label})`);
+    return res.json();
+  }
+  const firstField = (row, keys) => { for (const key of keys) if (row?.[key] !== undefined && row[key] !== null && row[key] !== "") return [key, row[key]]; return ["", ""]; };
+  function nestedIdentity(row, keys){
+    for (const key of keys) {
+      const value = row?.[key];
+      if (value == null || value === "") continue;
+      if (typeof value !== "object") return [key, value];
+      const [nestedKey, nestedValue] = firstField(value, ["user_pk", "telegram_user_id", "telegram_id", "user_id", "id", "pk"]);
+      if (nestedValue !== "") return [`${key}.${nestedKey}`, nestedValue];
+    }
+    return ["", ""];
+  }
+  function normalizeReactionRows(items){
+    return (items || []).map(x => {
+      const [fromKey, fromValue] = nestedIdentity(x, ["from_user_pk", "from_telegram_user_id", "from_telegram_id", "sender_telegram_user_id", "sender_telegram_id", "actor_telegram_user_id", "from_user_id", "sender_user_id", "actor_user_id", "from_id", "sender_id", "user_from_id", "from", "sender", "actor", "from_user", "sender_user", "user_pk", "telegram_user_id", "user_id", "actor_id"]);
+      const [toKey, toValue] = nestedIdentity(x, ["to_user_pk", "to_telegram_user_id", "to_telegram_id", "target_telegram_user_id", "target_telegram_id", "recipient_telegram_user_id", "to_user_id", "target_user_id", "recipient_user_id", "to_id", "target_id", "user_to_id", "to", "target", "recipient", "receiver", "to_user", "target_user", "receiver_user_id", "message_author_id", "message_author_telegram_user_id"]);
+      const dateValue = x.date ?? x.stat_date ?? x.day ?? x.created_at ?? x.createdAt ?? x.reaction_date ?? x.timestamp ?? x.reacted_at ?? "";
+      let d = "";
+      if (typeof dateValue === "number") { const ms = dateValue < 1e12 ? dateValue * 1000 : dateValue; try { d = new Date(ms).toISOString().slice(0,10); } catch (e) {} }
+      else d = String(dateValue).slice(0,10);
+      const fromIsPk = /user_pk|^user_pk$|^from_pk$/i.test(fromKey);
+      const toIsPk = /user_pk|^to_pk$/i.test(toKey);
+      const f = fromIsPk ? String(fromValue ?? "") : resolveApiUserId(fromValue, fromKey);
+      const t = toIsPk ? String(toValue ?? "") : resolveApiUserId(toValue, toKey);
+      const emojiValue = x.emoji ?? x.reaction_emoji ?? x.emoji_name ?? x.reaction ?? x.reaction_type ?? x.type;
+      const emoji = emojiValue && typeof emojiValue === "object" ? (emojiValue.emoji ?? emojiValue.name ?? emojiValue.value ?? "👍") : (emojiValue ?? "👍");
+      const countValue = Number(x.count ?? x.total_count ?? x.reaction_count ?? x.amount ?? x.total ?? 1);
+      return {d, f, t, e:String(emoji), n:Number.isFinite(countValue) && countValue > 0 ? countValue : 0};
+    }).filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x.d) && x.f && x.t && x.n > 0);
+  }
+  async function fetchApiItems(url, label){
+    const all = [], seen = new Set(); let cursor = null;
+    for (let page = 0; page < 1000; page++) {
+      let target = url;
+      if (cursor !== null) {
+        const parsed = new URL(url, location.href);
+        parsed.searchParams.set("cursor", String(cursor));
+        target = parsed.href;
+      }
+      const payload = await fetchJsonApi(target, label);
+      all.push(...apiItems(payload, label));
+      const next = payload && typeof payload === "object" ? (payload.next_cursor ?? payload.nextCursor ?? payload.pagination?.next_cursor ?? payload.meta?.next_cursor ?? payload.pagination?.nextCursor ?? payload.meta?.nextCursor ?? payload.data?.next_cursor ?? payload.data?.nextCursor ?? null) : null;
+      if (next == null || next === "" || next === false || seen.has(String(next))) break;
+      seen.add(String(next)); cursor = next;
+    }
+    return all;
+  }
   async function loadReactApi(){
-    const url = ls(K_RA); if (!url) return null;
-    const res = await fetch(url, {cache:"no-store"}); if (!res.ok) throw new Error("HTTP " + res.status);
-    const j = await res.json(), items = Array.isArray(j) ? j : (j.items || j.data || []);
-    return items.map(x => ({d:String(x.date ?? x.stat_date ?? "").slice(0, 10), f:String(x.from_user_pk ?? x.from ?? x.user_pk ?? ""), t:String(x.to_user_pk ?? x.to ?? ""), e:String(x.emoji ?? x.reaction ?? "👍"), n:Number(x.count ?? 1) || 1})).filter(x => x.d && x.f && x.t);
+    // Метрики участников могут содержать telegram_user_id → user_pk; загружаем их до нормализации.
+    try { if (typeof ensureUserMetrics === "function") await ensureUserMetrics(); } catch (e) {}
+    return fetchApiItems(apiUrl(K_RA), "реакций");
   }
   function rxAll(){
-    if (RX_API) return RX_API;
-    if (ls(K_RA)) { if (!RX_LOADING) RX_LOADING = loadReactApi().then(v => { RX_API = v || []; rerender(); }).catch(e => { RX_API = []; RX_ERR = e.message; rerender(); }); return []; }
-    if (!RX || RX.src !== AR()) RX = {src:AR(), rows:mockReactions()};
-    return RX.rows;
+    if (RX_RAW !== null) {
+      const refs = siteRowsRefs();
+      if (RX_API_SRC !== refs.history || RX_API_METRICS_SRC !== refs.metrics) { RX_API = normalizeReactionRows(RX_RAW); RX_API_SRC = refs.history; RX_API_METRICS_SRC = refs.metrics; RX_ERR = RX_RAW.length && !RX_API.length ? "API вернул строки, но в них не распознаны дата, отправитель и получатель реакции. Проверь формат ответа API /api/v1/reactions." : ""; CELL = null; }
+      return RX_API || [];
+    }
+    if (!RX_LOADING) RX_LOADING = loadReactApi().then(items => { RX_RAW = items; RX_API = normalizeReactionRows(items); const refs = siteRowsRefs(); RX_API_SRC = refs.history; RX_API_METRICS_SRC = refs.metrics; RX_ERR = items.length && !RX_API.length ? "API вернул строки, но в них не распознаны дата, отправитель и получатель реакции. Проверь формат ответа API /api/v1/reactions." : ""; RX_LOADING = null; rerender(); return RX_API; }).catch(e => { RX_RAW = []; RX_API = []; const refs = siteRowsRefs(); RX_API_SRC = refs.history; RX_API_METRICS_SRC = refs.metrics; RX_ERR = e?.message || String(e); RX_LOADING = null; rerender(); return RX_API; });
+    return [];
   }
   let RX_ERR = "";
   const inR = (x, from, to) => (!from || x.d >= from) && (!to || x.d <= to);
@@ -19932,70 +20014,114 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     between(a, b, from, to){ let ab = 0, ba = 0; rxAll().forEach(x => { if (!inR(x, from, to)) return; if (x.f === a && x.t === b) ab += x.n; else if (x.f === b && x.t === a) ba += x.n; }); return {ab, ba}; },
     totalsIn(pk, from, to){ let given = 0, got = 0; rxAll().forEach(x => { if (!inR(x, from, to)) return; if (x.f === pk) given += x.n; if (x.t === pk) got += x.n; }); return {given, got}; },
     rows:rxAll,
-    totals(pk){ pk = String(pk); let given = 0, got = 0; rxAll().forEach(x => { if (x.f === pk) given += x.n; if (x.t === pk) got += x.n; }); return {given, got}; },
-    isMock:() => !ls(K_RA)
+    totals(pk){ pk = String(pk); let given = 0, got = 0; rxAll().forEach(x => { if (x.f === pk) given += x.n; if (x.t === pk) got += x.n; }); return {given, got}; }
   };
 
   /* ---------- События ---------- */
-  const EVENTS = [
-    {id:"hp", title:"Гарри Поттер", start:"2025-12-15", end:"2026-03-20", c1:"#7a1f2b", c2:"#f2c14e", icon:"wand",
-      ach:{name:"Волшебник", icon:"wand", desc:"Достигнуть уровня в событии по Гарри Поттеру", th:[10,15,20,25,30,35,40]},
-      ranks:[[1, "Маггл"], [5, "Первокурсник"], [10, "Ученик Хогвартса"], [15, "Староста"], [20, "Мракоборец"], [25, "Член Ордена Феникса"], [30, "Профессор"], [35, "Директор Хогвартса"], [40, "Великий волшебник"]]},
-    {id:"naruto", title:"Наруто", start:"2026-03-21", end:"2026-09-11", c1:"#c2410c", c2:"#fb923c", icon:"shuriken",
-      ach:{name:"Шиноби", icon:"shuriken", desc:"Достигнуть уровня в событии по Наруто", th:[10,15,20,25,30,35,40]},
-      ranks:[[1, "Ученик академии"], [5, "Генин"], [10, "Чунин"], [15, "Токубецу-джонин"], [20, "Джонин"], [25, "АНБУ"], [30, "Саннин"], [35, "Каге"], [40, "Мудрец шести путей"]]},
-    {id:"greek", title:"Греческая мифология", start:"2026-09-12", end:"2026-12-11", c1:"#1d4ed8", c2:"#a5f3fc", icon:"column",
-      ach:{name:"Гречка", icon:"column", desc:"Достигнуть уровня в событии по греческой мифологии", th:[10,15,20,25,30,35,40]},
-      ranks:[[1, "Смертный"], [5, "Герой"], [10, "Аргонавт"], [15, "Полубог"], [20, "Оракул"], [25, "Титан"], [30, "Олимпиец"], [35, "Бог Олимпа"], [40, "Владыка Олимпа"]]},
-  ];
+  const EVENTS = [];
   const EV_ICON = {
     wand:'<path d="M4 20 15 9"/><path d="M14 5l1-2 1 2 2 1-2 1-1 2-1-2-2-1z"/><path d="M19 11l.6 1.4L21 13l-1.4.6L19 15l-.6-1.4L17 13l1.4-.6z"/>',
     shuriken:'<path d="M12 2l2 7 7-2-5 5 5 5-7-2-2 7-2-7-7 2 5-5-5-5 7 2z"/><circle cx="12" cy="12" r="1.6"/>',
     column:'<path d="M4 5h16M5 8h14M4 21h16M5 18h14"/><path d="M7 8v10M10.3 8v10M13.7 8v10M17 8v10"/>'};
   const evSvg = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${EV_ICON[k] || ""}</svg>`;
-  let EVD = null, EV_API = null, EV_LOADING = null;
+  let EVD = null, EV_API = null, EV_API_ROWS = null, EV_API_SRC = null, EV_API_METRICS_SRC = null, EV_LOADING = null;
   const xpFor = lv => Math.round(50 * lv * lv + 150 * lv);
-  function mockEvents(){
-    const P = people(), t = today(), lv = new Map();
-    EVENTS.forEach(ev => {
-      const r = rng(hash(ev.id)), m = new Map();
-      const total = dI(ev.end) - dI(ev.start) + 1, done = Math.max(0, Math.min(total, dI(t) - dI(ev.start) + 1)), frac = done / total;
-      if (frac <= 0) { lv.set(ev.id, m); return; }
-      const maxW = P[0]?.w || 1;
-      P.forEach((p, i) => {
-        if (r() < .18 + i / P.length * .25) return; // не все участвуют
-        const base = 4 + 42 * Math.pow(1 - i / P.length, 1.1) * (.7 + r() * .6) * (.6 + Math.pow(p.w / maxW, .5) * .4);
-        const level = Math.max(1, Math.min(45, Math.round(base * Math.sqrt(frac))));
-        m.set(p.pk, {level, xp:xpFor(level) + Math.floor(r() * (xpFor(level + 1) - xpFor(level)))});
-      });
-      lv.set(ev.id, m);
+  const validIsoDate = d => /^\d{4}-\d{2}-\d{2}$/.test(String(d ?? ""));
+  const eventDuration = ev => validIsoDate(ev?.start) && validIsoDate(ev?.end) ? Math.max(0, dI(ev.end) - dI(ev.start) + 1) : null;
+  const eventPeriod = ev => `${ev?.start ? fd(ev.start) : "дата начала не указана"} — ${ev?.end ? fd(ev.end) : "дата окончания не указана"}`;
+  const eventThresholds = maxLevel => {
+    const max = Math.max(1, Math.round(Number(maxLevel) || 7));
+    const out = [];
+    for (let i = 1; i <= 7; i++) { const v = Math.min(max, Math.max(1, Math.ceil(max * i / 7))); if (!out.length || v > out[out.length - 1]) out.push(v); }
+    while (out.length < 7) out.push(max);
+    return out;
+  };
+  /* Прогресс участников берётся только из /api/v1/event-progress. */
+  function eventProgressOrder(x){
+    const level = x?.level;
+    const v = level && typeof level === "object" ? (level.order ?? level.level_order ?? level.value) : (x?.level_order ?? x?.rank_order ?? x?.current_level ?? level);
+    return Number(v) || 0;
+  }
+  function eventProgressName(x){
+    const level = x?.level;
+    const nested = level && typeof level === "object" ? (level.name ?? level.title) : null;
+    return String(nested ?? x?.rank_name ?? x?.level_name ?? x?.title ?? "").trim();
+  }
+  function buildEventProgress(items){
+    const levels = new Map();
+    (items || []).forEach(x => {
+      const id = String(x?.event_id ?? x?.eventId ?? x?.event_pk ?? "").trim();
+      const [field, rawId] = firstField(x, ["telegram_user_id", "user_pk", "user_id", "userId", "member_id", "participant_id"]);
+      if (!id || !rawId) return;
+      const pk = resolveApiUserId(rawId, field);
+      const lev = eventProgressOrder(x);
+      const xp = Number(x?.experience ?? x?.xp ?? x?.experience_points ?? x?.total_experience ?? 0) || 0;
+      const progress = Number(x?.progress_percent ?? x?.progressPercent ?? x?.level_progress_percent);
+      const toNext = Number(x?.experience_to_next_level ?? x?.xp_to_next_level ?? x?.experienceToNextLevel);
+      if (!levels.has(id)) levels.set(id, new Map());
+      levels.get(id).set(pk, {level:lev, xp, progress:Number.isFinite(progress) ? Math.max(0, Math.min(100, progress)) : null, toNext:Number.isFinite(toNext) ? Math.max(0, toNext) : null, rankName:eventProgressName(x)});
     });
-    return lv;
+    return levels;
+  }
+  function hydrateEvents(eventItems, progressItems){
+    const rankByEvent = new Map();
+    (progressItems || []).forEach(x => {
+      const id = String(x?.event_id ?? x?.eventId ?? x?.event_pk ?? "").trim();
+      const order = eventProgressOrder(x), name = eventProgressName(x);
+      if (!id || !order || !name) return;
+      if (!rankByEvent.has(id)) rankByEvent.set(id, new Map());
+      const ranks = rankByEvent.get(id); if (!ranks.has(order)) ranks.set(order, name);
+    });
+    const hydrated = (eventItems || []).map((e, index) => {
+      const id = String(e?.id ?? e?.event_id ?? e?.event_pk ?? `event-${index+1}`).trim();
+      const title = String(e?.title ?? e?.name ?? `Событие ${id}`).trim();
+      const hue = hash(`${id}:${title}`) % 360;
+      const c1 = `hsl(${hue} 68% 48%)`, c2 = `hsl(${(hue + 46) % 360} 78% 72%)`;
+      const start = String(e?.start_date ?? e?.start ?? e?.starts_at ?? "").slice(0,10);
+      const end = String(e?.end_date ?? e?.end ?? e?.ends_at ?? "").slice(0,10);
+      const ranksMap = rankByEvent.get(id) || new Map();
+      const ranks = [...ranksMap.entries()].sort((a,b) => a[0] - b[0]).map(([level, name]) => [level, name]);
+      const maxRank = ranks.length ? Math.max(...ranks.map(r => r[0])) : 7;
+      const ach = {name:"Достижение события", icon:"star", desc:`Уровень достижения в событии «${title}»`, th:eventThresholds(maxRank)};
+      return {id, title, start:validIsoDate(start) ? start : "", end:validIsoDate(end) ? end : "", apiStatus:String(e?.status ?? "").toLowerCase(), c1, c2, icon:"column", ach, ranks};
+    });
+    EVENTS.splice(0, EVENTS.length, ...hydrated);
   }
   async function loadEventsApi(){
-    const url = ls(K_EA); if (!url) return null;
-    const res = await fetch(url, {cache:"no-store"}); if (!res.ok) throw new Error("HTTP " + res.status);
-    const j = await res.json(), lv = new Map();
-    (j.events || []).forEach(e => { const ex = EVENTS.find(x => x.id === String(e.id)); const ev = ex || {id:String(e.id), c1:"#6366f1", c2:"#c4b5fd", icon:"column", ach:{name:e.title, icon:"star", desc:`Достигнуть уровня в событии «${e.title}»`, th:[10,15,20,25,30,35,40]}}; Object.assign(ev, {title:e.title ?? ev.title, start:e.start ?? ev.start, end:e.end ?? ev.end}); if (e.ranks) ev.ranks = e.ranks; if (!ex) EVENTS.push(ev); });
-    (j.levels || []).forEach(x => { const id = String(x.event_id); if (!lv.has(id)) lv.set(id, new Map()); lv.get(id).set(String(x.user_pk), {level:Number(x.level) || 0, xp:Number(x.xp) || 0}); });
-    return lv;
+    // Подтягиваем локальный справочник участников, если он содержит Telegram ID.
+    try { if (typeof ensureUserMetrics === "function") await ensureUserMetrics(); } catch (e) {}
+    const [eventItems, progressItems] = await Promise.all([
+      fetchApiItems(apiUrl(K_EA), "списка событий"),
+      fetchApiItems(apiUrl(K_EP), "прогресса участников")
+    ]);
+    hydrateEvents(eventItems, progressItems);
+    return progressItems;
   }
   function evLevels(){
-    if (EV_API) return EV_API;
-    if (ls(K_EA)) { if (!EV_LOADING) EV_LOADING = loadEventsApi().then(v => { EV_API = v || new Map(); rerender(); }).catch(e => { EV_API = new Map(); EV_ERR = e.message; rerender(); }); return new Map(); }
-    if (!EVD || EVD.src !== AR()) EVD = {src:AR(), lv:mockEvents()};
-    return EVD.lv;
+    if (EV_API_ROWS !== null) {
+      const refs = siteRowsRefs();
+      if (EV_API_SRC !== refs.history || EV_API_METRICS_SRC !== refs.metrics) { EV_API = buildEventProgress(EV_API_ROWS); EV_API_SRC = refs.history; EV_API_METRICS_SRC = refs.metrics; }
+      return EV_API || new Map();
+    }
+    if (!EV_LOADING) EV_LOADING = loadEventsApi().then(items => { EV_API_ROWS = items; EV_API = buildEventProgress(items); const refs = siteRowsRefs(); EV_API_SRC = refs.history; EV_API_METRICS_SRC = refs.metrics; EV_ERR = items.length && !EV_API.size ? "API прогресса вернул строки, но не удалось распознать событие, участника и уровень." : ""; EV_LOADING = null; rerender(); return EV_API; }).catch(e => { EVENTS.splice(0, EVENTS.length); EV_API_ROWS = []; EV_API = new Map(); const refs = siteRowsRefs(); EV_API_SRC = refs.history; EV_API_METRICS_SRC = refs.metrics; EV_ERR = e?.message || String(e); EV_LOADING = null; rerender(); return EV_API; });
+    return new Map();
   }
   let EV_ERR = "";
-  const statusOf = ev => { const t = today(); return t < ev.start ? "soon" : t > ev.end ? "done" : "live"; };
+  const statusOf = ev => {
+    const t = today();
+    if (["legacy", "completed", "complete", "finished", "archived"].includes(String(ev?.apiStatus || "").toLowerCase())) return "done";
+    if (validIsoDate(ev?.start) && t < ev.start) return "soon";
+    if (validIsoDate(ev?.end) && t > ev.end) return "done";
+    return "live";
+  };
   const rankName = (ev, level) => { let n = ev.ranks?.[0]?.[1] || ""; (ev.ranks || []).forEach(([l, name]) => { if (level >= l) n = name; }); return n; };
   const events = {
     list:() => EVENTS.map(ev => ({...ev, status:statusOf(ev)})),
     levelOf:(id, pk) => evLevels().get(id)?.get(String(pk))?.level || 0,
-    people:() => people().map(p => p.pk),
-    isMock:() => !ls(K_EA),
+    people:() => { const ids = new Set(people().map(p => p.pk)); evLevels().forEach(m => m.forEach((v, k) => ids.add(k))); return [...ids]; },
+    isMock:() => false,
     inRange(from, to){
-      return EVENTS.filter(ev => ev.start <= to && ev.end >= from && ev.start <= today()).map(ev => {
+      return EVENTS.filter(ev => (!ev.start || ev.start <= to) && (!ev.end || ev.end >= from) && (!ev.start || ev.start <= today())).map(ev => {
         const m = evLevels().get(ev.id) || new Map(), lead = [...m.entries()].filter(([k]) => typeof isVisibleUser !== "function" || isVisibleUser(k)).sort((a, b) => b[1].xp - a[1].xp)[0];
         return {...ev, status:statusOf(ev), leader:lead ? {pk:lead[0], level:lead[1].level} : null, rank:lead ? rankName(ev, lead[1].level) : "", rankOf:l => rankName(ev, l)};
       });
@@ -20013,21 +20139,21 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     rxAll().forEach(x => { if (x.f === pk) { toM.set(x.t, (toM.get(x.t) || 0) + x.n); emo.set(x.e, (emo.get(x.e) || 0) + x.n); } if (x.t === pk) fromM.set(x.f, (fromM.get(x.f) || 0) + x.n); });
     const top = (m, n) => [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n);
     const L = evLevels();
-    const evCards = EVENTS.filter(ev => ev.start <= t).map(ev => {
+    const evCards = EVENTS.filter(ev => !ev.start || ev.start <= t).map(ev => {
       const m = L.get(ev.id) || new Map(), me = m.get(pk), st = statusOf(ev);
       const order = [...m.entries()].sort((a, b) => b[1].xp - a[1].xp), pl = order.findIndex(([k]) => k === pk) + 1, tl = me ? ev.ach.th.filter(x => me.level >= x).length : 0;
       const ROM = ["—", "I", "II", "III", "IV", "V", "VI", "VII"], TC = l => l <= 0 ? "#4a5060" : l <= 3 ? "#e3a36b" : l <= 6 ? "#c0c6d4" : "#ffd166";
-      return `<div class="ev-card" data-ev-open="${esc(ev.id)}" style="--ec1:${ev.c1};--ec2:${ev.c2}"><h3>${evSvg(ev.icon)}${esc(ev.title)}</h3><p class="hint">${fd(ev.start)} — ${fd(ev.end)}${st === "live" ? " · идёт" : ""}</p>
+      return `<div class="ev-card" data-ev-open="${esc(ev.id)}" style="--ec1:${ev.c1};--ec2:${ev.c2}"><h3>${evSvg(ev.icon)}${esc(ev.title)}</h3><p class="hint">${eventPeriod(ev)}${st === "live" ? " · идёт" : ""}</p>
         ${me && st === "live" ? (() => { const fc = forecastEvent(ev)?.list.find(x => x.k === pk); return fc ? `<div class="ev-meta"><span>Прогноз к концу: <b>ур. ${fc.end}</b> · ${fc.place}-е место</span></div>` : ""; })() : ""}${me ? `<div class="ev-meta"><span>Уровень: <b>${me.level}</b></span><span>${esc(rankName(ev, me.level))}</span></div><div class="ev-meta"><span>Место: <b>${pl}</b> из ${m.size}</span><span>«${esc(ev.ach.name)}»: <span class="ev-tier" style="--tc:${TC(tl)}">${ROM[tl]}</span></span></div>` : `<div class="ev-meta"><span>Не участвовал(а)</span></div>`}</div>`;
     }).join("");
-    return `<h2>Реакции ${mockNote(react.isMock())}</h2>
+    return `<h2>Реакции</h2>
       <div class="wrap"><table class="re-prof"><thead><tr><th style="text-align:left">Период</th><th>Поставил(а)</th><th>Получил(а)</th></tr></thead><tbody>${rowsT}</tbody></table></div>
       <div class="bx-grid">
         <div class="bx-card"><h3>Кому ставит реакции</h3><p class="hint">Топ-5 за всё время</p>${bars(top(toM, 5).map(([k, v]) => ({lbl:esc(nm(k)), v, c:col(k)})), {empty:"Реакций не ставил(а)"})}</div>
         <div class="bx-card"><h3>Кто ставит реакции</h3><p class="hint">Топ-5 за всё время</p>${bars(top(fromM, 5).map(([k, v]) => ({lbl:esc(nm(k)), v, c:col(k)})), {empty:"Реакций не получал(а)"})}</div>
         <div class="bx-card"><h3>Любимые реакции</h3><p class="hint">Что ставит чаще всего</p>${bars(top(emo, 5).map(([e, v]) => ({lbl:e, v, bg:grad(color || col(pk))})), {emo:true})}</div>
       </div>
-      <h2>События ${mockNote(events.isMock())}</h2><div class="ev-timeline">${evCards}</div>`;
+      <h2>События</h2><div class="ev-timeline">${evCards}</div>`;
   };
   document.addEventListener("click", e => {
     const c = e.target.closest?.("[data-ev-open]"); if (!c) return;
@@ -20130,7 +20256,6 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     const mx = Math.max(...list.map(x => x.v)) || 1;
     return `<div class="bx-list">${list.map(x => `<div class="bx-row${opt.emo ? " emo" : ""}" title="${esc(x.title || "")}"><span>${x.lbl}</span><div class="bx-bar"><i style="width:${(x.v / mx * 100).toFixed(1)}%;background:${x.bg || grad(x.c || "#7aa2f7")}"></i></div><b>${fmtN(x.v)}</b></div>`).join("")}</div>`;
   };
-  const mockNote = isMock => isMock ? `<span class="beta-badge">тестовые данные</span>` : `<span class="beta-badge">бета</span>`;
   const loading = id => { const o = document.getElementById(id); if (o) o.innerHTML = `<div class="sk sk-poster" style="height:120px"></div>`; };
 
   /* ---------- Вкладка «Реакции» ---------- */
@@ -20140,7 +20265,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
   const WD = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
   function renderReactions(){
     const out = document.getElementById("re-out"); if (!out) return;
-    if (ls(K_RA) && !RX_API) { loading("re-out"); rxAll(); return; }
+    if (apiUrl(K_RA) && RX_RAW === null) { loading("re-out"); rxAll(); return; }
     const all = rxAll(), t = today(), from = RS.per === "all" ? "" : isoD(new Date(Date.parse(t + "T00:00:00Z") - (Number(RS.per) - 1) * 864e5));
     const rows = from ? all.filter(x => x.d >= from && x.d <= t) : all;
     const days = new Set(rows.map(x => x.d)).size || 1;
@@ -20167,7 +20292,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     const th = (k, l) => `<th data-re-sort="${k}" style="cursor:pointer"${RS.sort === k ? ' class="sorted"' : ""}>${l}${RS.sort === k ? " ↓" : ""}</th>`;
     const table = `<div class="wrap"><table id="re-table"><thead><tr><th>Место</th><th>Участник</th>${th("given", "Поставил(а)")}${th("got", "Получил(а)")}${th("bal", "Баланс")}<th>В день</th><th>Любимая реакция</th></tr></thead><tbody>${list.map((k, i) => {
       const gv = given.get(k) || 0, gt = got.get(k) || 0, b = gt - gv;
-      return `<tr><td>${i + 1}</td><td><span class="pname" data-open-profile="${esc(k)}">${esc(nm(k))}</span></td><td>${fmtN(gv)}</td><td>${fmtN(gt)}</td><td style="color:${b > 0 ? "#4ade80" : b < 0 ? "#f87171" : "inherit"}">${b > 0 ? "+" : ""}${fmtN(b)}</td><td>${(gv / days).toFixed(1).replace(".", ",")}</td><td style="font-size:18px">${fav(k)}</td></tr>`;
+      return `<tr><td>${i + 1}</td><td>${personHtml(k)}</td><td>${fmtN(gv)}</td><td>${fmtN(gt)}</td><td style="color:${b > 0 ? "#4ade80" : b < 0 ? "#f87171" : "inherit"}">${b > 0 ? "+" : ""}${fmtN(b)}</td><td>${(gv / days).toFixed(1).replace(".", ",")}</td><td style="font-size:18px">${fav(k)}</td></tr>`;
     }).join("")}</tbody></table></div>`;
 
     // по дням и дням недели (у реакций есть только дата, без времени)
@@ -20198,7 +20323,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     const meE = top(favE.get(me) || new Map(), 6).map(([e, v]) => ({lbl:e, v, bg:grad(col(me))}));
 
     out.innerHTML = `
-      <div class="bx-head"><h2>Реакции ${mockNote(react.isMock())}</h2>
+      <div class="bx-head"><h2>Реакции</h2>
         <div class="seg" role="tablist">${PERIODS.map(([k, l]) => `<button type="button" data-re-per="${k}" class="${RS.per === k ? "active" : ""}">${l}</button>`).join("")}</div></div>
       ${RX_ERR ? `<p class="status err">Не удалось загрузить API реакций: ${esc(RX_ERR)}</p>` : ""}
       <div class="tiles">
@@ -20244,7 +20369,8 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
   function forecastEvent(ev){
     if (statusOf(ev) !== "live") return null;
     const m = evLevels().get(ev.id) || new Map(); if (!m.size) return null;
-    const t = today(), total = dI(ev.end) - dI(ev.start) + 1, done = Math.max(1, Math.min(total, dI(t) - dI(ev.start) + 1)), left = total - done;
+    const total = eventDuration(ev); if (!total) return null;
+    const t = today(), done = Math.max(1, Math.min(total, dI(t) - dI(ev.start) + 1)), left = total - done;
     // кривая уровня по опыту: log xp = log c + p·log lv
     const pts = [...m.values()].filter(v => v.level > 1 && v.xp > 0).map(v => [Math.log(v.level), Math.log(v.xp)]);
     let pw = 2, lc = Math.log(50);
@@ -20273,16 +20399,16 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
   let EVSEL = ls("chatstats.eventSel.v1");
   function renderEvents(){
     const out = document.getElementById("ev-out"); if (!out) return;
-    if (ls(K_EA) && !EV_API) { loading("ev-out"); evLevels(); return; }
+    if (apiUrl(K_EA) && EV_API_ROWS === null) { loading("ev-out"); evLevels(); return; }
     const L = evLevels(), list = events.list(), t = today();
     if (!list.some(ev => ev.id === EVSEL)) EVSEL = (list.find(ev => ev.status === "live") || list[list.length - 1])?.id || "";
     const cards = list.map(ev => {
-      const m = L.get(ev.id) || new Map(), tot = dI(ev.end) - dI(ev.start) + 1, done = Math.max(0, Math.min(tot, dI(t) - dI(ev.start) + 1));
+      const m = L.get(ev.id) || new Map(), tot = eventDuration(ev), done = tot ? Math.max(0, Math.min(tot, dI(t) - dI(ev.start) + 1)) : 0;
       const lead = [...m.entries()].sort((a, b) => b[1].xp - a[1].xp)[0];
-      const st = ev.status === "live" ? `<span class="ev-st live">● идёт · осталось ${fmtN(tot - done)} ${wf2(tot - done, ["день", "дня", "дней"])}</span>` : ev.status === "done" ? `<span class="ev-st">завершено</span>` : `<span class="ev-st">скоро</span>`;
+      const st = ev.status === "live" ? `<span class="ev-st live">● идёт${tot ? ` · осталось ${fmtN(Math.max(0, tot - done))} ${wf2(Math.max(0, tot - done), ["день", "дня", "дней"])}` : ""}</span>` : ev.status === "done" ? `<span class="ev-st">завершено</span>` : `<span class="ev-st">скоро</span>`;
       return `<div class="ev-card${ev.id === EVSEL ? " on" : ""}" data-ev="${esc(ev.id)}" style="--ec1:${ev.c1};--ec2:${ev.c2}" role="button" tabindex="0">
-        <h3>${evSvg(ev.icon)}${esc(ev.title)}</h3><p class="hint">${fd(ev.start)} — ${fd(ev.end)} · ${fmtN(tot)} ${wf2(tot, ["день", "дня", "дней"])}</p>
-        ${st}${ev.status === "live" ? `<div class="ev-prog"><i style="width:${(done / tot * 100).toFixed(1)}%"></i></div>` : ""}
+        <h3>${evSvg(ev.icon)}${esc(ev.title)}</h3><p class="hint">${eventPeriod(ev)}${tot ? ` · ${fmtN(tot)} ${wf2(tot, ["день", "дня", "дней"])}` : ""}</p>
+        ${st}${ev.status === "live" && tot ? `<div class="ev-prog"><i style="width:${(done / tot * 100).toFixed(1)}%"></i></div>` : ""}
         <div class="ev-meta"><span>Участников: <b>${fmtN(m.size)}</b></span>${lead ? `<span>Лидер: <b>${esc(nm(lead[0]))}</b> · ур. ${lead[1].level}</span>` : ""}</div></div>`;
     }).join("");
     const ev = list.find(x => x.id === EVSEL);
@@ -20304,7 +20430,9 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
         <h2>Уровни участников — ${esc(ev.title)}</h2>
         <div class="wrap"><table id="ev-table"><thead><tr><th>Место</th><th>Участник</th><th>Уровень</th><th>Звание</th><th>Опыт</th><th>«${esc(ev.ach.name)}»</th></tr></thead><tbody>${rows.map(([k, v], i) => {
           const tl = th.filter(x => v.level >= x).length;
-          return `<tr style="--ec1:${ev.c1};--ec2:${ev.c2}"><td>${i + 1}</td><td><span class="pname" data-open-profile="${esc(k)}">${esc(nm(k))}</span></td><td><span class="ev-lv"><b>${v.level}</b><i><em style="width:${Math.min(100, v.level / Math.max(40, mx) * 100).toFixed(1)}%"></em></i></span></td><td class="ev-rank">${esc(rankName(ev, v.level))}</td><td>${fmtN(v.xp)}</td><td><span class="ev-tier" style="--tc:${TC(tl)}">${ROM[tl]}</span></td></tr>`;
+          const bar = v.progress == null ? Math.min(100, v.level / Math.max(1, mx) * 100) : v.progress;
+          const progTitle = v.toNext == null ? (v.progress == null ? "" : `Прогресс до следующего уровня: ${v.progress.toFixed(1)}%`) : `До следующего уровня: ${fmtN(v.toNext)} опыта · ${v.progress == null ? "" : `${v.progress.toFixed(1)}%`}`;
+          return `<tr style="--ec1:${ev.c1};--ec2:${ev.c2}"><td>${i + 1}</td><td>${personHtml(k)}</td><td><span class="ev-lv" title="${esc(progTitle)}"><b>${v.level}</b><i><em style="width:${bar.toFixed(1)}%"></em></i></span></td><td class="ev-rank">${esc(rankName(ev, v.level) || v.rankName || "—")}</td><td>${fmtN(v.xp)}</td><td><span class="ev-tier" style="--tc:${TC(tl)}">${ROM[tl]}</span></td></tr>`;
         }).join("")}</tbody></table></div>
         <div class="bx-grid">
           <div class="bx-card"><h3>Сколько людей на каждом звании</h3><p class="hint">Звания события и диапазоны уровней</p>${bars(dist)}</div>
@@ -20326,7 +20454,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
           </div>
           <div class="wrap"><table id="ev-fc-table"><thead><tr><th>Место в конце</th><th>Участник</th><th>Сейчас</th><th>Прогноз уровня</th><th>Диапазон</th><th>Звание в конце</th><th>«${esc(ev.ach.name)}» в конце</th><th>Место</th><th>Темп</th></tr></thead><tbody>${FC.list.map(x => {
             const tl = tierOf(x.end), TC = l => l <= 0 ? "#4a5060" : l <= 3 ? "#e3a36b" : l <= 6 ? "#c0c6d4" : "#ffd166", ROM = ["—", "I", "II", "III", "IV", "V", "VI", "VII"];
-            return `<tr style="--ec1:${ev.c1};--ec2:${ev.c2}"><td>${x.place}</td><td><span class="pname" data-open-profile="${esc(x.k)}">${esc(nm(x.k))}</span></td><td>${x.now}</td><td><span class="ev-lv"><b>${x.end}</b><i style="position:relative"><em style="width:${(x.end / mxE * 100).toFixed(1)}%;opacity:.45"></em><em style="position:absolute;inset:0 auto 0 0;width:${(x.now / mxE * 100).toFixed(1)}%"></em></i></span></td><td class="ev-rank">${x.lo === x.hi ? x.end : `${x.lo}–${x.hi}`}</td><td class="ev-rank">${esc(rankName(ev, x.end))}</td><td><span class="ev-tier" style="--tc:${TC(tl)}">${ROM[tl]}</span>${tl > tierOf(x.now) ? ` <small style="color:#4ade80">+${tl - tierOf(x.now)}</small>` : ""}</td><td>${move(x)}</td><td>${trend(x.trend)}</td></tr>`;
+            return `<tr style="--ec1:${ev.c1};--ec2:${ev.c2}"><td>${x.place}</td><td>${personHtml(x.k)}</td><td>${x.now}</td><td><span class="ev-lv"><b>${x.end}</b><i style="position:relative"><em style="width:${(x.end / mxE * 100).toFixed(1)}%;opacity:.45"></em><em style="position:absolute;inset:0 auto 0 0;width:${(x.now / mxE * 100).toFixed(1)}%"></em></i></span></td><td class="ev-rank">${x.lo === x.hi ? x.end : `${x.lo}–${x.hi}`}</td><td class="ev-rank">${esc(rankName(ev, x.end))}</td><td><span class="ev-tier" style="--tc:${TC(tl)}">${ROM[tl]}</span>${tl > tierOf(x.now) ? ` <small style="color:#4ade80">+${tl - tierOf(x.now)}</small>` : ""}</td><td>${move(x)}</td><td>${trend(x.trend)}</td></tr>`;
           }).join("")}</tbody></table></div>`;
       }
     }
@@ -20334,11 +20462,11 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     const ppl = events.people().filter(k => list.some(e2 => (L.get(e2.id) || new Map()).has(k)));
     const sum = k => list.reduce((s, e2) => s + ((L.get(e2.id) || new Map()).get(k)?.level || 0), 0);
     const all = `<h2>Все события вместе</h2><p class="hint">Уровни каждого участника во всех событиях и сумма уровней.</p>
-      <div class="wrap"><table id="ev-all-table"><thead><tr><th>Место</th><th>Участник</th>${list.map(e2 => `<th>${esc(e2.title)}</th>`).join("")}<th>Сумма уровней</th></tr></thead><tbody>${ppl.sort((a, b) => sum(b) - sum(a)).map((k, i) => `<tr><td>${i + 1}</td><td><span class="pname" data-open-profile="${esc(k)}">${esc(nm(k))}</span></td>${list.map(e2 => { const v = (L.get(e2.id) || new Map()).get(k); return `<td>${v ? v.level : '<span class="hint">—</span>'}</td>`; }).join("")}<td><b>${sum(k)}</b></td></tr>`).join("")}</tbody></table></div>`;
-    out.innerHTML = `<div class="bx-head"><h2>События ${mockNote(events.isMock())}</h2></div>
+      <div class="wrap"><table id="ev-all-table"><thead><tr><th>Место</th><th>Участник</th>${list.map(e2 => `<th>${esc(e2.title)}</th>`).join("")}<th>Сумма уровней</th></tr></thead><tbody>${ppl.sort((a, b) => sum(b) - sum(a)).map((k, i) => `<tr><td>${i + 1}</td><td>${personHtml(k)}</td>${list.map(e2 => { const v = (L.get(e2.id) || new Map()).get(k); return `<td>${v ? v.level : '<span class="hint">—</span>'}</td>`; }).join("")}<td><b>${sum(k)}</b></td></tr>`).join("")}</tbody></table></div>`;
+    out.innerHTML = `<div class="bx-head"><h2>События</h2></div>
       ${EV_ERR ? `<p class="status err">Не удалось загрузить API событий: ${esc(EV_ERR)}</p>` : ""}
       <p class="hint">Тематические события бота: за сообщения начисляется опыт, с ним растёт уровень, у каждого уровня — своё звание. Нажми на событие, чтобы посмотреть его участников.</p>
-      <div class="ev-timeline">${cards}</div>${body}${all}`;
+      <div class="ev-timeline">${cards || `<div class="s-empty">API не вернуло события.</div>`}</div>${body}${all}`;
   }
   document.addEventListener("click", e => {
     const c = e.target.closest?.("[data-ev]"); if (!c) return;
@@ -20365,7 +20493,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
   new MutationObserver(() => { const t = curTab(); if (t !== lastT) { lastT = t; if (t === "reactions" || t === "events") open(t); } }).observe(document.querySelector("main"), {attributes:true, subtree:true, attributeFilter:["class"]});
   if (curTab() === "reactions" || curTab() === "events") open(curTab());
   // заранее подгружаем API, чтобы достижения сразу видели реальные данные
-  if (ls(K_RA)) rxAll(); if (ls(K_EA)) evLevels();
+  if (apiUrl(K_RA)) rxAll(); if (apiUrl(K_EA)) evLevels();
 })();
 </script>
 
