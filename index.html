@@ -146,7 +146,28 @@ input[type=color]{min-width:0;width:44px;height:32px;padding:2px;cursor:pointer}
 /* Activity matrix: natural size (the SVG is already fitted to the chart width), never wider than the panel. */
 #c-out > svg.heatrows-svg{width:auto !important;max-width:100% !important;height:auto !important;margin-left:auto;margin-right:auto}
 #c-out > svg.wide-svg{width:96%;max-width:1180px}
-@media(max-width:720px){#c-out > svg{width:70%;max-width:70%}#c-out > svg.wide-svg{width:100%;max-width:100%}#c-out > svg.heatrows-svg{width:100% !important;max-width:100% !important;height:auto !important}}
+.chat-stacked-legend{cursor:pointer;outline:none}
+.chat-stacked-legend:focus-visible rect{stroke:var(--accent);stroke-width:2.5}
+.chat-stacked-manager{width:min(96%, 900px);margin:10px auto 4px;color:var(--text);border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,var(--panel) 84%,transparent);overflow:hidden}
+.chat-stacked-manager summary{cursor:pointer;list-style:none;padding:10px 13px;font-size:13px;font-weight:650;color:var(--text);display:flex;align-items:center;gap:8px}
+.chat-stacked-manager summary::-webkit-details-marker{display:none}
+.chat-stacked-manager summary:before{content:"▸";color:var(--muted);transition:transform .15s}
+.chat-stacked-manager[open] summary:before{transform:rotate(90deg)}
+.chat-stacked-manager-body{padding:0 12px 12px;border-top:1px solid var(--line)}
+.chat-stacked-manager-hint{font-size:12px;color:var(--muted);margin:9px 0}
+.chat-stacked-manager-actions{display:flex;justify-content:flex-end;margin:8px 0}
+.chat-stacked-manager-actions button{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:7px;padding:5px 9px;font:inherit;font-size:12px;cursor:pointer}
+.chat-stacked-manager-actions button:disabled{opacity:.45;cursor:default}
+.chat-stacked-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:6px;max-height:280px;overflow:auto;padding:2px}
+.chat-stacked-choice{display:flex;align-items:center;gap:8px;min-width:0;border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:color-mix(in srgb,var(--panel) 70%,transparent);cursor:pointer}
+.chat-stacked-choice:hover{border-color:var(--accent)}
+.chat-stacked-choice input{margin:0;flex:0 0 auto;accent-color:var(--accent)}
+.chat-stacked-choice .chat-stack-swatch{width:11px;height:11px;border-radius:3px;flex:0 0 auto}
+.chat-stacked-choice .chat-stack-name{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.chat-stacked-choice .chat-stack-total{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.chat-stacked-choice.is-hidden{opacity:.62;background:transparent}
+.chat-stacked-choice.is-hidden .chat-stack-name{text-decoration:line-through}
+@media(max-width:720px){#c-out > svg{width:70%;max-width:70%}#c-out > svg.wide-svg{width:100%;max-width:100%}#c-out > svg.heatrows-svg{width:100% !important;max-width:100% !important;height:auto !important}.chat-stacked-manager{width:100%}.chat-stacked-choices{grid-template-columns:1fr;max-height:220px}}
 .pick{position:relative}
 .pick summary{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 10px;cursor:pointer;min-width:150px;list-style:none}
 .pick summary::-webkit-details-marker{display:none}
@@ -4440,6 +4461,14 @@ function chartStyleKind(){ return chartEntity === "chats" ? "c" : "u"; }
 
 /* ---------- Вертикальные stacked-столбцы: распределение активности по чатам ---------- */
 const CHAT_STACKED_PERIOD_KEY = "chatstats.chatStackedPeriod.v1";
+const CHAT_STACKED_HIDDEN_KEY = "chatstats.chatStackedHiddenChats.v1";
+let chatStackedHiddenKeys = new Set();
+let chatStackedManagerOpen = false;
+try {
+  const savedHiddenChats = JSON.parse(localStorage.getItem(CHAT_STACKED_HIDDEN_KEY) || "[]");
+  if (Array.isArray(savedHiddenChats)) chatStackedHiddenKeys = new Set(savedHiddenChats.map(String));
+} catch (e) {}
+function saveChatStackedHidden(){ try { localStorage.setItem(CHAT_STACKED_HIDDEN_KEY, JSON.stringify([...chatStackedHiddenKeys])); } catch (e) {} }
 let chatStackedPeriodValue = "week";
 try {
   const savedPeriod = localStorage.getItem(CHAT_STACKED_PERIOD_KEY);
@@ -4488,14 +4517,16 @@ function chatStackedAggregate(source, metric, period){
     values.set(key, (values.get(key) || 0) + value);
   });
   const allChats = [...chatMap.values()].filter(chat => chat.total > 0).sort((a,b) => b.total - a.total || a.n.localeCompare(b.n, "ru"));
-  const periodTotal = allChats.reduce((sum, chat) => sum + chat.total, 0);
+  // Keep the complete list for the visibility manager, but remove excluded chats from chart math.
+  const activeChats = allChats.filter(chat => !chatStackedHiddenKeys.has(String(chat.k)));
+  const periodTotal = activeChats.reduce((sum, chat) => sum + chat.total, 0);
   const OTHER_KEY = "__chat_stacked_other__";
   const keepKeys = new Set();
   const significantThreshold = Math.max(1, periodTotal * 0.025);
   // Keep the strongest chats as separate series. Combine low-activity chats to avoid thin, unreadable strips.
-  allChats.forEach((chat, index) => { if (index < 4 || (index < 12 && chat.total >= significantThreshold)) keepKeys.add(chat.k); });
-  const visibleChats = allChats.filter(chat => keepKeys.has(chat.k));
-  const groupedChats = allChats.filter(chat => !keepKeys.has(chat.k));
+  activeChats.forEach((chat, index) => { if (index < 4 || (index < 12 && chat.total >= significantThreshold)) keepKeys.add(chat.k); });
+  const visibleChats = activeChats.filter(chat => keepKeys.has(chat.k));
+  const groupedChats = activeChats.filter(chat => !keepKeys.has(chat.k));
   const chats = visibleChats.map(chat => ({...chat, isOther:false}));
   if (groupedChats.length) chats.push({k:OTHER_KEY, n:"Другие", total:groupedChats.reduce((sum, chat) => sum + chat.total, 0), isOther:true, groupedCount:groupedChats.length});
   const daily = period.days.map(day => {
@@ -4506,7 +4537,17 @@ function chatStackedAggregate(source, metric, period){
     const total = chats.reduce((sum, chat) => sum + (values.get(chat.k) || 0), 0);
     return {day, values, total};
   });
-  return {chats, daily, total:daily.reduce((sum, day) => sum + day.total, 0), allChats};
+  return {chats, daily, total:daily.reduce((sum, day) => sum + day.total, 0), allChats, activeChatCount:activeChats.length};
+}
+function chatStackedManagerHtml(allChats){
+  if (!allChats?.length) return "";
+  const hiddenInPeriod = allChats.filter(chat => chatStackedHiddenKeys.has(String(chat.k))).length;
+  const choices = allChats.map(chat => {
+    const key = String(chat.k), hidden = chatStackedHiddenKeys.has(key);
+    const style = chartSeriesStyle("c", key), color = style.c?.[0] || "#7aa2f7";
+    return `<label class="chat-stacked-choice${hidden ? " is-hidden" : ""}"><input type="checkbox" data-chatstacked-toggle="${escH(key)}" ${hidden ? "" : "checked"}><span class="chat-stack-swatch" style="background:${escH(color)}"></span><span class="chat-stack-name" title="${escH(chat.n)}">${escH(chat.n)}</span><span class="chat-stack-total">${fmt(chat.total)}</span></label>`;
+  }).join("");
+  return `<details class="chat-stacked-manager"${chatStackedManagerOpen ? " open" : ""}><summary>Чаты на графике · ${allChats.length - hiddenInPeriod} из ${allChats.length}</summary><div class="chat-stacked-manager-body"><p class="chat-stacked-manager-hint">Сними галочку, чтобы исключить чат из столбцов и сумм. Верни галочку, чтобы добавить его обратно. Настройка сохраняется.</p><div class="chat-stacked-manager-actions"><button type="button" data-chatstacked-reset ${chatStackedHiddenKeys.size ? "" : "disabled"}>Показать все чаты</button></div><div class="chat-stacked-choices">${choices}</div></div></details>`;
 }
 function chatStackedChart(source, period){
   const metric = $("metric").value;
@@ -4515,7 +4556,7 @@ function chatStackedChart(source, period){
   // when Ultimate is enabled, selected chats are merged into one Colony Ultimate series.
   const filteredSource = ultView(source);
   const data = chatStackedAggregate(filteredSource, metric, period);
-  if (!data.total || !data.chats.length) return note(`Нет данных по показателю «${MLBL[metric] || metric}» за период «${period.label.toLowerCase()}».`);
+  if (!data.total || !data.chats.length) return note(`Нет отображаемых данных по показателю «${MLBL[metric] || metric}» за период «${period.label.toLowerCase()}». Можно вернуть чаты в блоке ниже.`) + chatStackedManagerHtml(data.allChats);
 
   // Use nearly the full card width now that the value axis is hidden.
   const W = 1200, left = 30, right = 30, plotTop = 130, plotBottom = 462, plotH = plotBottom - plotTop;
@@ -4592,11 +4633,52 @@ function chatStackedChart(source, period){
     const style = chat.isOther ? chartSeriesStyle("special", "other") : chartSeriesStyle("c", chat.k);
     const color = style.c[0] || "#7aa2f7";
     const otherHint = chat.isOther ? ` (${chat.groupedCount} малых чатов)` : "";
-    svg += `<g class="chat-stacked-legend" data-n="${escH(chat.n)}"><rect x="${x}" y="${y-12}" width="15" height="15" rx="4" fill="${color}"/><text class="chart-legend" x="${x+23}" y="${y}" font-size="14" fill="#f2f3f7">${escH(chat.n)}${otherHint} · ${fmt(chat.total)}</text></g>`;
+    const interaction = chat.isOther
+      ? `data-chatstacked-manage="1" tabindex="0" role="button" aria-label="Выбрать чаты из группы Другие" title="Нажмите, чтобы исключить отдельные малые чаты"`
+      : `data-chatstacked-series-toggle="${escH(String(chat.k))}" tabindex="0" role="button" aria-pressed="true" aria-label="Исключить чат ${escH(chat.n)}" title="Нажмите, чтобы исключить чат из графика"`;
+    svg += `<g class="chat-stacked-legend" data-n="${escH(chat.n)}" ${interaction} style="cursor:pointer"><rect x="${x}" y="${y-12}" width="15" height="15" rx="4" fill="${color}"/><text class="chart-legend" x="${x+23}" y="${y}" font-size="14" fill="#f2f3f7">${escH(chat.n)}${otherHint} · ${fmt(chat.total)}</text></g>`;
   });
   const H = legendTop + legendRows * legendRowH + 14;
-  return `<svg class="wide-svg chat-stacked-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Распределение ${escH((MLBL[metric] || metric).toLowerCase())} по чатам за период ${escH(period.label.toLowerCase())}"><defs>${defs.join("")}</defs>${svg}</svg>`;
+  const chartSvg = `<svg class="wide-svg chat-stacked-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Распределение ${escH((MLBL[metric] || metric).toLowerCase())} по чатам за период ${escH(period.label.toLowerCase())}"><defs>${defs.join("")}</defs>${svg}</svg>`;
+  return chartSvg + chatStackedManagerHtml(data.allChats);
 }
+
+// Управление видимостью серий stacked-графика: клик по легенде скрывает чат,
+// полный список в раскрывающейся панели позволяет вернуть любой чат, в том числе из «Других».
+$("c-out").addEventListener("click", async e => {
+  const manage = e.target.closest?.("[data-chatstacked-manage]");
+  if (manage) {
+    const panel = $("c-out").querySelector("details.chat-stacked-manager");
+    if (panel) { panel.open = true; chatStackedManagerOpen = true; }
+    return;
+  }
+  const reset = e.target.closest?.("[data-chatstacked-reset]");
+  if (reset) {
+    chatStackedManagerOpen = true;
+    chatStackedHiddenKeys.clear(); saveChatStackedHidden();
+    await renderCharts();
+    return;
+  }
+  const series = e.target.closest?.("[data-chatstacked-series-toggle]");
+  if (!series || cType !== "chatstacked") return;
+  chatStackedManagerOpen = true;
+  const key = String(series.dataset.chatstackedSeriesToggle);
+  if (chatStackedHiddenKeys.has(key)) chatStackedHiddenKeys.delete(key); else chatStackedHiddenKeys.add(key);
+  saveChatStackedHidden(); hideTip(); await renderCharts();
+});
+$("c-out").addEventListener("change", async e => {
+  const input = e.target.closest?.("input[data-chatstacked-toggle]");
+  if (!input || cType !== "chatstacked") return;
+  chatStackedManagerOpen = !!input.closest("details.chat-stacked-manager")?.open;
+  const key = String(input.dataset.chatstackedToggle);
+  if (input.checked) chatStackedHiddenKeys.delete(key); else chatStackedHiddenKeys.add(key);
+  saveChatStackedHidden(); hideTip(); await renderCharts();
+});
+$("c-out").addEventListener("keydown", e => {
+  const el = e.target.closest?.("[data-chatstacked-series-toggle], [data-chatstacked-manage]");
+  if (!el || !(e.key === "Enter" || e.key === " ")) return;
+  e.preventDefault(); el.dispatchEvent(new MouseEvent("click", {bubbles:true}));
+});
 
 function barsChart(){
   const list = normChartList(chartAgg($("metric").value), $("metric").value).slice(0, barsCap(chartEntity === "users" && SEL_ACTIVE ? 40 : 20));
