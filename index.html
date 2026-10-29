@@ -5097,10 +5097,39 @@ async function fontCss(){
     }
   return (fontCache = css);
 }
+function cropChartStackedSvgForExport(svg, padding = 20){
+  // У этого графика сами столбцы и компактная легенда центрированы в большом SVG.
+  // Для копирования обрезаем только пустые боковые поля, не меняя расположение текста,
+  // столбцов и легенды на странице.
+  const vb = svg?.viewBox?.baseVal;
+  if (!vb || !(vb.width > 0) || typeof svg.getBBox !== "function") return svg;
+  let minX = Infinity, maxX = -Infinity;
+  for (const node of Array.from(svg.children || [])) {
+    if (["defs", "style", "title", "desc"].includes(String(node.tagName || "").toLowerCase())) continue;
+    try {
+      const b = node.getBBox();
+      if (!Number.isFinite(b.x) || !Number.isFinite(b.width) || b.width <= 0) continue;
+      minX = Math.min(minX, b.x);
+      maxX = Math.max(maxX, b.x + b.width);
+    } catch (e) {}
+  }
+  if (!Number.isFinite(minX) || !Number.isFinite(maxX)) return svg;
+  const viewLeft = vb.x, viewRight = vb.x + vb.width;
+  const left = Math.max(viewLeft, minX - padding);
+  const right = Math.min(viewRight, maxX + padding);
+  const width = right - left;
+  // Don't change exports if there is no material amount of empty space to trim.
+  if (!(width > 0) || width >= vb.width - 8) return svg;
+  const clone = svg.cloneNode(true);
+  clone.setAttribute("viewBox", `${left} ${vb.y} ${width} ${vb.height}`);
+  return clone;
+}
 async function chartBlob(){
   const svg = document.querySelector("#c-out svg");
   if (!svg) throw new Error("Сейчас нет графика");
-  return svgToPngBlob(svg, chartPrefs(currentChartType()));
+  const type = currentChartType();
+  const exportSvg = type === "chatstacked" ? cropChartStackedSvgForExport(svg) : svg;
+  return svgToPngBlob(exportSvg, chartPrefs(type));
 }
 // В картинке и видео не нужны подсказки «наведи / кликни» и слои для наведения - они там не работают.
 function stripInteractive(c){
@@ -5113,7 +5142,7 @@ function stripInteractive(c){
 }
 async function svgToPngBlob(svg, exportPrefs){
   if (!svg) throw new Error("Сейчас нет графика");
-  const vb = svg.viewBox.baseVal, W = vb.width, H = vb.height, K = 2;
+  const vb = svg.viewBox.baseVal, W = vb.width, H = vb.height, viewX = vb.x || 0, viewY = vb.y || 0, K = 2;
   const c = stripInteractive(svg.cloneNode(true));
   // Экспорт не должен наследовать интерактивный масштаб и смещение графика на странице.
   c.style.transform = ""; c.style.transformOrigin = ""; c.style.transformBox = "";
@@ -5135,7 +5164,7 @@ async function svgToPngBlob(svg, exportPrefs){
   // В режиме стекла не вкладываем в SVG непрозрачную заливку: иначе она полностью
   // перекрывает стеклянную подложку, нарисованную на canvas внутри рамки графика.
   const glass = typeof window.__glassWanted === "function" && window.__glassWanted() && typeof window.__glassBackdrop === "function";
-  const chartBackground = glass ? "" : `<rect width="${W}" height="${H}" fill="${bgPaint}"/>`;
+  const chartBackground = glass ? "" : `<rect x="${viewX}" y="${viewY}" width="${W}" height="${H}" fill="${bgPaint}"/>`;
   const extra = `<defs>${bgDefs}</defs><style>${await fontCss()}${exportPrefs.keepTextColors ? "" : `text,tspan{fill:${exportFontColor}!important}`}</style>${chartBackground}`;
   const xml = new XMLSerializer().serializeToString(c).replace(/<svg[^>]*>/, m => m + extra);
   const img = new Image();
