@@ -1480,16 +1480,17 @@ document.body.classList.add("beta-re");
 <main>
   <div id="shared">
     <div class="filters">
-      <div class="field" id="f-mode"><label>Режим</label>
-        <div class="seg" id="mode">
-          <button data-m="day" class="active">День</button>
-          <button data-m="week">Неделя</button>
+      <div class="field" id="f-mode"><label>Период</label>
+        <div class="period-fixed" id="fixed-period-caption">Текущая неделя</div>
+        <div class="seg" id="mode" hidden aria-hidden="true">
+          <button data-m="day">День</button>
+          <button data-m="week" class="active">Неделя</button>
           <button data-m="month">Месяц</button>
           <button data-m="year">Год</button>
           <button data-m="all">Все данные</button>
         </div>
       </div>
-      <div class="field" id="f-day"><label for="day">Дата</label><input type="date" id="day"></div>
+      <div class="field" id="f-day"><label for="day">С даты</label><input type="date" id="day"></div>
       <div class="field" id="f-month" hidden><label for="month">Месяц</label><input type="month" id="month"></div>
       <div class="field" id="f-year" hidden><label for="year">Год</label><input type="number" id="year" min="2000" max="2100" style="min-width:100px"></div>
       <div class="field" id="f-chat"><label for="chat">Чат</label>
@@ -2338,8 +2339,13 @@ function applyChartAppearance(type = currentChartType()){
 applyChartAppearance();
 const pad = n => String(n).padStart(2,"0");
 const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const FIXED_WEEK_START_KEY = "chatstats.fixedWeekStart.v1";
+function currentWeekStartIso(){ const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return iso(d); }
+let fixedWeekStart = "";
+try { fixedWeekStart = localStorage.getItem(FIXED_WEEK_START_KEY) || ""; } catch (e) {}
+if (!/^\d{4}-\d{2}-\d{2}$/.test(fixedWeekStart)) { fixedWeekStart = currentWeekStartIso(); try { localStorage.setItem(FIXED_WEEK_START_KEY, fixedWeekStart); } catch (e) {} }
 
-let mode = "day", rows = [], sort = {k:"msgs", dir:-1}, reqId = 0;
+let mode = "week", rows = [], sort = {k:"msgs", dir:-1}, reqId = 0;
 let comparisonRows = null, comparisonError = "", comparisonEnabled = false;
 try { comparisonEnabled = localStorage.getItem("chatstats.comparison.v1") === "1"; } catch (e) {}
 let hideLeft = false, leftFilterError = "";
@@ -2556,27 +2562,9 @@ $("chat").onchange = render;
 $("participants-top").onchange = render;
 
 function range(){
-  if (mode === "day") { const d = $("day").value; return d ? [d, d] : null; }
-  if (mode === "week") {
-    const v = $("day").value; if (!v) return null;
-    const [y, m, d] = v.split("-").map(Number);
-    // На вкладках «Участники», «Чаты» и «Графики» неделя означает последние 7 дней,
-    // включая выбранную дату. На остальных вкладках сохраняется календарная неделя.
-    const activeTab = activeDataTab();
-    if (["participants", "chats", "charts"].includes(activeTab)) {
-      return [iso(new Date(y, m - 1, d - 6)), v];
-    }
-    const wd = (new Date(y, m - 1, d).getDay() + 6) % 7;
-    return [iso(new Date(y, m - 1, d - wd)), iso(new Date(y, m - 1, d - wd + 6))];
-  }
-  if (mode === "all") return ["2000-01-01", iso(new Date())];
-  if (mode === "month") {
-    const v = $("month").value; if (!v) return null;
-    const [y, m] = v.split("-").map(Number);
-    return [`${y}-${pad(m)}-01`, `${y}-${pad(m)}-${pad(new Date(y, m, 0).getDate())}`];
-  }
-  const y = Number($("year").value); if (!y) return null;
-  return [`${y}-01-01`, `${y}-12-31`];
+  const start = $("day")?.value;
+  if (!start) return null;
+  return [start, addDaysIso(start, 6)];
 }
 
 function addDaysIso(value, delta){
@@ -2753,11 +2741,17 @@ function formatMetricDate(value){
 }
 
 function setDayLabel(){
-  const l = document.querySelector("#f-day label"), r = mode === "week" ? range() : null;
+  const l = document.querySelector("#f-day label"), r = range();
+  const caption = $("fixed-period-caption");
   const f = x => x.slice(8) + "." + x.slice(5,7);
-  const activeTab = activeDataTab();
-  const rolling = ["participants", "chats", "charts"].includes(activeTab);
-  l.textContent = r ? `${mode === "week" && rolling ? "Последние 7 дней" : "Неделя"}: ${f(r[0])}–${f(r[1])}` : (mode === "week" ? "Дата в неделе" : "Дата");
+  if (l) l.textContent = "С даты";
+  if (caption) {
+    const thisWeekStart = currentWeekStartIso();
+    const thisWeekEnd = addDaysIso(thisWeekStart, 6);
+    if (r && r[0] === thisWeekStart && r[1] === thisWeekEnd) caption.textContent = `Текущая неделя · ${f(r[0])} - ${f(r[1])}`;
+    else if (r) caption.textContent = `7 дней · ${f(r[0])} - ${f(r[1])}`;
+    else caption.textContent = "Выберите дату";
+  }
 }
 async function load(){
   setDayLabel();
@@ -2850,7 +2844,7 @@ function participantsPeriodTitle(){
     const [y,m,d] = r[0].split("-").map(Number);
     return `${prefix} за ${d} ${months[m-1]}${y !== currentYear ? " " + y : ""}`;
   }
-  if (mode === "week") return `${prefix} за последние 7 дней`;
+  if (mode === "week") { const r = range(); return r ? `${prefix} за ${chartDateLabel(r[0])} - ${chartDateLabel(r[1])}` : `${prefix} за 7 дней`; }
   if (mode === "month") {
     const [y,m] = r[0].split("-").map(Number);
     return `${prefix} за ${monthNames[m-1]}${y !== currentYear ? " " + y : ""}`;
@@ -3447,7 +3441,7 @@ function chatRankPeriodTitle(){
     const [y,m,d] = r[0].split("-").map(Number);
     return `Рейтинг чатов за ${d} ${monthNames[m-1]}${y !== currentYear ? " " + y : ""}`;
   }
-  if (mode === "week") return "Рейтинг чатов за последние 7 дней";
+  if (mode === "week") { const r = range(); return r ? `Рейтинг чатов за ${chartDateLabel(r[0])} - ${chartDateLabel(r[1])}` : "Рейтинг чатов за 7 дней"; }
   if (mode === "month") {
     const [y,m] = r[0].split("-").map(Number);
     return `Рейтинг чатов за ${monthNamesNominative[m-1]}${y !== currentYear ? " " + y : ""}`;
@@ -4517,7 +4511,10 @@ function chatStackedAggregate(source, metric, period){
 function chatStackedChart(source, period){
   const metric = $("metric").value;
   if (["rgive", "rgot"].includes(metric)) return note("Для реакций нет дневных данных: API не возвращает дату реакции. Выберите сообщения, стикеры, голосовые или видеосообщения.");
-  const data = chatStackedAggregate(source, metric, period);
+  // This chart uses the same global chat view as the rest of the dashboard:
+  // when Ultimate is enabled, selected chats are merged into one Colony Ultimate series.
+  const filteredSource = ultView(source);
+  const data = chatStackedAggregate(filteredSource, metric, period);
   if (!data.total || !data.chats.length) return note(`Нет данных по показателю «${MLBL[metric] || metric}» за период «${period.label.toLowerCase()}».`);
 
   // Use nearly the full card width now that the value axis is hidden.
@@ -6237,7 +6234,17 @@ function chartColorTargets(){
   if (type === "chatstacked") {
     const period = chatStackedPeriodRange();
     const cached = chatStackedRowsCache.get(`${period.from}|${period.to}`);
-    const src = cached?.rows || (allRows ? allRows.filter(x => { const d=String(x[F.date] ?? "").slice(0,10); return d >= period.from && d <= period.to; }) : rows);
+    let src;
+    if (cached?.rows) {
+      // Cached daily request is raw API data, so apply the global Ultimate/VK view here.
+      src = ultView(cached.rows);
+    } else if (rawHist) {
+      // rawHist is the untransformed source for the full history.
+      src = ultView(rawHist.filter(x => { const d=String(x[F.date] ?? "").slice(0,10); return d >= period.from && d <= period.to; }));
+    } else {
+      // allRows/rows have already gone through ultView in the dashboard data loader.
+      src = (allRows || rows).filter(x => { const d=String(x[F.date] ?? "").slice(0,10); return d >= period.from && d <= period.to; });
+    }
     return chatStackedAggregate(src, metric, period).chats.map(chat => ({kind:chat.isOther ? "special" : "c", key:chat.isOther ? "other" : chat.k, name:chat.n, v:chat.total}));
   }
   if (type === "heat" || type === "spiral" || type === "heatrows" || type === "heatrows-custom" || type === "pairs" || type === "season") return [];
@@ -8533,7 +8540,7 @@ function mainPaletteGroupHtml(type, p){
     const current = [...p.customBands].sort((a, b) => a.min - b.min).map(b => b.color);
     return `<div class="chart-setting-group pal-group"><h3>Готовые палитры</h3><p class="hint">Цвета назначаются диапазонам по порядку.</p>${palGridHtml("cat", CAT_PALETTES, cols => palMatchesTargets(current, cols), "data-pal-cat")}</div>`;
   }
-  const targets = chartColorTargets().filter(t => t.kind !== "special");
+  const targets = chartColorTargets().filter(t => t.kind !== "special" || type === "chatstacked");
   const current = targets.map(t => p.seriesColors[`${t.kind}:${t.key}`] || getStyle(t.kind, t.key).c[0]);
   return `<div class="chart-setting-group pal-group"><h3>Готовые палитры</h3><p class="hint">Цвета назначаются тем, кто сейчас на графике, по порядку мест. Фон и цвета текста подстраиваются под палитру.</p>${targets.length ? palGridHtml("cat", CAT_PALETTES, cols => palMatchesTargets(current, cols), "data-pal-cat") : '<p class="hint">Нет серий за выбранный период.</p>'}</div>`;
 }
@@ -8548,7 +8555,7 @@ $("chart-settings-content").addEventListener("click", e => {
     else if (type === "season") p.seriesColors = {...p.seriesColors, "season:cur":cols[0], "season:avg":cols[1 % cols.length]};
     else {
       const sc = {...p.seriesColors};
-      chartColorTargets().filter(t => t.kind !== "special").forEach((t, i) => { sc[`${t.kind}:${t.key}`] = cols[i % cols.length]; });
+      chartColorTargets().filter(t => t.kind !== "special" || type === "chatstacked").forEach((t, i) => { sc[`${t.kind}:${t.key}`] = cols[i % cols.length]; });
       p.seriesColors = sc;
     }
   }
@@ -10261,7 +10268,7 @@ function routeParam(t){
   if (t === "compare") { if (CMP.mode === "user") return CMP.a && CMP.b ? `${CMP.a}-${CMP.b}` : ""; const pr = {chat:["chA", "chB"], month:["mA", "mB"], year:["yA", "yB"]}[CMP.mode]; return CMP[pr[0]] && CMP[pr[1]] ? `${CMP.mode}~${CMP[pr[0]]}~${CMP[pr[1]]}` : CMP.mode; }
   return "";
 }
-function uiState(){ return {mode, month:$("month").value, year:$("year").value, cType:$("c-type").value, metric:$("metric").value, entity:chartEntity}; }
+function uiState(){ return {mode: "week", month:$("month").value, year:$("year").value, cType:$("c-type").value, metric:$("metric").value, entity:chartEntity}; }
 function updateRoute(){
   if (routeApplying) return;
   const t = currentTab(), p = routeParam(t), h = `#${t}${p ? "/" + encodeURIComponent(p) : ""}`;
@@ -10298,7 +10305,7 @@ window.addEventListener("hashchange", () => { if (location.hash.slice(1).split("
     if (saved.entity === "chats") document.querySelector('#c-entity button[data-entity="chats"]')?.click();
     if (saved.month) $("month").value = saved.month;
     if (saved.year) $("year").value = saved.year;
-    if (saved.mode && saved.mode !== "day") document.querySelector(`#mode button[data-m="${saved.mode}"]`)?.click();
+    /* Legacy saved modes are intentionally ignored; the application now uses a fixed seven-day range. */
   }
   if (!applyRoute(location.hash) && !(saved?.hash && applyRoute(saved.hash))) { const hb = document.querySelector('nav button[data-tab="hub"]'); if (hb) hb.click(); }
 })();
@@ -11997,14 +12004,16 @@ function multiplesChart(){
       syncComparisonControls();
     }
     if (SHARED.includes(key)) {
-      const want = {mode: st.mode || DEF.mode, day: st.day || DEF.day, month: st.month || DEF.month, year: st.year || DEF.year, norm: st.norm || DEF.norm};
-      if (want.mode !== mode && ["day", "week", "month", "year", "all"].includes(want.mode)) {
-        mode = want.mode;
-        document.querySelectorAll("#mode button").forEach(x => x.classList.toggle("active", x.dataset.m === mode));
-        $("f-day").hidden = !(mode === "day" || mode === "week"); $("f-month").hidden = mode !== "month"; $("f-year").hidden = mode !== "year";
+      const want = {mode: "week", day: fixedWeekStart || DEF.day, month: st.month || DEF.month, year: st.year || DEF.year, norm: st.norm || DEF.norm};
+      if (mode !== "week") {
+        mode = "week";
+        document.querySelectorAll("#mode button").forEach(x => x.classList.toggle("active", x.dataset.m === "week"));
+        $("f-day").hidden = false; $("f-month").hidden = true; $("f-year").hidden = true;
         f.shared = true;
       }
-      ["day", "month", "year"].forEach(id => { if (want[id] && $(id).value !== want[id]) { $(id).value = want[id]; f.shared = true; } });
+      // Дата начала периода общая для всех вкладок и больше не восстанавливается из старых per-tab фильтров.
+      if (want.day && $("day").value !== want.day) { $("day").value = want.day; f.shared = true; }
+      ["month", "year"].forEach(id => { if (want[id] && $(id).value !== want[id]) { $(id).value = want[id]; f.shared = true; } });
       if (want.norm && want.norm !== NORM && ["abs", "day", "share"].includes(want.norm)) {
         NORM = want.norm; try { localStorage.setItem(NORM_KEY, NORM); } catch (e) {}
         syncNormSeg(); f.shared = true;
@@ -21760,3 +21769,11 @@ body:has(#tab-events.active) #ev-out{padding-bottom:44px}
 
 </body>
 </html>
+
+<style id="fixed-seven-day-filter-style">
+#shared #f-mode .period-fixed{display:flex;align-items:center;min-height:38px;box-sizing:border-box;padding:8px 12px;border:1px solid var(--line,rgba(255,255,255,.14));border-radius:10px;background:rgba(255,255,255,.045);color:var(--text,#e8eaf0);font-size:13px;font-weight:600;white-space:nowrap}
+#shared #f-day input[type="date"]{min-width:155px}
+/* The global date picker is now the only visible period selector. */
+#shared #f-mode #mode{display:none!important}
+#stats-quick{display:none!important}
+</style>
