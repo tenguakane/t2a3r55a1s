@@ -4622,23 +4622,49 @@ function chatStackedChart(source, period){
     svg += `<text class="chart-axis" x="${center.toFixed(2)}" y="${plotBottom + 25}" text-anchor="middle" font-size="${data.daily.length > 10 ? 13 : 15}" fill="#aab0c0">${chartDateLabel(day.day, day.day.slice(0,4) !== String(new Date().getFullYear()))}</text>`;
   });
 
-  // Компактная легенда располагается под рядом столбцов, а не растягивается на всю рамку.
-  // Для одного-двух дней оставляем минимальную ширину, чтобы названия серий не слипались.
-  const legendAreaW = Math.max(groupW, 540);
+  // Легенда располагается под столбцами компактным блоком, а каждая строка
+  // центрируется по фактической ширине подписей. При скрытии чатов раскладка
+  // пересчитывается только по оставшимся сериям, без пустых колонок.
+  const legendAreaW = Math.min(plotW, Math.max(groupW, 540));
   const legendLeft = left + (plotW - legendAreaW) / 2;
-  const perRow = Math.max(1, Math.min(4, Math.floor(legendAreaW / 270)));
-  const legendTop = plotBottom + 67, legendRowH = 28, legendRows = Math.ceil(data.chats.length / perRow);
-  data.chats.forEach((chat, i) => {
-    const col = i % perRow, row = Math.floor(i / perRow), x = legendLeft + col * (legendAreaW / perRow), y = legendTop + row * legendRowH;
+  const legendTop = plotBottom + 67, legendRowH = 28, legendGap = 28;
+  let legendMeasureCtx = null;
+  try { legendMeasureCtx = document.createElement("canvas").getContext("2d"); } catch (e) {}
+  if (legendMeasureCtx) legendMeasureCtx.font = '14px "Samsung Sans", "SamsungOne", "Segoe UI", system-ui, sans-serif';
+  const measureLegendText = text => legendMeasureCtx ? legendMeasureCtx.measureText(text).width : [...text].length * 7.4;
+  const legendItems = data.chats.map(chat => {
+    const otherHint = chat.isOther ? ` (${chat.groupedCount} малых чатов)` : "";
+    const text = `${chat.n}${otherHint} · ${fmt(chat.total)}`;
     const style = chat.isOther ? chartSeriesStyle("special", "other") : chartSeriesStyle("c", chat.k);
     const color = style.c[0] || "#7aa2f7";
-    const otherHint = chat.isOther ? ` (${chat.groupedCount} малых чатов)` : "";
     const interaction = chat.isOther
       ? `data-chatstacked-manage="1" tabindex="0" role="button" aria-label="Выбрать чаты из группы Другие" title="Нажмите, чтобы исключить отдельные малые чаты"`
       : `data-chatstacked-series-toggle="${escH(String(chat.k))}" tabindex="0" role="button" aria-pressed="true" aria-label="Исключить чат ${escH(chat.n)}" title="Нажмите, чтобы исключить чат из графика"`;
-    svg += `<g class="chat-stacked-legend" data-n="${escH(chat.n)}" ${interaction} style="cursor:pointer"><rect x="${x}" y="${y-12}" width="15" height="15" rx="4" fill="${color}"/><text class="chart-legend" x="${x+23}" y="${y}" font-size="14" fill="#f2f3f7">${escH(chat.n)}${otherHint} · ${fmt(chat.total)}</text></g>`;
+    return {chat, text, color, interaction, width:23 + measureLegendText(text)};
   });
-  const H = legendTop + legendRows * legendRowH + 14;
+  const legendRows = [];
+  let legendRow = [], legendRowWidth = 0;
+  legendItems.forEach(item => {
+    const extra = legendRow.length ? legendGap : 0;
+    if (legendRow.length && legendRowWidth + extra + item.width > legendAreaW) {
+      legendRows.push(legendRow);
+      legendRow = [];
+      legendRowWidth = 0;
+    }
+    legendRowWidth += (legendRow.length ? legendGap : 0) + item.width;
+    legendRow.push(item);
+  });
+  if (legendRow.length) legendRows.push(legendRow);
+  legendRows.forEach((rowItems, rowIndex) => {
+    const rowWidth = rowItems.reduce((sum, item) => sum + item.width, 0) + legendGap * Math.max(0, rowItems.length - 1);
+    let x = legendLeft + (legendAreaW - rowWidth) / 2;
+    const y = legendTop + rowIndex * legendRowH;
+    rowItems.forEach(item => {
+      svg += `<g class="chat-stacked-legend" data-n="${escH(item.chat.n)}" ${item.interaction} style="cursor:pointer"><rect x="${x.toFixed(2)}" y="${y-12}" width="15" height="15" rx="4" fill="${item.color}"/><text class="chart-legend" x="${(x+23).toFixed(2)}" y="${y}" font-size="14" fill="#f2f3f7">${escH(item.text)}</text></g>`;
+      x += item.width + legendGap;
+    });
+  });
+  const H = legendTop + legendRows.length * legendRowH + 14;
   const chartSvg = `<svg class="wide-svg chat-stacked-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Распределение ${escH((MLBL[metric] || metric).toLowerCase())} по чатам за период ${escH(period.label.toLowerCase())}"><defs>${defs.join("")}</defs>${svg}</svg>`;
   return chartSvg + chatStackedManagerHtml(data.allChats);
 }
