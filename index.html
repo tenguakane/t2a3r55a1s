@@ -4927,7 +4927,11 @@ async function svgToPngBlob(svg, exportPrefs){
     bgPaint = "url(#chartBackgroundGradient)";
   }
   const exportFontColor = exportPrefs.fontColor || chartFontColor;
-  const extra = `<defs>${bgDefs}</defs><style>${await fontCss()}${exportPrefs.keepTextColors ? "" : `text,tspan{fill:${exportFontColor}!important}`}</style><rect width="${W}" height="${H}" fill="${bgPaint}"/>`;
+  // В режиме стекла не вкладываем в SVG непрозрачную заливку: иначе она полностью
+  // перекрывает стеклянную подложку, нарисованную на canvas внутри рамки графика.
+  const glass = typeof window.__glassWanted === "function" && window.__glassWanted() && typeof window.__glassBackdrop === "function";
+  const chartBackground = glass ? "" : `<rect width="${W}" height="${H}" fill="${bgPaint}"/>`;
+  const extra = `<defs>${bgDefs}</defs><style>${await fontCss()}${exportPrefs.keepTextColors ? "" : `text,tspan{fill:${exportFontColor}!important}`}</style>${chartBackground}`;
   const xml = new XMLSerializer().serializeToString(c).replace(/<svg[^>]*>/, m => m + extra);
   const img = new Image();
   await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error("Не удалось отрисовать картинку")); img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(xml); });
@@ -4941,11 +4945,45 @@ async function svgToPngBlob(svg, exportPrefs){
   const ctx = cv.getContext("2d");
   if (!ctx) throw new Error("Браузер не смог создать изображение");
   ctx.scale(K, K);
-  const glass = typeof window.__glassWanted === "function" && window.__glassWanted() && typeof window.__glassBackdrop === "function";
   const outerBg = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#0f1117";
-  if (glass) window.__glassBackdrop(ctx, outW, outH);
-  else { ctx.fillStyle = outerBg; ctx.fillRect(0, 0, outW, outH); }
+  if (glass) {
+    window.__glassBackdrop(ctx, outW, outH);
+    // Отдельная стеклянная панель под графиком — эффект остаётся внутри его рамки.
+    ctx.save();
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") ctx.roundRect(pad, pad, W, H, 8);
+    else ctx.rect(pad, pad, W, H);
+    ctx.clip();
+    const panel = ctx.createLinearGradient(pad, pad, pad + W, pad + H);
+    panel.addColorStop(0, "rgba(255,255,255,.075)");
+    panel.addColorStop(.52, "rgba(255,255,255,.035)");
+    panel.addColorStop(1, "rgba(255,255,255,.018)");
+    ctx.fillStyle = panel;
+    ctx.fillRect(pad, pad, W, H);
+    // Лёгкий холодный оттенок матового стекла, не перекрывающий сам график.
+    ctx.fillStyle = "rgba(12,15,23,.12)";
+    ctx.fillRect(pad, pad, W, H);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = outerBg;
+    ctx.fillRect(0, 0, outW, outH);
+  }
+  // Обрезаем SVG по внутренней панели; его фон прозрачен только в режиме стекла.
+  ctx.save();
+  ctx.beginPath();
+  if (typeof ctx.roundRect === "function") ctx.roundRect(pad, pad, W, H, 8);
+  else ctx.rect(pad, pad, W, H);
+  ctx.clip();
   ctx.drawImage(img, pad, pad, W, H);
+  ctx.restore();
+  if (glass) {
+    ctx.strokeStyle = "rgba(255,255,255,.14)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") ctx.roundRect(pad + .5, pad + .5, W - 1, H - 1, 8);
+    else ctx.rect(pad + .5, pad + .5, W - 1, H - 1);
+    ctx.stroke();
+  }
   // Рамка обрамляет именно график внутри картинки, а не её внешние края.
   const framed = typeof window.__tbFrameDraw === "function" && window.__tbFrameDraw(ctx, pad, pad, W, H, 8);
   const blob = await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error("Не удалось создать PNG")), "image/png"));
