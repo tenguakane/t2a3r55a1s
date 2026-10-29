@@ -4530,15 +4530,21 @@ function chatStackedChart(source, period){
   let svg = head("Активность по чатам", `${MLBL[metric] || metric} · ${period.label.toLowerCase()} · ${periodTitle} · всего ${fmt(data.total)}`, W, p.showSubtitle !== false);
 
   // Ось значений и горизонтальная сетка скрыты: оставляем визуально чистые столбцы.
-  const pitch = plotW / data.daily.length;
-  // Дни стоят близко друг к другу: около 90% шага занято столбцом, между днями остаётся небольшой просвет.
-  const barW = Math.max(20, Math.min(data.daily.length === 1 ? 150 : 150, pitch * 0.90));
+  // Возвращаем прежнюю ширину столбцов, но уплотняем расстояния между днями.
+  // На коротких периодах ряд занимает компактную центральную область; на двух неделях
+  // ширина автоматически подстраивается, чтобы все дни уместились в доступной области.
+  const dayCount = data.daily.length;
+  const dayGap = 10;
+  const barW = Math.max(20, Math.min(dayCount === 1 ? 76 : 78, (plotW - dayGap * (dayCount - 1)) / dayCount));
+  const pitch = barW + dayGap;
+  const groupW = barW * dayCount + dayGap * (dayCount - 1);
+  const groupLeft = left + (plotW - groupW) / 2;
   const segmentPositions = new Map();
   data.daily.forEach((day, dayIndex) => {
     const nonzero = data.chats.map(chat => ({chat, value:day.values.get(chat.k) || 0})).filter(item => item.value > 0);
     if (!nonzero.length || !day.total) { segmentPositions.set(day.day, new Map()); return; }
     const targetH = day.total / scaleMax * plotH;
-    const x = left + pitch * (dayIndex + 0.5) - barW/2;
+    const x = groupLeft + pitch * (dayIndex + 0.5) - barW/2;
     const topY = plotBottom - targetH;
     const clipId = `chatStackClip${dayIndex}`;
     const outerRx = Math.min(9, barW / 2, targetH / 2);
@@ -4570,7 +4576,7 @@ function chatStackedChart(source, period){
   });
 
   data.daily.forEach((day, i) => {
-    const center = left + pitch * (i + 0.5);
+    const center = groupLeft + pitch * (i + 0.5);
     const topY = day.total ? plotBottom - day.total / scaleMax * plotH : plotBottom;
     const topLabelY = Math.max(plotTop - 5, topY - 10);
     const totalTip = `Всего за ${chartDateLabel(day.day)}|${fmt(day.total)} ${escH((MLBL[metric] || metric).toLowerCase())}`;
