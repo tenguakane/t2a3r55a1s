@@ -4493,13 +4493,26 @@ function chatStackedAggregate(source, metric, period){
     const values = byDay.get(day);
     values.set(key, (values.get(key) || 0) + value);
   });
-  const chats = [...chatMap.values()].filter(chat => chat.total > 0).sort((a,b) => b.total - a.total || a.n.localeCompare(b.n, "ru"));
+  const allChats = [...chatMap.values()].filter(chat => chat.total > 0).sort((a,b) => b.total - a.total || a.n.localeCompare(b.n, "ru"));
+  const periodTotal = allChats.reduce((sum, chat) => sum + chat.total, 0);
+  const OTHER_KEY = "__chat_stacked_other__";
+  const keepKeys = new Set();
+  const significantThreshold = Math.max(1, periodTotal * 0.025);
+  // Keep the strongest chats as separate series. Combine low-activity chats to avoid thin, unreadable strips.
+  allChats.forEach((chat, index) => { if (index < 4 || (index < 12 && chat.total >= significantThreshold)) keepKeys.add(chat.k); });
+  const visibleChats = allChats.filter(chat => keepKeys.has(chat.k));
+  const groupedChats = allChats.filter(chat => !keepKeys.has(chat.k));
+  const chats = visibleChats.map(chat => ({...chat, isOther:false}));
+  if (groupedChats.length) chats.push({k:OTHER_KEY, n:"Другие", total:groupedChats.reduce((sum, chat) => sum + chat.total, 0), isOther:true, groupedCount:groupedChats.length});
   const daily = period.days.map(day => {
-    const values = byDay.get(day) || new Map();
+    const rawValues = byDay.get(day) || new Map();
+    const values = new Map();
+    visibleChats.forEach(chat => values.set(chat.k, rawValues.get(chat.k) || 0));
+    if (groupedChats.length) values.set(OTHER_KEY, groupedChats.reduce((sum, chat) => sum + (rawValues.get(chat.k) || 0), 0));
     const total = chats.reduce((sum, chat) => sum + (values.get(chat.k) || 0), 0);
     return {day, values, total};
   });
-  return {chats, daily, total:daily.reduce((sum, day) => sum + day.total, 0)};
+  return {chats, daily, total:daily.reduce((sum, day) => sum + day.total, 0), allChats};
 }
 function chatStackedChart(source, period){
   const metric = $("metric").value;
@@ -4525,33 +4538,37 @@ function chatStackedChart(source, period){
   const pitch = plotW / data.daily.length;
   const barW = Math.max(20, Math.min(data.daily.length === 1 ? 76 : 78, pitch * 0.66));
   const segmentPositions = new Map();
-  data.daily.forEach(day => {
+  data.daily.forEach((day, dayIndex) => {
     const nonzero = data.chats.map(chat => ({chat, value:day.values.get(chat.k) || 0})).filter(item => item.value > 0);
     if (!nonzero.length || !day.total) { segmentPositions.set(day.day, new Map()); return; }
     const targetH = day.total / scaleMax * plotH;
-    const gap = nonzero.length > 1 ? Math.min(3, targetH / (nonzero.length * 2)) : 0;
-    const drawableH = Math.max(0, targetH - gap * (nonzero.length - 1));
+    const x = left + pitch * (dayIndex + 0.5) - barW/2;
+    const topY = plotBottom - targetH;
+    const clipId = `chatStackClip${dayIndex}`;
+    const outerRx = Math.min(9, barW / 2, targetH / 2);
+    // A single rounded silhouette around the complete stack: internal chat segments touch with no gaps.
+    defs.push(`<clipPath id="${clipId}"><rect x="${x.toFixed(2)}" y="${topY.toFixed(2)}" width="${barW.toFixed(2)}" height="${targetH.toFixed(2)}" rx="${outerRx.toFixed(2)}"/></clipPath>`);
     let cursor = plotBottom;
     const positions = new Map();
     nonzero.forEach(item => {
-      const h = drawableH * item.value / day.total;
+      const h = targetH * item.value / day.total;
       const y = cursor - h;
-      positions.set(item.chat.k, {x:left + pitch * (data.daily.findIndex(d => d.day === day.day) + 0.5) - barW/2, y, h, value:item.value, total:day.total});
-      cursor = y - gap;
+      positions.set(item.chat.k, {x, y, h, value:item.value, total:day.total, clipId});
+      cursor = y;
     });
     segmentPositions.set(day.day, positions);
   });
 
-  data.chats.forEach((chat, chatIndex) => {
-    const paintInfo = paint(chartSeriesStyle("c", chat.k), 0, plotBottom, 0, plotTop);
+  data.chats.forEach(chat => {
+    const style = chat.isOther ? chartSeriesStyle("special", "other") : chartSeriesStyle("c", chat.k);
+    const paintInfo = paint(style, 0, plotBottom, 0, plotTop);
     if (paintInfo.defs) defs.push(paintInfo.defs);
     const parts = [];
-    data.daily.forEach((day, i) => {
+    data.daily.forEach(day => {
       const pos = segmentPositions.get(day.day)?.get(chat.k);
       if (!pos || pos.h <= 0) return;
       const tip = `${chat.n}|${fmt(pos.value)} ${(MLBL[metric] || metric).toLowerCase()} · ${chartDateLabel(day.day, day.day.slice(0,4) !== String(new Date().getFullYear()))}`;
-      const rx = Math.min(9, barW / 2, pos.h / 2);
-      parts.push(`<rect class="chat-stacked-segment" x="${pos.x.toFixed(2)}" y="${pos.y.toFixed(2)}" width="${barW.toFixed(2)}" height="${pos.h.toFixed(2)}" rx="${rx.toFixed(2)}" fill="${paintInfo.p}" data-tip="${escH(tip)}"/>`);
+      parts.push(`<rect class="chat-stacked-segment" x="${pos.x.toFixed(2)}" y="${pos.y.toFixed(2)}" width="${barW.toFixed(2)}" height="${pos.h.toFixed(2)}" fill="${paintInfo.p}" clip-path="url(#${pos.clipId})" data-tip="${escH(tip)}"/>`);
     });
     svg += `<g data-n="${escH(chat.n)}">${parts.join("")}</g>`;
   });
@@ -4569,8 +4586,10 @@ function chatStackedChart(source, period){
   const legendTop = plotBottom + 67, legendRowH = 28, legendRows = Math.ceil(data.chats.length / perRow);
   data.chats.forEach((chat, i) => {
     const col = i % perRow, row = Math.floor(i / perRow), x = 52 + col * ((W - 104) / perRow), y = legendTop + row * legendRowH;
-    const color = chartSeriesStyle("c", chat.k).c[0] || "#7aa2f7";
-    svg += `<g class="chat-stacked-legend" data-n="${escH(chat.n)}"><rect x="${x}" y="${y-12}" width="15" height="15" rx="4" fill="${color}"/><text class="chart-legend" x="${x+23}" y="${y}" font-size="14" fill="#f2f3f7">${escH(chat.n)} · ${fmt(chat.total)}</text></g>`;
+    const style = chat.isOther ? chartSeriesStyle("special", "other") : chartSeriesStyle("c", chat.k);
+    const color = style.c[0] || "#7aa2f7";
+    const otherHint = chat.isOther ? ` (${chat.groupedCount} малых чатов)` : "";
+    svg += `<g class="chat-stacked-legend" data-n="${escH(chat.n)}"><rect x="${x}" y="${y-12}" width="15" height="15" rx="4" fill="${color}"/><text class="chart-legend" x="${x+23}" y="${y}" font-size="14" fill="#f2f3f7">${escH(chat.n)}${otherHint} · ${fmt(chat.total)}</text></g>`;
   });
   const H = legendTop + legendRows * legendRowH + 14;
   return `<svg class="wide-svg chat-stacked-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Распределение ${escH((MLBL[metric] || metric).toLowerCase())} по чатам за период ${escH(period.label.toLowerCase())}"><defs>${defs.join("")}</defs>${svg}</svg>`;
@@ -6213,7 +6232,7 @@ function chartColorTargets(){
     const period = chatStackedPeriodRange();
     const cached = chatStackedRowsCache.get(`${period.from}|${period.to}`);
     const src = cached?.rows || (allRows ? allRows.filter(x => { const d=String(x[F.date] ?? "").slice(0,10); return d >= period.from && d <= period.to; }) : rows);
-    return chatStackedAggregate(src, metric, period).chats.map(chat => ({kind:"c", key:chat.k, name:chat.n, v:chat.total}));
+    return chatStackedAggregate(src, metric, period).chats.map(chat => ({kind:chat.isOther ? "special" : "c", key:chat.isOther ? "other" : chat.k, name:chat.n, v:chat.total}));
   }
   if (type === "heat" || type === "spiral" || type === "heatrows" || type === "heatrows-custom" || type === "pairs" || type === "season") return [];
   if (type === "gini") return [{kind:"g", key:"main", name:"Кривая и доля", v:1}, {kind:"g", key:"top", name:"Доля топ-3", v:1}];
