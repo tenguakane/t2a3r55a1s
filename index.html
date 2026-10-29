@@ -21220,5 +21220,39 @@ html body #s-days-table.tv-cards > tbody > tr > td.s-miss:empty::after{content:$
   window.addEventListener("load", hookWordForm);
 })();
 </script>
+
+<style id="events-spacing-refined-v2">
+/* События: явные вертикальные ритмы между заголовками, сводками, панелью таблицы и самой таблицей. */
+body:has(#tab-events.active) main{padding-top:clamp(38px,4vh,54px)!important}
+body:has(#tab-events.active) #ev-out{padding-bottom:44px}
+#ev-out .bx-head{margin:0 0 22px!important}
+#ev-out > .hint{line-height:1.6;margin:0 0 24px!important}
+#ev-out .ev-timeline{gap:18px!important;margin:0 0 32px!important}
+#ev-out .ev-card{min-height:142px}
+#ev-out .tiles{gap:16px!important;margin-top:22px!important;margin-bottom:30px!important}
+#ev-out .section-head{gap:12px!important;margin-top:40px!important;margin-bottom:18px!important}
+#ev-out .section-head + .hint{line-height:1.65;margin-top:0!important;margin-bottom:22px!important}
+#ev-out .hc-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;margin:26px 0 20px!important;position:relative;clear:both}
+#ev-out .hc-bar + .wrap{margin-top:0!important}
+#ev-out .tiles + .hc-bar{margin-top:28px!important}
+#ev-out .wrap{margin-top:18px!important;margin-bottom:30px!important;clear:both}
+#ev-out .bx-grid{gap:18px!important;margin-top:28px!important;margin-bottom:30px!important}
+#ev-out .bx-card{padding:18px 18px 16px}
+#ev-out .table-export-actions{gap:8px;align-items:center}
+@media(max-width:720px){
+  body:has(#tab-events.active) main{padding-top:28px!important}
+  body:has(#tab-events.active) #ev-out{padding-bottom:30px}
+  #ev-out .bx-head{margin-bottom:18px!important}
+  #ev-out > .hint{margin-bottom:20px!important}
+  #ev-out .ev-timeline{gap:12px!important;margin-bottom:26px!important}
+  #ev-out .ev-card{min-height:0;padding:16px}
+  #ev-out .tiles{gap:10px!important;margin-top:18px!important;margin-bottom:24px!important}
+  #ev-out .section-head{margin-top:32px!important;margin-bottom:16px!important;gap:8px!important}
+  #ev-out .section-head + .hint{margin-bottom:16px!important}
+  #ev-out .hc-bar{justify-content:flex-start;margin:22px 0 16px!important}
+  #ev-out .wrap{margin-top:14px!important;margin-bottom:24px!important}
+  #ev-out .bx-grid{gap:12px!important;margin-top:22px!important;margin-bottom:24px!important}
+}
+</style>
 </body>
 </html>
