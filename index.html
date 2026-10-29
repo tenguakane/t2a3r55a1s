@@ -21910,7 +21910,13 @@ body:has(#tab-events.active) #ev-out{padding-bottom:44px}
 <style id="fixed-seven-day-filter-style">
 #shared #f-mode .period-fixed{display:flex;align-items:center;min-height:38px;box-sizing:border-box;padding:8px 12px;border:1px solid var(--line,rgba(255,255,255,.14));border-radius:10px;background:rgba(255,255,255,.045);color:var(--text,#e8eaf0);font-size:13px;font-weight:600;white-space:nowrap}
 #shared #f-day input[type="date"]{min-width:155px}
-/* The global date picker is now the only visible period selector. */
+/* The global date picker is now the only visible period selector.
+   Keep the Statistics table controls visible; hide only the duplicate quick-period widgets. */
 #shared #f-mode #mode{display:none!important}
-#stats-quick{display:none!important}
+@media (min-width:721px){
+  body.filters-right #stats-quick{display:flex!important}
+  body.filters-right #stats-quick > .sq-seg,
+  body.filters-right #stats-quick > .sq-date,
+  body.filters-right #stats-quick > .sq-range{display:none!important}
+}
 </style>
