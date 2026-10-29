@@ -1615,6 +1615,7 @@ document.body.classList.add("beta-re");
       <div class="field"><label for="c-type">Вид графика</label>
         <select id="c-type">
           <option value="bars" selected>Столбцы</option>
+          <option value="chatstacked">Накопление по чатам</option>
           <option value="donut">Кольцо</option>
           <option value="trend">Динамика</option>
           <option value="years">По годам</option>
@@ -1637,6 +1638,15 @@ document.body.classList.add("beta-re");
           <option value="msgs">Сообщения</option><option value="stick">Стикеры</option>
           <option value="voice">Голосовые</option><option value="video">Видеосообщения</option>
           <option value="rgive" class="rx-opt">Поставленные реакции</option><option value="rgot" class="rx-opt">Полученные реакции</option>
+        </select>
+      </div>
+      <div class="field" id="chat-stacked-period-field" hidden>
+        <label for="chat-stacked-period">Период</label>
+        <select id="chat-stacked-period">
+          <option value="today">Сегодня</option>
+          <option value="yesterday">Вчера</option>
+          <option value="week" selected>Неделя</option>
+          <option value="2weeks">Две недели</option>
         </select>
       </div>
       <div class="field" id="heat-scale-field" hidden><label for="heat-scale">Шкала цвета</label>
@@ -2223,9 +2233,10 @@ const DEFAULT_CUSTOM_HEAT_BANDS_CHATS = [
   {min:250, color:"#22c55e"},
   {min:500, color:"#a855f7"}
 ];
-const CHART_TYPE_LABELS = {bars:"Столбцы", donut:"Кольцо", trend:"Динамика", years:"По годам", heat:"Календарь", spiral:"Спираль года", heatrows:"Карта: участники / чаты", "heatrows-custom":"Карта: Настраиваемая", race:"Гонка", pairs:"Кто активен вместе", season:"Сезонность", bump:"График мест", spread:"Разброс по дням", gini:"Концентрация активности", multiples:"Маленькие графики", norm:"Отклонение от нормы"};
+const CHART_TYPE_LABELS = {bars:"Столбцы", chatstacked:"Накопление по чатам", donut:"Кольцо", trend:"Динамика", years:"По годам", heat:"Календарь", spiral:"Спираль года", heatrows:"Карта: участники / чаты", "heatrows-custom":"Карта: Настраиваемая", race:"Гонка", pairs:"Кто активен вместе", season:"Сезонность", bump:"График мест", spread:"Разброс по дням", gini:"Концентрация активности", multiples:"Маленькие графики", norm:"Отклонение от нормы"};
 const DEFAULT_TEXT_STYLE = {
   bars:    {titleSize:36,titleColor:"#aaaaaa",subtitleSize:17,subtitleColor:"#7d8190",labelsSize:18,labelsColor:"#e6e8ee",valuesSize:18,valuesColor:"#eceef3",axisSize:19,axisColor:"#eceef3",legendSize:18,legendColor:"#f2f3f7"},
+  chatstacked:{titleSize:36,titleColor:"#aaaaaa",subtitleSize:17,subtitleColor:"#7d8190",labelsSize:16,labelsColor:"#e6e8ee",valuesSize:17,valuesColor:"#eceef3",axisSize:14,axisColor:"#aab0c0",legendSize:15,legendColor:"#f2f3f7"},
   donut:   {titleSize:36,titleColor:"#aaaaaa",subtitleSize:17,subtitleColor:"#7d8190",labelsSize:18,labelsColor:"#f2f3f7",valuesSize:18,valuesColor:"#eceef3",axisSize:17,axisColor:"#7d8190",legendSize:18,legendColor:"#aab0c0"},
   trend:   {titleSize:36,titleColor:"#aaaaaa",subtitleSize:17,subtitleColor:"#7d8190",labelsSize:18,labelsColor:"#f2f3f7",valuesSize:19,valuesColor:"#eceef3",axisSize:19,axisColor:"#eceef3",legendSize:18,legendColor:"#f2f3f7"},
   years:   {titleSize:36,titleColor:"#aaaaaa",subtitleSize:17,subtitleColor:"#7d8190",labelsSize:18,labelsColor:"#f2f3f7",valuesSize:19,valuesColor:"#eceef3",axisSize:19,axisColor:"#eceef3",legendSize:18,legendColor:"#f2f3f7"},
@@ -4065,12 +4076,17 @@ function spiralChart(){
 
 $("c-type").onchange = () => {
   cType = $("c-type").value;
+  if (cType === "chatstacked") {
+    chartEntity = "chats";
+    document.querySelectorAll("#c-entity button").forEach(button => button.classList.toggle("active", button.dataset.entity === "chats"));
+  }
   applyChartAppearance(cType);
   loadTrendStyleForChartType(cType);
   // Building the settings controls can be expensive for charts with many series.
-  // Only rebuild the drawer when it is visible; the chart itself should render immediately.
+  // Only rebuild the drawer when it is visible; for this chart, refresh it once data is loaded.
   if ($("chart-settings-panel")?.classList.contains("open")) renderChartSettingsPanel();
-  renderCharts();
+  const task = renderCharts();
+  if (cType === "chatstacked" && $("chart-settings-panel")?.classList.contains("open")) task.then(() => renderChartSettingsPanel());
 };
 $("heat-scale").onchange = () => renderCharts();
 document.querySelectorAll("#c-entity button").forEach(b => b.onclick = () => {
@@ -4080,6 +4096,12 @@ document.querySelectorAll("#c-entity button").forEach(b => b.onclick = () => {
   if ($("chart-settings-panel")?.classList.contains("open")) renderChartSettingsPanel();
 });
 $("metric").onchange = () => { renderCharts(); if ($("chart-settings-panel")?.classList.contains("open")) renderChartSettingsPanel(); };
+$("chat-stacked-period")?.addEventListener("change", async e => {
+  chatStackedPeriodValue = ["today", "yesterday", "week", "2weeks"].includes(e.target.value) ? e.target.value : "week";
+  try { localStorage.setItem(CHAT_STACKED_PERIOD_KEY, chatStackedPeriodValue); } catch (err) {}
+  await renderCharts();
+  if ($("chart-settings-panel")?.classList.contains("open") && cType === "chatstacked") renderChartSettingsPanel();
+});
 // «Все» в списке количества: Infinity, иначе число (по умолчанию def).
 const trendTop = (def = 5) => { const v = $("trend-top") ? $("trend-top").value : ""; return v === "all" ? Infinity : (Number(v) || def); };
 const barsCap = def => { const v = $("bars-top") ? $("bars-top").value : ""; return v === "all" ? 1e6 : v ? Number(v) : def; };
@@ -4421,6 +4443,139 @@ function chatsAgg(metric, source = cRows()){
 }
 function chartAgg(metric, source = cRows()){ return chartEntity === "chats" ? chatsAgg(metric, source) : usersAgg(metric); }
 function chartStyleKind(){ return chartEntity === "chats" ? "c" : "u"; }
+
+/* ---------- Вертикальные stacked-столбцы: распределение активности по чатам ---------- */
+const CHAT_STACKED_PERIOD_KEY = "chatstats.chatStackedPeriod.v1";
+let chatStackedPeriodValue = "week";
+try {
+  const savedPeriod = localStorage.getItem(CHAT_STACKED_PERIOD_KEY);
+  if (["today", "yesterday", "week", "2weeks"].includes(savedPeriod)) chatStackedPeriodValue = savedPeriod;
+} catch (e) {}
+if ($("chat-stacked-period")) $("chat-stacked-period").value = chatStackedPeriodValue;
+const chatStackedRowsCache = new Map();
+function chatStackedPeriodRange(value = $("chat-stacked-period")?.value || chatStackedPeriodValue){
+  const today = iso(new Date());
+  let from = today, to = today, label = "Сегодня";
+  if (value === "yesterday") { from = to = addDaysIso(today, -1); label = "Вчера"; }
+  else if (value === "week") { from = addDaysIso(today, -6); label = "Неделя"; }
+  else if (value === "2weeks") { from = addDaysIso(today, -13); label = "Две недели"; }
+  const days = [];
+  for (let d = from; d <= to; d = addDaysIso(d, 1)) days.push(d);
+  return {key:value, from, to, days, label};
+}
+async function loadChatStackedRows(period){
+  const cacheKey = `${period.from}|${period.to}`;
+  const previous = chatStackedRowsCache.get(cacheKey);
+  if (previous?.rows && Date.now() - previous.at < 30000) return previous.rows;
+  if (previous?.promise) return previous.promise;
+  const promise = fetchAll(period.from, period.to).then(data => {
+    chatStackedRowsCache.set(cacheKey, {rows:data, at:Date.now()});
+    return data;
+  }).catch(err => { chatStackedRowsCache.delete(cacheKey); throw err; });
+  chatStackedRowsCache.set(cacheKey, {promise, at:Date.now()});
+  return promise;
+}
+function chatStackedAggregate(source, metric, period){
+  const chatMap = new Map();
+  const byDay = new Map(period.days.map(day => [day, new Map()]));
+  source.forEach(row => {
+    const day = String(row[F.date] ?? "").slice(0, 10);
+    if (!byDay.has(day) || Number(row[F.chatPk]) === 0) return;
+    const key = String(row[F.chatPk] ?? row[F.chat]);
+    if (!key || key === "undefined" || key === "null") return;
+    const name = String(row[F.chat] || `Чат ${key}`);
+    const value = Math.max(0, Number(g(row, metric)) || 0);
+    const meta = chatMap.get(key) || {k:key, n:name, total:0};
+    // Keep the latest non-empty title if some records only have the chat ID.
+    if (row[F.chat]) meta.n = String(row[F.chat]);
+    meta.total += value;
+    chatMap.set(key, meta);
+    const values = byDay.get(day);
+    values.set(key, (values.get(key) || 0) + value);
+  });
+  const chats = [...chatMap.values()].filter(chat => chat.total > 0).sort((a,b) => b.total - a.total || a.n.localeCompare(b.n, "ru"));
+  const daily = period.days.map(day => {
+    const values = byDay.get(day) || new Map();
+    const total = chats.reduce((sum, chat) => sum + (values.get(chat.k) || 0), 0);
+    return {day, values, total};
+  });
+  return {chats, daily, total:daily.reduce((sum, day) => sum + day.total, 0)};
+}
+function chatStackedChart(source, period){
+  const metric = $("metric").value;
+  if (["rgive", "rgot"].includes(metric)) return note("Для реакций нет дневных данных: API не возвращает дату реакции. Выберите сообщения, стикеры, голосовые или видеосообщения.");
+  const data = chatStackedAggregate(source, metric, period);
+  if (!data.total || !data.chats.length) return note(`Нет данных по показателю «${MLBL[metric] || metric}» за период «${period.label.toLowerCase()}».`);
+
+  const W = 1200, left = 76, right = 34, plotTop = 130, plotBottom = 462, plotH = plotBottom - plotTop;
+  const plotW = W - left - right, axis = niceMax(Math.max(...data.daily.map(d => d.total))), scaleMax = axis.max || 1;
+  const periodTitle = period.days.length === 1
+    ? `${chartDateLabel(period.from, period.from.slice(0,4) !== String(new Date().getFullYear()))}`
+    : `${chartDateLabel(period.from, period.from.slice(0,4) !== String(new Date().getFullYear()))} — ${chartDateLabel(period.to, period.to.slice(0,4) !== String(new Date().getFullYear()))}`;
+  const p = chartPrefs("chatstacked"), defs = [];
+  let svg = head("Активность по чатам", `${MLBL[metric] || metric} · ${period.label.toLowerCase()} · ${periodTitle} · всего ${fmt(data.total)}`, W, p.showSubtitle !== false);
+
+  // Горизонтальная сетка и шкала общего дневного значения.
+  for (let i = 0; i <= 4; i++) {
+    const value = scaleMax * i / 4, y = plotBottom - plotH * i / 4;
+    svg += `<line x1="${left}" y1="${y.toFixed(2)}" x2="${W-right}" y2="${y.toFixed(2)}" stroke="${p.textStyle.axisColor || "#aab0c0"}" stroke-opacity="${i === 0 ? 0.35 : 0.14}" stroke-width="1"/>`;
+    svg += `<text class="chart-axis" x="${left-12}" y="${(y+4).toFixed(2)}" text-anchor="end" font-size="13" fill="#aab0c0">${fmt(Math.round(value))}</text>`;
+  }
+
+  const pitch = plotW / data.daily.length;
+  const barW = Math.max(20, Math.min(data.daily.length === 1 ? 76 : 78, pitch * 0.66));
+  const segmentPositions = new Map();
+  data.daily.forEach(day => {
+    const nonzero = data.chats.map(chat => ({chat, value:day.values.get(chat.k) || 0})).filter(item => item.value > 0);
+    if (!nonzero.length || !day.total) { segmentPositions.set(day.day, new Map()); return; }
+    const targetH = day.total / scaleMax * plotH;
+    const gap = nonzero.length > 1 ? Math.min(3, targetH / (nonzero.length * 2)) : 0;
+    const drawableH = Math.max(0, targetH - gap * (nonzero.length - 1));
+    let cursor = plotBottom;
+    const positions = new Map();
+    nonzero.forEach(item => {
+      const h = drawableH * item.value / day.total;
+      const y = cursor - h;
+      positions.set(item.chat.k, {x:left + pitch * (data.daily.findIndex(d => d.day === day.day) + 0.5) - barW/2, y, h, value:item.value, total:day.total});
+      cursor = y - gap;
+    });
+    segmentPositions.set(day.day, positions);
+  });
+
+  data.chats.forEach((chat, chatIndex) => {
+    const paintInfo = paint(chartSeriesStyle("c", chat.k), 0, plotBottom, 0, plotTop);
+    if (paintInfo.defs) defs.push(paintInfo.defs);
+    const parts = [];
+    data.daily.forEach((day, i) => {
+      const pos = segmentPositions.get(day.day)?.get(chat.k);
+      if (!pos || pos.h <= 0) return;
+      const tip = `${chat.n}|${fmt(pos.value)} ${(MLBL[metric] || metric).toLowerCase()} · ${chartDateLabel(day.day, day.day.slice(0,4) !== String(new Date().getFullYear()))}`;
+      const rx = Math.min(9, barW / 2, pos.h / 2);
+      parts.push(`<rect class="chat-stacked-segment" x="${pos.x.toFixed(2)}" y="${pos.y.toFixed(2)}" width="${barW.toFixed(2)}" height="${pos.h.toFixed(2)}" rx="${rx.toFixed(2)}" fill="${paintInfo.p}" data-tip="${escH(tip)}"/>`);
+    });
+    svg += `<g data-n="${escH(chat.n)}">${parts.join("")}</g>`;
+  });
+
+  data.daily.forEach((day, i) => {
+    const center = left + pitch * (i + 0.5);
+    const topY = day.total ? plotBottom - day.total / scaleMax * plotH : plotBottom;
+    const topLabelY = Math.max(plotTop - 5, topY - 10);
+    const totalTip = `Всего за ${chartDateLabel(day.day)}|${fmt(day.total)} ${escH((MLBL[metric] || metric).toLowerCase())}`;
+    svg += `<text class="chart-value" x="${center.toFixed(2)}" y="${topLabelY.toFixed(2)}" text-anchor="middle" font-size="16" fill="#eceef3" data-tip="${escH(totalTip)}">${fmt(day.total)}</text>`;
+    svg += `<text class="chart-axis" x="${center.toFixed(2)}" y="${plotBottom + 25}" text-anchor="middle" font-size="${data.daily.length > 10 ? 13 : 15}" fill="#aab0c0">${chartDateLabel(day.day, day.day.slice(0,4) !== String(new Date().getFullYear()))}</text>`;
+  });
+
+  const perRow = Math.max(1, Math.min(4, Math.floor((W - 80) / 265)));
+  const legendTop = plotBottom + 67, legendRowH = 28, legendRows = Math.ceil(data.chats.length / perRow);
+  data.chats.forEach((chat, i) => {
+    const col = i % perRow, row = Math.floor(i / perRow), x = 52 + col * ((W - 104) / perRow), y = legendTop + row * legendRowH;
+    const color = chartSeriesStyle("c", chat.k).c[0] || "#7aa2f7";
+    svg += `<g class="chat-stacked-legend" data-n="${escH(chat.n)}"><rect x="${x}" y="${y-12}" width="15" height="15" rx="4" fill="${color}"/><text class="chart-legend" x="${x+23}" y="${y}" font-size="14" fill="#f2f3f7">${escH(chat.n)} · ${fmt(chat.total)}</text></g>`;
+  });
+  const H = legendTop + legendRows * legendRowH + 14;
+  return `<svg class="wide-svg chat-stacked-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Распределение ${escH((MLBL[metric] || metric).toLowerCase())} по чатам за период ${escH(period.label.toLowerCase())}"><defs>${defs.join("")}</defs>${svg}</svg>`;
+}
+
 function barsChart(){
   const list = normChartList(chartAgg($("metric").value), $("metric").value).slice(0, barsCap(chartEntity === "users" && SEL_ACTIVE ? 40 : 20));
   if (!list.length) return note("Нет данных за выбранный период");
@@ -4710,6 +4865,11 @@ async function renderCharts(){
   const renderSeq = ++chartRenderSequence;
   lineSeriesInfo = null;
   const requestedType = cType;
+  const isChatStacked = requestedType === "chatstacked";
+  if (isChatStacked && chartEntity !== "chats") {
+    chartEntity = "chats";
+    document.querySelectorAll("#c-entity button").forEach(button => button.classList.toggle("active", button.dataset.entity === "chats"));
+  }
   applyChartAppearance(requestedType);
   if (requestedType === "trend") loadTrendStyleForChartType(requestedType);
 
@@ -4723,6 +4883,14 @@ async function renderCharts(){
     }).catch(e => { leftFilterError = e.message || String(e); });
   }
 
+  $("chat-stacked-period-field").hidden = !isChatStacked;
+  const entityField = document.querySelector(".c-entity-field"); if (entityField) entityField.hidden = isChatStacked;
+  const hideLeftLabel = $("hide-left-charts")?.closest("label"); if (hideLeftLabel) hideLeftLabel.hidden = isChatStacked;
+  const peopleField = $("people")?.closest(".field"); if (peopleField) peopleField.hidden = isChatStacked;
+  const quickRanges = $("c-quick"); if (quickRanges) quickRanges.hidden = isChatStacked;
+  const rxMetricOptions = $("metric") ? [...$("metric").options].filter(option => option.classList.contains("rx-opt")) : [];
+  rxMetricOptions.forEach(option => { option.disabled = isChatStacked; option.title = isChatStacked ? "API реакций не возвращает даты, поэтому дневной график для них недоступен" : ""; });
+  if (isChatStacked && ["rgive", "rgot"].includes($("metric").value)) $("metric").value = "msgs";
   $("trend-count-field").hidden = !["trend", "race", "pairs", "bump", "spread", "multiples"].includes(requestedType);
   $("y-ceil-field").hidden = !["trend", "years"].includes(requestedType);
   $("trend-fc-field").hidden = requestedType !== "trend";
@@ -4754,6 +4922,21 @@ async function renderCharts(){
   if (topSelect) [...topSelect.options].forEach(o => { o.textContent = o.value === "all" ? (chartEntity === "chats" ? "Все чаты" : "Все пользователи") : `Топ-${o.value} ${chartEntity === "chats" ? "чатов" : "пользователей"}`; });
   const out = $("c-out");
   dayTipCtx = null; CHART_HOVER = null;
+  if (isChatStacked) {
+    const period = chatStackedPeriodRange();
+    out.innerHTML = `<div class="sk sk-block"></div>`;
+    try {
+      const source = await loadChatStackedRows(period);
+      if (renderSeq !== chartRenderSequence || requestedType !== cType) return;
+      out.innerHTML = chatStackedChart(source, period);
+      applyChartTextStyles(); syncChartFocus();
+      return;
+    } catch (e) {
+      if (renderSeq !== chartRenderSequence || requestedType !== cType) return;
+      out.innerHTML = note("Не удалось загрузить данные для графика по чатам: " + (e.message || e));
+      applyChartTextStyles(); return;
+    }
+  }
   if (chartQuick && !allRows) {
     out.innerHTML = `<div class="sk sk-block"></div>`;
     try { await getHistory(); }
@@ -6026,6 +6209,12 @@ function decorateTables(){
 // Chart settings drawer: every graph type keeps its own appearance and series colours.
 function chartColorTargets(){
   const type = currentChartType(), metric = $("metric").value;
+  if (type === "chatstacked") {
+    const period = chatStackedPeriodRange();
+    const cached = chatStackedRowsCache.get(`${period.from}|${period.to}`);
+    const src = cached?.rows || (allRows ? allRows.filter(x => { const d=String(x[F.date] ?? "").slice(0,10); return d >= period.from && d <= period.to; }) : rows);
+    return chatStackedAggregate(src, metric, period).chats.map(chat => ({kind:"c", key:chat.k, name:chat.n, v:chat.total}));
+  }
   if (type === "heat" || type === "spiral" || type === "heatrows" || type === "heatrows-custom" || type === "pairs" || type === "season") return [];
   if (type === "gini") return [{kind:"g", key:"main", name:"Кривая и доля", v:1}, {kind:"g", key:"top", name:"Доля топ-3", v:1}];
   if (type === "years") {
