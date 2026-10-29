@@ -4584,10 +4584,14 @@ function chatStackedChart(source, period){
     svg += `<text class="chart-axis" x="${center.toFixed(2)}" y="${plotBottom + 25}" text-anchor="middle" font-size="${data.daily.length > 10 ? 13 : 15}" fill="#aab0c0">${chartDateLabel(day.day, day.day.slice(0,4) !== String(new Date().getFullYear()))}</text>`;
   });
 
-  const perRow = Math.max(1, Math.min(4, Math.floor((W - 80) / 265)));
+  // Компактная легенда располагается под рядом столбцов, а не растягивается на всю рамку.
+  // Для одного-двух дней оставляем минимальную ширину, чтобы названия серий не слипались.
+  const legendAreaW = Math.max(groupW, 540);
+  const legendLeft = left + (plotW - legendAreaW) / 2;
+  const perRow = Math.max(1, Math.min(4, Math.floor(legendAreaW / 270)));
   const legendTop = plotBottom + 67, legendRowH = 28, legendRows = Math.ceil(data.chats.length / perRow);
   data.chats.forEach((chat, i) => {
-    const col = i % perRow, row = Math.floor(i / perRow), x = 52 + col * ((W - 104) / perRow), y = legendTop + row * legendRowH;
+    const col = i % perRow, row = Math.floor(i / perRow), x = legendLeft + col * (legendAreaW / perRow), y = legendTop + row * legendRowH;
     const style = chat.isOther ? chartSeriesStyle("special", "other") : chartSeriesStyle("c", chat.k);
     const color = style.c[0] || "#7aa2f7";
     const otherHint = chat.isOther ? ` (${chat.groupedCount} малых чатов)` : "";
