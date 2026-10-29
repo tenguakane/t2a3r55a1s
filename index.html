@@ -2583,9 +2583,28 @@ $("chat").onchange = render;
 $("participants-top").onchange = render;
 
 function range(){
-  const start = $("day")?.value;
-  if (!start) return null;
-  return [start, addDaysIso(start, 6)];
+  // Quick period buttons are shortcuts for the same global filters.
+  // The default week is a rolling 7-day window starting at the selected date.
+  if (mode === "day") {
+    const d = $("day")?.value;
+    return d ? [d, d] : null;
+  }
+  if (mode === "week") {
+    const start = $("day")?.value;
+    return start ? [start, addDaysIso(start, 6)] : null;
+  }
+  if (mode === "month") {
+    const v = $("month")?.value;
+    if (!v) return null;
+    const [y, m] = v.split("-").map(Number);
+    return [`${y}-${pad(m)}-01`, `${y}-${pad(m)}-${pad(new Date(y, m, 0).getDate())}`];
+  }
+  if (mode === "year") {
+    const y = Number($("year")?.value);
+    return y ? [`${y}-01-01`, `${y}-12-31`] : null;
+  }
+  // Use a broad, explicit date range for the all-time endpoint query.
+  return ["2000-01-01", iso(new Date())];
 }
 
 function addDaysIso(value, delta){
@@ -2764,14 +2783,20 @@ function formatMetricDate(value){
 function setDayLabel(){
   const l = document.querySelector("#f-day label"), r = range();
   const caption = $("fixed-period-caption");
-  const f = x => x.slice(8) + "." + x.slice(5,7);
-  if (l) l.textContent = "С даты";
+  const f = x => x.slice(8) + "." + x.slice(5,7) + (x.slice(0,4) === String(new Date().getFullYear()) ? "" : `.${x.slice(0,4)}`);
+  if (l) l.textContent = mode === "day" ? "Дата" : "С даты";
   if (caption) {
-    const thisWeekStart = currentWeekStartIso();
-    const thisWeekEnd = addDaysIso(thisWeekStart, 6);
-    if (r && r[0] === thisWeekStart && r[1] === thisWeekEnd) caption.textContent = `Текущая неделя · ${f(r[0])} - ${f(r[1])}`;
-    else if (r) caption.textContent = `7 дней · ${f(r[0])} - ${f(r[1])}`;
-    else caption.textContent = "Выберите дату";
+    if (mode === "all") caption.textContent = "Всё время";
+    else if (mode === "month") caption.textContent = r ? `Месяц · ${r[0].slice(5,7)}.${r[0].slice(0,4)}` : "Выберите месяц";
+    else if (mode === "year") caption.textContent = r ? `Год · ${r[0].slice(0,4)}` : "Выберите год";
+    else if (r && mode === "day") {
+      const today = iso(new Date()), yesterday = addDaysIso(today, -1);
+      caption.textContent = r[0] === today ? `Сегодня · ${f(r[0])}` : r[0] === yesterday ? `Вчера · ${f(r[0])}` : `День · ${f(r[0])}`;
+    } else if (r && mode === "week") {
+      const thisWeekStart = currentWeekStartIso(), thisWeekEnd = addDaysIso(thisWeekStart, 6);
+      if (r[0] === thisWeekStart && r[1] === thisWeekEnd) caption.textContent = `Текущая неделя · ${f(r[0])} - ${f(r[1])}`;
+      else caption.textContent = `7 дней · ${f(r[0])} - ${f(r[1])}`;
+    } else caption.textContent = "Выберите дату";
   }
 }
 async function load(){
@@ -16135,7 +16160,7 @@ body.holo-text-on tr > td.medal-3:first-child{background-image:linear-gradient(1
     const act = m === "day" && day === today ? "today" : m === "day" && day === yday ? "yday" : m === "week" && day === today ? "7"
       : m === "month" && month === thisM ? "month" : m === "month" && month === prevM ? "pmonth" : m === "year" && year === String(t.getFullYear()) ? "year" : m === "all" ? "all" : "";
     q.querySelectorAll("[data-sq]").forEach(b => b.classList.toggle("active", b.dataset.sq === act));
-    $("sq-day").hidden = m === "month" || m === "year"; $("sq-month").hidden = m !== "month"; $("sq-year").hidden = m !== "year";
+    $("sq-day").hidden = m === "month" || m === "year" || m === "all"; $("sq-month").hidden = m !== "month"; $("sq-year").hidden = m !== "year";
     if (document.activeElement !== $("sq-day")) $("sq-day").value = day;
     if (document.activeElement !== $("sq-month")) $("sq-month").value = month;
     if (document.activeElement !== $("sq-year")) $("sq-year").value = year;
@@ -21915,8 +21940,8 @@ body:has(#tab-events.active) #ev-out{padding-bottom:44px}
 #shared #f-mode #mode{display:none!important}
 @media (min-width:721px){
   body.filters-right #stats-quick{display:flex!important}
-  body.filters-right #stats-quick > .sq-seg,
-  body.filters-right #stats-quick > .sq-date,
+  /* Keep quick period presets and the date picker visible in Statistics.
+     Only the redundant textual range label stays hidden. */
   body.filters-right #stats-quick > .sq-range{display:none!important}
 }
 </style>
