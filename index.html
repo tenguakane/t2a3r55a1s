@@ -4910,6 +4910,8 @@ async function svgToPngBlob(svg, exportPrefs){
   if (!svg) throw new Error("Сейчас нет графика");
   const vb = svg.viewBox.baseVal, W = vb.width, H = vb.height, K = 2;
   const c = stripInteractive(svg.cloneNode(true));
+  // Экспорт не должен наследовать интерактивный масштаб и смещение графика на странице.
+  c.style.transform = ""; c.style.transformOrigin = ""; c.style.transformBox = "";
   c.setAttribute("xmlns", "http://www.w3.org/2000/svg");
   c.setAttribute("width", W * K); c.setAttribute("height", H * K);
   c.setAttribute("font-family", "'Samsung Sans','SamsungOne','Segoe UI',system-ui,sans-serif");
@@ -4929,9 +4931,29 @@ async function svgToPngBlob(svg, exportPrefs){
   const xml = new XMLSerializer().serializeToString(c).replace(/<svg[^>]*>/, m => m + extra);
   const img = new Image();
   await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error("Не удалось отрисовать картинку")); img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(xml); });
-  const cv = document.createElement("canvas"); cv.width = W * K; cv.height = H * K;
-  cv.getContext("2d").drawImage(img, 0, 0, W * K, H * K);
-  return new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error("Не удалось создать PNG")), "image/png"));
+  // Копируем график в том же формате, что и таблицы:
+  // прямоугольный внешний фон с полями и отдельная внутренняя панель с рамкой.
+  // Внешние края изображения намеренно остаются прямыми — удобно отправлять в чат.
+  const pad = 18;
+  const outW = W + pad * 2, outH = H + pad * 2;
+  const cv = document.createElement("canvas");
+  cv.width = outW * K; cv.height = outH * K;
+  const ctx = cv.getContext("2d");
+  if (!ctx) throw new Error("Браузер не смог создать изображение");
+  ctx.scale(K, K);
+  const glass = typeof window.__glassWanted === "function" && window.__glassWanted() && typeof window.__glassBackdrop === "function";
+  const outerBg = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#0f1117";
+  if (glass) window.__glassBackdrop(ctx, outW, outH);
+  else { ctx.fillStyle = outerBg; ctx.fillRect(0, 0, outW, outH); }
+  ctx.drawImage(img, pad, pad, W, H);
+  // Рамка обрамляет именно график внутри картинки, а не её внешние края.
+  const framed = typeof window.__tbFrameDraw === "function" && window.__tbFrameDraw(ctx, pad, pad, W, H, 8);
+  const blob = await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error("Не удалось создать PNG")), "image/png"));
+  // Помечаем уже оформленный экспорт, чтобы общий обработчик clipboard не обрезал поля
+  // и не добавлял вторую рамку по внешнему краю.
+  if (glass) window.__glassRendered = {size: blob.size, t: Date.now()};
+  if (framed) window.__frameRendered = {size: blob.size, t: Date.now()};
+  return blob;
 }
 
 /* ---------- Копирование таблиц вместе с заголовком как PNG ---------- */
@@ -10891,6 +10913,8 @@ async function svgFrameKit(svg, prefs, outW){
   const color = prefs.fontColor || chartFontColor;
   const extra = `<defs>${bgDefs}</defs><style>${await fontCss()}${prefs.keepTextColors ? "" : `text,tspan{fill:${color}!important}`}</style><rect width="${W}" height="${H}" fill="${bgPaint}"/>`;
   const c = stripInteractive(svg.cloneNode(true));
+  // Экспорт не должен наследовать интерактивный масштаб и смещение графика на странице.
+  c.style.transform = ""; c.style.transformOrigin = ""; c.style.transformBox = "";
   c.setAttribute("xmlns", "http://www.w3.org/2000/svg"); c.setAttribute("width", CW); c.setAttribute("height", CH);
   c.setAttribute("font-family", "'Samsung Sans','SamsungOne','Segoe UI',system-ui,sans-serif");
   c.querySelectorAll(".anim-bar-x,.anim-bar-y").forEach(e => e.classList.remove("anim-bar-x", "anim-bar-y"));
@@ -21254,5 +21278,233 @@ body:has(#tab-events.active) #ev-out{padding-bottom:44px}
   #ev-out .bx-grid{gap:12px!important;margin-top:22px!important;margin-bottom:24px!important}
 }
 </style>
+
+
+<style id="desktop-chart-wheel-zoom-style">
+/* Desktop-only interaction: transform the SVG, while the chart frame stays fixed. */
+@media (hover: hover) and (pointer: fine) and (min-width: 721px) {
+  #c-out.chart-zoom-clipping { overflow: hidden !important; }
+  #c-out svg.chart-wheel-zoom-target.chart-is-zoomed {
+    cursor: grab !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -webkit-user-drag: none !important;
+    will-change: transform;
+  }
+  #c-out svg.chart-wheel-zoom-target.chart-is-panning { cursor: grabbing !important; }
+}
+</style>
+<script id="desktop-chart-wheel-zoom-script">
+(() => {
+  "use strict";
+  const out = document.getElementById("c-out");
+  if (!out) return;
+
+  const desktop = window.matchMedia("(hover: hover) and (pointer: fine) and (min-width: 721px)");
+  const MIN_SCALE = 1;
+  const MAX_SCALE = 5;
+  const WHEEL_SENSITIVITY = 0.002;
+  let state = {
+    svg: null, base: null, scale: 1, tx: 0, ty: 0,
+    originalTransform: "", originalTransformOrigin: "", originalTransformBox: "",
+    drag: null, suppressClick: false
+  };
+
+  const isDesktop = () => desktop.matches;
+  const currentSvg = () => out.querySelector(":scope > svg");
+
+  function restoreSvg(svg, transform = "", origin = "", box = "") {
+    if (!svg) return;
+    svg.style.transform = transform;
+    svg.style.transformOrigin = origin;
+    svg.style.transformBox = box;
+    svg.classList.remove("chart-wheel-zoom-target", "chart-is-zoomed", "chart-is-panning");
+  }
+
+  function measureBase(svg) {
+    if (!svg || !out.contains(svg)) return null;
+    const frame = out.getBoundingClientRect();
+    const r = svg.getBoundingClientRect();
+    const width = r.width;
+    const height = r.height;
+    const viewportWidth = out.clientWidth;
+    const viewportHeight = out.clientHeight;
+    if (width < 1 || height < 1 || viewportWidth < 1 || viewportHeight < 1) return null;
+    return {
+      left: r.left - (frame.left + out.clientLeft),
+      top: r.top - (frame.top + out.clientTop),
+      width, height, viewportWidth, viewportHeight
+    };
+  }
+
+  function attachSvg(svg) {
+    if (state.svg) restoreSvg(state.svg, state.originalTransform, state.originalTransformOrigin, state.originalTransformBox);
+    state = {
+      svg: svg || null, base: null, scale: MIN_SCALE, tx: 0, ty: 0,
+      originalTransform: svg?.style.transform || "",
+      originalTransformOrigin: svg?.style.transformOrigin || "",
+      originalTransformBox: svg?.style.transformBox || "",
+      drag: null, suppressClick: false
+    };
+    out.classList.remove("chart-zoom-clipping");
+    if (!svg) return;
+    svg.classList.add("chart-wheel-zoom-target");
+    // SVG transforms should be measured around the chart's own rectangle, not its viewBox origin.
+    svg.style.transformBox = "border-box";
+    svg.style.transformOrigin = "center center";
+    state.base = measureBase(svg);
+  }
+
+  function ensureBase() {
+    if (!state.svg || !out.contains(state.svg)) attachSvg(currentSvg());
+    if (!state.svg) return false;
+    const frameWidth = out.clientWidth, frameHeight = out.clientHeight;
+    if (!state.base || state.base.width < 1 || state.base.height < 1 || state.base.viewportWidth !== frameWidth || state.base.viewportHeight !== frameHeight) {
+      // Capture the untransformed SVG bounds. This also covers charts first rendered while their tab was hidden.
+      state.svg.style.transform = state.originalTransform;
+      state.svg.style.transformOrigin = state.originalTransformOrigin || "center center";
+      state.svg.style.transformBox = state.originalTransformBox || "border-box";
+      state.base = measureBase(state.svg);
+      if (!state.base) return false;
+      if (state.scale > MIN_SCALE) applyTransform();
+    }
+    return true;
+  }
+
+  function clamp(value, min, max) {
+    if (min > max) [min, max] = [max, min];
+    return Math.max(min, Math.min(max, value));
+  }
+
+  // Keep the graph clipped to the frame: when it is smaller than the frame it cannot be dragged outside;
+  // once enlarged beyond the frame, its edges cannot be dragged far enough to reveal empty space.
+  function clampAxis(translation, start, size, viewport, scale) {
+    const left = start + (1 - scale) * size / 2;
+    const right = left + size * scale;
+    const min = size * scale <= viewport ? -left : viewport - right;
+    const max = size * scale <= viewport ? viewport - right : -left;
+    return clamp(translation, min, max);
+  }
+
+  function applyTransform() {
+    const svg = state.svg, b = state.base;
+    if (!svg || !b) return;
+    if (state.scale <= MIN_SCALE + 0.0001) {
+      state.scale = MIN_SCALE; state.tx = 0; state.ty = 0;
+      svg.style.transform = state.originalTransform;
+      svg.style.transformOrigin = state.originalTransformOrigin || "center center";
+      svg.style.transformBox = state.originalTransformBox || "border-box";
+      svg.classList.remove("chart-is-zoomed", "chart-is-panning");
+      out.classList.remove("chart-zoom-clipping");
+      return;
+    }
+    state.tx = clampAxis(state.tx, b.left, b.width, b.viewportWidth, state.scale);
+    state.ty = clampAxis(state.ty, b.top, b.height, b.viewportHeight, state.scale);
+    svg.style.transformOrigin = "center center";
+    svg.style.transformBox = "border-box";
+    svg.style.transform = `translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`;
+    svg.classList.add("chart-is-zoomed");
+    out.classList.add("chart-zoom-clipping");
+  }
+
+  out.addEventListener("wheel", event => {
+    if (!isDesktop() || !ensureBase()) return;
+    const svg = state.svg;
+    if (!svg || !(event.target === svg || svg.contains(event.target))) return;
+    let wheelDelta = event.deltaY;
+    if (event.deltaMode === 1) wheelDelta *= 16;       // line-based wheel events
+    else if (event.deltaMode === 2) wheelDelta *= out.clientHeight; // page-based wheel events
+    const nextScale = clamp(state.scale * Math.exp(-wheelDelta * WHEEL_SENSITIVITY), MIN_SCALE, MAX_SCALE);
+    // Let the page scroll normally when the graph has already reached either zoom limit.
+    if (Math.abs(nextScale - state.scale) < 0.0001) return;
+
+    event.preventDefault();
+    const frame = out.getBoundingClientRect();
+    const px = event.clientX - (frame.left + out.clientLeft);
+    const py = event.clientY - (frame.top + out.clientTop);
+    const cx = state.base.left + state.base.width / 2;
+    const cy = state.base.top + state.base.height / 2;
+    const ratio = nextScale / state.scale;
+    // Zoom toward the mouse position rather than always toward the chart center.
+    state.tx = (px - cx) - (px - cx - state.tx) * ratio;
+    state.ty = (py - cy) - (py - cy - state.ty) * ratio;
+    state.scale = nextScale;
+    applyTransform();
+  }, { passive: false });
+
+  out.addEventListener("pointerdown", event => {
+    if (!isDesktop() || event.pointerType !== "mouse" || event.button !== 0 || !ensureBase()) return;
+    const svg = state.svg;
+    if (!svg || state.scale <= MIN_SCALE + 0.0001 || !(event.target === svg || svg.contains(event.target))) return;
+    state.drag = {
+      pointerId: event.pointerId,
+      startX: event.clientX, startY: event.clientY,
+      startTx: state.tx, startTy: state.ty,
+      moved: false
+    };
+  });
+
+  out.addEventListener("pointermove", event => {
+    const drag = state.drag;
+    if (!isDesktop() || !drag || drag.pointerId !== event.pointerId || !state.svg) return;
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+    if (!drag.moved) {
+      drag.moved = true;
+      state.svg.classList.add("chart-is-panning");
+      try { state.svg.setPointerCapture(event.pointerId); } catch (_) {}
+    }
+    event.preventDefault();
+    state.tx = drag.startTx + dx;
+    state.ty = drag.startTy + dy;
+    applyTransform();
+  }, { passive: false });
+
+  function finishDrag(event) {
+    const drag = state.drag;
+    if (!drag || (event && drag.pointerId !== event.pointerId)) return;
+    state.drag = null;
+    state.svg?.classList.remove("chart-is-panning");
+    if (drag.moved) {
+      state.suppressClick = true;
+      requestAnimationFrame(() => requestAnimationFrame(() => { state.suppressClick = false; }));
+    }
+    try {
+      if (state.svg?.hasPointerCapture?.(drag.pointerId)) state.svg.releasePointerCapture(drag.pointerId);
+    } catch (_) {}
+  }
+  out.addEventListener("pointerup", finishDrag);
+  out.addEventListener("pointercancel", finishDrag);
+  out.addEventListener("lostpointercapture", finishDrag);
+  out.addEventListener("click", event => {
+    if (!state.suppressClick) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+  }, true);
+
+  const observer = new MutationObserver(() => {
+    const svg = currentSvg();
+    if (svg !== state.svg) requestAnimationFrame(() => {
+      const latest = currentSvg();
+      if (latest !== state.svg) attachSvg(latest);
+    });
+  });
+  observer.observe(out, { childList: true });
+
+  window.addEventListener("resize", () => {
+    // A resized chart has new natural dimensions; reset rather than leaving a stale pan offset.
+    attachSvg(currentSvg());
+  }, { passive: true });
+
+  if (typeof desktop.addEventListener === "function") {
+    desktop.addEventListener("change", () => attachSvg(currentSvg()));
+  }
+
+  attachSvg(currentSvg());
+})();
+</script>
+
 </body>
 </html>
