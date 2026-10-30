@@ -1463,7 +1463,89 @@ body.fx-pulse .fx-pulse-dot{display:inline;animation:fxPulse 1.6s ease-out infin
    Флаг __betaOn и класс body.beta-re оставлены, потому что на них опираются остальные скрипты. */
 window.__betaOn = true;
 document.body.classList.add("beta-re");
+/* Раскладка ПК (вкладки слева, фильтры в шторке справа) включается до первой отрисовки страницы,
+   чтобы при загрузке не мелькал старый вид и фильтры не появлялись по центру. Класс fr-boot прячет
+   фильтры на странице, пока шторка их не заберёт (его снимает скрипт шторки). */
+(() => {
+  const b = document.body, ls = k => { try { return localStorage.getItem(k) === "1"; } catch (e) { return false; } };
+  b.classList.add("side-nav"); if (ls("chatstats.sideNavCollapsed.v1")) b.classList.add("side-collapsed");
+  if (matchMedia("(min-width:721px)").matches) { b.classList.add("filters-right", "fr-boot"); if (ls("chatstats.filtersRightCollapsed.v1")) b.classList.add("fr-collapsed"); }
+  setTimeout(() => b.classList.remove("fr-boot"), 4000); // страховка
+})();
 </script>
+<script id="ios-emoji">
+/* ===================== Смайлы в стиле iOS =====================
+   Картинки Apple-эмодзи из пакета emoji-datasource-apple (jsdelivr). Используются в фоновых частицах
+   и в реакциях. Нет сети или картинки — остаётся обычный системный смайл. */
+(() => {
+  const CDN = "https://cdn.jsdelivr.net/npm/emoji-datasource-apple@16.0.0/img/apple/64/";
+  const RE = /(?:\p{Regional_Indicator}{2}|[#*0-9]\uFE0F?\u20E3|\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?)*)/gu;
+  // Имена файлов: коды символов через дефис; у части смайлов нужен или не нужен вариант-селектор FE0F.
+  function variants(e){
+    const cps = [...e].map(c => c.codePointAt(0).toString(16));
+    const full = cps.join("-"), bare = cps.filter(h => h !== "fe0f").join("-"), out = [full, bare];
+    const withSel = []; cps.filter(h => h !== "fe0f").forEach((h, i, a) => { withSel.push(h); if (parseInt(h, 16) < 0x3000 && h !== "200d" && (a[i + 1] === "200d" || i === a.length - 1)) withSel.push("fe0f"); });
+    out.push(withSel.join("-"));
+    return [...new Set(out)];
+  }
+  const imgs = new Map(), listeners = new Set();
+  // Картинка для холста: загружается один раз; пока не готова — null.
+  function img(e){
+    let r = imgs.get(e);
+    if (!r) {
+      const v = variants(e); r = {el:new Image(), i:0, ok:false, dead:false};
+      r.el.crossOrigin = "anonymous"; r.el.decoding = "async";
+      r.el.onload = () => { r.ok = true; listeners.forEach(f => { try { f(e); } catch (err) {} }); };
+      r.el.onerror = () => { if (++r.i < v.length) r.el.src = CDN + v[r.i] + ".png"; else r.dead = true; };
+      r.el.src = CDN + v[0] + ".png"; imgs.set(e, r);
+    }
+    return r.ok ? r.el : null;
+  }
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;"}[c]));
+  // Разметка для страницы: <img> с запасными именами файлов и возвратом к тексту при неудаче.
+  function html(e){
+    const v = variants(e);
+    return `<img class="ios-emo" alt="${esc(e)}" draggable="false" crossorigin="anonymous" src="${CDN + v[0]}.png" data-v="${v.join(",")}" data-vi="0" onerror="__iosEmoji.fail(this)">`;
+  }
+  function fail(el){
+    const v = (el.dataset.v || "").split(","), i = Number(el.dataset.vi || 0) + 1;
+    if (i < v.length) { el.dataset.vi = String(i); el.src = CDN + v[i] + ".png"; }
+    else el.replaceWith(document.createTextNode(el.alt));
+  }
+  // Замена смайлов в текстовых узлах внутри блока (поля ввода, списки и SVG не трогаются).
+  const SKIP = "script,style,textarea,input,select,option,svg,.ios-emo,[data-no-emo]";
+  function apply(root){
+    if (!root || root.nodeType !== 1) return;
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {acceptNode:n => { RE.lastIndex = 0; return n.parentElement && !n.parentElement.closest(SKIP) && RE.test(n.nodeValue) ? 1 : 2; }});
+    const list = []; while (w.nextNode()) list.push(w.currentNode);
+    list.forEach(n => {
+      const t = n.nodeValue, frag = document.createDocumentFragment(); let last = 0; RE.lastIndex = 0; let m;
+      while ((m = RE.exec(t))) {
+        if (m.index > last) frag.append(t.slice(last, m.index));
+        const tpl = document.createElement("template"); tpl.innerHTML = html(m[0]); frag.append(tpl.content);
+        last = m.index + m[0].length;
+      }
+      if (last < t.length) frag.append(t.slice(last));
+      n.replaceWith(frag);
+    });
+  }
+  window.__iosEmoji = {img, html, fail, apply, onLoad:f => listeners.add(f), variants};
+  // Блоки с реакциями: вкладка «Реакции», реакции в профиле, «Любимая реакция» в таблицах.
+  const SCOPES = "#re-out, .rx-emo-scope";
+  let q = new Set(), raf = 0;
+  new MutationObserver(ms => {
+    ms.forEach(m => m.addedNodes.forEach(n => {
+      if (n.nodeType === 3) n = n.parentElement; if (!n || n.nodeType !== 1) return;
+      const s = n.closest(SCOPES); if (s) q.add(s); else n.querySelectorAll?.(SCOPES).forEach(x => q.add(x));
+    }));
+    if (q.size && !raf) raf = requestAnimationFrame(() => { raf = 0; const l = [...q]; q = new Set(); l.forEach(apply); });
+  }).observe(document.documentElement, {childList:true, subtree:true});
+})();
+</script>
+<style id="ios-emoji-css">.ios-emo{display:inline-block;width:1.2em;height:1.2em;vertical-align:-.22em;object-fit:contain;user-select:none}</style>
+<style id="fr-boot-css">
+body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot main #ch-types,body.fr-boot header #ult-toggle,body.fr-boot header #vk-toggle{visibility:hidden!important}
+</style>
 <main>
   <div id="shared">
     <div class="filters">
@@ -1488,7 +1570,6 @@ document.body.classList.add("beta-re");
     </div>
     <div class="filters chats-toolbar-controls" id="chats-toolbar-controls" hidden>
         <label class="checkline"><input type="checkbox" id="compare-chats">Сравнение</label>
-        <label class="checkline"><input type="checkbox" id="stats-chats" checked>Среднее и медиана</label>
         <div class="excluded-rows-host" id="chats-excluded-controls" hidden></div>
       <div class="table-export-actions chats-copy-action"><button class="mini copy-btn" id="copy-chats-image" title="Копировать как изображение">Копировать</button><span class="hint" id="copy-chats-status"></span></div>
     </div>
@@ -1525,7 +1606,6 @@ document.body.classList.add("beta-re");
     <div class="filters">
       <label class="checkline"><input type="checkbox" id="hide-left-participants">Убрать вышедших</label>
       <label class="checkline"><input type="checkbox" id="compare-participants">Сравнение</label>
-      <label class="checkline"><input type="checkbox" id="stats-participants" checked>Среднее и медиана</label>
       <div class="field"><label for="participants-top">Количество участников</label>
         <select id="participants-top">
           <option value="5">Топ-5 участников</option>
@@ -1976,7 +2056,7 @@ document.body.classList.add("beta-re");
     <div class="quick-ranges" id="theme-bases" role="group" aria-label="Фон сайта" style="margin:0 0 10px"></div>
     <div class="theme-grid" id="theme-grid"></div>
     <h2>Эффекты</h2>
-    <div class="filters"><label class="checkline" title="При переходе на другую вкладку блоки страницы плавно появляются по очереди — сверху вниз. Выключи, если хочется, чтобы всё показывалось сразу"><input type="checkbox" id="set-tab-anim" checked>Плавное появление блоков при смене вкладки</label><label class="checkline" title="Цвет каждого участника в графиках — лёгкий градиент: начало темнее, конец светлее. Работает и с готовыми палитрами"><input type="checkbox" id="set-soft-grad" checked>Лёгкий градиент в цветах участников</label><label class="checkline" title="Призовые места в таблицах (1 — радужный перелив, 2 — серебряный, 3 — бронзовый), победитель дуэли, номинанты «Итогов года» и максимальные достижения переливаются голографическим градиентом. В скопированных картинках — обычный текст"><input type="checkbox" id="set-holo-text">Переливающийся текст у победителей</label><label class="checkline" title="Карточки достижений, профиля, итогов года, сравнения, хаба и тем наклоняются за курсором, на них появляется блик; у алмазных достижений — радужная голограмма"><input type="checkbox" id="set-holo">3D-наклон и голографические блики на карточках</label></div>
+    <div class="filters"><label class="checkline" title="Цвет каждого участника в графиках — лёгкий градиент: начало темнее, конец светлее. Работает и с готовыми палитрами"><input type="checkbox" id="set-soft-grad" checked>Лёгкий градиент в цветах участников</label><label class="checkline" title="Призовые места в таблицах (1 — радужный перелив, 2 — серебряный, 3 — бронзовый), победитель дуэли, номинанты «Итогов года» и максимальные достижения переливаются голографическим градиентом. В скопированных картинках — обычный текст"><input type="checkbox" id="set-holo-text">Переливающийся текст у победителей</label><label class="checkline" title="Карточки достижений, профиля, итогов года, сравнения, хаба и тем наклоняются за курсором, на них появляется блик; у алмазных достижений — радужная голограмма"><input type="checkbox" id="set-holo">3D-наклон и голографические блики на карточках</label></div>
     <div class="filters" id="fx-list"></div>
     <div class="filters">
       <div class="field"><label for="fx-season-kind">Частицы на фоне</label><select id="fx-season-kind"></select></div>
@@ -1998,12 +2078,8 @@ document.body.classList.add("beta-re");
     <p class="hint">Как выглядят панели фильтров над таблицами и графиками.</p>
     <div class="filters">
       <label class="checkline" title="Галочки вроде «Убрать вышедших», «Сравнение», «Тепловая заливка» собираются в одно выпадающее меню"><input type="checkbox" id="set-compact-filters">Компактные фильтры: галочки в меню «Параметры»</label>
-      <label class="checkline" title="Скруглённые панели, переключатели вместо галочек, своя стрелка у списков"><input type="checkbox" id="set-filters-v3" checked>Современный вид фильтров</label>
-      <label class="checkline" title="Вместо системных выпадающих списков — аккуратное меню с отметкой выбранного и поиском в длинных списках. Только на ПК"><input type="checkbox" id="set-modern-select" checked>Современные выпадающие списки</label>
       <label class="checkline" title="Тонкая цветная линия у каждого фильтра: цвет зависит от смысла (период, чат, показатель, количество, вид, экспорт)"><input type="checkbox" id="set-filter-colors">Цветные метки у фильтров</label>
-      <label class="checkline"><input type="checkbox" id="set-statrows">Строки «Среднее» и «Медиана» в итогах таблиц</label>
-      <label class="checkline"><input type="checkbox" id="set-statrows-toggle">Показывать переключатель «Среднее и медиана» над таблицами</label>
-    </div>
+      </div>
     <div class="fcat-legend" id="fcat-legend"><span data-fcat="period"><i></i>период и даты</span><span data-fcat="scope"><i></i>чат и кто</span><span data-fcat="what"><i></i>что показывать</span><span data-fcat="amount"><i></i>количество и шкала</span><span data-fcat="look"><i></i>оформление</span><span data-fcat="opts"><i></i>параметры-галочки</span><span data-fcat="export"><i></i>экспорт</span><span data-fcat="data"><i></i>данные и импорт</span></div>
     <h2>Участники</h2>
     <p class="hint">Имена, user_pk из API, даты вступления и цвета участников. Цвет используется на всех графиках, где участник не перекрашен в настройке графика. После сохранения страница обновится.</p>
@@ -2041,16 +2117,8 @@ document.body.classList.add("beta-re");
     <h2>Экспериментально</h2>
     <p class="hint">Дополнения к таблицам «Участники» и «Чаты». Можно включить и выключить в любой момент.</p>
     <div class="filters">
-      <label class="checkline" title="Только для компьютера: на телефоне остаётся нижняя навигация"><input type="checkbox" id="exp-sidenav">Вкладки слева (только ПК)</label>
       <label class="checkline in-sidenav-only"><input type="checkbox" id="exp-sidenav-icons">Боковая панель свёрнута и выезжает при наведении (снять — закрепить открытой)</label>
-      <label class="checkline" title="Вкладки слева, фильтры, Ultimate и VK — в шторке справа, по центру только таблица или график"><input type="checkbox" id="exp-filters-right">Фильтры справа (только ПК)</label>
-      <label class="checkline"><input type="checkbox" id="exp-spark">Мини-графики в строках таблиц</label>
       <label class="checkline"><input type="checkbox" id="exp-bars">Полоски-заливки в ячейках</label>
-      <label class="checkline"><input type="checkbox" id="exp-hist">Мини-гистограммы в ячейках всех таблиц</label>
-      <label class="checkline"><input type="checkbox" id="exp-anom">Подсветка аномальных дней</label>
-      <div class="field"><label for="exp-anom-k">Порог аномалии</label>
-        <select id="exp-anom-k"><option value="1.5">1,5σ</option><option value="2">2σ</option><option value="2.5">2,5σ</option><option value="3">3σ</option></select>
-      </div>
       <label class="checkline"><input type="checkbox" id="quiet-on">«Тихие участники» на вкладке «Участники»</label>
       <div class="field"><label for="quiet-days">Тихий — молчит дней</label><select id="quiet-days"><option value="3">3+ дня</option><option value="5">5+ дней</option><option value="7">7+ дней</option><option value="14">14+ дней</option></select></div>
     </div>
@@ -3837,11 +3905,8 @@ function cPeriodLabel(){
 
 /* ---------- Аномалии (экспериментально) ---------- */
 const ANOM_KEY = "chatstats.anomalies.v1", ANOM_HI = "#ffe066", ANOM_LO = "#5ad1ff";
-let ANOM = {on:false, k:2};
-try {
-  const j = JSON.parse(localStorage.getItem(ANOM_KEY) || "null");
-  if (j) ANOM = {on:!!j.on, k:[1.5, 2, 2.5, 3].includes(Number(j.k)) ? Number(j.k) : 2};
-} catch (e) {}
+// Подсветка аномальных дней убрана (2026.10.30): флаг выключен навсегда, связанный код ничего не рисует.
+const ANOM = {on:false, k:2};
 // z-оценки ряда; null, если ряд слишком короткий или без разброса.
 function anomalyScores(values){
   const n = values.length; if (!ANOM.on || n < 7) return null;
@@ -5830,8 +5895,9 @@ function heatRowsChart(customRanges = false){
 }
 /* ---------- Экспериментально: мини-графики и полоски в таблицах ---------- */
 const EXP_KEY = "chatstats.exp.v1", EXP_TABLES = [["participants-table", "users"], ["chat-rank-table", "chats"]];
-let EXP = {spark: false, bars: false};
-try { const j = JSON.parse(localStorage.getItem(EXP_KEY) || "null"); if (j) EXP = {spark: !!j.spark, bars: !!j.bars}; } catch (e) {}
+// Мини-графики «Динамика» включены всегда; столбец скрывается в меню «Столбцы», как любой другой.
+let EXP = {spark: true, bars: false};
+try { const j = JSON.parse(localStorage.getItem(EXP_KEY) || "null"); if (j) EXP.bars = !!j.bars; } catch (e) {}
 
 function sparkSvg(a){
   if (!a || !a.length) return '<span class="spark-empty">—</span>';
@@ -5909,10 +5975,10 @@ function decorateTables(){
   EXP_TABLES.forEach(([id, ent]) => { const t = $(id); if (t) decorateTable(t, ent); });
 }
 (function(){
-  const sp = $("exp-spark"), br = $("exp-bars");
-  sp.checked = EXP.spark; br.checked = EXP.bars;
-  sp.onchange = br.onchange = () => {
-    EXP = {spark: sp.checked, bars: br.checked};
+  const br = $("exp-bars");
+  if (br) br.checked = EXP.bars;
+  if (br) br.onchange = () => {
+    EXP = {spark: true, bars: br.checked};
     try { localStorage.setItem(EXP_KEY, JSON.stringify(EXP)); } catch (e) {}
     try { render(); } catch (e) {}
     try { renderChatRank(); } catch (e) {}
@@ -6700,19 +6766,6 @@ $("fc-copy-table").onclick = () => {
   copyPngToStatus(() => tableImageBlob("forecast-table", title), $("fc-copy-status"), "Таблица скопирована");
 };
 $("fc-metric").onchange = renderForecast;
-
-/* ---------- Настройки аномалий ---------- */
-(function(){
-  const box = $("exp-anom"), k = $("exp-anom-k");
-  if (!box || !k) return;
-  box.checked = ANOM.on; k.value = String(ANOM.k);
-  const apply = () => {
-    ANOM = {on: box.checked, k: Number(k.value) || 2};
-    try { localStorage.setItem(ANOM_KEY, JSON.stringify(ANOM)); } catch (e) {}
-    if ($("tab-charts").classList.contains("active")) renderCharts();
-  };
-  box.onchange = apply; k.onchange = apply;
-})();
 
 // Экспорт и импорт локальных настроек дашборда (без статистики и API-ключа).
 (function installSettingsTransfer(){
@@ -10074,13 +10127,8 @@ function normChartList(list, metric){
   return list.map(u => ({...u, v:r1(u.v / Math.max(1, days.get(String(u.k))?.size || 1))})).sort((a, b) => b.v - a.v);
 }
 
-/* ===================== Среднее и медиана в итогах таблиц ===================== */
-function statRows(list, keys, lead){
-  if (list.length < 2 || SHOW_STATROWS === false) return "";
-  const med = a => { const s2 = [...a].sort((x, y) => x - y), m = s2.length >> 1; return s2.length % 2 ? s2[m] : (s2[m - 1] + s2[m]) / 2; };
-  const row = (label, f) => `<tr class="foot-stat">${lead(label)}${keys.map(k => { const v = f(list.map(u => Number(u[k]) || 0)); return `<td>${fmt(r1(v))}${NORM === "share" ? "%" : ""}</td>`; }).join("")}</tr>`;
-  return row("Среднее", a => a.reduce((s2, v) => s2 + v, 0) / a.length) + row("Медиана", med);
-}
+/* Строки «Среднее» и «Медиана» в итогах таблиц убраны (2026.10.30) */
+function statRows(){ return ""; }
 
 /* ===================== Гонка ===================== */
 var RACE = null, raceRaf = 0, raceSpeed = 1;
@@ -10291,38 +10339,8 @@ $("p-out").addEventListener("click", e => {
   if (b) { radarPeriod = b.dataset.rp; try { localStorage.setItem(RADAR_KEY, radarPeriod); } catch (err) {} renderProfile(); return; }
 });
 
-/* ===================== Эксперимент: мини-гистограммы в ячейках ===================== */
-const HIST_KEY = "chatstats.expHist.v1";
-var EXP_HIST = false;
-try { EXP_HIST = localStorage.getItem(HIST_KEY) === "1"; } catch (e) {}
-const HIST_TABLES = ["participants-table", "chat-rank-table", "records-table", "months-table", "days-table", "cmp-chats-table", "yr-top-table", "yr-chats-table", "mr-table", "mr-all-table", "s-people-table", "forecast-table", "time-table"];
-function applyCellHist(){
-  document.body.classList.toggle("exp-hist", EXP_HIST);
-  if (!EXP_HIST) return;
-  HIST_TABLES.forEach(id => {
-    const t = $(id); if (!t || !t.tBodies[0]) return;
-    const head = t.tHead?.rows[t.tHead.rows.length - 1], heads = head ? [...head.cells].map(c => c.textContent) : [];
-    const trs = [...t.tBodies[0].rows].filter(r => r.cells.length > 1);
-    if (!trs.length) return;
-    const ncol = Math.max(...trs.map(r => r.cells.length));
-    for (let c = 1; c < ncol; c++) {
-      if (/Место|№|#|Дата|дата|Срок|Впереди|%|Place|Date|Membership length|Ahead|Місце|Термін|Попереду|Месца|Тэрмін|Наперадзе|Орын|Күні|мерзімі|Алда/.test(heads[c] || "")) continue;
-      const cells = trs.map(r => r.cells[c]).filter(Boolean);
-      const vals = cells.map(td => { const s2 = td.textContent.trim(); if (/[A-Za-zА-Яа-яЁё]|\d{2}\.\d{2}\.\d{4}/.test(s2)) return null; const m = s2.replace(/[ \s]/g, "").match(/^-?\d+([.,]\d+)?/); return m ? parseFloat(m[0].replace(",", ".")) : null; });
-      if (vals.filter(v => v !== null).length < Math.max(2, cells.length * .6)) continue;
-      const mx = Math.max(0, ...vals.filter(v => v !== null)); if (!mx) continue;
-      cells.forEach((td, i) => { const v = vals[i]; if (v === null) return; td.classList.add("hcell"); td.style.setProperty("--hp", (v / mx * 100).toFixed(1) + "%"); td.style.setProperty("--ht", (v / mx).toFixed(3)); });
-    }
-  });
-}
-let histT = 0;
-new MutationObserver(() => { if (!EXP_HIST) return; clearTimeout(histT); histT = setTimeout(applyCellHist, 80); }).observe(document.body, {childList:true, subtree:true});
-(function(){
-  const box = $("exp-hist"); if (!box) return;
-  box.checked = EXP_HIST;
-  box.onchange = () => { EXP_HIST = box.checked; try { localStorage.setItem(HIST_KEY, EXP_HIST ? "1" : "0"); } catch (e) {} if (!EXP_HIST) document.querySelectorAll("td.hcell").forEach(td => { td.classList.remove("hcell"); td.style.removeProperty("--hp"); td.style.removeProperty("--ht"); }); applyCellHist(); };
-  applyCellHist();
-})();
+/* Мини-гистограммы в ячейках убраны (2026.10.30) */
+try { localStorage.removeItem("chatstats.expHist.v1"); localStorage.removeItem("chatstats.statRows.v1"); localStorage.removeItem("chatstats.anomalies.v1"); } catch (e) {}
 syncNormSeg();
 
 /* ===================== Гонка: экспорт в видео ===================== */
@@ -10529,20 +10547,6 @@ async function radarBlob(withList){
 document.addEventListener("click", e => {
   const b = e.target.closest?.("[data-radar-copy]"); if (!b) return;
   copyPngToStatus(() => radarBlob(b.dataset.radarCopy === "full"), $("p-radar-msg"), b.dataset.radarCopy === "full" ? "Радар с описанием скопирован" : "Радар скопирован");
-});
-
-/* ===================== Таблицы: показ среднего и медианы ===================== */
-const STATROWS_KEY = "chatstats.statRows.v1";
-var SHOW_STATROWS = true;
-try { SHOW_STATROWS = localStorage.getItem(STATROWS_KEY) !== "0"; } catch (e) {}
-["stats-participants", "stats-chats", "set-statrows"].forEach(id => { const c = $(id); if (c) c.checked = SHOW_STATROWS; });
-document.addEventListener("change", e => {
-  if (e.target.id !== "stats-participants" && e.target.id !== "stats-chats" && e.target.id !== "set-statrows") return;
-  SHOW_STATROWS = e.target.checked;
-  try { localStorage.setItem(STATROWS_KEY, SHOW_STATROWS ? "1" : "0"); } catch (err) {}
-  ["stats-participants", "stats-chats", "set-statrows"].forEach(id => { const c = $(id); if (c) c.checked = SHOW_STATROWS; });
-  try { render(); } catch (err) {}
-  try { renderChatRank(); } catch (err) {}
 });
 
 /* ===================== Общие мелочи ===================== */
@@ -13529,15 +13533,13 @@ function multiplesChart(){
     while (pops.length) { const pop = pops.pop(); pop._items.forEach(l => pop.before(l)); pop.remove(); }
   }
   function apply(){
-    document.body.classList.toggle("hide-statrows-toggle", !sttShow);
+    document.body.classList.add("hide-statrows-toggle");
     if (compact) build(); else unbuild();
-    const a = document.getElementById("set-compact-filters"), b = document.getElementById("set-statrows-toggle");
-    if (a) a.checked = compact; if (b) b.checked = sttShow;
+    const a = document.getElementById("set-compact-filters"); if (a) a.checked = compact;
     pops.forEach(count);
   }
   document.addEventListener("change", e => {
     if (e.target.id === "set-compact-filters") { compact = e.target.checked; try { localStorage.setItem(K_COMPACT, compact ? "1" : "0"); } catch (err) {} apply(); return; }
-    if (e.target.id === "set-statrows-toggle") { sttShow = e.target.checked; try { localStorage.setItem(K_STT, sttShow ? "1" : "0"); } catch (err) {} apply(); return; }
     const pop = e.target.closest && e.target.closest(".opt-pop"); if (pop) count(pop);
   });
   document.addEventListener("click", e => { pops.forEach(p => { if (p.open && !p.contains(e.target)) p.open = false; }); });
@@ -13611,17 +13613,17 @@ function multiplesChart(){
     toggle.title = collapsed ? "Закрепить панель открытой" : "Открепить: панель свернётся и будет выезжать при наведении";
     toggle.setAttribute("aria-pressed", collapsed ? "false" : "true");
     toggle.classList.toggle("pinned", !collapsed);
-    const a = document.getElementById("exp-sidenav"), c = document.getElementById("exp-sidenav-icons");
-    if (a) a.checked = on; if (c) c.checked = collapsed;
+    const c = document.getElementById("exp-sidenav-icons"); if (c) c.checked = collapsed;
     sync();
     // Графики подстраиваются под ширину области: перерисуем при смене раскладки.
     setTimeout(() => { try { window.dispatchEvent(new Event("resize")); } catch (e) {} }, 250);
   }
   let on = false, collapsed = false;
-  try { on = localStorage.getItem(KEY) === "1"; collapsed = localStorage.getItem(KEY_C) === "1"; } catch (e) {}
-  const save = () => { try { localStorage.setItem(KEY, on ? "1" : "0"); localStorage.setItem(KEY_C, collapsed ? "1" : "0"); } catch (e) {} };
+  // Вкладки слева на ПК включены всегда; запоминается только, свёрнута ли панель.
+  on = true;
+  try { collapsed = localStorage.getItem(KEY_C) === "1"; } catch (e) {}
+  const save = () => { try { localStorage.setItem(KEY, "1"); localStorage.setItem(KEY_C, collapsed ? "1" : "0"); } catch (e) {} };
   toggle.addEventListener("click", e => { e.stopPropagation(); collapsed = !collapsed; save(); apply(on, collapsed); });
-  document.getElementById("exp-sidenav")?.addEventListener("change", e => { on = e.target.checked; save(); apply(on, collapsed); });
   document.getElementById("exp-sidenav-icons")?.addEventListener("change", e => { collapsed = e.target.checked; save(); apply(on, collapsed); });
   new MutationObserver(() => sync()).observe(nav, {subtree:true, attributes:true, attributeFilter:["class", "data-tab"]});
   apply(on, collapsed);
@@ -13640,8 +13642,9 @@ function multiplesChart(){
   document.body.appendChild(dr);
   const body = dr.querySelector("#fd-body"), top = dr.querySelector("#fd-top");
   const moved = []; // [узел, метка-место]
-  let on = false, collapsed = false;
-  try { on = localStorage.getItem(KEY) === "1"; collapsed = localStorage.getItem(KEY_C) === "1"; } catch (e) {}
+  // Фильтры справа на ПК включены всегда; запоминается только, свёрнута ли шторка.
+  const on = true; let collapsed = false;
+  try { collapsed = localStorage.getItem(KEY_C) === "1"; } catch (e) {}
   const active = () => on && mq.matches;
   function park(node, dest){ const mark = document.createComment("fd"); node.before(mark); moved.push([node, mark]); dest.appendChild(node); }
   // Выбор участника (Профиль), пара для сравнения и кнопки копирования остаются на странице: поля помечены data-fr-keep.
@@ -13670,7 +13673,7 @@ function multiplesChart(){
   function candidates(){
     const out = [];
     document.querySelectorAll("main > .tab.active, main .tab.active .stat-content.active").forEach(sec => {
-      sec.querySelectorAll(":scope > .filters").forEach(f => out.push(f));
+      sec.querySelectorAll(":scope > .filters:not(.fr-keep)").forEach(f => out.push(f));
     });
     const sh = document.getElementById("shared");
     if (sh && !sh.hidden) sh.querySelectorAll(":scope > .filters").forEach(f => { if (!f.hidden) out.unshift(f); });
@@ -13679,6 +13682,7 @@ function multiplesChart(){
   }
   function mount(){
     restore();
+    document.body.classList.remove("fr-boot");
     const onSettings = document.querySelector("main > .tab.active")?.id === "tab-settings";
     document.body.classList.toggle("fr-settings", active() && onSettings);
     if (!active() || onSettings) return;
@@ -13697,8 +13701,7 @@ function multiplesChart(){
     tg.title = collapsed ? "Закрепить шторку открытой" : "Открепить: шторка свернётся и будет выезжать при наведении";
     tg.classList.toggle("pinned", !collapsed); tg.setAttribute("aria-pressed", collapsed ? "false" : "true");
     if (!collapsed) dr.classList.remove("fr-peek");
-    const c = document.getElementById("exp-filters-right"); if (c) c.checked = on;
-    if (act) mount(); else restore();
+    if (act) mount(); else { restore(); document.body.classList.remove("fr-boot"); }
     setTimeout(() => { try { window.dispatchEvent(new Event("resize")); } catch (e) {} }, 250);
   }
   const save = () => { try { localStorage.setItem(KEY, on ? "1" : "0"); localStorage.setItem(KEY_C, collapsed ? "1" : "0"); } catch (e) {} };
@@ -13707,6 +13710,7 @@ function multiplesChart(){
     if (!active()) return;
     const t = e.target.closest && e.target.closest("nav button, .nav-sheet button, [data-gtab], #stats-subnav [data-stats-view], [data-hub-go], [data-open-profile]");
     if (!t) return;
+    document.body.classList.add("fr-boot"); // старые фильтры не мелькают по центру, пока идёт перенос
     restore();
     setTimeout(mount, 60);
   }, true);
@@ -13732,14 +13736,19 @@ function multiplesChart(){
   }, {passive:true});
   document.documentElement.addEventListener("mouseleave", () => { if (dr.classList.contains("fr-peek") && !peekT) peekT = setTimeout(peekClose, 400); });
   dr.querySelector("#fd-rail").addEventListener("click", () => { collapsed = false; save(); apply(); });
-  document.getElementById("exp-filters-right")?.addEventListener("change", e => {
-    on = e.target.checked; save();
-    // Фильтры справа подразумевают вкладки слева.
-    const sn = document.getElementById("exp-sidenav");
-    if (on && sn && !sn.checked) { sn.checked = true; sn.dispatchEvent(new Event("change", {bubbles:true})); }
-    apply();
-  });
   mq.addEventListener ? mq.addEventListener("change", apply) : mq.addListener(apply);
+  // Перерисовка вкладки может создать новые панели фильтров — они сразу переезжают в шторку,
+  // а не остаются «лишними кнопками» по центру до следующего обновления.
+  let moRaf = 0;
+  const mainEl = document.querySelector("main");
+  if (mainEl) new MutationObserver(() => {
+    if (moRaf || !active()) return;
+    moRaf = requestAnimationFrame(() => {
+      moRaf = 0;
+      if (!active() || document.querySelector("main > .tab.active")?.id === "tab-settings") return;
+      if (candidates().some(n => !dr.contains(n))) mount();
+    });
+  }).observe(mainEl, {childList:true, subtree:true});
   window.__filterDrawer = {mount, restore, apply, rekeep};
   setTimeout(apply, 0);
 })();
@@ -13957,7 +13966,6 @@ function multiplesChart(){
     ["border", "Бегущая рамка у победителей"],
     ["glass", "Стеклянные подсказки и всплывающие меню"],
     ["parallax", "Мягкий параллакс-фон в Хабе и Итогах года"],
-    ["reveal", "Плавное появление блоков при прокрутке"],
     ["confetti", "Конфетти: день рождения, новое достижение, победа в дуэли"],
     ["fireworks", "Салют в «Итогах года» (декабрь и январь)"],
     ["season", "Частицы на фоне (вид выбирается ниже)"],
@@ -13969,6 +13977,7 @@ function multiplesChart(){
   ];
   let FX = {}; LIST.forEach(([k]) => FX[k] = true);
   try { Object.assign(FX, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
+  FX.reveal = true; // появление блоков при прокрутке включено всегда
   const RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   window.FX = FX;
   const on = k => FX[k] && !RM;
@@ -14277,14 +14286,21 @@ function multiplesChart(){
   }
   // Эмодзи и значки рисуются один раз в маленький холст и дальше просто копируются: так в десятки раз быстрее, чем fillText каждый кадр.
   const spriteCache = new Map();
+  // Смайлы рисуются картинками iOS; пока картинка грузится — системным шрифтом, потом спрайт пересоздаётся.
+  const isEmo = ch => /\p{Extended_Pictographic}/u.test(ch);
+  window.__iosEmoji?.onLoad(() => spriteCache.clear());
   function glyphSprite(ch, px, col){
     px = Math.max(8, Math.round(px / 2) * 2);
     const key = ch + "|" + px + "|" + col; let c = spriteCache.get(key); if (c) return c;
     const d = Math.min(2, devicePixelRatio || 1), sz = Math.ceil(px * 1.5);
     c = document.createElement("canvas"); c.width = c.height = Math.ceil(sz * d); c.__s = sz;
     const x = c.getContext("2d"); x.scale(d, d);
-    x.font = `${px}px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",system-ui,sans-serif`; x.textAlign = "center"; x.textBaseline = "middle"; x.fillStyle = col || "#fff";
-    x.fillText(ch, sz / 2, sz / 2);
+    const im = isEmo(ch) && window.__iosEmoji ? window.__iosEmoji.img(ch) : null;
+    if (im) { const w = px * 1.15; x.drawImage(im, (sz - w) / 2, (sz - w) / 2, w, w); }
+    else {
+      x.font = `${px}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",system-ui,sans-serif`; x.textAlign = "center"; x.textBaseline = "middle"; x.fillStyle = col || "#fff";
+      x.fillText(ch, sz / 2, sz / 2);
+    }
     if (spriteCache.size > 400) spriteCache.clear();
     spriteCache.set(key, c); return c;
   }
@@ -14546,7 +14562,12 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.10.30-1", date:"2026-10-30", title:"Реакции и события — в релизе", items:[
+  {v:"2026.10.30-2", date:"2026-10-30", title:"Реакции и события — в релизе", items:[
+    {tag:"fix", area:"Статистика", text:"Реакции в таблицах «Статистики» видны сразу, без захода на другие вкладки; в строке чата — реакции этого чата, в Colony Ultimate — сумма его чатов."},
+    {tag:"imp", area:"Интерфейс", text:"Всегда включены: плавное появление блоков при смене вкладки и при прокрутке, современные фильтры и списки, таблицы без линий, вкладки слева и фильтры справа на ПК, мини-графики «Динамика» (столбец скрывается в меню «Столбцы»)."},
+    {tag:"del", area:"Таблицы", text:"Убраны строки и переключатель «Среднее и медиана», мини-гистограммы в ячейках, подсветка аномальных дней и порог аномалии."},
+    {tag:"new", area:"Эффекты", text:"Смайлы iOS в падающих частицах и в реакциях."},
+    {tag:"fix", area:"Интерфейс", text:"При загрузке и смене вкладки больше не мелькают старый вид и фильтры по центру; новые панели фильтров сразу уезжают в шторку."},
     {tag:"new", area:"Реакции", text:"Реальные данные API вместо тестовых: кто, кому и какие реакции ставит. Дата и смайл записываются с 28.10.2026, более ранняя история («кто → кому») входит в «Всё время»."},
     {tag:"new", area:"События", text:"Настоящие события «Мир Гарри Поттера», «Мир Наруто» и «Греческая мифология»: уровни, звания и опыт участников из API; прогноз идущего события считается по таблице уровней."},
     {tag:"imp", area:"Реакции", text:"Данные встроены в сайт и, если сервер статистики их отдаёт, обновляются при открытии. Участники из Telegram сопоставляются с участниками сайта автоматически."},
@@ -15725,7 +15746,7 @@ body.holo-text-on tr > td.medal-3:first-child{background-image:linear-gradient(1
   const mq = matchMedia("(min-width:721px) and (pointer:fine)");
   const SCOPE = ".filters select, .section-head select, #filter-drawer select, .race-ctl select, .stats-quick select";
   const SKIP = ".chart-settings-panel, .chart-settings-content, .msel-pop, .s-cloud-dlg, table";
-  let on = true; try { on = localStorage.getItem(KEY) !== "0"; } catch (e) {}
+  const on = true; // современные выпадающие списки — всегда (на ПК)
   const desc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
   const descI = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "selectedIndex");
   const list = new Set();
@@ -15856,13 +15877,12 @@ body.holo-text-on tr > td.medal-3:first-child{background-image:linear-gradient(1
   setInterval(() => { list.forEach(sel => { if (!sel.isConnected) { list.delete(sel); return; } refresh(sel); }); }, 1500);
   function apply(){
     if (on && mq.matches) scan(); else { close(); [...list].forEach(unenhance); }
-    const cb = document.getElementById("set-modern-select"); if (cb) cb.checked = on;
   }
   document.addEventListener("change", e => {
-    if (e.target.id === "set-modern-select") { on = e.target.checked; try { localStorage.setItem(KEY, on ? "1" : "0"); } catch (err) {} apply(); }
-    if (e.target.id === "set-filters-v3") { document.body.classList.toggle("fv3-off", !e.target.checked); try { localStorage.setItem("chatstats.filtersV3.v1", e.target.checked ? "1" : "0"); } catch (err) {} }
   });
-  try { const v3 = localStorage.getItem("chatstats.filtersV3.v1") !== "0"; document.body.classList.toggle("fv3-off", !v3); const c = document.getElementById("set-filters-v3"); if (c) c.checked = v3; } catch (e) {}
+  // Современный вид фильтров и выпадающих списков включён всегда.
+  document.body.classList.remove("fv3-off");
+  try { localStorage.removeItem("chatstats.filtersV3.v1"); localStorage.removeItem(KEY); } catch (e) {}
   mq.addEventListener ? mq.addEventListener("change", apply) : mq.addListener(apply);
   setTimeout(apply, 0);
 })();
@@ -17433,7 +17453,7 @@ tbody tr.qv-able{cursor:pointer}
   addEventListener("appinstalled", () => { deferred = null; toastMsg("Приложение установлено 🎉"); });
   if (/^https?:$/.test(location.protocol)) {
     if (!qs('link[rel="manifest"]')) { const l = document.createElement("link"); l.rel = "manifest"; l.href = "manifest.webmanifest"; document.head.appendChild(l); }
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").then(r => { window.__pwa.reg = r; }).catch(() => {});
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js", {updateViaCache:"none"}).then(r => { window.__pwa.reg = r; try { r.update(); } catch (e) {} }).catch(() => {});
   }
   function syncAbout(){
     const box = $("about-box"); if (!box) return;
@@ -17795,11 +17815,12 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
   /* ---------- флаги вида: компактно, без линий, стекло ---------- */
   const FLAGS = {
     compact:{key:"chatstats.tableCompact.v1", cls:"tbl-compact", ids:["set-tbl-compact"]},
-    noborders:{key:"chatstats.tableNoBorders.v1", cls:"tbl-noborders", ids:["set-tbl-noborders"]},
+    noborders:{key:"chatstats.tableNoBorders.v1", cls:"tbl-noborders", ids:[]},
     glass:{key:"chatstats.glassUi.v1", cls:"glass-ui", ids:["exp-glass"]},
     cardscompact:{key:"chatstats.cardsCompact.v1", cls:"cards-compact", ids:["set-cards-compact"]},
   };
-  const isOn = f => lsGet(FLAGS[f].key, "0") === "1";
+  // «Без линий — только под заголовком» включено всегда
+  const isOn = f => f === "noborders" || lsGet(FLAGS[f].key, "0") === "1";
   function apply(){
     Object.keys(FLAGS).forEach(f => {
       const on = isOn(f), F = FLAGS[f];
@@ -17830,7 +17851,6 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
     const box = document.createElement("div"); box.className = "fd-look";
     box.innerHTML = `<b>Вид таблицы</b>`
       + `<label class="checkline" title="Меньше отступы в ячейках: строки ниже, столбцы уже"><input type="checkbox" data-tview="compact">Компактные таблицы</label>`
-      + `<label class="checkline" title="Убрать все линии внутри таблиц, оставить только линию под заголовком"><input type="checkbox" data-tview="noborders">Без линий — только под заголовком</label>`
       + `<label class="checkline" title="Показывать таблицы карточками. Отдельную таблицу можно переключить кнопкой «Карточки» рядом со «Столбцами»"><input type="checkbox" data-tview="cards">Карточки вместо таблиц</label>`
       + `<label class="checkline" title="Карточки меньше и стоят по несколько в ряд"><input type="checkbox" data-tview="cardscompact">Компактные карточки — несколько в ряд</label>`;
     host.appendChild(box); syncLook();
@@ -17845,12 +17865,11 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
       const p = document.createElement("p"); p.className = "hint"; p.textContent = "Как выглядят таблицы на всех вкладках. Это же можно переключить в меню «Таблица» у любой таблицы.";
       const box = document.createElement("div"); box.className = "filters";
       box.innerHTML = `<label class="checkline" title="Меньше отступы в ячейках: строки ниже, столбцы уже"><input type="checkbox" id="set-tbl-compact">Компактные таблицы</label>`
-        + `<label class="checkline" title="Убрать все линии внутри таблиц, оставить только линию под заголовком"><input type="checkbox" id="set-tbl-noborders">Без линий — только под заголовком</label>`
         + `<label class="checkline" title="Только для компьютера. Отдельную таблицу можно переключить кнопкой «Карточки» рядом со «Столбцами»"><input type="checkbox" id="set-tbl-cards-desk">Показывать таблицы карточками на ПК</label>`
         + `<label class="checkline" title="Карточки меньше и стоят по несколько в ряд: на ПК — сколько поместится, на телефоне — по две"><input type="checkbox" id="set-cards-compact">Компактные карточки — несколько в ряд</label>`;
       legend.after(h, p, box);
     }
-    const side = $("exp-sidenav");
+    const side = $("exp-sidenav-icons");
     if (side && !$("exp-glass")) {
       const l = document.createElement("label"); l.className = "checkline";
       l.title = "Карточки, таблицы, графики и панели становятся полупрозрачными, с размытием фона — как в iOS. Скопированные и скачанные картинки тоже получают стекло. На слабых телефонах может немного снизить плавность";
@@ -17879,7 +17898,6 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
     const v = document.createElement("div"); v.className = "hc-view";
     v.innerHTML = `<h4>Вид таблицы</h4>`
       + `<label class="hc-vitem"><input type="checkbox" data-tview="compact"${isOn("compact") ? " checked" : ""}><span>Компактно</span></label>`
-      + `<label class="hc-vitem"><input type="checkbox" data-tview="noborders"${isOn("noborders") ? " checked" : ""}><span>Без линий, кроме заголовка</span></label>`
       + `<label class="hc-vitem"><input type="checkbox" data-tview="cardscompact"${isOn("cardscompact") ? " checked" : ""}><span>Компактные карточки, несколько в ряд</span></label>`;
     pop.appendChild(v);
   }
@@ -19130,9 +19148,8 @@ main > .tab.tab-fade{animation:tabFade .32s ease both}
 (function(){
   "use strict";
   const KEY = "chatstats.tabAnim.v1";
-  let on = true; try { on = localStorage.getItem(KEY) !== "0"; } catch (e) {}
-  const cb = document.getElementById("set-tab-anim");
-  if (cb) { cb.checked = on; cb.addEventListener("change", () => { on = cb.checked; try { localStorage.setItem(KEY, on ? "1" : "0"); } catch (e) {} }); }
+  // Включено всегда (при «уменьшить движение» в системе анимация не запускается).
+  const on = true; try { localStorage.removeItem(KEY); } catch (e) {}
   const main = document.querySelector("main"); if (!main) return;
   const reduce = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
   const BIG = ".wrap,.chart,table,svg,.tiles,.hub-grid,.hub-feed";
@@ -19799,7 +19816,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
   .re-heat{gap:2px;font-size:9px;grid-template-columns:22px repeat(24,minmax(0,1fr))}
 }
 </style>
-<script id="colony-rx-data" type="application/json">{"generated_at":"2026-10-30T15:19:50.565733+00:00","timezone":"Europe/Moscow","users":{"282489954":["polozovdaniel","Danil","Lebedev"],"8880257555":["fate_write","Golden Ambient",""],"930906071":["klarkik","Ivan","Sergeev"],"347549926":["aug_b","𝚊𝚞𝚐𝚞𝚜𝚝",""],"7928795272":["ginseng_de_mai","Lisa","Чан"],"457274349":["Alise_Suon","Алиса 💜",""],"600274098":["tata_ruw","tata","ruw"],"526673962":["snaperavenclaw","Александра","Градская"],"1356218071":["Gonnor_Ironbeard","(Mixer) 𝔊𝔬𝔫𝔫𝔬𝔯 𝔍𝔢𝔩𝔢𝔷𝔬𝔟𝔬𝔯𝔬𝔡𝔶𝔦",""],"585731542":["kindlylyly","Валентность",""],"660579527":["ervionn","Quandale","Dingle"],"6891603349":["prettysnape","влад","shnape"],"983725251":["luminouvv","anastasiia.h","Стейси"],"676243725":["valadalena","Влада","Шибаева"],"421699274":["VanDerLord1092","Diloroff",""],"94031322":["Cuteenot","Лекса",""],"354940148":["yOGuRtE","Ягор",""],"480247162":["yesetsissenov","Есет",""],"392234812":["Tom_Reynold","Tom",""],"544966106":["MariiaHommyak","Mariia",""],"943222377":["AveTaric","AveTatty",""],"6674389741":["kristi_aldo","Альона","✨️"],"1648306748":["DolWolf19","Dol",""],"110077035":["Tautiki","Tishina",""],"6504207841":["horacyczopek","Horacy","Czopek"],"679271589":["babyteef","Vanzha",""],"708596307":["","Пан Евджений",""],"5072796396":["","",""],"5752602790":["","",""],"6314372730":["","",""]},"hist":[[94031322,0,2],[94031322,347549926,4],[94031322,421699274,2],[94031322,457274349,2],[94031322,526673962,1],[94031322,585731542,3],[94031322,600274098,7],[94031322,930906071,2],[94031322,1356218071,2],[94031322,6891603349,1],[94031322,7928795272,5],[94031322,8880257555,1],[110077035,347549926,2],[282489954,0,35],[282489954,94031322,2],[282489954,347549926,779],[282489954,354940148,5],[282489954,392234812,3],[282489954,421699274,8],[282489954,457274349,66],[282489954,480247162,15],[282489954,526673962,33],[282489954,585731542,46],[282489954,600274098,68],[282489954,660579527,103],[282489954,676243725,10],[282489954,930906071,31],[282489954,983725251,54],[282489954,1356218071,5],[282489954,1648306748,38],[282489954,6674389741,1],[282489954,6891603349,43],[282489954,7928795272,68],[282489954,8880257555,444],[347549926,0,152],[347549926,94031322,7],[347549926,110077035,1],[347549926,282489954,449],[347549926,354940148,88],[347549926,392234812,67],[347549926,421699274,113],[347549926,457274349,454],[347549926,480247162,15],[347549926,526673962,357],[347549926,585731542,748],[347549926,600274098,809],[347549926,660579527,731],[347549926,676243725,64],[347549926,679271589,38],[347549926,708596307,73],[347549926,930906071,588],[347549926,943222377,40],[347549926,983725251,902],[347549926,1356218071,74],[347549926,1648306748,591],[347549926,6504207841,14],[347549926,6674389741,53],[347549926,6891603349,408],[347549926,7928795272,1287],[347549926,8880257555,804],[354940148,0,6],[354940148,282489954,20],[354940148,347549926,79],[354940148,392234812,1],[354940148,421699274,3],[354940148,457274349,15],[354940148,526673962,16],[354940148,585731542,38],[354940148,600274098,28],[354940148,660579527,14],[354940148,679271589,3],[354940148,708596307,3],[354940148,930906071,79],[354940148,983725251,19],[354940148,1356218071,5],[354940148,1648306748,2],[354940148,6504207841,3],[354940148,6891603349,15],[354940148,7928795272,51],[354940148,8880257555,5],[392234812,0,4],[392234812,282489954,14],[392234812,347549926,24],[392234812,421699274,10],[392234812,457274349,14],[392234812,480247162,3],[392234812,526673962,3],[392234812,585731542,27],[392234812,600274098,9],[392234812,660579527,14],[392234812,679271589,1],[392234812,708596307,1],[392234812,930906071,14],[392234812,943222377,1],[392234812,983725251,13],[392234812,1356218071,1],[392234812,6674389741,3],[392234812,6891603349,9],[392234812,7928795272,36],[392234812,8880257555,9],[421699274,0,4],[421699274,94031322,1],[421699274,282489954,3],[421699274,347549926,16],[421699274,354940148,4],[421699274,392234812,3],[421699274,457274349,3],[421699274,526673962,11],[421699274,585731542,4],[421699274,600274098,7],[421699274,679271589,1],[421699274,930906071,1],[421699274,983725251,9],[421699274,1356218071,2],[421699274,6674389741,1],[421699274,6891603349,1],[421699274,7928795272,10],[421699274,8880257555,1],[457274349,0,71],[457274349,94031322,4],[457274349,282489954,71],[457274349,347549926,379],[457274349,354940148,18],[457274349,392234812,17],[457274349,421699274,33],[457274349,526673962,165],[457274349,585731542,37],[457274349,600274098,341],[457274349,660579527,72],[457274349,676243725,16],[457274349,679271589,9],[457274349,708596307,4],[457274349,930906071,75],[457274349,943222377,2],[457274349,983725251,170],[457274349,1356218071,20],[457274349,1648306748,1],[457274349,6504207841,1],[457274349,6674389741,8],[457274349,6891603349,21],[457274349,7928795272,209],[457274349,8880257555,35],[480247162,282489954,1],[480247162,347549926,10],[480247162,457274349,1],[480247162,660579527,2],[480247162,708596307,1],[480247162,7928795272,1],[480247162,8880257555,6],[526673962,0,13],[526673962,94031322,1],[526673962,282489954,18],[526673962,347549926,92],[526673962,354940148,11],[526673962,392234812,2],[526673962,421699274,5],[526673962,457274349,68],[526673962,585731542,8],[526673962,600274098,82],[526673962,660579527,15],[526673962,676243725,5],[526673962,930906071,28],[526673962,983725251,34],[526673962,1356218071,4],[526673962,6674389741,1],[526673962,6891603349,15],[526673962,7928795272,63],[526673962,8880257555,8],[544966106,0,3],[544966106,457274349,1],[585731542,0,26],[585731542,94031322,5],[585731542,282489954,46],[585731542,347549926,545],[585731542,354940148,26],[585731542,392234812,21],[585731542,421699274,27],[585731542,457274349,68],[585731542,526673962,53],[585731542,600274098,205],[585731542,660579527,104],[585731542,676243725,14],[585731542,679271589,19],[585731542,708596307,15],[585731542,930906071,85],[585731542,943222377,3],[585731542,983725251,117],[585731542,1356218071,30],[585731542,1648306748,21],[585731542,6504207841,2],[585731542,6674389741,19],[585731542,6891603349,39],[585731542,7928795272,227],[585731542,8880257555,18],[600274098,0,29],[600274098,94031322,5],[600274098,282489954,73],[600274098,347549926,537],[600274098,354940148,34],[600274098,392234812,17],[600274098,421699274,33],[600274098,457274349,168],[600274098,526673962,191],[600274098,585731542,107],[600274098,660579527,87],[600274098,676243725,18],[600274098,679271589,10],[600274098,708596307,16],[600274098,930906071,42],[600274098,943222377,2],[600274098,983725251,152],[600274098,1356218071,18],[600274098,1648306748,1],[600274098,6504207841,4],[600274098,6674389741,12],[600274098,6891603349,22],[600274098,7928795272,268],[600274098,8880257555,53],[660579527,0,8],[660579527,282489954,41],[660579527,347549926,122],[660579527,354940148,1],[660579527,392234812,5],[660579527,457274349,21],[660579527,480247162,2],[660579527,526673962,7],[660579527,585731542,68],[660579527,600274098,22],[660579527,676243725,3],[660579527,708596307,2],[660579527,930906071,19],[660579527,943222377,3],[660579527,983725251,136],[660579527,1356218071,2],[660579527,1648306748,18],[660579527,6891603349,21],[660579527,7928795272,32],[660579527,8880257555,65],[676243725,0,5],[676243725,94031322,1],[676243725,282489954,21],[676243725,347549926,24],[676243725,457274349,8],[676243725,526673962,3],[676243725,585731542,6],[676243725,600274098,13],[676243725,660579527,4],[676243725,930906071,4],[676243725,983725251,8],[676243725,1648306748,5],[676243725,6891603349,4],[676243725,7928795272,13],[676243725,8880257555,3],[679271589,347549926,1],[679271589,457274349,1],[679271589,526673962,1],[679271589,585731542,1],[679271589,7928795272,1],[708596307,0,8],[708596307,282489954,4],[708596307,347549926,23],[708596307,354940148,1],[708596307,392234812,2],[708596307,421699274,4],[708596307,457274349,3],[708596307,526673962,1],[708596307,585731542,13],[708596307,600274098,7],[708596307,660579527,12],[708596307,679271589,1],[708596307,930906071,8],[708596307,983725251,6],[708596307,1356218071,3],[708596307,6674389741,2],[708596307,6891603349,2],[708596307,7928795272,10],[708596307,8880257555,4],[930906071,0,19],[930906071,94031322,5],[930906071,282489954,65],[930906071,347549926,208],[930906071,354940148,40],[930906071,392234812,11],[930906071,421699274,28],[930906071,457274349,92],[930906071,480247162,1],[930906071,526673962,114],[930906071,585731542,65],[930906071,600274098,151],[930906071,660579527,58],[930906071,676243725,12],[930906071,679271589,6],[930906071,708596307,1],[930906071,943222377,22],[930906071,983725251,98],[930906071,1356218071,32],[930906071,1648306748,1],[930906071,6504207841,2],[930906071,6674389741,12],[930906071,6891603349,16],[930906071,7928795272,194],[930906071,8880257555,40],[943222377,282489954,3],[943222377,347549926,29],[943222377,457274349,3],[943222377,585731542,4],[943222377,600274098,3],[943222377,660579527,4],[943222377,930906071,25],[943222377,983725251,9],[943222377,1356218071,3],[943222377,7928795272,7],[943222377,8880257555,3],[983725251,0,17],[983725251,94031322,4],[983725251,282489954,84],[983725251,347549926,416],[983725251,354940148,30],[983725251,392234812,17],[983725251,421699274,47],[983725251,457274349,304],[983725251,526673962,93],[983725251,585731542,134],[983725251,600274098,300],[983725251,660579527,188],[983725251,676243725,21],[983725251,679271589,13],[983725251,708596307,17],[983725251,930906071,109],[983725251,943222377,18],[983725251,1356218071,29],[983725251,1648306748,7],[983725251,6504207841,5],[983725251,6674389741,15],[983725251,6891603349,62],[983725251,7928795272,499],[983725251,8880257555,27],[1356218071,0,13],[1356218071,94031322,1],[1356218071,282489954,9],[1356218071,347549926,91],[1356218071,354940148,3],[1356218071,392234812,2],[1356218071,421699274,6],[1356218071,457274349,10],[1356218071,526673962,9],[1356218071,585731542,14],[1356218071,600274098,10],[1356218071,660579527,5],[1356218071,679271589,1],[1356218071,930906071,16],[1356218071,943222377,3],[1356218071,983725251,32],[1356218071,6674389741,3],[1356218071,6891603349,5],[1356218071,7928795272,28],[1356218071,8880257555,11],[1648306748,0,22],[1648306748,282489954,34],[1648306748,347549926,225],[1648306748,354940148,2],[1648306748,457274349,2],[1648306748,585731542,33],[1648306748,660579527,18],[1648306748,983725251,4],[1648306748,6891603349,27],[1648306748,7928795272,12],[1648306748,8880257555,110],[6504207841,282489954,1],[6504207841,347549926,5],[6504207841,354940148,3],[6504207841,457274349,1],[6504207841,526673962,1],[6504207841,585731542,2],[6504207841,600274098,3],[6504207841,930906071,2],[6504207841,983725251,3],[6504207841,1356218071,2],[6504207841,7928795272,4],[6674389741,282489954,7],[6674389741,347549926,28],[6674389741,392234812,6],[6674389741,421699274,5],[6674389741,457274349,4],[6674389741,526673962,5],[6674389741,585731542,8],[6674389741,600274098,16],[6674389741,660579527,5],[6674389741,679271589,2],[6674389741,708596307,12],[6674389741,930906071,9],[6674389741,983725251,10],[6674389741,1356218071,2],[6674389741,6891603349,5],[6674389741,7928795272,35],[6674389741,8880257555,1],[6891603349,0,40],[6891603349,94031322,2],[6891603349,282489954,231],[6891603349,347549926,993],[6891603349,354940148,10],[6891603349,392234812,7],[6891603349,421699274,4],[6891603349,457274349,25],[6891603349,480247162,12],[6891603349,526673962,59],[6891603349,585731542,54],[6891603349,600274098,49],[6891603349,660579527,124],[6891603349,676243725,12],[6891603349,679271589,6],[6891603349,708596307,12],[6891603349,930906071,47],[6891603349,943222377,2],[6891603349,983725251,73],[6891603349,1356218071,11],[6891603349,1648306748,137],[6891603349,6674389741,5],[6891603349,7928795272,56],[6891603349,8880257555,369],[7928795272,0,89],[7928795272,94031322,5],[7928795272,282489954,160],[7928795272,347549926,1359],[7928795272,354940148,59],[7928795272,392234812,38],[7928795272,421699274,66],[7928795272,457274349,415],[7928795272,480247162,4],[7928795272,526673962,194],[7928795272,585731542,440],[7928795272,600274098,517],[7928795272,660579527,292],[7928795272,676243725,31],[7928795272,679271589,10],[7928795272,708596307,1],[7928795272,930906071,279],[7928795272,943222377,17],[7928795272,983725251,529],[7928795272,1356218071,35],[7928795272,1648306748,34],[7928795272,6504207841,8],[7928795272,6674389741,50],[7928795272,6891603349,75],[7928795272,8880257555,69],[8880257555,0,36],[8880257555,282489954,258],[8880257555,347549926,770],[8880257555,354940148,2],[8880257555,392234812,4],[8880257555,421699274,2],[8880257555,457274349,45],[8880257555,480247162,14],[8880257555,526673962,26],[8880257555,585731542,16],[8880257555,600274098,30],[8880257555,660579527,58],[8880257555,676243725,4],[8880257555,679271589,1],[8880257555,708596307,1],[8880257555,930906071,24],[8880257555,983725251,18],[8880257555,1356218071,6],[8880257555,1648306748,78],[8880257555,6674389741,4],[8880257555,6891603349,54],[8880257555,7928795272,38]],"daily":[["2026-10-28",282489954,457274349,"💯",1],["2026-10-28",282489954,660579527,"🤝",1],["2026-10-28",282489954,660579527,"🤣",1],["2026-10-28",282489954,6674389741,"💯",1],["2026-10-28",282489954,6674389741,"🤔",1],["2026-10-28",347549926,282489954,"🌚",1],["2026-10-28",347549926,282489954,"🤔",1],["2026-10-28",347549926,585731542,"🤔",1],["2026-10-28",347549926,600274098,"🌚",1],["2026-10-28",347549926,600274098,"🌟",3],["2026-10-28",347549926,600274098,"🤔",1],["2026-10-28",347549926,708596307,"🌟",1],["2026-10-28",347549926,708596307,"🤔",1],["2026-10-28",347549926,983725251,"🌟",1],["2026-10-28",347549926,983725251,"🤔",1],["2026-10-28",347549926,6891603349,"🌚",1],["2026-10-28",347549926,6891603349,"🤝",2],["2026-10-28",347549926,8880257555,"🔥",1],["2026-10-28",457274349,347549926,"❤",1],["2026-10-28",457274349,600274098,"❤",1],["2026-10-28",457274349,600274098,"🖤",1],["2026-10-28",585731542,0,"🌚",1],["2026-10-28",585731542,0,"😁",1],["2026-10-28",585731542,347549926,"🤝",1],["2026-10-28",585731542,457274349,"🌚",1],["2026-10-28",585731542,600274098,"😏",1],["2026-10-28",585731542,600274098,"🤔",1],["2026-10-28",585731542,708596307,"👍",1],["2026-10-28",585731542,983725251,"🌚",2],["2026-10-28",600274098,347549926,"🤩",1],["2026-10-28",660579527,282489954,"🤝",1],["2026-10-28",708596307,0,"❤",1],["2026-10-28",708596307,0,"🌚",1],["2026-10-28",708596307,585731542,"❤",2],["2026-10-28",983725251,0,"🌚",1],["2026-10-28",983725251,282489954,"🤝",1],["2026-10-28",983725251,347549926,"🖤",1],["2026-10-28",983725251,457274349,"🖤",1],["2026-10-28",983725251,600274098,"🖤",3],["2026-10-28",983725251,600274098,"🤔",1],["2026-10-28",983725251,708596307,"👍",1],["2026-10-28",983725251,6674389741,"🖤",1],["2026-10-28",983725251,6891603349,"🖤",1],["2026-10-28",6674389741,0,"🌚",1],["2026-10-28",6674389741,282489954,"❤",1],["2026-10-28",6674389741,282489954,"🤝",1],["2026-10-28",6891603349,347549926,"🤩",2],["2026-10-28",6891603349,585731542,"🤝",1],["2026-10-28",6891603349,983725251,"🤩",1],["2026-10-28",6891603349,8880257555,"🤩",1],["2026-10-28",7928795272,347549926,"❤",3],["2026-10-28",7928795272,347549926,"🌚",1],["2026-10-28",7928795272,585731542,"🤝",1],["2026-10-28",7928795272,600274098,"❤",1],["2026-10-28",7928795272,660579527,"❤",1],["2026-10-28",7928795272,660579527,"🌚",2],["2026-10-28",7928795272,6674389741,"🤔",1],["2026-10-28",7928795272,6891603349,"🌚",1],["2026-10-28",7928795272,6891603349,"🤝",1],["2026-10-28",7928795272,6891603349,"🤩",1],["2026-10-28",8880257555,282489954,"🤝",1],["2026-10-29",282489954,347549926,"🔥",1],["2026-10-29",282489954,8880257555,"🤣",1],["2026-10-29",347549926,0,"🌟",1],["2026-10-29",347549926,282489954,"🌚",3],["2026-10-29",347549926,282489954,"🤔",1],["2026-10-29",347549926,282489954,"🤝",2],["2026-10-29",347549926,392234812,"🌚",1],["2026-10-29",347549926,526673962,"🌚",1],["2026-10-29",347549926,526673962,"👀",1],["2026-10-29",347549926,600274098,"🌚",1],["2026-10-29",347549926,600274098,"🌟",2],["2026-10-29",347549926,660579527,"🌚",7],["2026-10-29",347549926,660579527,"👀",1],["2026-10-29",347549926,660579527,"🔥",1],["2026-10-29",347549926,660579527,"🤝",3],["2026-10-29",347549926,708596307,"🌟",1],["2026-10-29",347549926,983725251,"🌚",3],["2026-10-29",347549926,983725251,"🔥",1],["2026-10-29",347549926,983725251,"🤝",2],["2026-10-29",347549926,6674389741,"✨",1],["2026-10-29",347549926,6674389741,"🌚",1],["2026-10-29",347549926,6674389741,"🤝",2],["2026-10-29",347549926,6891603349,"🌚",6],["2026-10-29",347549926,6891603349,"👍",1],["2026-10-29",347549926,6891603349,"🤔",1],["2026-10-29",347549926,7928795272,"🌟",1],["2026-10-29",347549926,8880257555,"🤝",1],["2026-10-29",392234812,660579527,"❤",1],["2026-10-29",392234812,8880257555,"😁",1],["2026-10-29",457274349,0,"🔥",1],["2026-10-29",457274349,6674389741,"🖤",1],["2026-10-29",585731542,347549926,"🌚",1],["2026-10-29",585731542,347549926,"🐱",1],["2026-10-29",585731542,347549926,"🤝",1],["2026-10-29",585731542,7928795272,"🌚",1],["2026-10-29",600274098,347549926,"❤",2],["2026-10-29",600274098,526673962,"😁",1],["2026-10-29",600274098,6674389741,"❤",1],["2026-10-29",660579527,282489954,"🌚",1],["2026-10-29",660579527,983725251,"🤝",1],["2026-10-29",660579527,6891603349,"🤝",3],["2026-10-29",679271589,600274098,"💅",1],["2026-10-29",983725251,347549926,"❤",1],["2026-10-29",983725251,347549926,"🖤",2],["2026-10-29",983725251,347549926,"🫡",1],["2026-10-29",983725251,526673962,"🔥",1],["2026-10-29",983725251,600274098,"🌟",2],["2026-10-29",983725251,660579527,"🖤",2],["2026-10-29",983725251,708596307,"😶",1],["2026-10-29",983725251,6674389741,"🖤",1],["2026-10-29",983725251,7928795272,"🌟",1],["2026-10-29",983725251,7928795272,"🖤",1],["2026-10-29",983725251,7928795272,"😢",1],["2026-10-29",983725251,7928795272,"🤝",1],["2026-10-29",6674389741,347549926,"❤",1],["2026-10-29",6674389741,983725251,"🔥",1],["2026-10-29",6891603349,282489954,"🤩",1],["2026-10-29",6891603349,347549926,"🤩",2],["2026-10-29",6891603349,392234812,"🤩",1],["2026-10-29",6891603349,660579527,"🤩",5],["2026-10-29",6891603349,983725251,"🌚",1],["2026-10-29",6891603349,8880257555,"🤩",3],["2026-10-29",7928795272,347549926,"❤",2],["2026-10-29",7928795272,457274349,"🌚",1],["2026-10-29",7928795272,660579527,"🌚",2],["2026-10-29",7928795272,660579527,"🤝",1],["2026-10-29",7928795272,708596307,"🌟",1],["2026-10-29",7928795272,983725251,"🌚",3],["2026-10-29",7928795272,983725251,"🤝",1],["2026-10-29",8880257555,347549926,"🫡",2],["2026-10-29",8880257555,660579527,"😁",1],["2026-10-30",282489954,347549926,"🫡",1],["2026-10-30",282489954,660579527,"🤣",1],["2026-10-30",282489954,8880257555,"👀",1],["2026-10-30",282489954,8880257555,"🔥",1],["2026-10-30",347549926,0,"✨",1],["2026-10-30",347549926,0,"🤔",1],["2026-10-30",347549926,282489954,"🌚",1],["2026-10-30",347549926,282489954,"🔥",1],["2026-10-30",347549926,282489954,"🤔",1],["2026-10-30",347549926,392234812,"✨",1],["2026-10-30",347549926,457274349,"🌚",3],["2026-10-30",347549926,457274349,"🫡",1],["2026-10-30",347549926,585731542,"🌚",2],["2026-10-30",347549926,585731542,"🤝",1],["2026-10-30",347549926,660579527,"✨",1],["2026-10-30",347549926,660579527,"🌚",4],["2026-10-30",347549926,660579527,"🌟",3],["2026-10-30",347549926,660579527,"👎",1],["2026-10-30",347549926,708596307,"🌚",2],["2026-10-30",347549926,7928795272,"🌚",3],["2026-10-30",347549926,7928795272,"🤔",2],["2026-10-30",347549926,8880257555,"🤔",1],["2026-10-30",354940148,660579527,"🤔",1],["2026-10-30",354940148,7928795272,"😭",1],["2026-10-30",457274349,347549926,"❤",1],["2026-10-30",457274349,347549926,"😁",1],["2026-10-30",457274349,347549926,"🤝",1],["2026-10-30",457274349,585731542,"❤",1],["2026-10-30",457274349,585731542,"🤝",1],["2026-10-30",585731542,0,"🌚",1],["2026-10-30",585731542,347549926,"🌚",2],["2026-10-30",585731542,392234812,"🔥",1],["2026-10-30",585731542,457274349,"☕️",1],["2026-10-30",585731542,457274349,"🌚",3],["2026-10-30",585731542,457274349,"🤝",2],["2026-10-30",585731542,457274349,"🫡",1],["2026-10-30",585731542,660579527,"🌚",3],["2026-10-30",585731542,660579527,"🤔",1],["2026-10-30",585731542,708596307,"🌚",3],["2026-10-30",585731542,983725251,"🌚",2],["2026-10-30",585731542,6891603349,"🌚",1],["2026-10-30",585731542,7928795272,"🌚",2],["2026-10-30",600274098,347549926,"😁",1],["2026-10-30",600274098,392234812,"🔥",1],["2026-10-30",600274098,7928795272,"❤",1],["2026-10-30",708596307,585731542,"❤‍🔥",1],["2026-10-30",708596307,660579527,"🫡",4],["2026-10-30",708596307,7928795272,"🫡",2],["2026-10-30",983725251,282489954,"🖤",1],["2026-10-30",983725251,347549926,"🤩",1],["2026-10-30",983725251,392234812,"🔥",1],["2026-10-30",983725251,585731542,"🌚",1],["2026-10-30",983725251,7928795272,"👀",1],["2026-10-30",6674389741,600274098,"❤",1],["2026-10-30",6891603349,347549926,"🌚",1],["2026-10-30",6891603349,347549926,"🤩",2],["2026-10-30",6891603349,600274098,"❤",1],["2026-10-30",6891603349,660579527,"🤩",2],["2026-10-30",7928795272,347549926,"❤",1],["2026-10-30",7928795272,347549926,"🌚",2],["2026-10-30",7928795272,347549926,"🔥",1],["2026-10-30",7928795272,457274349,"🤔",1],["2026-10-30",7928795272,585731542,"🌚",1],["2026-10-30",7928795272,660579527,"🌟",1],["2026-10-30",7928795272,660579527,"👀",1],["2026-10-30",7928795272,660579527,"🤝",1],["2026-10-30",7928795272,708596307,"😐",1],["2026-10-30",7928795272,983725251,"🌚",1],["2026-10-30",7928795272,6674389741,"🌚",1],["2026-10-30",8880257555,282489954,"🤔",1],["2026-10-30",8880257555,282489954,"🤝",1],["2026-10-30",8880257555,347549926,"🫡",1]],"events":[{"id":4,"title":"Мир Гарри Поттера","status":"finished","start":"2025-12-15","end":"2026-03-20","levels":[[1,"Маггл-новичок",0],[2,"Узнал о мире магии",11],[3,"Получил письмо из Хогвартса",45],[4,"Первокурсник",101],[5,"Ученик Хогвартса",180],[6,"Ученик своего факультета",281],[7,"Любитель простых чар",405],[8,"Начинающий волшебник",551],[9,"Читатель библиотеки Хогвартса",720],[10,"Практик бытовой магии",911],[11,"Ученик-дуэлянт",1124],[12,"Участник клуба зелий",1360],[13,"Знаток Левиосы",1619],[14,"Мастер Люмоса",1900],[15,"Префект факультета",2204],[16,"Старший префект",2530],[17,"Отличник СОВ",2878],[18,"Отличник ЖАБА",3249],[19,"Помощник преподавателя",3643],[20,"Хранитель секретных проходов",4059],[21,"Молодой аврор-практикант",4497],[22,"Аврор",4958],[23,"Опытный аврор",5441],[24,"Магический следопыт",7501],[25,"Зельевар-мастер",10001],[26,"Исследователь магических существ",13001],[27,"Исследователь Запретного отдела",16501],[28,"Член Ордена Феникса",20501],[29,"Старший член Ордена Феникса",25001],[30,"Мастер боевой магии",30001],[31,"Хранитель тайн Хогвартса",35501],[32,"Архимаг ордена",41501],[33,"Главный аврор",48001],[34,"Советник Министерства магии",55001],[35,"Руководитель Отдела тайн",62501],[36,"Легенда магического мира",70501],[37,"Живая легенда Хогвартса",79001],[38,"Великий маг Британии",88001],[39,"Великий маг Европы",97501],[40,"Маг-эпоха",107501]]},{"id":1,"title":"Мир Наруто","status":"legacy","start":"2026-03-21","end":"2026-09-10","levels":[[1,"Гражданский",0],[2,"Академист",11],[3,"Ученик академии",45],[4,"Стажёр шиноби",101],[5,"Практик чакры",180],[6,"Новобранец",281],[7,"Выпускник академии",405],[8,"Кандидат в генин",551],[9,"Носитель повязки",720],[10,"Генин",911],[11,"Исполнитель миссий",1124],[12,"Шиноби команды",1360],[13,"Знаток дзюцу",1619],[14,"Контроллер чакры",1900],[15,"Ученик сенсея",2204],[16,"Претендент на экзамен",2530],[17,"Чунин",2878],[18,"Экзаменуемый",3249],[19,"Тактик деревни",3643],[20,"Командник",4059],[21,"Специалист ниндзюцу",4497],[22,"Мастер тайдзюцу",4958],[23,"Иллюзионист",5441],[24,"Следопыт",7501],[25,"Джонин",10001],[26,"Сенсей",13001],[27,"Наставник команды",16501],[28,"Капитан отряда",20501],[29,"Элитный шиноби",25001],[30,"Мастер техник",30001],[31,"Масочник",35501],[32,"Теневик",41501],[33,"Клинок деревни",48001],[34,"Хранитель воли огня",55001],[35,"Представитель клана",62501],[36,"Наследник клана",70501],[37,"Легендарный шиноби",79001],[38,"Правая рука Каге",88001],[39,"Преемник Каге",97501],[40,"Каге",107501]]},{"id":3,"title":"Греческая мифология","status":"active","start":"2026-09-12","end":"2026-12-11","levels":[[1,"Грек",0],[2,"Паломник",20],[3,"Верующий",77],[4,"Жрец",172],[5,"Гоплит",305],[6,"Воин",475],[7,"Спартанец",682],[8,"Стратег",927],[9,"Военачальник",1210],[10,"Гладиатор",1530],[11,"Герой",1888],[12,"Авгур",2284],[13,"Оракул",2717],[14,"Аргонавт",3187],[15,"Сатир",3695],[16,"Амазонка",4241],[17,"Герой Эллады",4824],[18,"Избранник богов",5445],[19,"Дитё Геракла",6103],[20,"Полубог",6799],[21,"Кентавр",7533],[22,"Сирена",8304],[23,"Минотавр",9113],[24,"Гидра",9959],[25,"Цербер",10843],[26,"Медуза",11764],[27,"Химера",12723],[28,"Сфинкс",13719],[29,"Мойра",14753],[30,"Прометей",15825],[31,"Титан",16934],[32,"Атлант",18081],[33,"Божество",19265],[34,"Олимпиец",20487],[35,"Великий бог",21746],[36,"Владыка Олимпа",23043],[37,"Повелитель стихий",24378],[38,"Владыка судьбы",25750],[39,"Царь богов",27160],[40,"Повелитель богов",28607]]}],"progress":[[1,5072796396,1,1],[1,354940148,10,957],[1,6504207841,3,59],[1,8880257555,13,1699],[1,480247162,2,41],[1,600274098,21,4822],[1,526673962,19,3928],[1,457274349,23,6271],[1,930906071,27,19658],[1,282489954,17,3073],[1,585731542,25,12830],[1,347549926,26,16098],[1,7928795272,27,17982],[1,6891603349,15,2463],[1,679271589,6,359],[1,676243725,6,345],[1,1648306748,4,170],[1,94031322,1,6],[1,983725251,26,15244],[1,660579527,19,3793],[1,421699274,7,517],[1,392234812,3,62],[1,943222377,11,1291],[1,1356218071,14,2003],[3,347549926,18,5613],[3,660579527,10,1569],[3,983725251,9,1398],[3,457274349,7,858],[3,7928795272,15,4007],[3,6891603349,9,1495],[3,8880257555,13,2807],[3,421699274,3,80],[3,600274098,8,969],[3,1356218071,4,193],[3,526673962,4,221],[3,585731542,11,2142],[3,930906071,13,2901],[3,679271589,4,300],[3,676243725,2,45],[3,282489954,8,1104],[3,6674389741,7,907],[3,392234812,6,658],[3,354940148,4,194],[3,480247162,3,90],[3,708596307,8,1188],[3,943222377,2,72],[4,5752602790,3,53],[4,94031322,1,7],[4,6314372730,1,1],[4,943222377,5,242],[4,392234812,4,179],[4,1648306748,1,6],[4,930906071,26,15065],[4,983725251,17,3156],[4,7928795272,28,24120],[4,1356218071,10,1091],[4,457274349,23,7465],[4,585731542,24,9959],[4,347549926,25,10282],[4,526673962,20,4306],[4,354940148,8,661],[4,676243725,8,555],[4,660579527,20,4239],[4,421699274,6,393],[4,8880257555,16,2552],[4,600274098,23,6970],[4,110077035,2,14],[4,282489954,22,5255],[4,480247162,2,38],[4,6891603349,8,713],[4,544966106,4,144]]}</script>
+<script id="colony-rx-data" type="application/json">{"generated_at":"2026-10-30T15:19:50.565733+00:00","timezone":"Europe/Moscow","users":{"282489954":["polozovdaniel","Danil","Lebedev"],"8880257555":["fate_write","Golden Ambient",""],"930906071":["klarkik","Ivan","Sergeev"],"347549926":["aug_b","𝚊𝚞𝚐𝚞𝚜𝚝",""],"7928795272":["ginseng_de_mai","Lisa","Чан"],"457274349":["Alise_Suon","Алиса 💜",""],"600274098":["tata_ruw","tata","ruw"],"526673962":["snaperavenclaw","Александра","Градская"],"1356218071":["Gonnor_Ironbeard","(Mixer) 𝔊𝔬𝔫𝔫𝔬𝔯 𝔍𝔢𝔩𝔢𝔷𝔬𝔟𝔬𝔯𝔬𝔡𝔶𝔦",""],"585731542":["kindlylyly","Валентность",""],"660579527":["ervionn","Quandale","Dingle"],"6891603349":["prettysnape","влад","shnape"],"983725251":["luminouvv","anastasiia.h","Стейси"],"676243725":["valadalena","Влада","Шибаева"],"421699274":["VanDerLord1092","Diloroff",""],"94031322":["Cuteenot","Лекса",""],"354940148":["yOGuRtE","Ягор",""],"480247162":["yesetsissenov","Есет",""],"392234812":["Tom_Reynold","Tom",""],"544966106":["MariiaHommyak","Mariia",""],"943222377":["AveTaric","AveTatty",""],"6674389741":["kristi_aldo","Альона","✨️"],"1648306748":["DolWolf19","Dol",""],"110077035":["Tautiki","Tishina",""],"6504207841":["horacyczopek","Horacy","Czopek"],"679271589":["babyteef","Vanzha",""],"708596307":["","Пан Евджений",""],"5072796396":["","",""],"5752602790":["","",""],"6314372730":["","",""]},"hist":[[94031322,0,2],[94031322,347549926,4],[94031322,421699274,2],[94031322,457274349,2],[94031322,526673962,1],[94031322,585731542,3],[94031322,600274098,7],[94031322,930906071,2],[94031322,1356218071,2],[94031322,6891603349,1],[94031322,7928795272,5],[94031322,8880257555,1],[110077035,347549926,2],[282489954,0,35],[282489954,94031322,2],[282489954,347549926,779],[282489954,354940148,5],[282489954,392234812,3],[282489954,421699274,8],[282489954,457274349,66],[282489954,480247162,15],[282489954,526673962,33],[282489954,585731542,46],[282489954,600274098,68],[282489954,660579527,103],[282489954,676243725,10],[282489954,930906071,31],[282489954,983725251,54],[282489954,1356218071,5],[282489954,1648306748,38],[282489954,6674389741,1],[282489954,6891603349,43],[282489954,7928795272,68],[282489954,8880257555,444],[347549926,0,152],[347549926,94031322,7],[347549926,110077035,1],[347549926,282489954,449],[347549926,354940148,88],[347549926,392234812,67],[347549926,421699274,113],[347549926,457274349,454],[347549926,480247162,15],[347549926,526673962,357],[347549926,585731542,748],[347549926,600274098,809],[347549926,660579527,731],[347549926,676243725,64],[347549926,679271589,38],[347549926,708596307,73],[347549926,930906071,588],[347549926,943222377,40],[347549926,983725251,902],[347549926,1356218071,74],[347549926,1648306748,591],[347549926,6504207841,14],[347549926,6674389741,53],[347549926,6891603349,408],[347549926,7928795272,1287],[347549926,8880257555,804],[354940148,0,6],[354940148,282489954,20],[354940148,347549926,79],[354940148,392234812,1],[354940148,421699274,3],[354940148,457274349,15],[354940148,526673962,16],[354940148,585731542,38],[354940148,600274098,28],[354940148,660579527,14],[354940148,679271589,3],[354940148,708596307,3],[354940148,930906071,79],[354940148,983725251,19],[354940148,1356218071,5],[354940148,1648306748,2],[354940148,6504207841,3],[354940148,6891603349,15],[354940148,7928795272,51],[354940148,8880257555,5],[392234812,0,4],[392234812,282489954,14],[392234812,347549926,24],[392234812,421699274,10],[392234812,457274349,14],[392234812,480247162,3],[392234812,526673962,3],[392234812,585731542,27],[392234812,600274098,9],[392234812,660579527,14],[392234812,679271589,1],[392234812,708596307,1],[392234812,930906071,14],[392234812,943222377,1],[392234812,983725251,13],[392234812,1356218071,1],[392234812,6674389741,3],[392234812,6891603349,9],[392234812,7928795272,36],[392234812,8880257555,9],[421699274,0,4],[421699274,94031322,1],[421699274,282489954,3],[421699274,347549926,16],[421699274,354940148,4],[421699274,392234812,3],[421699274,457274349,3],[421699274,526673962,11],[421699274,585731542,4],[421699274,600274098,7],[421699274,679271589,1],[421699274,930906071,1],[421699274,983725251,9],[421699274,1356218071,2],[421699274,6674389741,1],[421699274,6891603349,1],[421699274,7928795272,10],[421699274,8880257555,1],[457274349,0,71],[457274349,94031322,4],[457274349,282489954,71],[457274349,347549926,379],[457274349,354940148,18],[457274349,392234812,17],[457274349,421699274,33],[457274349,526673962,165],[457274349,585731542,37],[457274349,600274098,341],[457274349,660579527,72],[457274349,676243725,16],[457274349,679271589,9],[457274349,708596307,4],[457274349,930906071,75],[457274349,943222377,2],[457274349,983725251,170],[457274349,1356218071,20],[457274349,1648306748,1],[457274349,6504207841,1],[457274349,6674389741,8],[457274349,6891603349,21],[457274349,7928795272,209],[457274349,8880257555,35],[480247162,282489954,1],[480247162,347549926,10],[480247162,457274349,1],[480247162,660579527,2],[480247162,708596307,1],[480247162,7928795272,1],[480247162,8880257555,6],[526673962,0,13],[526673962,94031322,1],[526673962,282489954,18],[526673962,347549926,92],[526673962,354940148,11],[526673962,392234812,2],[526673962,421699274,5],[526673962,457274349,68],[526673962,585731542,8],[526673962,600274098,82],[526673962,660579527,15],[526673962,676243725,5],[526673962,930906071,28],[526673962,983725251,34],[526673962,1356218071,4],[526673962,6674389741,1],[526673962,6891603349,15],[526673962,7928795272,63],[526673962,8880257555,8],[544966106,0,3],[544966106,457274349,1],[585731542,0,26],[585731542,94031322,5],[585731542,282489954,46],[585731542,347549926,545],[585731542,354940148,26],[585731542,392234812,21],[585731542,421699274,27],[585731542,457274349,68],[585731542,526673962,53],[585731542,600274098,205],[585731542,660579527,104],[585731542,676243725,14],[585731542,679271589,19],[585731542,708596307,15],[585731542,930906071,85],[585731542,943222377,3],[585731542,983725251,117],[585731542,1356218071,30],[585731542,1648306748,21],[585731542,6504207841,2],[585731542,6674389741,19],[585731542,6891603349,39],[585731542,7928795272,227],[585731542,8880257555,18],[600274098,0,29],[600274098,94031322,5],[600274098,282489954,73],[600274098,347549926,537],[600274098,354940148,34],[600274098,392234812,17],[600274098,421699274,33],[600274098,457274349,168],[600274098,526673962,191],[600274098,585731542,107],[600274098,660579527,87],[600274098,676243725,18],[600274098,679271589,10],[600274098,708596307,16],[600274098,930906071,42],[600274098,943222377,2],[600274098,983725251,152],[600274098,1356218071,18],[600274098,1648306748,1],[600274098,6504207841,4],[600274098,6674389741,12],[600274098,6891603349,22],[600274098,7928795272,268],[600274098,8880257555,53],[660579527,0,8],[660579527,282489954,41],[660579527,347549926,122],[660579527,354940148,1],[660579527,392234812,5],[660579527,457274349,21],[660579527,480247162,2],[660579527,526673962,7],[660579527,585731542,68],[660579527,600274098,22],[660579527,676243725,3],[660579527,708596307,2],[660579527,930906071,19],[660579527,943222377,3],[660579527,983725251,136],[660579527,1356218071,2],[660579527,1648306748,18],[660579527,6891603349,21],[660579527,7928795272,32],[660579527,8880257555,65],[676243725,0,5],[676243725,94031322,1],[676243725,282489954,21],[676243725,347549926,24],[676243725,457274349,8],[676243725,526673962,3],[676243725,585731542,6],[676243725,600274098,13],[676243725,660579527,4],[676243725,930906071,4],[676243725,983725251,8],[676243725,1648306748,5],[676243725,6891603349,4],[676243725,7928795272,13],[676243725,8880257555,3],[679271589,347549926,1],[679271589,457274349,1],[679271589,526673962,1],[679271589,585731542,1],[679271589,7928795272,1],[708596307,0,8],[708596307,282489954,4],[708596307,347549926,23],[708596307,354940148,1],[708596307,392234812,2],[708596307,421699274,4],[708596307,457274349,3],[708596307,526673962,1],[708596307,585731542,13],[708596307,600274098,7],[708596307,660579527,12],[708596307,679271589,1],[708596307,930906071,8],[708596307,983725251,6],[708596307,1356218071,3],[708596307,6674389741,2],[708596307,6891603349,2],[708596307,7928795272,10],[708596307,8880257555,4],[930906071,0,19],[930906071,94031322,5],[930906071,282489954,65],[930906071,347549926,208],[930906071,354940148,40],[930906071,392234812,11],[930906071,421699274,28],[930906071,457274349,92],[930906071,480247162,1],[930906071,526673962,114],[930906071,585731542,65],[930906071,600274098,151],[930906071,660579527,58],[930906071,676243725,12],[930906071,679271589,6],[930906071,708596307,1],[930906071,943222377,22],[930906071,983725251,98],[930906071,1356218071,32],[930906071,1648306748,1],[930906071,6504207841,2],[930906071,6674389741,12],[930906071,6891603349,16],[930906071,7928795272,194],[930906071,8880257555,40],[943222377,282489954,3],[943222377,347549926,29],[943222377,457274349,3],[943222377,585731542,4],[943222377,600274098,3],[943222377,660579527,4],[943222377,930906071,25],[943222377,983725251,9],[943222377,1356218071,3],[943222377,7928795272,7],[943222377,8880257555,3],[983725251,0,17],[983725251,94031322,4],[983725251,282489954,84],[983725251,347549926,416],[983725251,354940148,30],[983725251,392234812,17],[983725251,421699274,47],[983725251,457274349,304],[983725251,526673962,93],[983725251,585731542,134],[983725251,600274098,300],[983725251,660579527,188],[983725251,676243725,21],[983725251,679271589,13],[983725251,708596307,17],[983725251,930906071,109],[983725251,943222377,18],[983725251,1356218071,29],[983725251,1648306748,7],[983725251,6504207841,5],[983725251,6674389741,15],[983725251,6891603349,62],[983725251,7928795272,499],[983725251,8880257555,27],[1356218071,0,13],[1356218071,94031322,1],[1356218071,282489954,9],[1356218071,347549926,91],[1356218071,354940148,3],[1356218071,392234812,2],[1356218071,421699274,6],[1356218071,457274349,10],[1356218071,526673962,9],[1356218071,585731542,14],[1356218071,600274098,10],[1356218071,660579527,5],[1356218071,679271589,1],[1356218071,930906071,16],[1356218071,943222377,3],[1356218071,983725251,32],[1356218071,6674389741,3],[1356218071,6891603349,5],[1356218071,7928795272,28],[1356218071,8880257555,11],[1648306748,0,22],[1648306748,282489954,34],[1648306748,347549926,225],[1648306748,354940148,2],[1648306748,457274349,2],[1648306748,585731542,33],[1648306748,660579527,18],[1648306748,983725251,4],[1648306748,6891603349,27],[1648306748,7928795272,12],[1648306748,8880257555,110],[6504207841,282489954,1],[6504207841,347549926,5],[6504207841,354940148,3],[6504207841,457274349,1],[6504207841,526673962,1],[6504207841,585731542,2],[6504207841,600274098,3],[6504207841,930906071,2],[6504207841,983725251,3],[6504207841,1356218071,2],[6504207841,7928795272,4],[6674389741,282489954,7],[6674389741,347549926,28],[6674389741,392234812,6],[6674389741,421699274,5],[6674389741,457274349,4],[6674389741,526673962,5],[6674389741,585731542,8],[6674389741,600274098,16],[6674389741,660579527,5],[6674389741,679271589,2],[6674389741,708596307,12],[6674389741,930906071,9],[6674389741,983725251,10],[6674389741,1356218071,2],[6674389741,6891603349,5],[6674389741,7928795272,35],[6674389741,8880257555,1],[6891603349,0,40],[6891603349,94031322,2],[6891603349,282489954,231],[6891603349,347549926,993],[6891603349,354940148,10],[6891603349,392234812,7],[6891603349,421699274,4],[6891603349,457274349,25],[6891603349,480247162,12],[6891603349,526673962,59],[6891603349,585731542,54],[6891603349,600274098,49],[6891603349,660579527,124],[6891603349,676243725,12],[6891603349,679271589,6],[6891603349,708596307,12],[6891603349,930906071,47],[6891603349,943222377,2],[6891603349,983725251,73],[6891603349,1356218071,11],[6891603349,1648306748,137],[6891603349,6674389741,5],[6891603349,7928795272,56],[6891603349,8880257555,369],[7928795272,0,89],[7928795272,94031322,5],[7928795272,282489954,160],[7928795272,347549926,1359],[7928795272,354940148,59],[7928795272,392234812,38],[7928795272,421699274,66],[7928795272,457274349,415],[7928795272,480247162,4],[7928795272,526673962,194],[7928795272,585731542,440],[7928795272,600274098,517],[7928795272,660579527,292],[7928795272,676243725,31],[7928795272,679271589,10],[7928795272,708596307,1],[7928795272,930906071,279],[7928795272,943222377,17],[7928795272,983725251,529],[7928795272,1356218071,35],[7928795272,1648306748,34],[7928795272,6504207841,8],[7928795272,6674389741,50],[7928795272,6891603349,75],[7928795272,8880257555,69],[8880257555,0,36],[8880257555,282489954,258],[8880257555,347549926,770],[8880257555,354940148,2],[8880257555,392234812,4],[8880257555,421699274,2],[8880257555,457274349,45],[8880257555,480247162,14],[8880257555,526673962,26],[8880257555,585731542,16],[8880257555,600274098,30],[8880257555,660579527,58],[8880257555,676243725,4],[8880257555,679271589,1],[8880257555,708596307,1],[8880257555,930906071,24],[8880257555,983725251,18],[8880257555,1356218071,6],[8880257555,1648306748,78],[8880257555,6674389741,4],[8880257555,6891603349,54],[8880257555,7928795272,38]],"daily":[["2026-10-28",282489954,457274349,"💯",1,"Colony Original"],["2026-10-28",282489954,660579527,"🤝",1,"Colony Original"],["2026-10-28",282489954,660579527,"🤣",1,"Colony Original"],["2026-10-28",282489954,6674389741,"💯",1,"Colony Original"],["2026-10-28",282489954,6674389741,"🤔",1,"Colony Original"],["2026-10-28",347549926,282489954,"🌚",1,"Colony Original"],["2026-10-28",347549926,282489954,"🤔",1,"Colony Original"],["2026-10-28",347549926,585731542,"🤔",1,"Colony Original"],["2026-10-28",347549926,600274098,"🌚",1,"Colony Original"],["2026-10-28",347549926,600274098,"🌟",3,"Colony Original"],["2026-10-28",347549926,600274098,"🤔",1,"Colony Original"],["2026-10-28",347549926,708596307,"🌟",1,"Colony Original"],["2026-10-28",347549926,708596307,"🤔",1,"Colony Original"],["2026-10-28",347549926,983725251,"🌟",1,"Colony Original"],["2026-10-28",347549926,983725251,"🤔",1,"Colony Original"],["2026-10-28",347549926,6891603349,"🌚",1,"Colony Original"],["2026-10-28",347549926,6891603349,"🤝",2,"Colony Original"],["2026-10-28",347549926,8880257555,"🔥",1,"Republic of Gamers"],["2026-10-28",457274349,347549926,"❤",1,"Colony Original"],["2026-10-28",457274349,600274098,"❤",1,"Colony Original"],["2026-10-28",457274349,600274098,"🖤",1,"Colony Original"],["2026-10-28",585731542,0,"🌚",1,"Colony Original"],["2026-10-28",585731542,0,"😁",1,"Colony Original"],["2026-10-28",585731542,347549926,"🤝",1,"Colony Original"],["2026-10-28",585731542,457274349,"🌚",1,"Colony Original"],["2026-10-28",585731542,600274098,"😏",1,"Colony Original"],["2026-10-28",585731542,600274098,"🤔",1,"Colony Original"],["2026-10-28",585731542,708596307,"👍",1,"Colony Original"],["2026-10-28",585731542,983725251,"🌚",2,"Colony Original"],["2026-10-28",600274098,347549926,"🤩",1,"Colony Original"],["2026-10-28",660579527,282489954,"🤝",1,"Colony Original"],["2026-10-28",708596307,0,"❤",1,"Colony Original"],["2026-10-28",708596307,0,"🌚",1,"Colony Original"],["2026-10-28",708596307,585731542,"❤",2,"Colony Original"],["2026-10-28",983725251,0,"🌚",1,"Colony Original"],["2026-10-28",983725251,282489954,"🤝",1,"Colony Original"],["2026-10-28",983725251,347549926,"🖤",1,"Colony Original"],["2026-10-28",983725251,457274349,"🖤",1,"Colony Original"],["2026-10-28",983725251,600274098,"🖤",3,"Colony Original"],["2026-10-28",983725251,600274098,"🤔",1,"Colony Original"],["2026-10-28",983725251,708596307,"👍",1,"Colony Original"],["2026-10-28",983725251,6674389741,"🖤",1,"Colony Original"],["2026-10-28",983725251,6891603349,"🖤",1,"Colony Original"],["2026-10-28",6674389741,0,"🌚",1,"Colony Original"],["2026-10-28",6674389741,282489954,"❤",1,"Colony Original"],["2026-10-28",6674389741,282489954,"🤝",1,"Colony Original"],["2026-10-28",6891603349,347549926,"🤩",2,"Colony Original"],["2026-10-28",6891603349,585731542,"🤝",1,"Colony Original"],["2026-10-28",6891603349,983725251,"🤩",1,"Colony Original"],["2026-10-28",6891603349,8880257555,"🤩",1,"Republic of Gamers"],["2026-10-28",7928795272,347549926,"❤",3,"Colony Original"],["2026-10-28",7928795272,347549926,"🌚",1,"Colony Original"],["2026-10-28",7928795272,585731542,"🤝",1,"Colony Original"],["2026-10-28",7928795272,600274098,"❤",1,"Colony Original"],["2026-10-28",7928795272,660579527,"❤",1,"Colony Original"],["2026-10-28",7928795272,660579527,"🌚",2,"Colony Original"],["2026-10-28",7928795272,6674389741,"🤔",1,"Colony Original"],["2026-10-28",7928795272,6891603349,"🌚",1,"Colony Original"],["2026-10-28",7928795272,6891603349,"🤝",1,"Colony Original"],["2026-10-28",7928795272,6891603349,"🤩",1,"Colony Original"],["2026-10-28",8880257555,282489954,"🤝",1,"Colony Original"],["2026-10-29",282489954,347549926,"🔥",1,"Hot Aesthetics"],["2026-10-29",282489954,8880257555,"🤣",1,"Republic of Gamers"],["2026-10-29",347549926,0,"🌟",1,"Colony Original"],["2026-10-29",347549926,282489954,"🌚",1,"Colony Cinema"],["2026-10-29",347549926,282489954,"🌚",2,"Real Politics"],["2026-10-29",347549926,282489954,"🤔",1,"Real Politics"],["2026-10-29",347549926,282489954,"🤝",1,"Colony Cinema"],["2026-10-29",347549926,282489954,"🤝",1,"Colony Original"],["2026-10-29",347549926,392234812,"🌚",1,"Real Politics"],["2026-10-29",347549926,526673962,"🌚",1,"Colony Original"],["2026-10-29",347549926,526673962,"👀",1,"Colony Original"],["2026-10-29",347549926,600274098,"🌚",1,"Colony Original"],["2026-10-29",347549926,600274098,"🌟",2,"Colony Original"],["2026-10-29",347549926,660579527,"🌚",1,"Colony Cinema"],["2026-10-29",347549926,660579527,"🌚",2,"Colony Original"],["2026-10-29",347549926,660579527,"🌚",3,"Real Politics"],["2026-10-29",347549926,660579527,"🌚",1,"Republic of Gamers"],["2026-10-29",347549926,660579527,"👀",1,"Real Politics"],["2026-10-29",347549926,660579527,"🔥",1,"Colony Original"],["2026-10-29",347549926,660579527,"🤝",1,"Colony Cinema"],["2026-10-29",347549926,660579527,"🤝",1,"Colony Original"],["2026-10-29",347549926,660579527,"🤝",1,"Real Politics"],["2026-10-29",347549926,708596307,"🌟",1,"Colony Original"],["2026-10-29",347549926,983725251,"🌚",3,"Colony Original"],["2026-10-29",347549926,983725251,"🔥",1,"Colony Original"],["2026-10-29",347549926,983725251,"🤝",1,"Colony Cinema"],["2026-10-29",347549926,983725251,"🤝",1,"Colony Original"],["2026-10-29",347549926,6674389741,"✨",1,"Colony Original"],["2026-10-29",347549926,6674389741,"🌚",1,"Colony Original"],["2026-10-29",347549926,6674389741,"🤝",2,"Colony Original"],["2026-10-29",347549926,6891603349,"🌚",4,"Colony Original"],["2026-10-29",347549926,6891603349,"🌚",1,"Neural Nonsense"],["2026-10-29",347549926,6891603349,"🌚",1,"Real Politics"],["2026-10-29",347549926,6891603349,"👍",1,"Colony Original"],["2026-10-29",347549926,6891603349,"🤔",1,"Colony Original"],["2026-10-29",347549926,7928795272,"🌟",1,"Colony Original"],["2026-10-29",347549926,8880257555,"🤝",1,"Republic of Gamers"],["2026-10-29",392234812,660579527,"❤",1,"Real Politics"],["2026-10-29",392234812,8880257555,"😁",1,"Real Politics"],["2026-10-29",457274349,0,"🔥",1,"Hot men aesthetics"],["2026-10-29",457274349,6674389741,"🖤",1,"Colony Original"],["2026-10-29",585731542,347549926,"🌚",1,"Colony Original"],["2026-10-29",585731542,347549926,"🐱",1,"Colony Original"],["2026-10-29",585731542,347549926,"🤝",1,"Colony Original"],["2026-10-29",585731542,7928795272,"🌚",1,"Colony Original"],["2026-10-29",600274098,347549926,"❤",2,"Colony Original"],["2026-10-29",600274098,526673962,"😁",1,"Colony Original"],["2026-10-29",600274098,6674389741,"❤",1,"Colony Original"],["2026-10-29",660579527,282489954,"🌚",1,"Real Politics"],["2026-10-29",660579527,983725251,"🤝",1,"Colony Original"],["2026-10-29",660579527,6891603349,"🤝",1,"Colony Cinema"],["2026-10-29",660579527,6891603349,"🤝",2,"Colony Original"],["2026-10-29",679271589,600274098,"💅",1,"Colony Original"],["2026-10-29",983725251,347549926,"❤",1,"Colony Original"],["2026-10-29",983725251,347549926,"🖤",2,"Colony Original"],["2026-10-29",983725251,347549926,"🫡",1,"Colony Cinema"],["2026-10-29",983725251,526673962,"🔥",1,"Colony Original"],["2026-10-29",983725251,600274098,"🌟",2,"Colony Original"],["2026-10-29",983725251,660579527,"🖤",1,"Colony Cinema"],["2026-10-29",983725251,660579527,"🖤",1,"Colony Original"],["2026-10-29",983725251,708596307,"😶",1,"Colony Original"],["2026-10-29",983725251,6674389741,"🖤",1,"Colony Original"],["2026-10-29",983725251,7928795272,"🌟",1,"Colony Original"],["2026-10-29",983725251,7928795272,"🖤",1,"Colony Original"],["2026-10-29",983725251,7928795272,"😢",1,"Colony Original"],["2026-10-29",983725251,7928795272,"🤝",1,"Colony Original"],["2026-10-29",6674389741,347549926,"❤",1,"Colony Original"],["2026-10-29",6674389741,983725251,"🔥",1,"Colony Original"],["2026-10-29",6891603349,282489954,"🤩",1,"Colony Original"],["2026-10-29",6891603349,347549926,"🤩",2,"Colony Cinema"],["2026-10-29",6891603349,392234812,"🤩",1,"Real Politics"],["2026-10-29",6891603349,660579527,"🤩",1,"Colony Cinema"],["2026-10-29",6891603349,660579527,"🤩",3,"Colony Original"],["2026-10-29",6891603349,660579527,"🤩",1,"Republic of Gamers"],["2026-10-29",6891603349,983725251,"🌚",1,"Colony Original"],["2026-10-29",6891603349,8880257555,"🤩",3,"Republic of Gamers"],["2026-10-29",7928795272,347549926,"❤",2,"Colony Original"],["2026-10-29",7928795272,457274349,"🌚",1,"Hot men aesthetics"],["2026-10-29",7928795272,660579527,"🌚",2,"Colony Original"],["2026-10-29",7928795272,660579527,"🤝",1,"Colony Original"],["2026-10-29",7928795272,708596307,"🌟",1,"Colony Original"],["2026-10-29",7928795272,983725251,"🌚",3,"Colony Original"],["2026-10-29",7928795272,983725251,"🤝",1,"Colony Original"],["2026-10-29",8880257555,347549926,"🫡",2,"Colony Cinema"],["2026-10-29",8880257555,660579527,"😁",1,"Real Politics"],["2026-10-30",282489954,347549926,"🫡",1,"Real Politics"],["2026-10-30",282489954,660579527,"🤣",1,"Real Politics"],["2026-10-30",282489954,8880257555,"👀",1,"Colony Cinema"],["2026-10-30",282489954,8880257555,"🔥",1,"Hot Aesthetics"],["2026-10-30",347549926,0,"✨",1,"Colony Original"],["2026-10-30",347549926,0,"🤔",1,"Real Politics"],["2026-10-30",347549926,282489954,"🌚",1,"Real Politics"],["2026-10-30",347549926,282489954,"🔥",1,"Real Politics"],["2026-10-30",347549926,282489954,"🤔",1,"Real Politics"],["2026-10-30",347549926,392234812,"✨",1,"Colony Original"],["2026-10-30",347549926,457274349,"🌚",3,"Colony Original"],["2026-10-30",347549926,457274349,"🫡",1,"Colony Original"],["2026-10-30",347549926,585731542,"🌚",2,"Colony Original"],["2026-10-30",347549926,585731542,"🤝",1,"Colony Original"],["2026-10-30",347549926,660579527,"✨",1,"Colony Original"],["2026-10-30",347549926,660579527,"🌚",3,"Colony Original"],["2026-10-30",347549926,660579527,"🌚",1,"Real Politics"],["2026-10-30",347549926,660579527,"🌟",3,"Colony Original"],["2026-10-30",347549926,660579527,"👎",1,"Colony Original"],["2026-10-30",347549926,708596307,"🌚",2,"Colony Original"],["2026-10-30",347549926,7928795272,"🌚",3,"Colony Original"],["2026-10-30",347549926,7928795272,"🤔",2,"Colony Original"],["2026-10-30",347549926,8880257555,"🤔",1,"Colony Cinema"],["2026-10-30",354940148,660579527,"🤔",1,"Colony Original"],["2026-10-30",354940148,7928795272,"😭",1,"Colony Original"],["2026-10-30",457274349,347549926,"❤",1,"Colony Original"],["2026-10-30",457274349,347549926,"😁",1,"Colony Original"],["2026-10-30",457274349,347549926,"🤝",1,"Colony Original"],["2026-10-30",457274349,585731542,"❤",1,"Colony Original"],["2026-10-30",457274349,585731542,"🤝",1,"Colony Original"],["2026-10-30",585731542,0,"🌚",1,"Colony Original"],["2026-10-30",585731542,347549926,"🌚",2,"Colony Original"],["2026-10-30",585731542,392234812,"🔥",1,"Colony Original"],["2026-10-30",585731542,457274349,"☕️",1,"Colony Original"],["2026-10-30",585731542,457274349,"🌚",3,"Colony Original"],["2026-10-30",585731542,457274349,"🤝",2,"Colony Original"],["2026-10-30",585731542,457274349,"🫡",1,"Colony Original"],["2026-10-30",585731542,660579527,"🌚",3,"Colony Original"],["2026-10-30",585731542,660579527,"🤔",1,"Colony Original"],["2026-10-30",585731542,708596307,"🌚",3,"Colony Original"],["2026-10-30",585731542,983725251,"🌚",2,"Colony Original"],["2026-10-30",585731542,6891603349,"🌚",1,"Colony Original"],["2026-10-30",585731542,7928795272,"🌚",2,"Colony Original"],["2026-10-30",600274098,347549926,"😁",1,"Colony Original"],["2026-10-30",600274098,392234812,"🔥",1,"Colony Original"],["2026-10-30",600274098,7928795272,"❤",1,"Colony Original"],["2026-10-30",708596307,585731542,"❤‍🔥",1,"Colony Original"],["2026-10-30",708596307,660579527,"🫡",4,"Colony Original"],["2026-10-30",708596307,7928795272,"🫡",2,"Colony Original"],["2026-10-30",983725251,282489954,"🖤",1,"Colony Original"],["2026-10-30",983725251,347549926,"🤩",1,"Colony Cinema"],["2026-10-30",983725251,392234812,"🔥",1,"Colony Original"],["2026-10-30",983725251,585731542,"🌚",1,"Colony Original"],["2026-10-30",983725251,7928795272,"👀",1,"Colony Original"],["2026-10-30",6674389741,600274098,"❤",1,"Colony Original"],["2026-10-30",6891603349,347549926,"🌚",1,"Colony Original"],["2026-10-30",6891603349,347549926,"🤩",1,"Colony Cinema"],["2026-10-30",6891603349,347549926,"🤩",1,"Colony Original"],["2026-10-30",6891603349,600274098,"❤",1,"Colony Original"],["2026-10-30",6891603349,660579527,"🤩",2,"Real Politics"],["2026-10-30",7928795272,347549926,"❤",1,"Colony Original"],["2026-10-30",7928795272,347549926,"🌚",2,"Colony Original"],["2026-10-30",7928795272,347549926,"🔥",1,"Colony Original"],["2026-10-30",7928795272,457274349,"🤔",1,"Colony Original"],["2026-10-30",7928795272,585731542,"🌚",1,"Colony Original"],["2026-10-30",7928795272,660579527,"🌟",1,"Colony Original"],["2026-10-30",7928795272,660579527,"👀",1,"Colony Original"],["2026-10-30",7928795272,660579527,"🤝",1,"Colony Original"],["2026-10-30",7928795272,708596307,"😐",1,"Colony Original"],["2026-10-30",7928795272,983725251,"🌚",1,"Colony Original"],["2026-10-30",7928795272,6674389741,"🌚",1,"Colony Original"],["2026-10-30",8880257555,282489954,"🤔",1,"Real Politics"],["2026-10-30",8880257555,282489954,"🤝",1,"Real Politics"],["2026-10-30",8880257555,347549926,"🫡",1,"Colony Cinema"]],"events":[{"id":4,"title":"Мир Гарри Поттера","status":"finished","start":"2025-12-15","end":"2026-03-20","levels":[[1,"Маггл-новичок",0],[2,"Узнал о мире магии",11],[3,"Получил письмо из Хогвартса",45],[4,"Первокурсник",101],[5,"Ученик Хогвартса",180],[6,"Ученик своего факультета",281],[7,"Любитель простых чар",405],[8,"Начинающий волшебник",551],[9,"Читатель библиотеки Хогвартса",720],[10,"Практик бытовой магии",911],[11,"Ученик-дуэлянт",1124],[12,"Участник клуба зелий",1360],[13,"Знаток Левиосы",1619],[14,"Мастер Люмоса",1900],[15,"Префект факультета",2204],[16,"Старший префект",2530],[17,"Отличник СОВ",2878],[18,"Отличник ЖАБА",3249],[19,"Помощник преподавателя",3643],[20,"Хранитель секретных проходов",4059],[21,"Молодой аврор-практикант",4497],[22,"Аврор",4958],[23,"Опытный аврор",5441],[24,"Магический следопыт",7501],[25,"Зельевар-мастер",10001],[26,"Исследователь магических существ",13001],[27,"Исследователь Запретного отдела",16501],[28,"Член Ордена Феникса",20501],[29,"Старший член Ордена Феникса",25001],[30,"Мастер боевой магии",30001],[31,"Хранитель тайн Хогвартса",35501],[32,"Архимаг ордена",41501],[33,"Главный аврор",48001],[34,"Советник Министерства магии",55001],[35,"Руководитель Отдела тайн",62501],[36,"Легенда магического мира",70501],[37,"Живая легенда Хогвартса",79001],[38,"Великий маг Британии",88001],[39,"Великий маг Европы",97501],[40,"Маг-эпоха",107501]]},{"id":1,"title":"Мир Наруто","status":"legacy","start":"2026-03-21","end":"2026-09-10","levels":[[1,"Гражданский",0],[2,"Академист",11],[3,"Ученик академии",45],[4,"Стажёр шиноби",101],[5,"Практик чакры",180],[6,"Новобранец",281],[7,"Выпускник академии",405],[8,"Кандидат в генин",551],[9,"Носитель повязки",720],[10,"Генин",911],[11,"Исполнитель миссий",1124],[12,"Шиноби команды",1360],[13,"Знаток дзюцу",1619],[14,"Контроллер чакры",1900],[15,"Ученик сенсея",2204],[16,"Претендент на экзамен",2530],[17,"Чунин",2878],[18,"Экзаменуемый",3249],[19,"Тактик деревни",3643],[20,"Командник",4059],[21,"Специалист ниндзюцу",4497],[22,"Мастер тайдзюцу",4958],[23,"Иллюзионист",5441],[24,"Следопыт",7501],[25,"Джонин",10001],[26,"Сенсей",13001],[27,"Наставник команды",16501],[28,"Капитан отряда",20501],[29,"Элитный шиноби",25001],[30,"Мастер техник",30001],[31,"Масочник",35501],[32,"Теневик",41501],[33,"Клинок деревни",48001],[34,"Хранитель воли огня",55001],[35,"Представитель клана",62501],[36,"Наследник клана",70501],[37,"Легендарный шиноби",79001],[38,"Правая рука Каге",88001],[39,"Преемник Каге",97501],[40,"Каге",107501]]},{"id":3,"title":"Греческая мифология","status":"active","start":"2026-09-12","end":"2026-12-11","levels":[[1,"Грек",0],[2,"Паломник",20],[3,"Верующий",77],[4,"Жрец",172],[5,"Гоплит",305],[6,"Воин",475],[7,"Спартанец",682],[8,"Стратег",927],[9,"Военачальник",1210],[10,"Гладиатор",1530],[11,"Герой",1888],[12,"Авгур",2284],[13,"Оракул",2717],[14,"Аргонавт",3187],[15,"Сатир",3695],[16,"Амазонка",4241],[17,"Герой Эллады",4824],[18,"Избранник богов",5445],[19,"Дитё Геракла",6103],[20,"Полубог",6799],[21,"Кентавр",7533],[22,"Сирена",8304],[23,"Минотавр",9113],[24,"Гидра",9959],[25,"Цербер",10843],[26,"Медуза",11764],[27,"Химера",12723],[28,"Сфинкс",13719],[29,"Мойра",14753],[30,"Прометей",15825],[31,"Титан",16934],[32,"Атлант",18081],[33,"Божество",19265],[34,"Олимпиец",20487],[35,"Великий бог",21746],[36,"Владыка Олимпа",23043],[37,"Повелитель стихий",24378],[38,"Владыка судьбы",25750],[39,"Царь богов",27160],[40,"Повелитель богов",28607]]}],"progress":[[1,5072796396,1,1],[1,354940148,10,957],[1,6504207841,3,59],[1,8880257555,13,1699],[1,480247162,2,41],[1,600274098,21,4822],[1,526673962,19,3928],[1,457274349,23,6271],[1,930906071,27,19658],[1,282489954,17,3073],[1,585731542,25,12830],[1,347549926,26,16098],[1,7928795272,27,17982],[1,6891603349,15,2463],[1,679271589,6,359],[1,676243725,6,345],[1,1648306748,4,170],[1,94031322,1,6],[1,983725251,26,15244],[1,660579527,19,3793],[1,421699274,7,517],[1,392234812,3,62],[1,943222377,11,1291],[1,1356218071,14,2003],[3,347549926,18,5613],[3,660579527,10,1569],[3,983725251,9,1398],[3,457274349,7,858],[3,7928795272,15,4007],[3,6891603349,9,1495],[3,8880257555,13,2807],[3,421699274,3,80],[3,600274098,8,969],[3,1356218071,4,193],[3,526673962,4,221],[3,585731542,11,2142],[3,930906071,13,2901],[3,679271589,4,300],[3,676243725,2,45],[3,282489954,8,1104],[3,6674389741,7,907],[3,392234812,6,658],[3,354940148,4,194],[3,480247162,3,90],[3,708596307,8,1188],[3,943222377,2,72],[4,5752602790,3,53],[4,94031322,1,7],[4,6314372730,1,1],[4,943222377,5,242],[4,392234812,4,179],[4,1648306748,1,6],[4,930906071,26,15065],[4,983725251,17,3156],[4,7928795272,28,24120],[4,1356218071,10,1091],[4,457274349,23,7465],[4,585731542,24,9959],[4,347549926,25,10282],[4,526673962,20,4306],[4,354940148,8,661],[4,676243725,8,555],[4,660579527,20,4239],[4,421699274,6,393],[4,8880257555,16,2552],[4,600274098,23,6970],[4,110077035,2,14],[4,282489954,22,5255],[4,480247162,2,38],[4,6891603349,8,713],[4,544966106,4,144]]}</script>
 <script id="v42-js">
 /* ===================== Реакции и события =====================
    Данные — снимок API colony-taras.com, вшитый в файл (блок #colony-rx-data выше):
@@ -19894,37 +19911,39 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     if (RXC && RXC.m === m && RXC.ver === VER) return RXC.rows;
     const rows = [];
     DATA.hist.forEach(([f, t, n]) => { const a = keyOf(f); if (a) rows.push({d:"", f:a, t:keyOf(t), e:"", n:Number(n) || 1}); });
-    DATA.daily.forEach(([d, f, t, e, n]) => { const a = keyOf(f); if (a) rows.push({d:String(d).slice(0, 10), f:a, t:keyOf(t), e:e || "", n:Number(n) || 1}); });
+    DATA.daily.forEach(([d, f, t, e, n, c]) => { const a = keyOf(f); if (a) rows.push({d:String(d).slice(0, 10), f:a, t:keyOf(t), e:e || "", n:Number(n) || 1, c:c || ""}); });
     RXC = {m, ver:VER, rows};
     return rows;
   }
   const SINCE = () => DATA.daily.reduce((a, x) => (!a || x[0] < a ? x[0] : a), "");
   const undatedTotal = () => DATA.hist.reduce((s, x) => s + (Number(x[2]) || 0), 0);
-  // Показатели rgive/rgot для строк истории: реакции участника за день «живут» в одной его строке —
-  // в строке «все чаты» (chat_pk 0), а если её нет — в чате, где он больше всего писал в тот день.
+  // Показатели rgive/rgot для строк истории. Каждая строка сама находит свои реакции, без полной истории:
+  // строка «все чаты» (chat_pk 0) — все реакции участника за день, строка чата — реакции в этом чате,
+  // Colony Ultimate — сумма по входящим в него чатам. Строки VK реакций не получают.
   let CELL = null;
+  const chatKey = t => norm(t);
   function cellIndex(){
-    const rx = rxAll(), rowsA = AR();
-    if (CELL && CELL.rx === rx && CELL.rows === rowsA) return CELL;
+    const rx = rxAll();
+    if (CELL && CELL.rx === rx) return CELL;
     const du = new Map(), dc = new Map();
+    const put = (M, k, kind, n) => { let a = M.get(k); if (!a) M.set(k, a = {rgive:0, rgot:0}); a[kind] += n; };
     rx.forEach(x => {
       if (!x.d) return;
-      let a = du.get(x.d + "|" + x.f); if (!a) du.set(x.d + "|" + x.f, a = {rgive:0, rgot:0}); a.rgive += x.n;
-      if (x.t) { let b = du.get(x.d + "|" + x.t); if (!b) du.set(x.d + "|" + x.t, b = {rgive:0, rgot:0}); b.rgot += x.n; }
+      put(du, x.d + "|" + x.f, "rgive", x.n); if (x.t) put(du, x.d + "|" + x.t, "rgot", x.n);
+      const c = chatKey(x.c); if (!c) return;
+      put(dc, x.d + "|" + x.f + "|" + c, "rgive", x.n); if (x.t) put(dc, x.d + "|" + x.t + "|" + c, "rgot", x.n);
     });
-    const hasTot = (rowsA || []).some(x => Number(x[F.chatPk]) === 0), best = new Map();
-    (rowsA || []).forEach(x => {
-      const k = String(x[F.date] ?? "").slice(0, 10) + "|" + String(x[F.userId] ?? ""), c = String(x[F.chatPk] ?? x[F.chat] ?? "");
-      if (hasTot) { if (Number(x[F.chatPk]) === 0) dc.set(k, c); return; }
-      const v = Number(g(x, "msgs")) || 0, b = best.get(k);
-      if (!b || v > b) { best.set(k, v); dc.set(k, c); }
-    });
-    return CELL = {rx, rows:rowsA, du, dc};
+    // для Ultimate: какие чаты встречаются у реакций
+    const chats = new Map(); rx.forEach(x => { if (x.c) chats.set(chatKey(x.c), x.c); });
+    return CELL = {rx, du, dc, chats};
   }
   window.__betaReactCell = (x, k) => {
-    const C = cellIndex(), key = String(x[F.date] ?? "").slice(0, 10) + "|" + String(x[F.userId] ?? "");
-    if (C.dc.get(key) !== String(x[F.chatPk] ?? x[F.chat] ?? "")) return 0;
-    return C.du.get(key)?.[k] || 0;
+    const C = cellIndex(), base = String(x[F.date] ?? "").slice(0, 10) + "|" + String(x[F.userId] ?? ""), pk = x[F.chatPk];
+    if (Number(pk) === 0) return C.du.get(base)?.[k] || 0;
+    if (typeof isUltPk === "function" && isUltPk(pk)) {
+      let s = 0; C.chats.forEach((title, ck) => { if (typeof ultIsMember === "function" && ultIsMember(title)) s += C.dc.get(base + "|" + ck)?.[k] || 0; }); return s;
+    }
+    return C.dc.get(base + "|" + chatKey(x[F.chat]))?.[k] || 0;
   };
   // Ранние реакции без даты попадают только в выборки без начальной даты («за всё время»)
   const inR = (x, from, to) => x.d ? ((!from || x.d >= from) && (!to || x.d <= to)) : !from;
@@ -20009,10 +20028,10 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
         const items = await getAll("/api/v1/reactions/daily"), m = new Map();
         items.forEach(x => {
           const f = addUser(x.giver); if (!f) return;
-          const t = x.receiver_unknown ? 0 : addUser(x.receiver), e = x.reaction?.emoji || "", k = [x.stat_date, f, t, e].join("|");
+          const t = x.receiver_unknown ? 0 : addUser(x.receiver), e = x.reaction?.emoji || "", k = [x.stat_date, f, t, e, x.chat_title || ""].join("\u0001");
           m.set(k, (m.get(k) || 0) + (Number(x.reaction_count) || 1));
         });
-        if (m.size) { DATA.daily = [...m.entries()].map(([k, n]) => { const [d, f, t, e] = k.split("|"); return [d, +f, +t, e, n]; }); changed = true; }
+        if (m.size) { DATA.daily = [...m.entries()].map(([k, n]) => { const [d, f, t, e, c] = k.split("\u0001"); return [d, +f, +t, e, n, c]; }); changed = true; }
       } catch (e) {}
       try {
         const evs = await getAll("/api/v1/events"), prog = await getAll("/api/v1/event-progress");
@@ -20049,7 +20068,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
         ${me && st === "live" ? (() => { const fc = forecastEvent(ev)?.list.find(x => x.k === pk); return fc ? `<div class="ev-meta"><span>Прогноз к концу: <b>ур. ${fc.end}</b> · ${fc.place}-е место</span></div>` : ""; })() : ""}${me ? `<div class="ev-meta"><span>Уровень: <b>${me.level}</b></span><span>${esc(rankName(ev, me.level))}</span></div><div class="ev-meta"><span>Место: <b>${pl}</b> из ${m.size}</span><span>«${esc(ev.ach.name)}»: <span class="ev-tier" style="--tc:${TC(tl)}">${ROM[tl]}</span></span></div>` : `<div class="ev-meta"><span>Не участвовал(а)</span></div>`}</div>`;
     }).join("");
     const since = SINCE();
-    return `<h2>Реакции ${dataNote()}</h2>
+    return `<div class="rx-emo-scope"><h2>Реакции ${dataNote()}</h2>
       <div class="wrap"><table class="re-prof"><thead><tr><th style="text-align:left">Период</th><th>Поставил(а)</th><th>Получил(а)</th></tr></thead><tbody>${rowsT}</tbody></table></div>
       ${since && undatedTotal() ? `<p class="hint">Даты реакций записываются с ${fd(since)}; более ранние реакции входят только в «За всё время».</p>` : ""}
       <div class="bx-grid">
@@ -20057,7 +20076,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
         <div class="bx-card"><h3>Кто ставит реакции</h3><p class="hint">Топ-5 за всё время</p>${bars(top(fromM, 5).map(([k, v]) => ({lbl:esc(nm(k)), v, c:col(k)})), {empty:"Реакций не получал(а)"})}</div>
         <div class="bx-card"><h3>Любимые реакции</h3><p class="hint">Что ставит чаще всего${since ? ` (с ${fd(since)})` : ""}</p>${bars(top(emo, 5).map(([e, v]) => ({lbl:e, v, bg:grad(color || col(pk))})), {emo:true})}</div>
       </div>
-      <h2>События ${dataNote()}</h2><div class="ev-timeline">${evCards}</div>`;
+      </div><h2>События ${dataNote()}</h2><div class="ev-timeline">${evCards}</div>`;
   };
   document.addEventListener("click", e => {
     const c = e.target.closest?.("[data-ev-open]"); if (!c) return;
@@ -20757,7 +20776,8 @@ h2 + p.hint{margin-top:-4px}
 
 /* Цифры — главный элемент */
 .tile .num,.hub-kpi .v{font-weight:800;letter-spacing:-.025em;line-height:1.08;font-variant-numeric:tabular-nums lining-nums}
-.tile .num{font-size:36px;margin:6px 0 4px}
+.tile{container-type:inline-size}
+.tile .num{font-size:min(36px,15.5cqi);margin:6px 0 4px;white-space:nowrap}
 .hub-kpi .v{font-size:32px;margin:4px 0}
 .tile .lbl,.hub-kpi .l{font-size:13.5px;letter-spacing:0;color:var(--muted)}
 .tile .place,.hub-kpi .s{font-size:13px}
@@ -20775,7 +20795,7 @@ header h1{letter-spacing:-.01em}
 
 @media (max-width:720px){
   h2{font-size:17px}
-  .tile .num{font-size:27px}
+  .tile .num{font-size:min(27px,15.5cqi)}
   .hub-kpi .v{font-size:26px}
 }
 </style>
