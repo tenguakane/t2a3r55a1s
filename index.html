@@ -21144,8 +21144,9 @@ html body #s-days-table.tv-cards > tbody > tr > td.s-miss:empty::after{content:$
     setVB(svg, clampVB(svg, p.x - (p.x - cur[0]) * k, p.y - (p.y - cur[1]) * k, w, h));
   }, {passive:false});
   // Перетаскивание приближенного графика
-  let drag = null, moved = false;
+  let drag = null, moved = false, movedSvg = null;
   document.addEventListener("pointerdown", e => {
+    moved = false; movedSvg = null;
     if (e.button !== 0 || !desk.matches) return;
     const svg = outer(e.target); if (!svg || !svg.classList.contains("cz-on")) return;
     drag = {svg, x:e.clientX, y:e.clientY, vb:parse(svg.getAttribute("viewBox")), m:svg.getScreenCTM()}; moved = false;
@@ -21154,14 +21155,15 @@ html body #s-days-table.tv-cards > tbody > tr > td.s-miss:empty::after{content:$
     if (!drag) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
     if (!moved && Math.hypot(dx, dy) < 4) return;
-    moved = true; drag.svg.classList.add("cz-drag");
+    moved = true; movedSvg = drag.svg; drag.svg.classList.add("cz-drag");
     const s = drag.m ? drag.m.a : 1, [x, y, w, h] = drag.vb;
     setVB(drag.svg, clampVB(drag.svg, x - dx / s, y - dy / s, w, h));
   });
   const end = () => { if (drag) drag.svg.classList.remove("cz-drag"); drag = null; };
   document.addEventListener("pointerup", end); document.addEventListener("pointercancel", end);
   // после перетаскивания клик не должен срабатывать (например, скрывать серию в легенде)
-  document.addEventListener("click", e => { if (moved) { moved = false; e.stopPropagation(); e.preventDefault(); } }, true);
+  // гасится только клик по тому же графику сразу после перетаскивания; кнопки и фильтры не трогаются
+  document.addEventListener("click", e => { if (moved && movedSvg && outer(e.target) === movedSvg) { e.stopPropagation(); e.preventDefault(); } moved = false; movedSvg = null; }, true);
   document.addEventListener("dblclick", e => {
     const svg = outer(e.target); if (!svg || !svg.dataset.vb0 || !svg.classList.contains("cz-on")) return;
     e.preventDefault(); setVB(svg, parse(svg.dataset.vb0));
