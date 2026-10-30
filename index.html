@@ -1542,7 +1542,21 @@ document.body.classList.add("beta-re");
   }).observe(document.documentElement, {childList:true, subtree:true});
 })();
 </script>
-<style id="rx-copy-css">.rx-copy-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px}.bx-card > .rx-copy-row{margin:12px 0 0}.rx-copy-row .hint{margin:0;font-size:13px}</style>
+<style id="theme-custom-css">#theme-custom{align-items:flex-end}#theme-custom input[type=color]{width:56px;height:34px;padding:2px;border-radius:8px;border:1px solid var(--line);background:var(--ctrl);cursor:pointer}
+html body #theme-custom input.tc-hue{width:240px!important;height:14px!important;padding:0!important;border:0!important;border-radius:7px!important;-webkit-appearance:none;appearance:none;background-image:none!important;background:linear-gradient(90deg,hsl(0 88% 66%),hsl(60 88% 66%),hsl(120 88% 66%),hsl(180 88% 66%),hsl(240 88% 66%),hsl(300 88% 66%),hsl(360 88% 66%))!important;outline-offset:3px}
+html body #theme-custom input.tc-hue::-webkit-slider-runnable-track{background:transparent!important;border:0!important;height:14px}
+html body #theme-custom input.tc-hue::-moz-range-track{background:transparent!important;border:0!important}
+html body #theme-custom input.tc-hue::-webkit-slider-thumb{-webkit-appearance:none;margin-top:-3px;width:20px;height:20px;border-radius:50%;background:#fff;border:2px solid var(--bg);box-shadow:0 1px 4px #0008}
+.tc-hue::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid var(--bg)}</style>
+<style id="rx-copy-css">
+.rx-head{display:flex;align-items:center;gap:10px;margin:26px 0 10px}
+.rx-head > h2{margin:0!important;margin-right:auto!important}
+.rx-head.rx-head-3{margin:0 0 4px}.rx-head.rx-head-3 > h3{margin:0!important;margin-right:auto!important}
+.rx-head.rx-head-solo{justify-content:flex-end;margin:0 0 8px}
+.rx-head .rx-copy,.hc-bar .rx-copy{height:30px;padding:0 10px;font-size:13px}
+.rx-head-3 .rx-copy{height:26px;padding:0 9px;font-size:12.5px}
+.rx-copy-msg{margin:0!important;font-size:12.5px}
+</style>
 <style id="ios-emoji-css">.ios-emo{display:inline-block;width:1.2em;height:1.2em;vertical-align:-.22em;object-fit:contain;user-select:none}</style>
 <style id="fr-boot-css">
 body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot main #ch-types,body.fr-boot header #ult-toggle,body.fr-boot header #vk-toggle{visibility:hidden!important}
@@ -2056,6 +2070,7 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
     <p class="hint">Все темы тёмные: тема задаёт цвет акцентов (кнопки, подсветка, ссылки), а «Фон» — оттенок тёмной основы. Меняет цвета всего сайта и таблиц, в том числе в скопированных картинках. Цвета графиков настраиваются отдельно через «⚙ Настройка».</p>
     <div class="quick-ranges" id="theme-bases" role="group" aria-label="Фон сайта" style="margin:0 0 10px"></div>
     <div class="theme-grid" id="theme-grid"></div>
+    <div class="filters" id="theme-custom"></div>
     <h2>Эффекты</h2>
     <div class="filters"><label class="checkline" title="Цвет каждого участника в графиках — лёгкий градиент: начало темнее, конец светлее. Работает и с готовыми палитрами"><input type="checkbox" id="set-soft-grad" checked>Лёгкий градиент в цветах участников</label><label class="checkline" title="Призовые места в таблицах (1 — радужный перелив, 2 — серебряный, 3 — бронзовый), победитель дуэли, номинанты «Итогов года» и максимальные достижения переливаются голографическим градиентом. В скопированных картинках — обычный текст"><input type="checkbox" id="set-holo-text">Переливающийся текст у победителей</label><label class="checkline" title="Карточки достижений, профиля, итогов года, сравнения, хаба и тем наклоняются за курсором, на них появляется блик; у алмазных достижений — радужная голограмма"><input type="checkbox" id="set-holo">3D-наклон и голографические блики на карточках</label></div>
     <div class="filters" id="fx-list"></div>
@@ -5043,6 +5058,51 @@ function drawCanvasCellText(ctx, cell, rect, tableRect, xOffset, yOffset, fallba
   });
   ctx.restore();
 }
+// Ячейка с плашками (уровень достижения «I–VII» и т. п.): плашка с фоном и рамкой, текст — точно там, где он на странице.
+function drawExactCell(ctx, cell, tableRect, tableX, tableY, fallback){
+  const X = r => tableX + r.left - tableRect.left, Y = r => tableY + r.top - tableRect.top;
+  cell.querySelectorAll(".ev-tier").forEach(el => {
+    const r = el.getBoundingClientRect(), cs = getComputedStyle(el); if (!r.width) return;
+    const rad = parseFloat(cs.borderTopLeftRadius) || 0, bw = parseFloat(cs.borderTopWidth) || 0;
+    ctx.save(); ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(X(r), Y(r), r.width, r.height, rad); else ctx.rect(X(r), Y(r), r.width, r.height);
+    const bg = canvasColor(cs.backgroundColor, "rgba(0,0,0,0)"); if (bg && !/rgba\([^)]*,\s*0\)$/.test(bg)) { ctx.fillStyle = bg; ctx.fill(); }
+    if (bw) { ctx.lineWidth = bw; ctx.strokeStyle = canvasColor(cs.borderTopColor, fallback); ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(X(r) + bw / 2, Y(r) + bw / 2, r.width - bw, r.height - bw, Math.max(0, rad - bw / 2)); else ctx.rect(X(r), Y(r), r.width, r.height); ctx.stroke(); }
+    ctx.restore();
+  });
+  const w = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT), range = document.createRange();
+  while (w.nextNode()) {
+    const n = w.currentNode, t = n.nodeValue.replace(/\s+/g, " "); if (!t.trim()) continue;
+    const p = n.parentElement; if (p.closest("[data-no-export]")) continue;
+    range.selectNodeContents(n); const r = [...range.getClientRects()].find(x => x.width > 0); if (!r) continue;
+    const cs = getComputedStyle(p);
+    ctx.save(); ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`; ctx.fillStyle = canvasColor(cs.color, fallback); ctx.textBaseline = "middle"; ctx.textAlign = "left";
+    ctx.fillText(t.trim(), X(r) + (t.startsWith(" ") ? ctx.measureText(" ").width : 0), Y(r) + r.height / 2); ctx.restore();
+  }
+}
+// Число уровня рядом с полоской — ровно там, где оно стоит на странице (а не по центру ячейки поверх полоски).
+function drawLevelText(ctx, cell, tableRect, tableX, tableY, fallback){
+  cell.querySelectorAll(".ev-lv > b").forEach(el => {
+    const r = el.getBoundingClientRect(), cs = getComputedStyle(el); if (!r.width) return;
+    ctx.save(); ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`; ctx.fillStyle = canvasColor(cs.color, fallback); ctx.textBaseline = "middle"; ctx.textAlign = "left";
+    ctx.fillText(el.textContent, tableX + r.left - tableRect.left, tableY + r.top - tableRect.top + r.height / 2); ctx.restore();
+  });
+}
+// Полоски уровня (.ev-lv): дорожка и заливки — с теми цветами и прозрачностью, что на странице.
+function drawCellBars(ctx, cell, tableRect, tableX, tableY){
+  const conv = c => { const k = c.match(/^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?/i); return k ? `rgba(${Math.round(k[1] * 255)},${Math.round(k[2] * 255)},${Math.round(k[3] * 255)},${k[4] ?? 1})` : c; };
+  const cols = el => { const cs = getComputedStyle(el); return ((cs.backgroundImage + " " + cs.backgroundColor).match(/rgba?\([^)]*\)|#[0-9a-f]{3,8}\b|color\(srgb[^)]*\)/gi) || []).map(conv).filter(c => !/rgba\([^)]*,\s*0\)$/.test(c)); };
+  const paint = el => {
+    const r = el.getBoundingClientRect(); if (r.width < .5 || r.height < .5) return;
+    const list = cols(el); if (!list.length) return;
+    const x = tableX + r.left - tableRect.left, y = tableY + r.top - tableRect.top;
+    let fill = list[0];
+    if (list.length > 1) { const gr = ctx.createLinearGradient(x, 0, x + r.width, 0); gr.addColorStop(0, list[0]); gr.addColorStop(1, list[list.length - 1]); fill = gr; }
+    ctx.save(); ctx.globalAlpha = Number(getComputedStyle(el).opacity) || 1; ctx.fillStyle = fill;
+    const rad = Math.min(r.height / 2, parseFloat(getComputedStyle(el).borderTopLeftRadius) || r.height / 2);
+    ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, r.width, r.height, rad); else ctx.rect(x, y, r.width, r.height); ctx.fill(); ctx.restore();
+  };
+  cell.querySelectorAll(".ev-lv i").forEach(track => { paint(track); track.querySelectorAll("em").forEach(paint); });
+}
 // Смайлы iOS (картинки) в ячейках: рисуются поверх, на своих местах.
 async function drawCellEmoji(ctx, cell, tableRect, tableX, tableY){
   for (const im of cell.querySelectorAll("img.ios-emo")) {
@@ -5326,9 +5386,12 @@ async function tableImageBlob(tableId, title, rowLimit = null){
         if (!glass && leftBorder > 0 && cs.borderLeftStyle !== "none" && seen(cs.borderLeftColor)) {
           ctx.fillStyle = canvasColor(cs.borderLeftColor, lineColor); ctx.fillRect(x, y, leftBorder, cr.height);
         }
-        drawCanvasCellText(ctx, cell, cr, tableRect, tableX, tableY, textColor);
+        if (cell.querySelector(".ev-lv i")) drawLevelText(ctx, cell, tableRect, tableX, tableY, textColor);
+        else if (cell.querySelector(".ev-tier")) drawExactCell(ctx, cell, tableRect, tableX, tableY, textColor);
+        else drawCanvasCellText(ctx, cell, cr, tableRect, tableX, tableY, textColor);
         if (cell.querySelector("svg")) await drawInlineSvgVisuals(ctx, cell, tableRect, tableX, tableY);
         if (cell.querySelector("img.ios-emo")) await drawCellEmoji(ctx, cell, tableRect, tableX, tableY);
+        if (cell.querySelector(".ev-lv i")) drawCellBars(ctx, cell, tableRect, tableX, tableY);
         const borderWidth = parseFloat(cs.borderBottomWidth) || 0;
         if (!glass && borderWidth > 0 && cs.borderBottomStyle !== "none" && seen(cs.borderBottomColor)) {
           const borderColor = canvasColor(cs.borderBottomColor, lineColor);
@@ -9027,7 +9090,14 @@ const SITE_ACCENTS = [
   ["glacier", "Ледник", "#9fd8ff", "#c7d2fe", "slate"],
   ["crimson", "Кармин", "#ef4444", "#f97316", "oled"],
   ["sea", "Морская волна", "#2dd4bf", "#22d3ee", "night"],
+  ["custom", "Свой оттенок", "#ff7a59", "#ffc857", "night"],
 ];
+// «Свой оттенок»: два цвета акцента, которые выбирает пользователь (Настройки → Тема)
+const SITE_CUSTOM_KEY = "chatstats.siteCustom.v1";
+(function(){
+  try { const j = JSON.parse(localStorage.getItem(SITE_CUSTOM_KEY) || "null"); const ok = v => /^#[0-9a-f]{6}$/i.test(v || "");
+    if (j && ok(j.a1) && ok(j.a2)) { const c = SITE_ACCENTS.find(x => x[0] === "custom"); c[2] = j.a1; c[3] = j.a2; if (j.base && SITE_BASES[j.base]) c[4] = j.base; } } catch (e) {}
+})();
 const SITE_BASE_KEY = "chatstats.siteBase.v1";
 let siteBaseId = "auto";
 try { const b = localStorage.getItem(SITE_BASE_KEY); if (b === "auto" || SITE_BASES[b]) siteBaseId = b; } catch (e) {}
@@ -9058,7 +9128,30 @@ function renderThemeGrid(){
   box.innerHTML = SITE_ACCENTS.map(a => siteTheme(a[0])).map(t => `<button type="button" class="theme-card${t.id === siteThemeId ? " active" : ""}" data-theme-id="${t.id}" style="--t-bg:${t.bg};--t-panel:${t.panel};--t-line:${t.line};--t-text:${t.text};--t-muted:${t.muted};--t-accent:${t.accent};--t-accent2:${t.accent2}">
     <span class="theme-preview"><span class="theme-prev-head"><i></i><b></b></span><span class="theme-prev-row"><em></em><em></em><em></em></span><span class="theme-prev-row"><em></em><em class="hl"></em><em></em></span></span>
     <span class="theme-name">${escH(t.name)}</span></button>`).join("");
+  const cu = SITE_ACCENTS.find(x => x[0] === "custom"), box2 = $("theme-custom");
+  if (box2) {
+    const hue = (() => { const h = cu[2].slice(1), r = parseInt(h.slice(0, 2), 16) / 255, g = parseInt(h.slice(2, 4), 16) / 255, b = parseInt(h.slice(4, 6), 16) / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; if (!d) return 0; let x = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return Math.round((x * 60 + 360) % 360); })();
+    box2.innerHTML = `<div class="field"><label for="tc-hue">Оттенок</label><input type="range" id="tc-hue" min="0" max="359" step="1" value="${hue}" class="tc-hue"></div>
+      <div class="field"><label for="tc-a1">Основной цвет</label><input type="color" id="tc-a1" value="${cu[2]}"></div>
+      <div class="field"><label for="tc-a2">Второй цвет</label><input type="color" id="tc-a2" value="${cu[3]}"></div>
+      <span class="hint">${siteThemeId === "custom" ? "Свой оттенок включён" : "Выбери цвет — тема «Свой оттенок» включится сама"}</span>`;
+  }
 }
+// цвет по оттенку: насыщенный и светлый, чтобы читался на тёмном фоне
+function hslHex(h, s, l){ s /= 100; l /= 100; const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))); return "#" + [f(0), f(8), f(4)].map(x => Math.round(x * 255).toString(16).padStart(2, "0")).join(""); }
+function setCustomTheme(a1, a2, rerender){
+  const cu = SITE_ACCENTS.find(x => x[0] === "custom"); cu[2] = a1; cu[3] = a2;
+  try { localStorage.setItem(SITE_CUSTOM_KEY, JSON.stringify({a1, a2})); localStorage.setItem(SITE_THEME_KEY, "custom"); } catch (e) {}
+  applySiteTheme("custom");
+  if (rerender) renderThemeGrid();
+  else { document.querySelectorAll("#theme-grid .theme-card").forEach(c => c.classList.toggle("active", c.dataset.themeId === "custom")); const card = document.querySelector('#theme-grid [data-theme-id="custom"]'); if (card) { card.style.setProperty("--t-accent", a1); card.style.setProperty("--t-accent2", a2); } const a = $("tc-a1"), b = $("tc-a2"); if (a) a.value = a1; if (b) b.value = a2; }
+}
+document.addEventListener("input", e => {
+  const id = e.target && e.target.id;
+  if (id === "tc-hue") { const h = Number(e.target.value) || 0; setCustomTheme(hslHex(h, 88, 66), hslHex((h + 38) % 360, 90, 70), false); }
+  else if (id === "tc-a1" || id === "tc-a2") setCustomTheme($("tc-a1").value, $("tc-a2").value, false);
+});
+document.addEventListener("change", e => { const id = e.target && e.target.id; if (id === "tc-hue" || id === "tc-a1" || id === "tc-a2") { renderThemeGrid(); if ($("tab-selfie").classList.contains("active")) renderSelfie(); } });
 $("theme-grid").addEventListener("click", e => {
   const card = e.target.closest("[data-theme-id]"); if (!card) return;
   applySiteTheme(card.dataset.themeId);
@@ -14572,7 +14665,11 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.10.30-4", date:"2026-10-30", title:"Реакции и события — в релизе", items:[
+  {v:"2026.10.30-6", date:"2026-10-30", title:"Реакции и события — в релизе", items:[
+    {tag:"new", area:"Тема", text:"«Свой оттенок» в Настройках → Тема: ползунок оттенка и два цвета акцента."},
+    {tag:"fix", area:"События", text:"«+1» к уровню достижения стоит в одной строке с плашкой — и на сайте, и на картинке; плашки уровня копируются с рамкой и фоном."},
+    {tag:"fix", area:"Копирование", text:"Полоски уровня попадают в картинку таблицы; цвета картинок со стеклом берутся из выбранной темы, а не из синей по умолчанию."},
+    {tag:"imp", area:"Реакции и События", text:"Полоски уровня — в цвет темы; кнопки «Копировать» стоят рядом со своим блоком: у таблицы — рядом с «Карточками» и «Таблицей», у плиток и графиков — в строке заголовка."},
     {tag:"fix", area:"Реакции и События", text:"Все участники из Telegram сопоставлены с участниками сайта: их реакции и уровни видны в Статистике, профилях, достижениях и прогнозе. Аккаунты без имени не учитываются."},
     {tag:"new", area:"Реакции и События", text:"Кнопки копирования картинкой: показатели, таблицы и каждый график. Смайлы iOS попадают и в картинку."},
     {tag:"imp", area:"События", text:"Прогноз идущего события считается как у бота: темп = 0,7 × среднее за 28 дней + 0,3 × среднее за 56 дней; видно, до какого уровня и сколько опыта наберёт каждый и кто дойдёт до вершины."},
@@ -18121,11 +18218,13 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
   // Фон стеклянной картинки: тёмная основа, размытые цветные пятна и матовый слой стекла поверх них.
   function glassBackdrop(c, W, H){
     const M = Math.max(W, H), acc = (getComputedStyle(document.body).getPropertyValue("--accent") || "").trim() || "#7aa2f7";
-    c.fillStyle = "#0d1018"; c.fillRect(0, 0, W, H);
+    const tbg = (getComputedStyle(document.documentElement).getPropertyValue("--bg") || "").trim() || "#0d1018";
+    const tpanel = (getComputedStyle(document.documentElement).getPropertyValue("--panel") || "").trim() || "#141720";
+    c.fillStyle = tbg; c.fillRect(0, 0, W, H);
     const spot = (x, y, r, col) => { const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, col); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(0, 0, W, H); };
     c.save(); c.globalAlpha = .55; spot(W * .14, H * .2, M * .45, acc); c.globalAlpha = .4; { const bs = getComputedStyle(document.body), a2 = (bs.getPropertyValue("--accent-2") || "").trim() || "#ff6fb5", c3 = (bs.getPropertyValue("--theme-c3") || "").trim() || "#4fd8ff", c4 = (bs.getPropertyValue("--theme-c4") || "").trim() || "#9b7bff"; spot(W * .9, H * .25, M * .4, a2); spot(W * .6, H * .95, M * .5, c3); c.globalAlpha = .33; spot(W * .3, H * .75, M * .35, c4); } c.restore();
     // матовость: стекло приглушает пятна, как полупрозрачные панели на сайте
-    c.fillStyle = "rgba(20,23,32,.5)"; c.fillRect(0, 0, W, H);
+    c.save(); c.globalAlpha = .5; c.fillStyle = tpanel; c.fillRect(0, 0, W, H); c.restore();
     const sheen = c.createLinearGradient(0, 0, W * .6, H); sheen.addColorStop(0, "rgba(255,255,255,.07)"); sheen.addColorStop(.5, "rgba(255,255,255,.02)"); sheen.addColorStop(1, "rgba(255,255,255,0)");
     c.fillStyle = sheen; c.fillRect(0, 0, W, H);
   }
@@ -19817,11 +19916,12 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
 .ev-prog > i{display:block;height:100%;background:linear-gradient(90deg,var(--ec1),var(--ec2))}
 .ev-meta{display:flex;gap:14px;margin-top:10px;font-size:12.5px;color:var(--muted)}
 .ev-meta b{color:var(--text)}
+td .ev-tier + small{display:inline!important;margin-left:4px;font-size:12.5px;font-weight:600}
 .ev-tier{display:inline-block;min-width:26px;padding:1px 6px;border-radius:8px;font-weight:700;font-size:12px;color:var(--tc);border:1px solid color-mix(in srgb,var(--tc) 55%,transparent);background:color-mix(in srgb,var(--tc) 12%,transparent)}
 .ev-rank{font-size:12.5px;color:var(--muted)}
 .ev-lv{display:inline-flex;align-items:center;gap:8px}
 .ev-lv i{display:inline-block;width:80px;height:6px;border-radius:3px;background:color-mix(in srgb,var(--text) 8%,transparent);overflow:hidden}
-.ev-lv i > em{display:block;height:100%;background:linear-gradient(90deg,var(--ec1),var(--ec2))}
+.ev-lv i > em{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
 .ach-view-seg{margin:0 0 16px!important}
 #tab-achievements.active > #ach-out > .ach-view-seg{flex:0 0 auto!important;max-width:max-content}
 @media (max-width:720px){
@@ -20295,28 +20395,50 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
       if (!window.__copyimg?.tilesSvg) throw new Error("Копирование плиток недоступно");
       return blob(window.__copyimg.tilesSvg(cl, title), 1240);
     }
-    function row(btns){
-      const r = document.createElement("div"); r.className = "copy-row rx-copy-row";
-      const msg = document.createElement("span"); msg.className = "hint"; msg.setAttribute("role", "status");
-      btns.forEach(([label, fn]) => { const b = document.createElement("button"); b.type = "button"; b.className = "mini copy-btn"; b.textContent = label; b.addEventListener("click", () => copyPngToStatus(fn, msg, "Скопировано")); r.appendChild(b); });
-      r.appendChild(msg); return r;
+    function btn(label, fn){
+      const b = document.createElement("button"); b.type = "button"; b.className = "mini copy-btn rx-copy"; b.textContent = label;
+      const msg = document.createElement("span"); msg.className = "hint rx-copy-msg"; msg.setAttribute("role", "status");
+      b.addEventListener("click", () => copyPngToStatus(fn, msg, "Скопировано"));
+      const f = document.createDocumentFragment(); f.append(msg, b); return f;
     }
-    // Заголовок блока — ближайший предыдущий h2
-    const titleBefore = el => { let n = el.previousElementSibling; while (n) { if (n.tagName === "H2") return txt(n); n = n.previousElementSibling; } return ""; };
+    // Строка заголовка: h2/h3 и кнопка справа, на одной линии
+    function headOf(h){
+      if (h.parentElement?.classList.contains("rx-head")) return h.parentElement;
+      const w = document.createElement("div"); w.className = "rx-head" + (h.tagName === "H3" ? " rx-head-3" : ""); h.before(w); w.appendChild(h); return w;
+    }
+    const prevHeading = el => { let n = el.previousElementSibling; while (n) { if (n.tagName === "H2") return n; if (n.classList.contains("rx-head")) return n.querySelector("h2"); if (!n.matches("p.hint, .hc-bar, .rx-copy-row")) return null; n = n.previousElementSibling; } return null; };
+    const titleBefore = el => { let n = el.previousElementSibling; while (n) { if (n.tagName === "H2") return txt(n); const h = n.classList?.contains("rx-head") && n.querySelector("h2"); if (h) return txt(h); n = n.previousElementSibling; } return ""; };
+    // Кнопка таблицы переезжает в панель «Карточки / Таблица» над ней, как только та появится
+    const pending = new Set();
+    function placeTableBtns(){
+      [...pending].forEach(x => {
+        const [w, frag] = x;
+        if (!w.isConnected) { pending.delete(x); return; }
+        const bar = w.previousElementSibling;
+        if (bar?.classList.contains("hc-bar")) { bar.prepend(frag); w.__rxBtn = true; pending.delete(x); }
+      });
+    }
+    new MutationObserver(() => { if (pending.size) placeTableBtns(); }).observe(document.querySelector("main") || document.body, {childList:true, subtree:true});
     function decorate(out, base){
       out.querySelectorAll(".wrap > table").forEach(t => {
-        const w = t.parentElement; if (w.previousElementSibling?.classList.contains("rx-copy-row")) return;
+        const w = t.parentElement; if (w.__rxBtn || [...pending].some(x => x[0] === w)) return;
         const h = titleBefore(w), title = !h ? base : (h.includes(base) || /Все события/.test(h) ? h : `${h} · ${base}`);
-        w.before(row([["Копировать таблицу", () => tableImageBlob(t, title)]]));
+        pending.add([w, btn("Копировать", () => tableImageBlob(t, title))]);
       });
+      placeTableBtns();
+      // если панели над таблицей так и не появилось — кнопка встаёт в строку заголовка
+      setTimeout(() => [...pending].forEach(x => { const [w, frag] = x; if (!w.isConnected || w.__rxBtn) return; const h = prevHeading(w); if (h) { headOf(h).appendChild(frag); w.__rxBtn = true; pending.delete(x); } }), 1200);
       out.querySelectorAll(".tiles").forEach(tl => {
-        if (tl.previousElementSibling?.classList.contains("rx-copy-row")) return;
-        const title = titleBefore(tl) || base; tl.before(row([["Копировать показатели", () => tiles(tl, title)]]));
+        if (tl.__rxBtn) return; tl.__rxBtn = true;
+        const h = prevHeading(tl), title = h ? txt(h) : base;
+        const f = btn("Копировать", () => tiles(tl, title === "Сводка" ? `Сводка · ${base}` : title));
+        if (h) headOf(h).appendChild(f); else { const r = document.createElement("div"); r.className = "rx-head rx-head-solo"; r.appendChild(f); tl.before(r); }
       });
       out.querySelectorAll(".bx-card").forEach(card => {
-        if (card.querySelector(".rx-copy-row")) return;
+        if (card.__rxBtn) return;
         const fn = card.querySelector(".re-hours") ? () => cols(card) : card.querySelector(".bx-row") ? () => hbars(card) : null;
-        if (fn) card.appendChild(row([["Копировать график", fn]]));
+        const h3 = card.querySelector(":scope > h3"); if (!fn || !h3) return; card.__rxBtn = true;
+        headOf(h3).appendChild(btn("Копировать", fn));
       });
     }
     return {decorate};
@@ -20389,6 +20511,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
       <div class="bx-head"><h2>Реакции ${dataNote()}</h2>
         <div class="seg" role="tablist">${PERIODS.map(([k, l]) => `<button type="button" data-re-per="${k}" class="${RS.per === k ? "active" : ""}">${l}</button>`).join("")}</div></div>
       ${since ? `<p class="hint">${undated && !from ? `Дата и смайл реакции записываются с ${fd(since)}. Ещё ${fmtN(undated)} ${wf2(undated, ["реакция", "реакции", "реакций"])} из более ранней истории известны только как «кто → кому»: они входят в таблицу, пары и «Лично», но не в графики по дням и любимые смайлы.` : `Реакции с датой есть с ${fd(since)}${undatedTotal() ? ` — более ранние ${fmtN(undatedTotal())} без даты видны в «Всё время»` : ""}.`}</p>` : ""}
+      <h2>Сводка</h2>
       <div class="tiles">
         ${tile("Всего реакций", fmtN(total), undated && !from ? `${fmtN(totalD)} — с ${fd(since)}` : `≈ ${fmtN(Math.round(totalD / days))} в день`)}
         ${tile("Ставит больше всех", gTop ? esc(nm(gTop[0])) : "—", gTop ? `${fmtN(gTop[1])} ${wf2(gTop[1], ["реакция", "реакции", "реакций"])}` : "")}
@@ -20500,6 +20623,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
       const dist = (ev.ranks || []).map(([l, name], i) => { const hi = ev.ranks[i + 1]?.[0] ?? Infinity; return {lbl:`${esc(name)} <small class="hint">ур. ${l}${hi === Infinity ? "+" : hi - 1 > l ? "–" + (hi - 1) : ""}</small>`, v:rows.filter(([, v]) => v.level >= l && v.level < hi).length, bg:`linear-gradient(90deg,${ev.c1},${ev.c2})`}; }).filter(x => x.v > 0);
       const tiers = th.map((t2, i) => ({lbl:`Ур. ${ROM[i + 1]} <small class="hint">${t2}+</small>`, v:rows.filter(([, v]) => v.level >= t2).length, bg:`linear-gradient(90deg,${TC(i + 1)}88,${TC(i + 1)})`}));
       body = `
+        <h2>Сводка — ${esc(ev.title)}</h2>
         <div class="tiles">
           ${tile("Участников", fmtN(rows.length), ev.status === "live" ? "набирают опыт прямо сейчас" : "дошли до конца события")}
           ${tile("Средний уровень", avg.toFixed(1).replace(".", ","), "")}
