@@ -1577,6 +1577,7 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
           <button data-m="month">Месяц</button>
           <button data-m="year">Год</button>
           <button data-m="all">Все данные</button>
+          <button data-m="range" hidden>Период</button>
         </div>
       </div>
       <div class="field" id="f-day"><label for="day">Дата</label><input type="date" id="day"></div>
@@ -2398,6 +2399,8 @@ const pad = n => String(n).padStart(2,"0");
 const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 
 let mode = "day", rows = [], sort = {k:"msgs", dir:-1}, reqId = 0;
+// Произвольный период «с — по», выбранный в календаре (режим «Период»)
+let RANGE_SEL = null;
 let comparisonRows = null, comparisonError = "", comparisonEnabled = false;
 try { comparisonEnabled = localStorage.getItem("chatstats.comparison.v1") === "1"; } catch (e) {}
 let hideLeft = false, leftFilterError = "";
@@ -2603,17 +2606,30 @@ document.querySelectorAll("#mode button").forEach(b => b.onclick = () => {
   mode = b.dataset.m;
   clearChartQuick();
   document.querySelectorAll("#mode button").forEach(x => x.classList.toggle("active", x === b));
-  $("f-day").hidden = !(mode === "day" || mode === "week");
+  $("f-day").hidden = !(mode === "day" || mode === "week" || mode === "range");
   $("f-month").hidden = mode !== "month";
   $("f-year").hidden = mode !== "year";
+  const rb = document.querySelector('#mode button[data-m="range"]'); if (rb) rb.hidden = mode !== "range";
   syncComparisonControls();
   load();
 });
+// Выбор периода из календаря: два разных дня — режим «Период», один и тот же день — режим «День»
+window.__statsRange = {
+  get(){ try { return mode === "all" ? null : range(); } catch (e) { return null; } },
+  set(a, b){
+    if (a > b) [a, b] = [b, a];
+    if (a === b) { $("day").value = a; if (mode !== "day") document.querySelector('#mode button[data-m="day"]').click(); else { clearChartQuick(); load(); } return; }
+    RANGE_SEL = {from:a, to:b}; $("day").value = b;
+    const rb = document.querySelector('#mode button[data-m="range"]'); rb.hidden = false;
+    if (mode === "range") { clearChartQuick(); load(); } else rb.click();
+  }
+};
 ["day","month","year"].forEach(id => $(id).onchange = () => { clearChartQuick(); load(); });
 $("chat").onchange = render;
 $("participants-top").onchange = render;
 
 function range(){
+  if (mode === "range") return RANGE_SEL ? [RANGE_SEL.from, RANGE_SEL.to] : null;
   if (mode === "day") { const d = $("day").value; return d ? [d, d] : null; }
   if (mode === "week") {
     const v = $("day").value; if (!v) return null;
@@ -2637,6 +2653,15 @@ function range(){
   return [`${y}-01-01`, `${y}-12-31`];
 }
 
+// «1–15 октября», «28 сентября – 3 октября», с годом, если он не текущий
+function rangeTitle(r){
+  if (!r) return "выбранный период";
+  const G = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"], cy = new Date().getFullYear();
+  const [y0, m0, d0] = r[0].split("-").map(Number), [y1, m1, d1] = r[1].split("-").map(Number);
+  if (y0 === y1 && m0 === m1) return `${d0}–${d1} ${G[m1 - 1]}${y1 !== cy ? " " + y1 : ""}`;
+  if (y0 === y1) return `${d0} ${G[m0 - 1]} – ${d1} ${G[m1 - 1]}${y1 !== cy ? " " + y1 : ""}`;
+  return `${d0} ${G[m0 - 1]} ${y0} – ${d1} ${G[m1 - 1]} ${y1}`;
+}
 function addDaysIso(value, delta){
   const [y,m,d] = value.split("-").map(Number);
   return iso(new Date(y, m - 1, d + delta));
@@ -2645,7 +2670,7 @@ function previousPeriodRange(currentRange){
   if (!currentRange || mode === "all") return null;
   const [from, to] = currentRange;
   if (mode === "day") { const d = addDaysIso(from, -1); return [d, d]; }
-  if (mode === "week") {
+  if (mode === "week" || mode === "range") {
     const count = Math.round((Date.parse(to + "T00:00:00Z") - Date.parse(from + "T00:00:00Z")) / 86400000) + 1;
     const prevTo = addDaysIso(from, -1);
     return [addDaysIso(prevTo, -(count - 1)), prevTo];
@@ -2816,11 +2841,11 @@ function formatMetricDate(value){
 }
 
 function setDayLabel(){
-  const l = document.querySelector("#f-day label"), r = mode === "week" ? range() : null;
+  const l = document.querySelector("#f-day label"), r = mode === "week" || mode === "range" ? range() : null;
   const f = x => x.slice(8) + "." + x.slice(5,7);
   const activeTab = activeDataTab();
   const rolling = ["participants", "chats", "charts"].includes(activeTab);
-  l.textContent = r ? `${mode === "week" && rolling ? "Последние 7 дней" : "Неделя"}: ${f(r[0])}–${f(r[1])}` : (mode === "week" ? "Дата в неделе" : "Дата");
+  l.textContent = r ? `${mode === "range" ? "Период" : mode === "week" && rolling ? "Последние 7 дней" : "Неделя"}: ${f(r[0])}–${f(r[1])}` : (mode === "week" ? "Дата в неделе" : "Дата");
 }
 async function load(){
   setDayLabel();
@@ -2914,6 +2939,7 @@ function participantsPeriodTitle(){
     return `${prefix} за ${d} ${months[m-1]}${y !== currentYear ? " " + y : ""}`;
   }
   if (mode === "week") return `${prefix} за последние 7 дней`;
+  if (mode === "range") return `${prefix} за ${rangeTitle(r)}`;
   if (mode === "month") {
     const [y,m] = r[0].split("-").map(Number);
     return `${prefix} за ${monthNames[m-1]}${y !== currentYear ? " " + y : ""}`;
@@ -3493,6 +3519,7 @@ function chatRankPeriodTitle(){
     return `Рейтинг чатов за ${d} ${monthNames[m-1]}${y !== currentYear ? " " + y : ""}`;
   }
   if (mode === "week") return "Рейтинг чатов за последние 7 дней";
+  if (mode === "range") return `Рейтинг чатов за ${rangeTitle(r)}`;
   if (mode === "month") {
     const [y,m] = r[0].split("-").map(Number);
     return `Рейтинг чатов за ${monthNamesNominative[m-1]}${y !== currentYear ? " " + y : ""}`;
@@ -4165,6 +4192,12 @@ function chartDateLabel(isoDate, includeYear = false){
 }
 function periodLabel(){
   const currentYear = new Date().getFullYear();
+  if (mode === "range") {
+    const r = range(); if (!r) return "";
+    const y0 = Number(r[0].slice(0, 4)), y1 = Number(r[1].slice(0, 4));
+    if (y0 === y1) return `${chartDateLabel(r[0])} - ${chartDateLabel(r[1])}${y0 !== currentYear ? ` ${y0}` : ""}`;
+    return `${chartDateLabel(r[0], y0 !== currentYear)} - ${chartDateLabel(r[1], y1 !== currentYear)}`;
+  }
   if (mode === "day") {
     const d = $("day").value;
     if (!d) return "";
@@ -11329,7 +11362,8 @@ var CHART_NORM_TYPES = ["bars", "trend", "bump", "multiples"];
 var EV_FLAG = "#ffd166", EV_MAR_PAL = ["#9ece6a", "#2ac3de", "#bb9af7", "#ff9e64", "#73daca", "#f7768e"];
 function syncChartNormField(type){
   const f = $("f-norm"); if (!f) return;
-  f.hidden = $("tab-charts").classList.contains("active") && !CHART_NORM_TYPES.includes(type || cType);
+  // список может быть ещё не задан, если график рисуется в самом начале загрузки
+  f.hidden = $("tab-charts").classList.contains("active") && !(CHART_NORM_TYPES || ["bars", "trend", "bump", "multiples"]).includes(type || cType);
 }
 try { const nw = localStorage.getItem(NORM_WEEKS_KEY); if (nw && $("norm-weeks")?.querySelector(`option[value="${nw}"]`)) $("norm-weeks").value = nw; } catch (e) {}
 $("norm-weeks")?.addEventListener("change", () => { try { localStorage.setItem(NORM_WEEKS_KEY, $("norm-weeks").value); } catch (e) {} renderCharts(); });
@@ -11845,6 +11879,7 @@ function multiplesChart(){
     if (CMP_ID[key]) st.cmp = comparisonEnabled;
     if (SHARED.includes(key)) {
       st.mode = mode; st.day = $("day").value; st.month = $("month").value; st.year = $("year").value; st.norm = NORM;
+      if (mode === "range" && RANGE_SEL) { st.rf = RANGE_SEL.from; st.rt = RANGE_SEL.to; }
       if (key !== "chats" && $("chat").options.length > 1) st.chat = $("chat").value;
     }
     const c = st.c || (st.c = {});
@@ -11872,10 +11907,13 @@ function multiplesChart(){
     }
     if (SHARED.includes(key)) {
       const want = {mode: st.mode || DEF.mode, day: st.day || DEF.day, month: st.month || DEF.month, year: st.year || DEF.year, norm: st.norm || DEF.norm};
-      if (want.mode !== mode && ["day", "week", "month", "year", "all"].includes(want.mode)) {
+      const wantRange = want.mode === "range" && st.rf && st.rt;
+      if (wantRange && (mode !== "range" || !RANGE_SEL || RANGE_SEL.from !== st.rf || RANGE_SEL.to !== st.rt)) { RANGE_SEL = {from:st.rf, to:st.rt}; f.shared = true; }
+      { const rb = document.querySelector('#mode button[data-m="range"]'); if (rb) rb.hidden = !(wantRange || (want.mode === mode && mode === "range")); }
+      if (want.mode !== mode && (["day", "week", "month", "year", "all"].includes(want.mode) || wantRange)) {
         mode = want.mode;
         document.querySelectorAll("#mode button").forEach(x => x.classList.toggle("active", x.dataset.m === mode));
-        $("f-day").hidden = !(mode === "day" || mode === "week"); $("f-month").hidden = mode !== "month"; $("f-year").hidden = mode !== "year";
+        $("f-day").hidden = !(mode === "day" || mode === "week" || mode === "range"); $("f-month").hidden = mode !== "month"; $("f-year").hidden = mode !== "year";
         f.shared = true;
       }
       ["day", "month", "year"].forEach(id => { if (want[id] && $(id).value !== want[id]) { $(id).value = want[id]; f.shared = true; } });
@@ -14756,7 +14794,8 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.10.30-12", date:"2026-10-30", title:"Реакции и события — в релизе", items:[
+  {v:"2026.10.30-13", date:"2026-10-30", title:"Реакции и события — в релизе", items:[
+    {tag:"new", area:"Статистика и Графики", text:"Период в календаре: первый клик — начало, второй — конец (второй клик по тому же дню — только этот день). Появился режим «Период» со сравнением с прошлым периодом той же длины; стрелки ←/→ сдвигают его целиком. В «Матрице» и «Марафонах» так же выбираются поля «с — по»."},
     {tag:"new", area:"Интерфейс", text:"Свой календарь в стиле сайта вместо системного: на ПК — панель под полем, на телефоне — окно по центру; выбор месяца, кнопка «Сегодня», ограничения дат и управление с клавиатуры."},
     {tag:"imp", area:"Телефон", text:"Плотные таблицы: в «Участниках», «Чатах», «Реакциях» и уровнях «Событий» участник занимает одну строку с короткими подписями — на экран помещается в 2,5 раза больше; остальные карточки и таблицы тоже компактнее."},
     {tag:"imp", area:"Телефон", text:"Мобильная версия в стиле Android (Material 3): верхняя панель 64, нижняя навигация с индикатором-пилюлей, чипы и сегменты с галочкой, переключатели Material, шторка с радиусом 28, крупные области нажатия, snackbar над навигацией; системная «назад» закрывает шторку фильтров."},
@@ -15909,6 +15948,7 @@ body.holo-text-on tr > td.medal-3:first-child{background-image:linear-gradient(1
       : m === "month" && month === thisM ? "month" : m === "month" && month === prevM ? "pmonth" : m === "year" && year === String(t.getFullYear()) ? "year" : m === "all" ? "all" : "";
     q.querySelectorAll("[data-sq]").forEach(b => b.classList.toggle("active", b.dataset.sq === act));
     $("sq-day").hidden = m === "month" || m === "year"; $("sq-month").hidden = m !== "month"; $("sq-year").hidden = m !== "year";
+    q.querySelector(".sq-date")?.classList.toggle("is-range", m === "range");
     if (document.activeElement !== $("sq-day")) $("sq-day").value = day;
     if (document.activeElement !== $("sq-month")) $("sq-month").value = month;
     if (document.activeElement !== $("sq-year")) $("sq-year").value = year;
@@ -17474,7 +17514,8 @@ tbody tr.qv-able{cursor:pointer}
   function shift(dir){
     if (typeof mode === "undefined" || mode === "all") return false;
     const fire = el => el.dispatchEvent(new Event("change", {bubbles:true}));
-    if (mode === "day" || mode === "week") { const d = $("day"); if (!d) return false; d.value = addD(d.value || todayIso(), dir * (mode === "week" ? 7 : 1)); fire(d); }
+    if (mode === "range" && typeof RANGE_SEL !== "undefined" && RANGE_SEL) { const n = Math.round((Date.parse(RANGE_SEL.to) - Date.parse(RANGE_SEL.from)) / 864e5) + 1; window.__statsRange.set(addD(RANGE_SEL.from, dir * n), addD(RANGE_SEL.to, dir * n)); }
+    else if (mode === "day" || mode === "week") { const d = $("day"); if (!d) return false; d.value = addD(d.value || todayIso(), dir * (mode === "week" ? 7 : 1)); fire(d); }
     else if (mode === "month") { const m = $("month"); if (!m || !m.value) return false; const [y, mo] = m.value.split("-").map(Number), t = new Date(y, mo - 1 + dir, 1); m.value = `${t.getFullYear()}-${pad2(t.getMonth() + 1)}`; fire(m); }
     else if (mode === "year") { const y = $("year"); if (!y) return false; y.value = String((+y.value || new Date().getFullYear()) + dir); fire(y); }
     return true;
@@ -21387,6 +21428,23 @@ svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
   const todayIso = () => { const t = new Date(); return isoOf(t.getFullYear(), t.getMonth(), t.getDate()); };
   const SKIP = "[data-native-date], .chart-settings-panel";
   let el = null, inp = null, kind = "date", view = "days", vy = 0, vm = 0, focusIso = "", scrim = null;
+  // Выбор периода: первый клик — начало, второй — конец; второй клик по тому же дню — только этот день.
+  // rng — куда записать период: {get() → [с, по] | null, set(с, по)}; start — выбранное начало; hover — день под курсором.
+  let rng = null, start = "", hover = "", cur = null;
+  const PAIRS = [["dm-from", "dm-to"], ["mr-f-from", "mr-f-to"]];
+  function rangeFor(input){
+    if ((input.id === "day" || input.id === "sq-day") && window.__statsRange) return window.__statsRange;
+    const pr = PAIRS.find(p => p.includes(input.id));
+    if (pr) {
+      const a = document.getElementById(pr[0]), b = document.getElementById(pr[1]);
+      if (!a || !b) return null;
+      return {get:() => a.value && b.value ? [a.value, b.value] : null, set(x, y){
+        if (x > y) [x, y] = [y, x];
+        [[a, x], [b, y]].forEach(([el, v]) => { if (el.value !== v) { el.value = v; el.dispatchEvent(new Event("input", {bubbles:true})); el.dispatchEvent(new Event("change", {bubbles:true})); } });
+      }};
+    }
+    return null;
+  }
 
   function build(){
     scrim = document.createElement("div"); scrim.className = "dp-scrim"; scrim.hidden = true;
@@ -21395,6 +21453,7 @@ svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
     scrim.addEventListener("click", close);
     el.addEventListener("click", onClick);
     el.addEventListener("keydown", onKey);
+    el.addEventListener("mouseover", e => { if (!rng || !start) return; const d = e.target.closest(".dp-day"); if (!d || d.disabled || d.dataset.v === hover) return; hover = d.dataset.v; paintRange(); });
   }
   const inRange = v => (!inp.min || v >= inp.min.slice(0, v.length)) && (!inp.max || v <= inp.max.slice(0, v.length));
   function render(){
@@ -21404,11 +21463,15 @@ svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
       const first = new Date(vy, vm, 1), lead = (first.getDay() + 6) % 7, dim = new Date(vy, vm + 1, 0).getDate();
       const prevOk = inRange(isoOf(vm ? vy : vy - 1, vm ? vm - 1 : 11, new Date(vy, vm, 0).getDate())), nextOk = inRange(isoOf(vm < 11 ? vy : vy + 1, vm < 11 ? vm + 1 : 0, 1));
       h += `<div class="dp-head"><button type="button" class="dp-nav" data-dp="prev" aria-label="Предыдущий месяц"${prevOk ? "" : " disabled"}>‹</button><button type="button" class="dp-title" data-dp="months" aria-label="Выбрать месяц">${MONTHS[vm]} ${vy}</button><button type="button" class="dp-nav" data-dp="next" aria-label="Следующий месяц"${nextOk ? "" : " disabled"}>›</button></div>`;
+      if (rng) h += `<p class="dp-hint" role="status">${start ? "Теперь конец периода — или тот же день, чтобы показать только его" : "Выбери начало периода"}</p>`;
       h += `<div class="dp-wd" aria-hidden="true">${WD.map((w, i) => `<span${i > 4 ? ' class="we"' : ""}>${w}</span>`).join("")}</div><div class="dp-grid" role="grid">`;
       for (let i = 0; i < lead; i++) h += `<span class="dp-pad"></span>`;
+      let lo = "", hi = "";
+      if (rng) { if (start) { const e2 = hover || start; lo = start < e2 ? start : e2; hi = start < e2 ? e2 : start; } else if (cur) { lo = cur[0]; hi = cur[1]; } }
       for (let d = 1; d <= dim; d++) {
         const v = isoOf(vy, vm, d), ok = inRange(v), wd = (lead + d - 1) % 7;
-        h += `<button type="button" class="dp-day${v === sel ? " sel" : ""}${v === t ? " today" : ""}${wd > 4 ? " we" : ""}" data-v="${v}" tabindex="${v === focusIso ? 0 : -1}" aria-label="${d} ${MGEN[vm]} ${vy}"${v === sel ? ' aria-selected="true"' : ""}${ok ? "" : " disabled"}>${d}</button>`;
+        const rc = rng && lo ? (v === lo && v === hi ? " sel" : v === lo ? " rs" : v === hi ? " re" : v > lo && v < hi ? " in" : "") : (v === sel ? " sel" : "");
+        h += `<button type="button" class="dp-day${rc}${v === t ? " today" : ""}${wd > 4 ? " we" : ""}" data-v="${v}" tabindex="${v === focusIso ? 0 : -1}" aria-label="${d} ${MGEN[vm]} ${vy}"${rc.trim() ? ' aria-selected="true"' : ""}${ok ? "" : " disabled"}>${d}</button>`;
       }
       h += `</div><div class="dp-foot"><button type="button" class="dp-link" data-dp="today"${inRange(t) ? "" : " disabled"}>Сегодня</button><button type="button" class="dp-link" data-dp="close">Закрыть</button></div>`;
     } else {
@@ -21419,6 +21482,11 @@ svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
       h += `</div><div class="dp-foot">${kind === "month" ? `<button type="button" class="dp-link" data-dp="thism">Этот месяц</button>` : `<button type="button" class="dp-link" data-dp="back">К дням</button>`}<button type="button" class="dp-link" data-dp="close">Закрыть</button></div>`;
     }
     el.innerHTML = h;
+  }
+  // Перекраска подсветки без перерисовки (чтобы не терять наведение)
+  function paintRange(){
+    const e2 = hover || start, lo = start < e2 ? start : e2, hi = start < e2 ? e2 : start;
+    el.querySelectorAll(".dp-day").forEach(d => { const v = d.dataset.v; d.classList.toggle("sel", v === lo && v === hi); d.classList.toggle("rs", v === lo && lo !== hi); d.classList.toggle("re", v === hi && lo !== hi); d.classList.toggle("in", v > lo && v < hi); });
   }
   function place(){
     if (mobile.matches) { el.classList.add("dp-modal"); scrim.hidden = false; el.style.left = el.style.top = ""; return; }
@@ -21432,9 +21500,12 @@ svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
   function open(input){
     if (!el) build();
     inp = input; kind = input.type === "month" ? "month" : "date"; view = kind === "month" ? "months" : "days";
+    rng = kind === "date" ? rangeFor(input) : null; start = ""; hover = ""; cur = rng ? rng.get() : null;
+    if (cur && cur[0] === cur[1]) cur = [cur[0], cur[0]];
     const v = input.value || (kind === "month" ? todayIso().slice(0, 7) : todayIso());
-    vy = +v.slice(0, 4); vm = +v.slice(5, 7) - 1; focusIso = kind === "date" ? (input.value || todayIso()) : "";
-    el.setAttribute("aria-label", kind === "month" ? "Выбор месяца" : "Выбор даты");
+    const v0 = cur ? cur[1] : v;
+    vy = +v0.slice(0, 4); vm = +v0.slice(5, 7) - 1; focusIso = kind === "date" ? (cur ? cur[1] : input.value || todayIso()) : "";
+    el.setAttribute("aria-label", kind === "month" ? "Выбор месяца" : rng ? "Выбор периода" : "Выбор даты");
     el.hidden = false; el.classList.toggle("glass", document.body.classList.contains("glass-ui"));
     render(); place(); focusCur();
     input.setAttribute("aria-expanded", "true");
@@ -21443,7 +21514,7 @@ svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
     if (!el || el.hidden) return;
     el.hidden = true; scrim.hidden = true;
     if (inp) { inp.setAttribute("aria-expanded", "false"); try { inp.focus({preventScroll:true}); } catch (e) {} }
-    inp = null;
+    inp = null; rng = null; start = ""; hover = "";
   }
   function commit(v){
     const target = inp; close();
@@ -21456,13 +21527,18 @@ svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
   function onClick(e){
     const b = e.target.closest("button"); if (!b || b.disabled) return;
     const a = b.dataset.dp;
-    if (b.dataset.v) { commit(b.dataset.v); return; }
+    if (b.dataset.v) {
+      if (!rng) { commit(b.dataset.v); return; }
+      const v = b.dataset.v;
+      if (!start) { start = v; hover = v; focusIso = v; render(); focusCur(); return; }
+      const a = start < v ? start : v, z = start < v ? v : start, target = rng; close(); target.set(a, z); return;
+    }
     if (b.dataset.m) { const m = +b.dataset.m; if (kind === "month") { commit(`${vy}-${pad(m + 1)}`); return; } vm = m; view = "days"; focusIso = isoOf(vy, vm, Math.min(+(focusIso.slice(8, 10) || 1), new Date(vy, vm + 1, 0).getDate())); render(); place(); focusCur(); return; }
     if (a === "prev" || a === "next") { shiftMonth(a === "prev" ? -1 : 1); focusIso = isoOf(vy, vm, Math.min(+(focusIso.slice(8, 10) || 1), new Date(vy, vm + 1, 0).getDate())); render(); place(); el.querySelector(`[data-dp="${a}"]`)?.focus(); return; }
     if (a === "yprev" || a === "ynext") { vy += a === "yprev" ? -1 : 1; render(); el.querySelector(`[data-dp="${a}"]`)?.focus(); return; }
     if (a === "months") { view = "months"; render(); place(); focusCur(); return; }
     if (a === "back") { view = "days"; render(); place(); focusCur(); return; }
-    if (a === "today") { commit(todayIso()); return; }
+    if (a === "today") { if (rng) { const t = todayIso(), target = rng; close(); target.set(t, t); } else commit(todayIso()); return; }
     if (a === "thism") { commit(todayIso().slice(0, 7)); return; }
     if (a === "close") close();
   }
@@ -21485,7 +21561,7 @@ svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
       else return;
       e.preventDefault();
       const v = isoOf(d.getFullYear(), d.getMonth(), d.getDate()); if (!inRange(v)) return;
-      focusIso = v; vy = d.getFullYear(); vm = d.getMonth(); render(); focusCur();
+      focusIso = v; vy = d.getFullYear(); vm = d.getMonth(); if (rng && start) hover = v; render(); focusCur();
     } else if (mon) {
       const step = {ArrowLeft:-1, ArrowRight:1, ArrowUp:-3, ArrowDown:3}[e.key]; if (!step) return;
       e.preventDefault(); const n = Math.min(11, Math.max(0, +mon.dataset.m + step)); el.querySelector(`.dp-mon[data-m="${n}"]`)?.focus();
@@ -21530,6 +21606,12 @@ svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
 .dp-day:not(:disabled):not(.sel):hover{background:color-mix(in srgb,var(--text) 8%,transparent)}
 .dp-day.today:not(.sel){box-shadow:inset 0 0 0 1.5px var(--accent);color:var(--accent)}
 .dp-day.sel,.dp-mon.sel{background:var(--accent)!important;color:var(--bg)!important;font-weight:700}
+.dp-hint{margin:0 0 6px;font-size:12.5px;color:var(--muted);text-align:center}
+.dp-grid{gap:2px 0}
+.dp-day.in{background:color-mix(in srgb,var(--accent) 20%,transparent)!important;border-radius:0}
+.dp-day.rs,.dp-day.re{background:var(--accent)!important;color:var(--bg)!important;font-weight:700}
+.dp-day.rs{border-radius:10px 0 0 10px}.dp-day.re{border-radius:0 10px 10px 0}
+.dp.dp-modal .dp-day.rs{border-radius:22px 0 0 22px}.dp.dp-modal .dp-day.re{border-radius:0 22px 22px 0}
 .dp-months{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .dp-mon{height:44px;border-radius:10px;text-transform:capitalize}
 .dp-mon:not(:disabled):not(.sel):hover{background:color-mix(in srgb,var(--text) 8%,transparent)}
