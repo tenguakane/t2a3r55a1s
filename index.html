@@ -1428,7 +1428,7 @@ body.fx-pulse .fx-pulse-dot{display:inline;animation:fxPulse 1.6s ease-out infin
 <body>
 <header>
   <div class="top">
-    <h1>Статистика чата</h1>
+    <h1>Colony Stats</h1>
     <div class="top-actions"><button class="ult-btn" id="ult-toggle" type="button" title="Объединить отмеченные чаты в Colony Ultimate"><i></i>Ultimate</button><button class="ult-btn" id="vk-toggle" type="button" title="Добавить данные VK в общую статистику"><i></i>VK</button><button class="mini" id="filters-visibility-toggle" type="button" aria-pressed="false" title="Скрыть фильтры текущей вкладки">◫ Скрыть фильтры</button><div id="upd-wrap"><span id="live-dot" hidden>● LIVE</span><span id="upd"></span><button class="mini" id="refresh">Обновить</button></div></div>
   </div>
   <nav role="tablist">
@@ -20730,5 +20730,54 @@ html body #s-days-table.tv-cards > tbody > tr > td.s-miss:empty::after{content:$
   window.addEventListener("load", hookWordForm);
 })();
 </script>
+<style id="design-pass">
+/* ===================== Дизайн-проход 2026.10.30 =====================
+   Предмет: статистика Telegram-чата «Colony». Участники открывают сайт, чтобы понять, кто впереди и где они сами.
+   Главное на любой вкладке — цифры. Им достаётся вся смелость: крупные, плотные, табличные. Остальное — тише.
+   Правила для следующих правок:
+   1. Полоски, рамки, точки и маркеры появляются, только если что-то значат: цвет показателя, медаль, «идёт сейчас».
+   2. Подписи пишутся обычным регистром, без капса и разрядки.
+   3. Иерархию задают размер и насыщенность шрифта, а не градиенты и тени. Плитки плоские.
+   4. Движение — в ответ на действие. Фоновые эффекты включает сам пользователь в «Эффектах».
+   5. Пояснения — до ~75 знаков в строке.
+   Палитра и шрифт (Samsung Sans) остаются из тем оформления — блок опирается только на их переменные. */
+
+/* Заголовки разделов: акцентная полоска была украшением — иерархию держит сам шрифт */
+h2::before{display:none}
+h2{font-size:18px;font-weight:700;letter-spacing:-.005em;line-height:1.25}
+h2 + p.hint{margin-top:-4px}
+
+/* Плитки: без градиентной заливки, тени и подпрыгивания. Цветная полоска остаётся,
+   только если у плитки задан свой цвет показателя (--tile-accent / --k), и без перелива */
+.tile{background:var(--panel);box-shadow:none;transition:border-color .15s}
+.tile:hover{transform:none}
+.tile::before{height:2px;background:var(--tile-accent,transparent);opacity:1}
+.hub-kpi::before{height:2px;background:var(--k,transparent);opacity:1}
+.ev-card:hover{transform:none;border-color:color-mix(in srgb,var(--ec2) 45%,var(--line))}
+
+/* Цифры — главный элемент */
+.tile .num,.hub-kpi .v{font-weight:800;letter-spacing:-.025em;line-height:1.08;font-variant-numeric:tabular-nums lining-nums}
+.tile .num{font-size:36px;margin:6px 0 4px}
+.hub-kpi .v{font-size:32px;margin:4px 0}
+.tile .lbl,.hub-kpi .l{font-size:13.5px;letter-spacing:0;color:var(--muted)}
+.tile .place,.hub-kpi .s{font-size:13px}
+
+/* Подписи обычным регистром */
+.yr-award-title,body.side-nav .side-sep,.hub-cat h3,.msel-grp,#ma-menu .ma-gt,#ma-fsheet .ma-ftitle,body.mapp .set-menu-title,.hc-pop h4,.ss-grp,#fd-body .fd-look > b{text-transform:none!important;letter-spacing:0!important}
+.mt-h{text-transform:none;letter-spacing:0;font-size:15px;font-weight:600;color:var(--text)}
+.hub-cat h3,body.side-nav .side-sep,#ma-menu .ma-gt,#ma-fsheet .ma-ftitle,body.mapp .set-menu-title,.ss-grp{font-weight:600}
+
+/* Пояснения не растягиваются на всю ширину */
+p.hint{max-width:78ch}
+
+/* Название сайта */
+header h1{letter-spacing:-.01em}
+
+@media (max-width:720px){
+  h2{font-size:17px}
+  .tile .num{font-size:27px}
+  .hub-kpi .v{font-size:26px}
+}
+</style>
 </body>
 </html>
