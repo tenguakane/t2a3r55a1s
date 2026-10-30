@@ -1552,6 +1552,7 @@ html body #theme-custom input.tc-hue::-webkit-slider-thumb{-webkit-appearance:no
 html body #people-body .people-show input[type=checkbox]{width:18px!important;min-width:0!important;height:18px!important;margin:0;padding:0;accent-color:var(--accent);flex:0 0 auto}
 html body #people-body input[data-pf="name"]{width:200px!important;min-width:0!important}
 html body #people-body input[data-pf="pk"]{width:100px!important}</style>
+<style id="total-row-css">tr.total-row > td.total-label{white-space:nowrap;font-weight:600}</style>
 <style id="s-key-css">.s-people-note{margin:8px 0 0;color:#f87171}@keyframes sKeyFlash{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 0 3px var(--accent)}}.s-key-flash{animation:sKeyFlash .8s ease-in-out 3}@media (prefers-reduced-motion:reduce){.s-key-flash{animation:none;outline:2px solid var(--accent)}}</style>
 <style id="rx-copy-css">
 .rx-head{display:flex;align-items:center;gap:10px;margin:26px 0 10px}
@@ -2951,8 +2952,8 @@ function render(){
     : `<tr><td colspan="${COLS.length}" style="text-align:center;color:var(--muted)">${EXCLUDED_TABLE_ROWS.participants.size ? "Нет строк: участники исключены из таблицы" : "Нет данных за выбранный период"}</td></tr>`;
 
   $("foot").innerHTML = list.length
-    ? (NORM === "day" ? "" : `<tr><td colspan="2">Всего (${list.length})</td>${["msgs","voice","video","stick", ...RX_KEYS].map(k => displayedCell(sumMapMetric(visibleMap,k), sumMapMetric(visiblePriorMap,k), compareOn, visiblePriorMap.size > 0)).join("")}</tr>`)
-      + statRows(list, ["msgs","voice","video","stick", ...RX_KEYS], label => `<td colspan="2">${label}</td>`) : "";
+    ? (NORM === "day" ? "" : `<tr class="total-row"><td class="total-place"></td><td class="total-label">Всего (${list.length})</td>${["msgs","voice","video","stick", ...RX_KEYS].map(k => displayedCell(sumMapMetric(visibleMap,k), sumMapMetric(visiblePriorMap,k), compareOn, visiblePriorMap.size > 0)).join("")}</tr>`)
+      + statRows(list, ["msgs","voice","video","stick", ...RX_KEYS], label => `<td></td><td>${label}</td>`) : "";
 
   let statusText = hideLeft && leftFilterError ? `Не удалось получить статусы участников: ${leftFilterError}. Вышедшие не отфильтрованы.` : "";
   if (comparisonEnabled && mode === "all") statusText = [statusText, "Сравнение недоступно для режима «Все данные». Выберите день, неделю, месяц или год."].filter(Boolean).join(" ");
@@ -3535,8 +3536,8 @@ function renderChatRank(){
     const value = k => displayedCell(Number(u[k])||0, Number((priorMap.get(u.key)||{})[k])||0, compareOn, priorMap.has(u.key));
     return `<tr data-row-entity="chats" data-row-key="${escH(u.key)}"><td class="${i < 3 ? "medal-" + (i + 1) : ""}">${i+1}</td><td style="text-align:left"><div class="row-name-with-action"><span>${escH(u.name)}</span><button type="button" class="row-exclude-btn" data-no-export="true" data-exclude-row="chats" data-row-key="${escH(u.key)}" data-row-name="${escH(u.name)}" title="Исключить из таблицы" aria-label="Исключить ${escH(u.name)} из таблицы">×</button></div></td>${value("msgs")}${value("stick")}${value("voice")}${value("video")}</tr>`;
   }).join("") : `<tr><td colspan="6" style="text-align:center;color:var(--muted)">${EXCLUDED_TABLE_ROWS.chats.size ? "Нет строк: чаты исключены из таблицы" : "Нет данных по отдельным чатам за выбранный период"}</td></tr>`;
-  if (footEl) footEl.innerHTML = list.length ? (NORM === "day" ? "" : `<tr><td colspan="2">Всего (${list.length} чатов)</td>${["msgs","stick","voice","video"].map(k=>displayedCell(sumMapMetric(shownMap,k),sumMapMetric(shownPriorMap,k),compareOn,shownPriorMap.size > 0)).join("")}</tr>`)
-    + statRows(list, ["msgs","stick","voice","video"], label => `<td colspan="2">${label}</td>`) : "";
+  if (footEl) footEl.innerHTML = list.length ? (NORM === "day" ? "" : `<tr class="total-row"><td class="total-place"></td><td class="total-label">Всего (${list.length} чатов)</td>${["msgs","stick","voice","video"].map(k=>displayedCell(sumMapMetric(shownMap,k),sumMapMetric(shownPriorMap,k),compareOn,shownPriorMap.size > 0)).join("")}</tr>`)
+    + statRows(list, ["msgs","stick","voice","video"], label => `<td></td><td>${label}</td>`) : "";
   renderExcludedRowsControls("chats");
 }
 // Exclude and restore individual rows without modifying the underlying API data.
@@ -11647,8 +11648,8 @@ function stackChart(){
     let y = BOT;
     ser.forEach(se => {
       const v = se.s[b]; if (!(v > 0)) return;
-      const sh = sy(v), st = chartSeriesStyle(se.kind, se.k), pa = paint(st, 0, y - sh, 0, y); defs.push(pa.defs);
-      o += `<rect class="anim-bar-y" x="${x.toFixed(1)}" y="${(y - sh).toFixed(1)}" width="${cw.toFixed(1)}" height="${(sh + .5).toFixed(1)}" fill="${pa.p}" data-ek="${escH(se.k)}" data-tip="${escH(B.full(b))}|${escH(`${se.n}: ${fmt(Math.round(v))} · ${Math.round(v / tot[b] * 100)}% из ${fmt(Math.round(tot[b]))}`)}"/>`;
+      const sh = sy(v), fill = chartSeriesStyle(se.kind, se.k).c[0]; // плоский цвет, без градиента
+      o += `<rect class="anim-bar-y" x="${x.toFixed(1)}" y="${(y - sh).toFixed(1)}" width="${cw.toFixed(1)}" height="${(sh + .5).toFixed(1)}" fill="${fill}" data-ek="${escH(se.k)}" data-tip="${escH(B.full(b))}|${escH(`${se.n}: ${fmt(Math.round(v))} · ${Math.round(v / tot[b] * 100)}% из ${fmt(Math.round(tot[b]))}`)}"/>`;
       y -= sh;
     });
     o += `</g>`;
@@ -11660,8 +11661,8 @@ function stackChart(){
   let wsum = 0; items.forEach(it => { const w = lw(it) + 26; if (wsum + w > R - L && lines[lines.length - 1].length) { lines.push([]); wsum = 0; } lines[lines.length - 1].push(it); wsum += w; });
   lines.forEach((ln, li) => {
     const tw = ln.reduce((a, it) => a + lw(it) + 26, -26); let x = W / 2 - tw / 2; const y = BOT + 80 + li * 34;
-    ln.forEach(it => { const st = chartSeriesStyle(it.se.kind, it.se.k), pa = paint(st, x, y - 13, x + 24, y + 11); defs.push(pa.defs);
-      o += `<g data-ek="${escH(it.se.k)}"><rect x="${x.toFixed(1)}" y="${y - 13}" width="24" height="24" rx="6" fill="${pa.p}"/><text class="chart-legend" x="${(x + 34).toFixed(1)}" y="${y + 6}" font-size="17" fill="#d6d9e2">${escH(it.t)}</text></g>`;
+    ln.forEach(it => { const fill = chartSeriesStyle(it.se.kind, it.se.k).c[0];
+      o += `<g data-ek="${escH(it.se.k)}"><rect x="${x.toFixed(1)}" y="${y - 13}" width="24" height="24" rx="6" fill="${fill}"/><text class="chart-legend" x="${(x + 34).toFixed(1)}" y="${y + 6}" font-size="17" fill="#d6d9e2">${escH(it.t)}</text></g>`;
       x += lw(it) + 26; });
   });
   const H = BOT + 80 + lines.length * 34 + 10;
@@ -14755,7 +14756,10 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.10.30-9", date:"2026-10-30", title:"Реакции и события — в релизе", items:[
+  {v:"2026.10.30-10", date:"2026-10-30", title:"Реакции и события — в релизе", items:[
+    {tag:"imp", area:"Телефон", text:"Мобильная версия в стиле Android (Material 3): верхняя панель 64, нижняя навигация с индикатором-пилюлей, чипы и сегменты с галочкой, переключатели Material, шторка с радиусом 28, крупные области нажатия, snackbar над навигацией; системная «назад» закрывает шторку фильтров."},
+    {tag:"fix", area:"Статистика", text:"Строка «Всего» больше не объединяет ячейки и скрывает столбцы вместе с заголовком."},
+    {tag:"imp", area:"Графики", text:"«Активность по дням» — плоские цвета без градиентов."},
     {tag:"fix", area:"Графики", text:"Кнопки и переключатели снова срабатывают: шторка фильтров больше не перекладывает панели по кругу (из-за этого дёргался выбор даты и мигал курсор)."},
     {tag:"fix", area:"Селфи", text:"Облако, «🔑 Ключ редактора» и сообщения остаются рядом с отметками; без ключа под именами появляется подсказка, а кнопка ключа подсвечивается."},
     {tag:"new", area:"Участники", text:"В Настройках → Участники можно исключить лишнего участника со всего сайта галочкой «На сайте» и вернуть в любой момент."},
@@ -21231,6 +21235,118 @@ svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
 .cz-badge.show{opacity:1}
 @media (prefers-reduced-motion:reduce){.cz-badge{transition:none}}
 </style>
+<style id="m3-mobile">
+/* ===================== Мобильная версия в стиле Android (Material 3) =====================
+   План — в истории обновлений 2026.10.30-10. Только телефон (body.mapp, ширина до 720px); цвета — из темы сайта. */
+@media (max-width:720px){
+  body.mapp{
+    --m3-primary:var(--accent);
+    --m3-on-primary:var(--bg);
+    --m3-sec:color-mix(in srgb,var(--accent) 22%,var(--panel));
+    --m3-outline:color-mix(in srgb,var(--text) 24%,transparent);
+    --m3-surf:var(--panel);
+    --m3-surf-hi:color-mix(in srgb,var(--text) 6%,var(--panel));
+    --m3-state:color-mix(in srgb,var(--text) 12%,transparent);
+    --ma-tabs-h:80px;
+  }
+  /* Верхняя панель: 64, заголовок 22, иконки 24 в кнопках 48 */
+  body.mapp #ma-bar{background:var(--bg);backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none}
+  body.mapp #ma-bar .ma-top{height:64px;gap:0;padding:0 4px 0 16px}
+  body.mapp #ma-bar .ma-title{font-size:22px;font-weight:500;letter-spacing:0}
+  body.mapp #ma-bar .ma-ic{flex:0 0 48px;width:48px;height:48px}
+  body.mapp #ma-bar .ma-ic svg{width:24px;height:24px}
+  body.mapp #ma-bar .ma-ic .ma-dot{top:11px;right:11px;width:6px;height:6px}
+  /* Чипы сводки фильтров: 32, радиус 8, контур; ряд 48 — удобно попадать пальцем */
+  body.mapp #ma-bar .ma-sum{gap:8px;padding:8px 16px 8px;min-height:48px;align-items:center}
+  body.mapp #ma-bar .ma-chip{height:32px;padding:0 16px;border-radius:8px;border:1px solid var(--m3-outline);background:transparent;font-size:14px;font-weight:500}
+  body.mapp #ma-bar .ma-chip.first{padding-left:8px;border-color:transparent;background:var(--m3-sec)}
+  body.mapp #ma-bar .ma-chip svg{width:18px;height:18px}
+  /* Нижняя навигация: 80, индикатор-пилюля 64×32 за иконкой, подписи 12/500 */
+  body.mapp #ma-tabs{background:var(--m3-surf);backdrop-filter:none;-webkit-backdrop-filter:none;border-top:0;box-shadow:none;padding:0 0 env(safe-area-inset-bottom,0px)}
+  body.mapp #ma-tabs button{gap:4px;padding:12px 0 16px;font-size:12px;font-weight:500;color:var(--muted);justify-content:flex-start;min-height:80px}
+  body.mapp #ma-tabs button svg{width:24px;height:24px;box-sizing:content-box;padding:4px 20px;border-radius:16px;transition:background-color .2s cubic-bezier(.2,0,0,1);transform:none!important}
+  body.mapp #ma-tabs button.on{color:var(--text);font-weight:700}
+  body.mapp #ma-tabs button.on svg{background:var(--m3-sec);color:var(--text)}
+  body.mapp #ma-tabs button:active svg{background:var(--m3-state)}
+  /* Меню: ряды 56, тональные иконки 40, без iOS-стрелок */
+  body.mapp #ma-menu .ma-chev{display:none}
+  body.mapp #ma-menu .ma-gt,body.mapp .set-menu-title{color:var(--m3-primary)!important;font-size:14px!important;font-weight:500!important;letter-spacing:.01em!important;margin:20px 16px 8px!important}
+  body.mapp .ma-grp{border-radius:16px!important;background:var(--m3-surf)!important;border:0!important;box-shadow:none!important;overflow:hidden}
+  body.mapp .ma-row{min-height:56px;gap:16px;padding:0 0 0 16px;font-size:16px}
+  body.mapp .ma-row + .ma-row .ma-txt{box-shadow:none}
+  body.mapp .ma-ico{flex:0 0 40px;width:40px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--c,#7aa2f7) 22%,var(--m3-surf));color:var(--c,#7aa2f7);font-size:19px}
+  body.mapp .ma-ico svg{width:22px;height:22px}
+  body.mapp .ma-row.cur{background:var(--m3-sec)}
+  body.mapp .ma-row.cur .ma-txt > span:first-child{color:var(--text)}
+  /* Переключатель Material 3: 52×32 */
+  body.mapp .ma-sw{flex:0 0 52px;width:52px;height:32px;border-radius:16px;background:transparent;box-shadow:inset 0 0 0 2px var(--m3-outline);margin-right:16px}
+  body.mapp .ma-sw::after{left:8px;top:8px;width:16px;height:16px;background:var(--m3-outline);box-shadow:none;transition:transform .2s cubic-bezier(.2,0,0,1),width .2s,height .2s,left .2s,top .2s}
+  body.mapp .ma-row.on .ma-sw{background:var(--m3-primary);box-shadow:none}
+  body.mapp .ma-row.on .ma-sw::after{left:4px;top:4px;width:24px;height:24px;background:var(--m3-on-primary);transform:translateX(20px)}
+  /* Шторка фильтров: радиус 28, ручка 32×4, заголовок 22 */
+  body.mapp #ma-fsheet .ma-panel{border-radius:28px 28px 0 0;background:var(--m3-surf);box-shadow:none}
+  body.mapp #ma-fsheet .ma-grip{width:32px;height:4px;margin:16px auto 6px;border-radius:2px;background:var(--m3-outline)}
+  body.mapp #ma-fsheet .ma-fhead b{font-size:22px;font-weight:500}
+  body.mapp #ma-fsheet .ma-done{min-height:40px;padding:0 12px;border-radius:20px;font-size:14px;font-weight:500;color:var(--m3-primary)}
+  body.mapp #ma-fsheet .ma-bd{background:rgba(0,0,0,.32)}
+  /* Сегменты Material 3: 40, контур, выбранный — тональный с галочкой */
+  html body.mapp :is(main,#ma-fsheet,#filter-drawer) :is(.seg,.sq-seg,.quick-ranges:not(#theme-bases),.group-tabs,.stat-subnav){gap:0!important;padding:0!important;border:1px solid var(--m3-outline)!important;border-radius:20px!important;background:transparent!important;box-shadow:none!important;overflow:hidden}
+  html body.mapp :is(main,#ma-fsheet,#filter-drawer) :is(.seg,.sq-seg,.group-tabs,.stat-subnav,#m3x) > button,html body.mapp :is(main,#ma-fsheet,#filter-drawer) .quick-ranges:not(#theme-bases) > .quick-chip{height:40px!important;min-height:40px!important;padding:0 14px!important;border-radius:0!important;border:0!important;background:transparent!important;color:var(--text)!important;font-size:14px!important;font-weight:500!important;box-shadow:none!important}
+  html body.mapp :is(main,#ma-fsheet,#filter-drawer) :is(.seg,.sq-seg,.group-tabs,.stat-subnav,#m3x) > button + button,html body.mapp :is(main,#ma-fsheet,#filter-drawer) .quick-ranges:not(#theme-bases) > .quick-chip + .quick-chip{border-left:1px solid var(--m3-outline)!important}
+  html body.mapp :is(main,#ma-fsheet,#filter-drawer) :is(.seg,.sq-seg,.group-tabs,.stat-subnav,#m3x) > button:is(.active,[aria-pressed="true"]),html body.mapp :is(main,#ma-fsheet,#filter-drawer) .quick-ranges:not(#theme-bases) > .quick-chip:is(.active,[aria-pressed="true"]){background:var(--m3-sec)!important}
+  html body.mapp :is(main,#ma-fsheet,#filter-drawer) :is(.seg,.sq-seg,.group-tabs,.stat-subnav,#m3x) > button:is(.active,[aria-pressed="true"])::before,html body.mapp :is(main,#ma-fsheet,#filter-drawer) .quick-ranges:not(#theme-bases) > .quick-chip:is(.active,[aria-pressed="true"])::before{content:"✓";margin-right:6px;font-weight:700}
+  html body.mapp :is(main,#ma-fsheet,#filter-drawer) .quick-ranges:not(#theme-bases) > .qr-label{padding:0 10px 0 14px!important;font-size:12px!important}
+  /* Кнопки: 40, радиус 20 */
+  html body.mapp main :is(button.mini,.hc-btn,.tv-btn,.rx-copy){min-height:40px!important;height:auto!important;padding:0 16px!important;border-radius:20px!important;font-size:14px!important;font-weight:500}
+  html body.mapp main .tv-btn{min-width:40px!important;padding:0 10px!important}
+  html body.mapp main :is(select,input[type=date],input[type=month],input[type=text],input[type=number]){min-height:40px}
+  /* Нажатие: слой состояния 12% поверх (Material state layer), без анимированных кругов */
+  html body.mapp :is(button,.quick-chip,.ma-row,.ma-chip,[role=button]):active{background-image:linear-gradient(var(--m3-state),var(--m3-state))!important}
+  /* Snackbar над нижней навигацией */
+  body.mapp #cs-toast{left:16px!important;right:16px!important;bottom:calc(var(--ma-tabs-h) + env(safe-area-inset-bottom,0px) + 12px)!important;transform:none!important;max-width:none!important;padding:14px 16px!important;border-radius:4px!important;background:var(--text)!important;color:var(--bg)!important;font-size:14px!important;box-shadow:0 3px 8px #0006!important;text-align:left!important}
+  /* Карточки: радиус 12 */
+  body.mapp main :is(.tile,.bx-card,.ev-card,.hub-kpi,.mt-card,.p-card){border-radius:12px}
+}
+@media (max-width:720px) and (prefers-reduced-motion:reduce){body.mapp #ma-tabs button svg,body.mapp .ma-sw::after{transition:none}}
+
+  /* В шторке фильтров сегменты в одну строку, без переноса */
+  html body.mapp #ma-fsheet .filters :is(.seg,#m3x){flex-wrap:nowrap!important;gap:0!important;padding:0!important;margin:0 14px 12px!important;overflow-x:auto;scrollbar-width:none}
+  html body.mapp #ma-fsheet .filters :is(.seg,#m3x) > button{flex:1 1 auto!important;padding:0 8px!important;white-space:nowrap;border-radius:0!important;box-shadow:none!important}
+  html body.mapp #ma-fsheet .filters :is(.seg,#m3x) > button:not(.active){background:transparent!important}
+  html body.mapp #ma-fsheet .filters :is(.seg,#m3x) > button.active{background:var(--m3-sec)!important;font-weight:500}
+  /* «Участники / Чаты» — сегмент из двух кнопок, без обводки на всю ширину */
+  html body.mapp :is(main,#m3x) #stats-subnav.seg.stat-subnav{padding-right:0!important;border:0!important;border-radius:0!important;gap:0!important;overflow:visible;flex:0 0 auto!important;width:auto!important}
+  html body.mapp :is(main,#m3x) #stats-subnav.seg.stat-subnav > button{border:1px solid var(--m3-outline)!important;padding:0 16px!important}
+  html body.mapp :is(main,#m3x) #stats-subnav.seg.stat-subnav{background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border-radius:20px!important}
+  html body.mapp :is(main,#m3x) #stats-subnav.seg.stat-subnav > button:not(.active){background:transparent!important}
+  html body.mapp :is(main,#m3x) #stats-subnav.seg.stat-subnav > button:first-child{border-radius:20px 0 0 20px!important}
+  html body.mapp :is(main,#m3x) #stats-subnav.seg.stat-subnav > button:last-child{border-radius:0 20px 20px 0!important;border-left:0!important}
+</style>
+<script id="m3-mobile-js">
+/* Мобильная версия: семантика переключателей, цвет системной панели, «назад» закрывает шторку фильтров */
+(function(){
+  // Переключатели меню — роль switch и состояние для TalkBack
+  const menu = document.getElementById("ma-menu");
+  const sem = () => menu && menu.querySelectorAll("[data-ma-sw]").forEach(r => { r.setAttribute("role", "switch"); r.setAttribute("aria-checked", String(r.classList.contains("on"))); });
+  if (menu) new MutationObserver(sem).observe(menu, {childList:true, subtree:true, attributes:true, attributeFilter:["class"]});
+  // Активная вкладка нижней навигации
+  const tabs = document.getElementById("ma-tabs");
+  if (tabs) new MutationObserver(() => tabs.querySelectorAll("button").forEach(b => b.classList.contains("on") ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"))).observe(tabs, {subtree:true, attributes:true, attributeFilter:["class"]});
+  // Цвет системной панели = фон темы
+  const meta = document.querySelector('meta[name="theme-color"]') || (() => { const m = document.createElement("meta"); m.name = "theme-color"; document.head.appendChild(m); return m; })();
+  const paint = () => { const c = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim(); if (c && meta.content !== c) meta.content = c; };
+  paint(); new MutationObserver(paint).observe(document.documentElement, {attributes:true, attributeFilter:["style", "class"]});
+  // Системная кнопка «назад» закрывает шторку фильтров, а не уводит со страницы
+  const fs = document.getElementById("ma-fsheet"); if (!fs) return;
+  let pushed = false;
+  new MutationObserver(() => {
+    const open = fs.classList.contains("open");
+    if (open && !pushed) { try { history.pushState({maSheet:1}, ""); pushed = true; } catch (e) {} }
+    else if (!open && pushed) { pushed = false; if (history.state && history.state.maSheet) { try { history.back(); } catch (e) {} } }
+  }).observe(fs, {attributes:true, attributeFilter:["class"]});
+  window.addEventListener("popstate", () => { if (pushed && fs.classList.contains("open")) { pushed = false; fs.querySelector(".ma-done")?.click(); } });
+})();
+</script>
 <style id="design-pass">
 /* ===================== Дизайн-проход 2026.10.30 =====================
    Предмет: статистика Telegram-чата «Colony». Участники открывают сайт, чтобы понять, кто впереди и где они сами.
