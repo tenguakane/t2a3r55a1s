@@ -14756,7 +14756,9 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.10.30-10", date:"2026-10-30", title:"Реакции и события — в релизе", items:[
+  {v:"2026.10.30-12", date:"2026-10-30", title:"Реакции и события — в релизе", items:[
+    {tag:"new", area:"Интерфейс", text:"Свой календарь в стиле сайта вместо системного: на ПК — панель под полем, на телефоне — окно по центру; выбор месяца, кнопка «Сегодня», ограничения дат и управление с клавиатуры."},
+    {tag:"imp", area:"Телефон", text:"Плотные таблицы: в «Участниках», «Чатах», «Реакциях» и уровнях «Событий» участник занимает одну строку с короткими подписями — на экран помещается в 2,5 раза больше; остальные карточки и таблицы тоже компактнее."},
     {tag:"imp", area:"Телефон", text:"Мобильная версия в стиле Android (Material 3): верхняя панель 64, нижняя навигация с индикатором-пилюлей, чипы и сегменты с галочкой, переключатели Material, шторка с радиусом 28, крупные области нажатия, snackbar над навигацией; системная «назад» закрывает шторку фильтров."},
     {tag:"fix", area:"Статистика", text:"Строка «Всего» больше не объединяет ячейки и скрывает столбцы вместе с заголовком."},
     {tag:"imp", area:"Графики", text:"«Активность по дням» — плоские цвета без градиентов."},
@@ -17576,7 +17578,8 @@ tbody tr.qv-able{cursor:pointer}
     return AUTO[k];
   }
   function cols(t){ const r = t.tHead && t.tHead.rows[t.tHead.rows.length - 1]; return r ? [...r.cells].map(c => String(c.dataset.hcName || c.textContent).replace(/[▲▼△▽↑↓⇅⬍↕]/g, "").replace(/\s+/g, " ").trim()) : []; }
-  const SHORT = {"Видеосообщения":"Кружки","Видеосообщений":"Кружки","Голосовые сообщения":"Голосовые","Пересланные":"Пересл.","Пересланных":"Пересл.","Активных дней":"Дней"};
+  const SHORT = {"Видеосообщения":"Кружки","Видеосообщений":"Кружки","Голосовые сообщения":"Голосовые","Пересланные":"Пересл.","Пересланных":"Пересл.","Активных дней":"Дней",
+    "Сообщения":"Сообщ.","Голосовые":"Голос.","Поставил(а) реакций":"Поставил","Получил(а) реакций":"Получил","Поставил(а)":"Поставил","Получил(а)":"Получил","Любимая реакция":"Любимая","Достижение":"Дост.","Стикеры":"Стикер."};
   function labelRows(t){
     const names = cols(t);
     qsa(":scope > :is(tbody,tfoot) > tr", t).forEach(tr => { let col = 0; [...tr.cells].forEach(c => { const span = Number(c.dataset.hcCs || c.colSpan) || 1; if (span === 1 && !c.dataset.hcCs) { const n = names[col] && (SHORT[names[col]] || names[col]); if (n && c.dataset.label !== n) c.dataset.label = n; } col += span; }); });
@@ -21306,6 +21309,26 @@ svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
   body.mapp #cs-toast{left:16px!important;right:16px!important;bottom:calc(var(--ma-tabs-h) + env(safe-area-inset-bottom,0px) + 12px)!important;transform:none!important;max-width:none!important;padding:14px 16px!important;border-radius:4px!important;background:var(--text)!important;color:var(--bg)!important;font-size:14px!important;box-shadow:0 3px 8px #0006!important;text-align:left!important}
   /* Карточки: радиус 12 */
   body.mapp main :is(.tile,.bx-card,.ev-card,.hub-kpi,.mt-card,.p-card){border-radius:12px}
+  /* Плотные таблицы: главные таблицы — одна строка на участника (номер, имя, показатели с короткими подписями) */
+  html body.mapp main table.tv-cards:is(#participants-table,#chat-rank-table,#re-table,#ev-table) > :is(tbody,tfoot) > tr{flex-wrap:nowrap!important;align-items:center!important;gap:0 4px!important;padding:6px 8px!important;border-radius:10px!important}
+  html body.mapp main table.tv-cards:is(#participants-table,#chat-rank-table,#re-table,#ev-table) > :is(tbody,tfoot) > tr > :is(td,th){flex:1 1 0!important;min-width:0!important;font-size:13px!important;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important}
+  html body.mapp main table.tv-cards:is(#participants-table,#chat-rank-table,#re-table,#ev-table) > :is(tbody,tfoot) > tr > :is(td,th)::before{font-size:9.5px!important;margin:0!important;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;word-break:normal!important}
+  html body.mapp main table.tv-cards:is(#participants-table,#chat-rank-table,#re-table,#ev-table) > :is(tbody,tfoot) > tr > :is(td,th):nth-child(1){flex:0 0 20px!important;font-size:12px!important}
+  html body.mapp main table.tv-cards:is(#participants-table,#chat-rank-table,#re-table,#ev-table) > :is(tbody,tfoot) > tr > :is(td,th):nth-child(2){flex:0 0 27%!important;font-size:13.5px!important;white-space:nowrap}
+  html body.mapp main table.tv-cards:is(#participants-table,#chat-rank-table,#re-table,#ev-table) .row-exclude-btn{display:none!important}
+  html body.mapp main table.tv-cards:is(#participants-table,#chat-rank-table,#re-table,#ev-table) .row-name-with-action{display:block!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  html body.mapp main table.tv-cards#ev-table .ev-lv > i{display:none}
+  html body.mapp main table.tv-cards#ev-table .ev-rank{font-size:11.5px!important}
+  html body.mapp main table.tv-cards#re-table td img.ios-emo{width:1.1em;height:1.1em}
+  html body.mapp main table.tv-cards > :is(tbody,tfoot){gap:4px!important;margin-bottom:4px!important}
+  /* Остальные карточки — плотнее */
+  html body.mapp main table.tv-cards > :is(tbody,tfoot) > tr{padding:6px 10px 7px!important;gap:4px 8px!important}
+  html body.mapp main table.tv-cards > :is(tbody,tfoot) > tr > :is(td,th){font-size:13px}
+  html body.mapp main table.tv-cards > :is(tbody,tfoot) > tr > :is(td,th)::before{font-size:9.5px!important}
+  html body.mapp main table.tv-cards > :is(tbody,tfoot) > tr > :is(td,th):nth-child(2){font-size:14px!important}
+  /* Обычный вид таблицы на телефоне — мельче шрифт и отступы */
+  html body.mapp main table:not(.tv-cards) :is(th,td){font-size:12.5px;padding:6px 7px}
+
 }
 @media (max-width:720px) and (prefers-reduced-motion:reduce){body.mapp #ma-tabs button svg,body.mapp .ma-sw::after{transition:none}}
 
@@ -21347,6 +21370,187 @@ svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
   window.addEventListener("popstate", () => { if (pushed && fs.classList.contains("open")) { pushed = false; fs.querySelector(".ma-done")?.click(); } });
 })();
 </script>
+<script id="date-picker">
+/* ===================== Календарь в стиле сайта =====================
+   Вместо системного календаря (его нельзя оформить) у полей даты и месяца открывается свой:
+   на ПК — панель под полем, на телефоне — окно по центру (Material 3). Учитывает min/max поля,
+   работает с клавиатуры: стрелки — по дням, PageUp/PageDown — по месяцам, Enter — выбрать, Esc — закрыть.
+   После выбора поле получает значение и события input и change, как от обычного календаря. */
+(function(){
+  const MONTHS = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+  const MGEN = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  const MSH = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
+  const WD = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
+  const mobile = matchMedia("(max-width:720px)");
+  const pad = n => String(n).padStart(2, "0");
+  const isoOf = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
+  const todayIso = () => { const t = new Date(); return isoOf(t.getFullYear(), t.getMonth(), t.getDate()); };
+  const SKIP = "[data-native-date], .chart-settings-panel";
+  let el = null, inp = null, kind = "date", view = "days", vy = 0, vm = 0, focusIso = "", scrim = null;
+
+  function build(){
+    scrim = document.createElement("div"); scrim.className = "dp-scrim"; scrim.hidden = true;
+    el = document.createElement("div"); el.className = "dp"; el.hidden = true; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "false");
+    document.body.append(scrim, el);
+    scrim.addEventListener("click", close);
+    el.addEventListener("click", onClick);
+    el.addEventListener("keydown", onKey);
+  }
+  const inRange = v => (!inp.min || v >= inp.min.slice(0, v.length)) && (!inp.max || v <= inp.max.slice(0, v.length));
+  function render(){
+    const sel = inp.value || "", t = todayIso();
+    let h = "";
+    if (view === "days") {
+      const first = new Date(vy, vm, 1), lead = (first.getDay() + 6) % 7, dim = new Date(vy, vm + 1, 0).getDate();
+      const prevOk = inRange(isoOf(vm ? vy : vy - 1, vm ? vm - 1 : 11, new Date(vy, vm, 0).getDate())), nextOk = inRange(isoOf(vm < 11 ? vy : vy + 1, vm < 11 ? vm + 1 : 0, 1));
+      h += `<div class="dp-head"><button type="button" class="dp-nav" data-dp="prev" aria-label="Предыдущий месяц"${prevOk ? "" : " disabled"}>‹</button><button type="button" class="dp-title" data-dp="months" aria-label="Выбрать месяц">${MONTHS[vm]} ${vy}</button><button type="button" class="dp-nav" data-dp="next" aria-label="Следующий месяц"${nextOk ? "" : " disabled"}>›</button></div>`;
+      h += `<div class="dp-wd" aria-hidden="true">${WD.map((w, i) => `<span${i > 4 ? ' class="we"' : ""}>${w}</span>`).join("")}</div><div class="dp-grid" role="grid">`;
+      for (let i = 0; i < lead; i++) h += `<span class="dp-pad"></span>`;
+      for (let d = 1; d <= dim; d++) {
+        const v = isoOf(vy, vm, d), ok = inRange(v), wd = (lead + d - 1) % 7;
+        h += `<button type="button" class="dp-day${v === sel ? " sel" : ""}${v === t ? " today" : ""}${wd > 4 ? " we" : ""}" data-v="${v}" tabindex="${v === focusIso ? 0 : -1}" aria-label="${d} ${MGEN[vm]} ${vy}"${v === sel ? ' aria-selected="true"' : ""}${ok ? "" : " disabled"}>${d}</button>`;
+      }
+      h += `</div><div class="dp-foot"><button type="button" class="dp-link" data-dp="today"${inRange(t) ? "" : " disabled"}>Сегодня</button><button type="button" class="dp-link" data-dp="close">Закрыть</button></div>`;
+    } else {
+      const prevOk = !inp.min || String(vy - 1) >= inp.min.slice(0, 4), nextOk = !inp.max || String(vy + 1) <= inp.max.slice(0, 4);
+      h += `<div class="dp-head"><button type="button" class="dp-nav" data-dp="yprev" aria-label="Предыдущий год"${prevOk ? "" : " disabled"}>‹</button><span class="dp-title is-static">${vy}</span><button type="button" class="dp-nav" data-dp="ynext" aria-label="Следующий год"${nextOk ? "" : " disabled"}>›</button></div><div class="dp-months" role="grid">`;
+      const selM = sel.slice(0, 7), curM = todayIso().slice(0, 7);
+      for (let m = 0; m < 12; m++) { const v = `${vy}-${pad(m + 1)}`, ok = inRange(v); h += `<button type="button" class="dp-mon${v === selM ? " sel" : ""}${v === curM ? " today" : ""}" data-m="${m}" tabindex="${m === vm ? 0 : -1}" aria-label="${MONTHS[m]} ${vy}"${ok ? "" : " disabled"}>${MSH[m]}</button>`; }
+      h += `</div><div class="dp-foot">${kind === "month" ? `<button type="button" class="dp-link" data-dp="thism">Этот месяц</button>` : `<button type="button" class="dp-link" data-dp="back">К дням</button>`}<button type="button" class="dp-link" data-dp="close">Закрыть</button></div>`;
+    }
+    el.innerHTML = h;
+  }
+  function place(){
+    if (mobile.matches) { el.classList.add("dp-modal"); scrim.hidden = false; el.style.left = el.style.top = ""; return; }
+    el.classList.remove("dp-modal"); scrim.hidden = true;
+    const r = inp.getBoundingClientRect(), w = el.offsetWidth, hgt = el.offsetHeight;
+    let x = Math.min(Math.max(8, r.left), innerWidth - w - 8), y = r.bottom + 6;
+    if (y + hgt > innerHeight - 8 && r.top - hgt - 6 > 8) y = r.top - hgt - 6;
+    el.style.left = Math.round(x) + "px"; el.style.top = Math.round(Math.max(8, y)) + "px";
+  }
+  function focusCur(){ const b = el.querySelector('[tabindex="0"]:not([disabled])') || el.querySelector(".dp-day:not([disabled]), .dp-mon:not([disabled])"); b && b.focus({preventScroll:true}); }
+  function open(input){
+    if (!el) build();
+    inp = input; kind = input.type === "month" ? "month" : "date"; view = kind === "month" ? "months" : "days";
+    const v = input.value || (kind === "month" ? todayIso().slice(0, 7) : todayIso());
+    vy = +v.slice(0, 4); vm = +v.slice(5, 7) - 1; focusIso = kind === "date" ? (input.value || todayIso()) : "";
+    el.setAttribute("aria-label", kind === "month" ? "Выбор месяца" : "Выбор даты");
+    el.hidden = false; el.classList.toggle("glass", document.body.classList.contains("glass-ui"));
+    render(); place(); focusCur();
+    input.setAttribute("aria-expanded", "true");
+  }
+  function close(){
+    if (!el || el.hidden) return;
+    el.hidden = true; scrim.hidden = true;
+    if (inp) { inp.setAttribute("aria-expanded", "false"); try { inp.focus({preventScroll:true}); } catch (e) {} }
+    inp = null;
+  }
+  function commit(v){
+    const target = inp; close();
+    if (!target || target.value === v) return;
+    target.value = v;
+    target.dispatchEvent(new Event("input", {bubbles:true}));
+    target.dispatchEvent(new Event("change", {bubbles:true}));
+  }
+  function shiftMonth(n){ vm += n; while (vm < 0) { vm += 12; vy--; } while (vm > 11) { vm -= 12; vy++; } }
+  function onClick(e){
+    const b = e.target.closest("button"); if (!b || b.disabled) return;
+    const a = b.dataset.dp;
+    if (b.dataset.v) { commit(b.dataset.v); return; }
+    if (b.dataset.m) { const m = +b.dataset.m; if (kind === "month") { commit(`${vy}-${pad(m + 1)}`); return; } vm = m; view = "days"; focusIso = isoOf(vy, vm, Math.min(+(focusIso.slice(8, 10) || 1), new Date(vy, vm + 1, 0).getDate())); render(); place(); focusCur(); return; }
+    if (a === "prev" || a === "next") { shiftMonth(a === "prev" ? -1 : 1); focusIso = isoOf(vy, vm, Math.min(+(focusIso.slice(8, 10) || 1), new Date(vy, vm + 1, 0).getDate())); render(); place(); el.querySelector(`[data-dp="${a}"]`)?.focus(); return; }
+    if (a === "yprev" || a === "ynext") { vy += a === "yprev" ? -1 : 1; render(); el.querySelector(`[data-dp="${a}"]`)?.focus(); return; }
+    if (a === "months") { view = "months"; render(); place(); focusCur(); return; }
+    if (a === "back") { view = "days"; render(); place(); focusCur(); return; }
+    if (a === "today") { commit(todayIso()); return; }
+    if (a === "thism") { commit(todayIso().slice(0, 7)); return; }
+    if (a === "close") close();
+  }
+  function onKey(e){
+    if (e.key === "Escape") { e.preventDefault(); close(); return; }
+    if (e.key === "Tab") { // фокус не уходит из окна
+      const f = [...el.querySelectorAll("button:not([disabled])")].filter(b => b.tabIndex !== -1 || b === document.activeElement);
+      if (!f.length) return; const i = f.indexOf(document.activeElement);
+      if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+      return;
+    }
+    const day = e.target.closest(".dp-day"), mon = e.target.closest(".dp-mon");
+    if (day) {
+      const step = {ArrowLeft:-1, ArrowRight:1, ArrowUp:-7, ArrowDown:7}[e.key];
+      let d = new Date(+focusIso.slice(0, 4), +focusIso.slice(5, 7) - 1, +focusIso.slice(8, 10));
+      if (step) d.setDate(d.getDate() + step);
+      else if (e.key === "PageUp" || e.key === "PageDown") d.setMonth(d.getMonth() + (e.key === "PageUp" ? -1 : 1));
+      else if (e.key === "Home") d.setDate(d.getDate() - (d.getDay() + 6) % 7);
+      else if (e.key === "End") d.setDate(d.getDate() + 6 - (d.getDay() + 6) % 7);
+      else return;
+      e.preventDefault();
+      const v = isoOf(d.getFullYear(), d.getMonth(), d.getDate()); if (!inRange(v)) return;
+      focusIso = v; vy = d.getFullYear(); vm = d.getMonth(); render(); focusCur();
+    } else if (mon) {
+      const step = {ArrowLeft:-1, ArrowRight:1, ArrowUp:-3, ArrowDown:3}[e.key]; if (!step) return;
+      e.preventDefault(); const n = Math.min(11, Math.max(0, +mon.dataset.m + step)); el.querySelector(`.dp-mon[data-m="${n}"]`)?.focus();
+    }
+  }
+  const eligible = t => t && t.matches && t.matches('input[type="date"], input[type="month"]') && !t.disabled && !t.readOnly && !t.closest(SKIP);
+  // Клик по полю (и по значку календаря в нём) открывает наш календарь вместо системного
+  document.addEventListener("click", e => { const t = e.target; if (!eligible(t)) return; e.preventDefault(); if (el && !el.hidden && inp === t) { close(); return; } open(t); }, true);
+  // Системный календарь не должен успеть открыться: касание на телефоне и нажатие на значок календаря на ПК гасятся сразу
+  document.addEventListener("pointerdown", e => {
+    const t = e.target; if (!eligible(t)) return;
+    if (e.pointerType === "touch" || e.pointerType === "pen") { e.preventDefault(); return; }
+    const r = t.getBoundingClientRect(); if (e.clientX > r.right - 34) e.preventDefault();
+  }, true);
+  // С клавиатуры: Enter, пробел, Alt+↓ или F4 на поле. Ввод цифр в поле работает как обычно.
+  document.addEventListener("keydown", e => { const t = e.target; if (!eligible(t)) return; if (e.key === "Enter" || e.key === " " || e.key === "F4" || (e.altKey && e.key === "ArrowDown")) { e.preventDefault(); open(t); } }, true);
+  // Клик мимо — закрыть; прокрутка и ресайз — переставить или закрыть
+  document.addEventListener("pointerdown", e => { if (!el || el.hidden) return; if (el.contains(e.target) || e.target === inp || (scrim && e.target === scrim)) return; close(); }, true);
+  addEventListener("resize", () => { if (el && !el.hidden) place(); });
+  addEventListener("scroll", () => { if (el && !el.hidden && !mobile.matches) { if (!inp || !inp.isConnected || !inp.offsetParent) close(); else place(); } }, {passive:true, capture:true});
+  window.__datePicker = {open, close};
+})();
+</script>
+<style id="date-picker-css">
+.dp{position:fixed;z-index:200;width:300px;padding:12px;border-radius:14px;background:var(--panel);border:1px solid var(--line);box-shadow:0 18px 44px -12px #000a;color:var(--text);font-size:14px;user-select:none}
+.dp.glass{background:color-mix(in srgb,var(--panel) 78%,transparent);-webkit-backdrop-filter:var(--glass-blur,blur(18px));backdrop-filter:var(--glass-blur,blur(18px))}
+.dp[hidden],.dp-scrim[hidden]{display:none}
+.dp button{font:inherit;color:inherit;background:transparent;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dp button:disabled{opacity:.3;cursor:default}
+.dp button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.dp-head{display:flex;align-items:center;gap:4px;margin:0 0 8px}
+.dp-title{flex:1;height:36px;border-radius:10px;font-weight:700;font-size:15px}
+.dp-title:not(.is-static):hover{background:color-mix(in srgb,var(--text) 7%,transparent)}
+.dp-title.is-static{display:grid;place-items:center}
+.dp-nav{flex:0 0 36px;width:36px;height:36px;border-radius:10px;font-size:22px;line-height:1;color:var(--muted)!important}
+.dp-nav:not(:disabled):hover{background:color-mix(in srgb,var(--text) 7%,transparent);color:var(--text)!important}
+.dp-wd,.dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.dp-wd{margin:0 0 2px}
+.dp-wd span{display:grid;place-items:center;height:26px;font-size:12px;font-weight:600;color:var(--muted)}
+.dp-wd span.we,.dp-day.we:not(.sel){color:color-mix(in srgb,var(--accent-2,var(--accent)) 70%,var(--text))}
+.dp-day{height:36px;border-radius:10px;font-variant-numeric:tabular-nums}
+.dp-day:not(:disabled):not(.sel):hover{background:color-mix(in srgb,var(--text) 8%,transparent)}
+.dp-day.today:not(.sel){box-shadow:inset 0 0 0 1.5px var(--accent);color:var(--accent)}
+.dp-day.sel,.dp-mon.sel{background:var(--accent)!important;color:var(--bg)!important;font-weight:700}
+.dp-months{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.dp-mon{height:44px;border-radius:10px;text-transform:capitalize}
+.dp-mon:not(:disabled):not(.sel):hover{background:color-mix(in srgb,var(--text) 8%,transparent)}
+.dp-mon.today:not(.sel){box-shadow:inset 0 0 0 1.5px var(--accent);color:var(--accent)}
+.dp-foot{display:flex;justify-content:space-between;gap:8px;margin:10px 0 0;padding:8px 0 0;border-top:1px solid var(--line)}
+.dp-link{height:34px;padding:0 10px;border-radius:10px;font-weight:600;color:var(--accent)!important}
+.dp-link:not(:disabled):hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+/* Телефон: окно по центру, как в Android (радиус 28, крупные ячейки 48) */
+.dp-scrim{position:fixed;inset:0;z-index:199;background:rgba(0,0,0,.32)}
+.dp.dp-modal{left:50%!important;top:50%!important;transform:translate(-50%,-50%);width:min(360px,calc(100vw - 32px));padding:16px 12px 8px;border-radius:28px;border:0;background:var(--panel)}
+.dp.dp-modal .dp-title{font-size:16px;height:48px}
+.dp.dp-modal .dp-nav{flex-basis:48px;width:48px;height:48px;border-radius:24px}
+.dp.dp-modal .dp-day{height:44px;border-radius:22px}
+.dp.dp-modal .dp-mon{height:52px;border-radius:26px}
+.dp.dp-modal .dp-foot{border-top:0;justify-content:flex-end}
+.dp.dp-modal .dp-link{height:40px;padding:0 14px;border-radius:20px}
+input[type=date][aria-expanded="true"],input[type=month][aria-expanded="true"]{outline:2px solid var(--accent);outline-offset:1px}
+@media (prefers-reduced-motion:no-preference){.dp:not([hidden]){animation:dpIn .14s cubic-bezier(.2,0,0,1)}.dp.dp-modal:not([hidden]){animation:dpInM .18s cubic-bezier(.2,0,0,1)}}
+@keyframes dpIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@keyframes dpInM{from{opacity:0;transform:translate(-50%,-48%)}to{opacity:1;transform:translate(-50%,-50%)}}
+</style>
 <style id="design-pass">
 /* ===================== Дизайн-проход 2026.10.30 =====================
    Предмет: статистика Telegram-чата «Colony». Участники открывают сайт, чтобы понять, кто впереди и где они сами.
