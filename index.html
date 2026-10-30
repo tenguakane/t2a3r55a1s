@@ -1548,6 +1548,11 @@ html body #theme-custom input.tc-hue::-webkit-slider-runnable-track{background:t
 html body #theme-custom input.tc-hue::-moz-range-track{background:transparent!important;border:0!important}
 html body #theme-custom input.tc-hue::-webkit-slider-thumb{-webkit-appearance:none;margin-top:-3px;width:20px;height:20px;border-radius:50%;background:#fff;border:2px solid var(--bg);box-shadow:0 1px 4px #0008}
 .tc-hue::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid var(--bg)}</style>
+<style id="people-off-css">#people-body tr.people-off > td:not(:nth-last-child(2)){opacity:.45}.people-show{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;white-space:nowrap}
+html body #people-body .people-show input[type=checkbox]{width:18px!important;min-width:0!important;height:18px!important;margin:0;padding:0;accent-color:var(--accent);flex:0 0 auto}
+html body #people-body input[data-pf="name"]{width:200px!important;min-width:0!important}
+html body #people-body input[data-pf="pk"]{width:100px!important}</style>
+<style id="s-key-css">.s-people-note{margin:8px 0 0;color:#f87171}@keyframes sKeyFlash{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 0 3px var(--accent)}}.s-key-flash{animation:sKeyFlash .8s ease-in-out 3}@media (prefers-reduced-motion:reduce){.s-key-flash{animation:none;outline:2px solid var(--accent)}}</style>
 <style id="rx-copy-css">
 .rx-head{display:flex;align-items:center;gap:10px;margin:26px 0 10px}
 .rx-head > h2{margin:0!important;margin-right:auto!important}
@@ -2009,11 +2014,11 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
     <div class="seg group-tabs" data-group-seg="other"><button type="button" data-gtab="records" class="">Рекорды</button><button type="button" data-gtab="months" class="">Топ месяцев</button><button type="button" data-gtab="days" class="">Топ дней</button><button type="button" data-gtab="forecast" class="">Прогноз</button><button type="button" data-gtab="marathons" class="">Марафоны</button><button type="button" data-gtab="time" class="">Время</button><button type="button" data-gtab="yearreview" class="">Итоги года</button><button type="button" data-gtab="chronicle" class="">Хроника</button><button type="button" data-gtab="birthdays" class="">Дни рождения</button><button type="button" data-gtab="selfie" class="active">Селфи</button><button type="button" data-gtab="usermap" class="">Карта</button><button type="button" data-gtab="vk" class="">VK</button></div>
     <div class="filters">
       <div class="field"><label>База селфи</label><div class="pbtn"><button class="mini" id="s-import" type="button">Импорт из Excel</button><button class="mini" id="s-export" type="button">Экспорт в Excel</button><button class="mini" id="s-undo" type="button" disabled>Отменить изменение</button><button class="mini" id="s-builtin" type="button" title="Вернуть базу селфи, встроенную в сайт">Встроенная база</button></div><input type="file" id="s-file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden></div>
-      <div class="field s-cloud-field"><label>Облако</label><div class="pbtn"><button class="mini s-cloud-badge sc-off" id="s-cloud-badge" type="button" title="Обновить из облака">💾 Только в этом браузере</button><button class="mini" id="s-cloud-key" type="button">🔑 Ключ редактора</button></div></div>
+      <div class="field s-cloud-field" data-fr-keep><label>Облако</label><div class="pbtn"><button class="mini s-cloud-badge sc-off" id="s-cloud-badge" type="button" title="Обновить из облака">💾 Только в этом браузере</button><button class="mini" id="s-cloud-key" type="button">🔑 Ключ редактора</button></div></div>
       <div class="field"><label for="s-range">Период</label><select id="s-range"></select></div>
       <div class="field"><label for="s-sort">Сортировка участников</label><select id="s-sort"><option value="total">По количеству селфи</option><option value="att">По посещаемости</option><option value="streak">По текущей серии</option><option value="missed">По пропускам</option></select></div>
       <label class="checkline"><input type="checkbox" id="hide-left-selfie">Убрать вышедших</label>
-      <span class="hint" id="s-msg" role="status" aria-live="polite"></span>
+      <span class="hint" id="s-msg" role="status" aria-live="polite" data-fr-keep></span>
     </div>
     <p class="status" id="s-status"></p>
     <div class="p-card s-mark">
@@ -2099,9 +2104,9 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
       </div>
     <div class="fcat-legend" id="fcat-legend"><span data-fcat="period"><i></i>период и даты</span><span data-fcat="scope"><i></i>чат и кто</span><span data-fcat="what"><i></i>что показывать</span><span data-fcat="amount"><i></i>количество и шкала</span><span data-fcat="look"><i></i>оформление</span><span data-fcat="opts"><i></i>параметры-галочки</span><span data-fcat="export"><i></i>экспорт</span><span data-fcat="data"><i></i>данные и импорт</span></div>
     <h2>Участники</h2>
-    <p class="hint">Имена, user_pk из API, даты вступления и цвета участников. Цвет используется на всех графиках, где участник не перекрашен в настройке графика. После сохранения страница обновится.</p>
+    <p class="hint">Имена, user_pk из API, даты вступления и цвета участников. Сними «На сайте», чтобы исключить лишнего участника из всех таблиц, графиков, топов и достижений (его можно вернуть в любой момент). Цвет используется на всех графиках, где участник не перекрашен в настройке графика. После сохранения страница обновится.</p>
     <div class="pbtn" style="margin-bottom:10px"><button class="mini" id="people-add" type="button">+ Добавить участника</button><button class="mini" id="people-find" type="button">Найти новых в данных</button><button class="mini" id="people-save" type="button">Сохранить</button><button class="mini" id="people-reset" type="button">Отменить изменения</button><button class="mini" id="people-default" type="button">Вернуть исходный список</button><span class="hint" id="people-msg" role="status" aria-live="polite"></span></div>
-    <div class="wrap people-wrap"><table id="people-table"><thead><tr><th>Цвет</th><th style="text-align:left">Имя</th><th>user_pk</th><th>Дата вступления</th><th></th></tr></thead><tbody id="people-body"></tbody></table></div>
+    <div class="wrap people-wrap"><table id="people-table"><thead><tr><th>Цвет</th><th style="text-align:left">Имя</th><th>user_pk</th><th>Дата вступления</th><th>На сайте</th><th></th></tr></thead><tbody id="people-body"></tbody></table></div>
     <h2>Дни рождения и города</h2>
     <p class="hint">Дата рождения (без года), город и страна участника. Данные есть не у всех — пустые поля можно заполнить, готовые изменить. Часовой пояс определяется по городу или стране; при необходимости укажи его вручную (например, Europe/Berlin). Координаты — «широта, долгота» через запятую (например, 50.45, 30.52): открой место в Google/Яндекс Картах, щёлкни правой кнопкой по точке и скопируй числа. Если города нет во встроенной базе, без координат его не будет на карте; впиши их вручную. Сохраняется сразу, входит в экспорт настроек.</p>
     <div class="filters" id="bio-tools"><label class="checkline"><input type="checkbox" id="bio-only-empty">Только без данных</label><button class="mini" id="bio-reset-all" type="button">Вернуть исходные данные</button><span class="hint" id="bio-msg" role="status" aria-live="polite"></span></div>
@@ -2760,7 +2765,12 @@ function isLeftUser(id){
   const status = userStatuses.get(String(id));
   return status === "left" || status === "leaved" || status === "inactive_left" || status === "departed";
 }
-function isVisibleUser(id){ return !hideLeft || !isLeftUser(id); }
+// Участники, исключённые в Настройках → Участники: не показываются нигде на сайте
+const PEOPLE_HIDDEN_KEY = "chatstats.peopleHidden.v1";
+let PEOPLE_HIDDEN = new Set();
+try { const j = JSON.parse(localStorage.getItem(PEOPLE_HIDDEN_KEY) || "[]"); if (Array.isArray(j)) PEOPLE_HIDDEN = new Set(j.map(String)); } catch (e) {}
+const isExcludedUser = id => PEOPLE_HIDDEN.has(String(id));
+function isVisibleUser(id){ return !isExcludedUser(id) && (!hideLeft || !isLeftUser(id)); }
 function metricDisplayName(row){
   const id = metricUserId(row);
   if (id && NAMES[id]) return NAMES[id];
@@ -2969,7 +2979,7 @@ const MET = ["msgs","stick","voice","video"];
 const escH = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmt = v => v.toLocaleString("ru-RU");
 const person = $("person");
-Object.entries(NAMES).sort((a,b) => a[1].localeCompare(b[1],"ru")).forEach(([pk, n]) => {
+Object.entries(NAMES).filter(([pk]) => !isExcludedUser(pk)).sort((a,b) => a[1].localeCompare(b[1],"ru")).forEach(([pk, n]) => {
   const o = document.createElement("option"); o.value = pk; o.textContent = n; person.appendChild(o);
 });
 person.onchange = renderProfile;
@@ -7463,7 +7473,12 @@ function renderSelfieMark(m){
 }
 $("s-people").addEventListener("click", e => {
   const chip = e.target.closest("[data-s-pk]"); if (!chip) return;
-  if (!scCanEdit()) { scDenied(); return; }
+  if (!scCanEdit()) {
+    let note = $("s-people-note"); if (!note) { note = document.createElement("p"); note.id = "s-people-note"; note.className = "hint s-people-note"; note.setAttribute("role", "status"); $("s-people").after(note); }
+    scDenied(note);
+    const kb = $("s-cloud-key"); if (kb && !kb.hidden) { kb.classList.add("s-key-flash"); kb.scrollIntoView({block:"nearest", behavior:"smooth"}); setTimeout(() => kb.classList.remove("s-key-flash"), 2400); }
+    return;
+  }
   const date = $("s-date").value || iso(new Date()), on = chip.getAttribute("aria-pressed") !== "true";
   if (selfieSet(chip.dataset.sPk, "", date, on)) {
     selfieMsg(`${selfieNameOf(chip.dataset.sPk)}: ${on ? "селфи засчитано" : "отметка снята"} (${sFmtDate(fridayOf(date))})`);
@@ -9253,14 +9268,26 @@ try {
   if (Array.isArray(saved) && saved.length) { applyPeople(saved.filter(p => p && /^\d+$/.test(String(p.pk)) && p.name).map(p => ({pk:String(p.pk), name:String(p.name), joined:/^\d{4}-\d{2}-\d{2}$/.test(p.joined || "") ? p.joined : ""}))); rebuildPersonSelect(); renderPeople(); }
 } catch (e) {}
 let peopleDraft = null;
-function peopleCurrent(){ return Object.entries(NAMES).map(([pk, name]) => ({pk:String(pk), name, joined:(MEMBERSHIP_STARTS.find(([, id]) => String(id) === String(pk)) || [""])[0], color:getStyle("u", pk).c[0]})); }
+function peopleCurrent(){
+  const list = Object.entries(NAMES).map(([pk, name]) => ({pk:String(pk), name, joined:(MEMBERSHIP_STARTS.find(([, id]) => String(id) === String(pk)) || [""])[0], color:getStyle("u", pk).c[0], hidden:isExcludedUser(pk)}));
+  // исключённые, которых нет в списке имён (пришли из данных), тоже видны — чтобы их можно было вернуть
+  PEOPLE_HIDDEN.forEach(pk => { if (!NAMES[pk]) list.push({pk, name:`ID ${pk}`, joined:"", color:getStyle("u", pk).c[0], hidden:true}); });
+  return list;
+}
 function renderPeopleEditor(){
   if (!peopleDraft) peopleDraft = peopleCurrent().sort((a, b) => a.name.localeCompare(b.name, "ru"));
-  $("people-body").innerHTML = peopleDraft.map((p, i) => `<tr data-i="${i}"><td><input type="color" data-pf="color" value="${p.color || "#7aa2f7"}" aria-label="Цвет"></td><td style="text-align:left"><input type="text" data-pf="name" value="${escH(p.name)}" maxlength="40" placeholder="Имя"></td><td><input type="number" data-pf="pk" value="${escH(p.pk)}" min="1" step="1" style="width:110px" placeholder="user_pk"></td><td><input type="date" data-pf="joined" value="${escH(p.joined || "")}"></td><td><button type="button" class="row-exclude-btn" data-pdel="${i}" title="Удалить участника" aria-label="Удалить участника">×</button></td></tr>`).join("");
+  $("people-body").innerHTML = peopleDraft.map((p, i) => `<tr data-i="${i}"${p.hidden ? ' class="people-off"' : ""}><td><input type="color" data-pf="color" value="${p.color || "#7aa2f7"}" aria-label="Цвет"></td><td style="text-align:left"><input type="text" data-pf="name" value="${escH(p.name)}" maxlength="40" placeholder="Имя"></td><td><input type="number" data-pf="pk" value="${escH(p.pk)}" min="1" step="1" style="width:110px" placeholder="user_pk"></td><td><input type="date" data-pf="joined" value="${escH(p.joined || "")}"></td><td><label class="people-show" title="Снять, чтобы исключить участника со всего сайта"><input type="checkbox" data-pshow="${i}"${p.hidden ? "" : " checked"}><span>${p.hidden ? "Исключён" : "Показан"}</span></label></td><td><button type="button" class="row-exclude-btn" data-pdel="${i}" title="Удалить участника" aria-label="Удалить участника">×</button></td></tr>`).join("");
 }
 $("people-body").addEventListener("input", e => {
   const tr = e.target.closest("tr"), f = e.target.dataset.pf; if (!tr || !f) return;
   peopleDraft[+tr.dataset.i][f] = e.target.value.trim();
+});
+$("people-body").addEventListener("change", e => {
+  const c = e.target.closest("[data-pshow]"); if (!c) return;
+  const p = peopleDraft[+c.dataset.pshow]; p.hidden = !c.checked;
+  const sp = c.parentElement.querySelector("span"); if (sp) sp.textContent = p.hidden ? "Исключён" : "Показан";
+  c.closest("tr").classList.toggle("people-off", p.hidden);
+  $("people-msg").textContent = "Нажми «Сохранить», чтобы применить";
 });
 $("people-body").addEventListener("click", e => {
   const d = e.target.closest("[data-pdel]"); if (!d) return;
@@ -9283,7 +9310,9 @@ $("people-save").onclick = () => {
     if (seen.has(String(p.pk))) { msg.textContent = `user_pk ${p.pk} указан дважды`; return; }
     seen.add(String(p.pk));
   }
-  const list = peopleDraft.map(p => ({pk:String(p.pk), name:p.name, joined:p.joined || ""}));
+  // исключённые хранятся отдельно; «ID …» без имени в список имён не попадают
+  try { localStorage.setItem(PEOPLE_HIDDEN_KEY, JSON.stringify(peopleDraft.filter(p => p.hidden).map(p => String(p.pk)))); } catch (e) {}
+  const list = peopleDraft.filter(p => !(p.hidden && /^ID \d+$/.test(p.name) && !NAMES[p.pk])).map(p => ({pk:String(p.pk), name:p.name, joined:p.joined || ""}));
   peopleDraft.forEach(p => { if (/^#[0-9a-f]{6}$/i.test(p.color || "") && p.color.toLowerCase() !== defColor("u", p.pk).toLowerCase()) STYLE.u[p.pk] = {c:[p.color]}; else delete STYLE.u[p.pk]; });
   saveStyle();
   try { localStorage.setItem(PEOPLE_KEY, JSON.stringify(list)); } catch (e) { msg.textContent = "Не удалось сохранить: " + e.message; return; }
@@ -13801,6 +13830,7 @@ function multiplesChart(){
   document.body.appendChild(dr);
   const body = dr.querySelector("#fd-body"), top = dr.querySelector("#fd-top");
   const moved = []; // [узел, метка-место]
+  const seen = new WeakSet(); // панели, которые шторка уже забирала
   // Фильтры справа на ПК включены всегда; запоминается только, свёрнута ли шторка.
   const on = true; let collapsed = false;
   try { collapsed = localStorage.getItem(KEY_C) === "1"; } catch (e) {}
@@ -13835,7 +13865,7 @@ function multiplesChart(){
       sec.querySelectorAll(":scope > .filters:not(.fr-keep)").forEach(f => out.push(f));
     });
     const sh = document.getElementById("shared");
-    if (sh && !sh.hidden) sh.querySelectorAll(":scope > .filters").forEach(f => { if (!f.hidden) out.unshift(f); });
+    if (sh && !sh.hidden) sh.querySelectorAll(":scope > .filters:not(.fr-keep)").forEach(f => { if (!f.hidden) out.unshift(f); });
     ["c-quick", "ch-types"].forEach(id => { const q = document.getElementById(id); if (q && q.closest(".tab.active")) out.push(q); });
     return [...new Set(out)];
   }
@@ -13845,7 +13875,7 @@ function multiplesChart(){
     const onSettings = document.querySelector("main > .tab.active")?.id === "tab-settings";
     document.body.classList.toggle("fr-settings", active() && onSettings);
     if (!active() || onSettings) return;
-    candidates().forEach(n => { park(n, body); keepOut(n, moved[moved.length - 1][1]); });
+    candidates().forEach(n => { seen.add(n); park(n, body); keepOut(n, moved[moved.length - 1][1]); });
     body.dataset.tab = typeof activeDataTab === "function" ? activeDataTab() : "";
     ["ult-toggle", "vk-toggle"].forEach(id => { const b = document.getElementById(id); if (b && b.parentNode !== top) park(b, top); });
     // «Вид таблицы» в шторку больше не добавляется: те же настройки есть в меню «Столбцы» у каждой таблицы.
@@ -13898,14 +13928,18 @@ function multiplesChart(){
   mq.addEventListener ? mq.addEventListener("change", apply) : mq.addListener(apply);
   // Перерисовка вкладки может создать новые панели фильтров — они сразу переезжают в шторку,
   // а не остаются «лишними кнопками» по центру до следующего обновления.
-  let moRaf = 0;
+  // Подхватываются только по-настоящему новые панели (которых шторка ещё не видела), и не чаще 3 раз за 2 секунды —
+  // так шторка никогда не зациклится, перекладывая один и тот же блок.
+  let moRaf = 0; const hits = [];
   const mainEl = document.querySelector("main");
   if (mainEl) new MutationObserver(() => {
     if (moRaf || !active()) return;
     moRaf = requestAnimationFrame(() => {
       moRaf = 0;
       if (!active() || document.querySelector("main > .tab.active")?.id === "tab-settings") return;
-      if (candidates().some(n => !dr.contains(n))) mount();
+      const fresh = candidates().filter(n => !dr.contains(n) && !seen.has(n)); if (!fresh.length) return;
+      const now = Date.now(); while (hits.length && now - hits[0] > 2000) hits.shift(); if (hits.length >= 3) return; hits.push(now);
+      mount();
     });
   }).observe(mainEl, {childList:true, subtree:true});
   window.__filterDrawer = {mount, restore, apply, rekeep};
@@ -14721,7 +14755,11 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.10.30-8", date:"2026-10-30", title:"Реакции и события — в релизе", items:[
+  {v:"2026.10.30-9", date:"2026-10-30", title:"Реакции и события — в релизе", items:[
+    {tag:"fix", area:"Графики", text:"Кнопки и переключатели снова срабатывают: шторка фильтров больше не перекладывает панели по кругу (из-за этого дёргался выбор даты и мигал курсор)."},
+    {tag:"fix", area:"Селфи", text:"Облако, «🔑 Ключ редактора» и сообщения остаются рядом с отметками; без ключа под именами появляется подсказка, а кнопка ключа подсвечивается."},
+    {tag:"new", area:"Участники", text:"В Настройках → Участники можно исключить лишнего участника со всего сайта галочкой «На сайте» и вернуть в любой момент."},
+    {tag:"fix", area:"Статистика", text:"Строка «Всего» надёжно повторяет скрытые столбцы таблицы."},
     {tag:"new", area:"Графики", text:"«Активность по дням»: столбцы по дням, неделям или месяцам, а в каждом — доли чатов (или участников) стопкой, итог над столбцом и суммы в легенде."},
     {tag:"new", area:"Графики", text:"На ПК графики приближаются колесом мыши в точку под курсором и остаются чёткими; приближенный график двигается мышью, двойной клик — сбросить. Копирование и видео — всегда целиком."},
     {tag:"new", area:"Тема", text:"«Свой оттенок» в Настройках → Тема: ползунок оттенка и два цвета акцента."},
@@ -16767,7 +16805,7 @@ body.tb-on .chart:has(svg.heatrows-svg){border:1.5px solid transparent;backgroun
   }
   function rules(){
     let css = "";
-    document.querySelectorAll("table[data-hc]").forEach(t => {
+    document.querySelectorAll("table[data-hc]").forEach(t => { try {
       const cols = colsOf(t); if (!cols) return;
       const hid = hiddenIdx(t, cols);
       if (hid.length) {
@@ -16777,8 +16815,8 @@ body.tb-on .chart:has(svg.heatrows-svg){border:1.5px solid transparent;backgroun
         css += sel + "," + colSel + "{display:none!important}\n";
       }
       if (hid.length || t.querySelector("[data-hc-cs]")) fixSpans(t, hid);
-      const b = t.__hcBtn; if (b) { b.classList.toggle("has", hid.length > 0); b.querySelector("b").textContent = hid.length ? String(hid.length) : ""; b.querySelector("b").hidden = !hid.length; }
-    });
+      const b = t.__hcBtn, bb = b && b.querySelector("b"); if (b) b.classList.toggle("has", hid.length > 0); if (bb) { bb.textContent = hid.length ? String(hid.length) : ""; bb.hidden = !hid.length; }
+    } catch (e) {} }); // ошибка в одной таблице не мешает остальным
     if (style.textContent !== css) style.textContent = css;
   }
   function attach(t){
@@ -16797,7 +16835,7 @@ body.tb-on .chart:has(svg.heatrows-svg){border:1.5px solid transparent;backgroun
   let pending = 0;
   function scan(){
     pending = 0;
-    document.querySelectorAll("main table").forEach(t => { if (eligible(t)) attach(t); });
+    document.querySelectorAll("main table").forEach(t => { try { if (eligible(t)) attach(t); } catch (e) {} });
     // Убираем кнопки, чья таблица исчезла.
     document.querySelectorAll(".hc-bar").forEach(b => { const t = document.querySelector(`table[data-hc="${b.dataset.for}"]`); if (!t || (hostOf(t)?.previousElementSibling !== b && !b.classList.contains("hc-moved"))) b.remove(); });
     rules();
@@ -16855,6 +16893,8 @@ body.tb-on .chart:has(svg.heatrows-svg){border:1.5px solid transparent;backgroun
   });
   const root = document.querySelector("main") || document.body;
   new MutationObserver(ms => { if (ms.some(m => !(m.target.closest && m.target.closest(".hc-bar, .hc-pop")))) later(); }).observe(root, {childList:true, subtree:true});
+  // страховка: строки «Всего» с объединёнными ячейками ещё раз сверяются со скрытыми столбцами
+  setInterval(() => { let need = false; document.querySelectorAll("main table[data-hc]").forEach(t => { if ((H[t.dataset.hcKey] || []).length && t.querySelector(":scope > tfoot > tr > [colspan]:not([data-hc-cs])")) need = true; }); if (need) later(); }, 1500);
   scan();
 })();
 
