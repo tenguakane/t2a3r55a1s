@@ -1542,6 +1542,7 @@ document.body.classList.add("beta-re");
   }).observe(document.documentElement, {childList:true, subtree:true});
 })();
 </script>
+<style id="rx-copy-css">.rx-copy-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px}.bx-card > .rx-copy-row{margin:12px 0 0}.rx-copy-row .hint{margin:0;font-size:13px}</style>
 <style id="ios-emoji-css">.ios-emo{display:inline-block;width:1.2em;height:1.2em;vertical-align:-.22em;object-fit:contain;user-select:none}</style>
 <style id="fr-boot-css">
 body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot main #ch-types,body.fr-boot header #ult-toggle,body.fr-boot header #vk-toggle{visibility:hidden!important}
@@ -5042,6 +5043,14 @@ function drawCanvasCellText(ctx, cell, rect, tableRect, xOffset, yOffset, fallba
   });
   ctx.restore();
 }
+// Смайлы iOS (картинки) в ячейках: рисуются поверх, на своих местах.
+async function drawCellEmoji(ctx, cell, tableRect, tableX, tableY){
+  for (const im of cell.querySelectorAll("img.ios-emo")) {
+    try { if (!im.complete || !im.naturalWidth) await im.decode(); } catch (e) { continue; }
+    const r = im.getBoundingClientRect(); if (!r.width) continue;
+    try { ctx.drawImage(im, tableX + r.left - tableRect.left, tableY + r.top - tableRect.top, r.width, r.height); } catch (e) {}
+  }
+}
 // Rasterize inline SVGs (such as the "Динамика" sparklines) for table-image export.
 // They are separate visual elements, not text, so the canvas exporter must paint them explicitly.
 async function drawInlineSvgVisuals(ctx, cell, tableRect, tableX, tableY){
@@ -5319,6 +5328,7 @@ async function tableImageBlob(tableId, title, rowLimit = null){
         }
         drawCanvasCellText(ctx, cell, cr, tableRect, tableX, tableY, textColor);
         if (cell.querySelector("svg")) await drawInlineSvgVisuals(ctx, cell, tableRect, tableX, tableY);
+        if (cell.querySelector("img.ios-emo")) await drawCellEmoji(ctx, cell, tableRect, tableX, tableY);
         const borderWidth = parseFloat(cs.borderBottomWidth) || 0;
         if (!glass && borderWidth > 0 && cs.borderBottomStyle !== "none" && seen(cs.borderBottomColor)) {
           const borderColor = canvasColor(cs.borderBottomColor, lineColor);
@@ -12961,7 +12971,7 @@ function multiplesChart(){
     box.innerHTML = svgStr; document.body.appendChild(box);
     try { return await svgToPngBlob(box.querySelector("svg"), cmpExportPrefs()); } finally { box.remove(); }
   }
-  const head = (c, title, W) => `<rect x="36" y="32" width="6" height="28" rx="3" fill="${c.ac}"/><text x="54" y="55" font-size="26" font-weight="700" fill="${c.tx}">${escH(cmpFit(title, 60))}</text><text x="${W - 36}" y="55" font-size="14" fill="${c.mu}" text-anchor="end">Статистика чата · ${new Date().toLocaleDateString("ru-RU")}</text>`;
+  const head = (c, title, W) => `<rect x="36" y="32" width="6" height="28" rx="3" fill="${c.ac}"/><text x="54" y="55" font-size="26" font-weight="700" fill="${c.tx}">${escH(cmpFit(title, 60))}</text><text x="${W - 36}" y="55" font-size="14" fill="${c.mu}" text-anchor="end">Colony Stats · ${new Date().toLocaleDateString("ru-RU")}</text>`;
 
   // столбики (месяцы / бодрствование по часам)
   function barsSvg(card, title){
@@ -14562,7 +14572,10 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.10.30-2", date:"2026-10-30", title:"Реакции и события — в релизе", items:[
+  {v:"2026.10.30-4", date:"2026-10-30", title:"Реакции и события — в релизе", items:[
+    {tag:"fix", area:"Реакции и События", text:"Все участники из Telegram сопоставлены с участниками сайта: их реакции и уровни видны в Статистике, профилях, достижениях и прогнозе. Аккаунты без имени не учитываются."},
+    {tag:"new", area:"Реакции и События", text:"Кнопки копирования картинкой: показатели, таблицы и каждый график. Смайлы iOS попадают и в картинку."},
+    {tag:"imp", area:"События", text:"Прогноз идущего события считается как у бота: темп = 0,7 × среднее за 28 дней + 0,3 × среднее за 56 дней; видно, до какого уровня и сколько опыта наберёт каждый и кто дойдёт до вершины."},
     {tag:"fix", area:"Статистика", text:"Реакции в таблицах «Статистики» видны сразу, без захода на другие вкладки; в строке чата — реакции этого чата, в Colony Ultimate — сумма его чатов."},
     {tag:"imp", area:"Интерфейс", text:"Всегда включены: плавное появление блоков при смене вкладки и при прокрутке, современные фильтры и списки, таблицы без линий, вкладки слева и фильтры справа на ПК, мини-графики «Динамика» (столбец скрывается в меню «Столбцы»)."},
     {tag:"del", area:"Таблицы", text:"Убраны строки и переключатель «Среднее и медиана», мини-гистограммы в ячейках, подсветка аномальных дней и порог аномалии."},
@@ -19838,11 +19851,38 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
   try { DATA = Object.assign(DATA, JSON.parse(document.getElementById("colony-rx-data")?.textContent || "{}")); } catch (e) {}
   let VER = 0, LIVE_AT = "";
 
-  // telegram_user_id → user_pk (подобрано по именам; автоматическое сопоставление по истории главнее)
+  // telegram_user_id → user_pk — проверено владельцем сайта (30.10.2026). Это сопоставление главнее автоматического.
   const TG_PK = {
-    282489954:2, 983725251:11, 457274349:14, 480247162:16, 526673962:17, 930906071:19, 676243725:20, 544966106:27,
-    354940148:28, 94031322:46, 6891603349:55, 1356218071:60, 110077035:64, 6504207841:100, 6674389741:107, 708596307:108,
+    282489954:2,    // Danil Lebedev → Данил
+    983725251:11,   // anastasiia.h Стейси → Анастасия
+    457274349:14,   // Алиса 💜 → Алиса
+    480247162:16,   // Есет
+    526673962:17,   // Александра Градская → Саша
+    930906071:19,   // Ivan Sergeev → Ваня
+    676243725:20,   // Влада Шибаева → Влада
+    544966106:27,   // Mariia → Маша
+    354940148:28,   // Ягор → Егор
+    94031322:46,    // Лекса
+    6891603349:55,  // влад shnape → Влад
+    1356218071:60,  // Gonnor → Гоннор
+    110077035:64,   // Tishina → Тишина
+    6504207841:100, // Horacy Czopek → Жопек
+    6674389741:107, // Альона → Алёна
+    708596307:108,  // Пан Евджений → Евджений
+    347549926:3,    // 𝚊𝚞𝚐𝚞𝚜𝚝 @aug_b → Дима
+    7928795272:69,  // Lisa Чан @ginseng_de_mai → Женя
+    600274098:5,    // tata ruw → Наташа
+    585731542:66,   // Валентность @kindlylyly → Валик
+    8880257555:106, // Golden Ambient @fate_write → Миша А.
+    660579527:1,    // Quandale Dingle @ervionn → Артём
+    1648306748:26,  // Dol @DolWolf19 → Серёга
+    392234812:9,    // Tom @Tom_Reynold → Ярик
+    943222377:7,    // AveTatty @AveTaric → Адлет
+    421699274:76,   // Diloroff @VanDerLord1092 → Миша О.
+    679271589:105,  // Vanzha @babyteef → Ульяна
   };
+  // Неизвестные аккаунты без имени — в расчётах не участвуют
+  const TG_IGNORE = new Set(["5072796396", "5752602790", "6314372730"]);
 
   const AR = () => (typeof allRows !== "undefined" ? allRows : null);
   const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;"}[c]));
@@ -19874,6 +19914,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
         addName(fn, pk); if (x.last_name) addName([fn, x.last_name].join(" "), pk);
       });
       ids.forEach(tg => { if (byCol.has(tg)) set(tg, byCol.get(tg)); });
+      Object.entries(TG_PK).forEach(([tg, pk]) => set(tg, String(pk)));
       ids.forEach(tg => {
         const u = DATA.users[tg]; if (!u || m.has(tg)) return;
         for (const n of [[u[1], u[2]].filter(Boolean).join(" "), u[1]]) { const s = byName.get(norm(n)); if (s && s.size === 1) { set(tg, [...s][0]); break; } }
@@ -19883,7 +19924,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     MAP = {src:rowsA, ver:VER, m};
     return m;
   }
-  const keyOf = id => { id = String(id ?? ""); if (!id || id === "0") return ""; return tgMap().get(id) || "tg" + id; };
+  const keyOf = id => { id = String(id ?? ""); if (!id || id === "0" || TG_IGNORE.has(id)) return ""; return tgMap().get(id) || "tg" + id; };
   const isTg = k => /^tg\d+$/.test(String(k));
   const nm = pk => NAMES[pk] || (isTg(pk) ? tgName(pk.slice(2)) : "") || `ID ${isTg(pk) ? pk.slice(2) : pk}`;
   const pn = pk => isTg(pk) ? `<span title="Нет в списке участников сайта">${esc(nm(pk))}</span>` : `<span class="pname" data-open-profile="${esc(pk)}">${esc(nm(pk))}</span>`;
@@ -20186,6 +20227,101 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
   };
   const loading = id => { const o = document.getElementById(id); if (o) o.innerHTML = `<div class="sk sk-poster" style="height:120px"></div>`; };
 
+  /* ---------- Копирование картинкой: таблицы, плитки и графики на «Реакциях» и «Событиях» ---------- */
+  const CPY = (() => {
+    const th = () => ({tx:cmpThemeVar("--text", "#e8eaf1"), mu:cmpThemeVar("--muted", "#9aa0b0"), ln:cmpThemeVar("--line", "#2c303b"), ac:cmpThemeVar("--accent", "#7aa2f7")});
+    const txt = el => (el ? el.textContent : "").replace(/\s+/g, " ").trim();
+    const fit = (t, n) => (typeof cmpFit === "function" ? cmpFit(t, n) : String(t).slice(0, n));
+    const FF = "Samsung Sans, SamsungOne, Segoe UI, system-ui, sans-serif";
+    const doc = (W, H, body, defs = "") => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="${FF}"><defs>${defs}</defs>${body}</svg>`;
+    const head = (c, title, W, sub) => `<text x="36" y="56" font-size="26" font-weight="700" fill="${c.tx}">${esc(fit(title, 54))}</text><text x="${W - 36}" y="56" font-size="14" fill="${c.mu}" text-anchor="end">Colony Stats · ${new Date().toLocaleDateString("ru-RU")}</text>` + (sub ? `<text x="36" y="84" font-size="15" fill="${c.mu}">${esc(fit(sub, 115))}</text>` : "");
+    async function blob(svgStr, W){
+      const box = document.createElement("div"); box.style.cssText = `position:fixed;left:-10000px;top:0;width:${W}px;pointer-events:none`;
+      box.innerHTML = svgStr; document.body.appendChild(box);
+      try { return await svgToPngBlob(box.querySelector("svg"), cmpExportPrefs()); } finally { box.remove(); }
+    }
+    // Смайл iOS как data-URL для SVG (внешние картинки в экспортируемом SVG не грузятся)
+    const emoCache = new Map();
+    async function emoData(e){
+      if (emoCache.has(e)) return emoCache.get(e);
+      let url = null; const im = new Image(); im.crossOrigin = "anonymous";
+      const v = window.__iosEmoji?.variants(e) || [];
+      for (const name of v) { try { im.src = "https://cdn.jsdelivr.net/npm/emoji-datasource-apple@16.0.0/img/apple/64/" + name + ".png"; await im.decode(); const c = document.createElement("canvas"); c.width = c.height = 64; c.getContext("2d").drawImage(im, 0, 0, 64, 64); url = c.toDataURL("image/png"); break; } catch (err) {} }
+      emoCache.set(e, url); return url;
+    }
+    // Цвета полоски: из вычисленного фона (градиент → две точки)
+    function colorsOf(el, fb){
+      const cs = getComputedStyle(el), bg = cs.backgroundImage + " " + cs.backgroundColor;
+      const conv = c => { const k = c.match(/^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/i); return k ? `rgb(${Math.round(k[1] * 255)},${Math.round(k[2] * 255)},${Math.round(k[3] * 255)})` : c; };
+      const list = (bg.match(/rgba?\([^)]*\)|#[0-9a-f]{3,8}\b|color\(srgb[^)]*\)|hsla?\([^)]*\)/gi) || []).map(conv).filter(c => !/rgba\([^)]*,\s*0\)$/.test(c));
+      return list.length ? [list[0], list[list.length - 1]] : [fb, fb];
+    }
+    // Карточка с горизонтальными полосками (.bx-list)
+    async function hbars(card){
+      const c = th(), title = txt(card.querySelector("h3")), sub = txt(card.querySelector(".hint")), rows = [...card.querySelectorAll(".bx-row")];
+      if (!rows.length) throw new Error("Нет данных");
+      const onlyEmo = rows.every(r => r.querySelector(":scope > span img.ios-emo"));
+      const W = 1000, top = sub ? 112 : 92, rh = 38, H = top + rows.length * rh + 30, bx = onlyEmo ? 96 : 330, bw = W - bx - 130;
+      let o = head(c, title, W, sub), defs = "";
+      for (let i = 0; i < rows.length; i++) {
+        const r = rows[i], lab = r.querySelector(":scope > span"), bar = r.querySelector(".bx-bar > i"), y = top + i * rh;
+        const pct = Math.max(0, Math.min(100, parseFloat(bar?.style.width) || 0)), [c1, c2] = colorsOf(bar, c.ac), em = lab?.querySelector("img.ios-emo");
+        if (em) { const d = await emoData(em.alt); o += d ? `<image href="${d}" x="${bx - 44}" y="${y - 2}" width="28" height="28"/>` : `<text x="${bx - 16}" y="${y + 20}" font-size="22" text-anchor="end">${esc(em.alt)}</text>`; }
+        else o += `<text x="${bx - 16}" y="${y + 19}" font-size="15" text-anchor="end" fill="${c.tx}">${esc(fit(txt(lab), 34))}</text>`;
+        defs += `<linearGradient id="cg${i}" x1="0" x2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>`;
+        o += `<rect x="${bx}" y="${y + 5}" width="${bw}" height="16" rx="8" fill="${c.tx}" fill-opacity=".06"/><rect x="${bx}" y="${y + 5}" width="${Math.max(4, bw * pct / 100).toFixed(1)}" height="16" rx="8" fill="url(#cg${i})"/>`;
+        o += `<text x="${W - 36}" y="${y + 19}" font-size="15" font-weight="700" text-anchor="end" fill="${c.tx}">${esc(txt(r.querySelector("b")))}</text>`;
+      }
+      return blob(doc(W, H, o, defs), W);
+    }
+    // Карточка со столбиками (.re-hours)
+    function cols(card){
+      const c = th(), title = txt(card.querySelector("h3")), sub = txt(card.querySelector(".hint")), items = [...card.querySelectorAll(".re-hours > div")];
+      if (!items.length) throw new Error("Нет данных");
+      const W = 1000, H = 440, x0 = 50, x1 = W - 50, y0 = sub ? 130 : 110, y1 = H - 60, bw = (x1 - x0) / items.length;
+      let o = head(c, title, W, sub);
+      items.forEach((d, i) => {
+        const hp = parseFloat(d.querySelector("i")?.style.height) || 0, h = Math.max(2, (y1 - y0) * hp / 100), w = Math.min(bw * .72, 64), x = x0 + i * bw + (bw - w) / 2;
+        const val = (d.title.match(/([\d\s ]+)$/) || [])[1]?.trim() || "", l = txt(d.querySelector("small"));
+        o += `<rect x="${x.toFixed(1)}" y="${(y1 - h).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="5" fill="${c.ac}" fill-opacity=".85"/>`;
+        if (val && items.length <= 40) o += `<text x="${(x + w / 2).toFixed(1)}" y="${(y1 - h - 7).toFixed(1)}" font-size="12.5" text-anchor="middle" fill="${c.mu}">${esc(val)}</text>`;
+        if (l) o += `<text x="${(x + w / 2).toFixed(1)}" y="${y1 + 24}" font-size="13" text-anchor="middle" fill="${c.mu}">${esc(l)}</text>`;
+      });
+      return blob(doc(W, H, o), W);
+    }
+    // Плитки: смайлы-картинки превращаются в текст, остальное рисует общий модуль сайта
+    function tiles(host, title){
+      const cl = host.cloneNode(true); cl.querySelectorAll("img.ios-emo").forEach(im => im.replaceWith(document.createTextNode(im.alt)));
+      if (!window.__copyimg?.tilesSvg) throw new Error("Копирование плиток недоступно");
+      return blob(window.__copyimg.tilesSvg(cl, title), 1240);
+    }
+    function row(btns){
+      const r = document.createElement("div"); r.className = "copy-row rx-copy-row";
+      const msg = document.createElement("span"); msg.className = "hint"; msg.setAttribute("role", "status");
+      btns.forEach(([label, fn]) => { const b = document.createElement("button"); b.type = "button"; b.className = "mini copy-btn"; b.textContent = label; b.addEventListener("click", () => copyPngToStatus(fn, msg, "Скопировано")); r.appendChild(b); });
+      r.appendChild(msg); return r;
+    }
+    // Заголовок блока — ближайший предыдущий h2
+    const titleBefore = el => { let n = el.previousElementSibling; while (n) { if (n.tagName === "H2") return txt(n); n = n.previousElementSibling; } return ""; };
+    function decorate(out, base){
+      out.querySelectorAll(".wrap > table").forEach(t => {
+        const w = t.parentElement; if (w.previousElementSibling?.classList.contains("rx-copy-row")) return;
+        const h = titleBefore(w), title = !h ? base : (h.includes(base) || /Все события/.test(h) ? h : `${h} · ${base}`);
+        w.before(row([["Копировать таблицу", () => tableImageBlob(t, title)]]));
+      });
+      out.querySelectorAll(".tiles").forEach(tl => {
+        if (tl.previousElementSibling?.classList.contains("rx-copy-row")) return;
+        const title = titleBefore(tl) || base; tl.before(row([["Копировать показатели", () => tiles(tl, title)]]));
+      });
+      out.querySelectorAll(".bx-card").forEach(card => {
+        if (card.querySelector(".rx-copy-row")) return;
+        const fn = card.querySelector(".re-hours") ? () => cols(card) : card.querySelector(".bx-row") ? () => hbars(card) : null;
+        if (fn) card.appendChild(row([["Копировать график", fn]]));
+      });
+    }
+    return {decorate};
+  })();
+
   /* ---------- Вкладка «Реакции» ---------- */
   const RS = {per:"all", pk:"", sort:"given"};
   try { Object.assign(RS, JSON.parse(ls("chatstats.reactUi.v1") || "{}")); } catch (e) {}
@@ -20282,6 +20418,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
         <div class="bx-card"><h3>Самые частые пары</h3><p class="hint">Кто → кому ставит больше всего</p>${bars(top(pair, 10).map(([k, v]) => { const [a, b] = k.split(">"); return {lbl:`${esc(nm(a))} → ${esc(nm(b))}`, v, c:col(a)}; }))}</div>
       </div>`;
     out.querySelector("#re-pk")?.addEventListener("change", e => { RS.pk = e.target.value; save(); renderReactions(); });
+    CPY.decorate(out, "Реакции");
     save();
   }
   document.addEventListener("click", e => {
@@ -20289,35 +20426,52 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     const s = e.target.closest?.("[data-re-sort]"); if (s) { RS.sort = s.dataset.reSort; renderReactions(); }
   });
 
-  /* ---------- Прогноз для идущего события: на каком уровне каждый закончит ----------
-     Опыт копится примерно пропорционально сообщениям. Темп = опыт с начала события / прошедшие дни,
-     поправленный на то, как человек пишет последние 14 дней по сравнению со средним с начала события.
-     Уровень из опыта — по таблице уровней события из API (если её нет — по кривой xp ≈ c·уровень^p, подобранной по данным участников). */
+  /* ---------- Прогноз для идущего события: до какого уровня каждый дойдёт с текущим темпом ----------
+     Темп считается так же, как его считает бот события:
+     • берутся сообщения участника за последние 28 и 56 полных дней (до вчера включительно, дни без сообщений — нули);
+     • темп = 0,7 × среднее за 28 дней + 0,3 × среднее за 56 дней (сообщений в день);
+     • кто за последние 28 дней не написал ни одного сообщения, считается выбывшим: его опыт дальше не растёт.
+     Опыт к концу = текущий опыт + темп × оставшиеся дни (с остатком сегодняшнего дня). В событии засчитываются не все чаты,
+     поэтому темп переводится в опыт по личному соотношению «опыт с начала события / сообщения с начала события».
+     Если истории сообщений участника нет (он не сопоставлен с участником сайта), темп берётся из опыта события: опыт / прошедшие дни.
+     Вершина — порог высшего уровня события из API. Диапазон — прогноз только по 28-дневному и только по 56-дневному темпу.
+     Как и у бота, прогноз предполагает сохранение темпа и не учитывает случайные всплески и спады. */
   function forecastEvent(ev){
     if (statusOf(ev) !== "live") return null;
     const m = evLevels().get(ev.id) || new Map(); if (!m.size) return null;
-    const t = today(), total = dI(ev.end) - dI(ev.start) + 1, done = Math.max(1, Math.min(total, dI(t) - dI(ev.start) + 1)), left = total - done;
-    // кривая уровня по опыту: log xp = log c + p·log lv
-    const pts = [...m.values()].filter(v => v.level > 1 && v.xp > 0).map(v => [Math.log(v.level), Math.log(v.xp)]);
-    let pw = 2, lc = Math.log(50);
-    if (pts.length >= 3) { const n = pts.length, sx = pts.reduce((a, q) => a + q[0], 0), sy = pts.reduce((a, q) => a + q[1], 0), sxx = pts.reduce((a, q) => a + q[0] * q[0], 0), sxy = pts.reduce((a, q) => a + q[0] * q[1], 0), den = n * sxx - sx * sx; if (den > 1e-9) { pw = (n * sxy - sx * sy) / den; lc = (sy - pw * sx) / n; } }
-    if (!(pw > .3)) pw = 2;
-    const lvOf = ev.levels?.length ? xp => levelByXp(ev, xp) : xp => Math.max(1, Math.floor(Math.exp((Math.log(Math.max(1, xp)) - lc) / pw)));
-    // активность по сообщениям: с начала события и за последние 14 дней
-    const rowsA = AR() || [], hasTot = rowsA.some(x => Number(x[F.chatPk]) === 0), since = new Map(), recent = new Map(), r0 = isoD(new Date(Date.parse(t + "T00:00:00Z") - 13 * 864e5));
-    rowsA.forEach(x => { if (hasTot && Number(x[F.chatPk]) !== 0) return; const d = String(x[F.date] ?? "").slice(0, 10); if (d < ev.start || d > t) return; const u = String(x[F.userId] ?? ""), v = Number(g(x, "msgs")) || 0; since.set(u, (since.get(u) || 0) + v); if (d >= r0) recent.set(u, (recent.get(u) || 0) + v); });
-    const recDays = Math.min(14, done);
+    const t = today(), total = dI(ev.end) - dI(ev.start) + 1, done = Math.max(1, Math.min(total, dI(t) - dI(ev.start) + 1));
+    const now = new Date(), dayLeft = 1 - (now.getHours() * 60 + now.getMinutes()) / 1440;
+    const left = total - done, rem = left + dayLeft;
+    const lvOf = xp => ev.levels?.length ? levelByXp(ev, xp) : 1;
+    const top = ev.levels?.length ? ev.levels[ev.levels.length - 1] : null, topXp = top ? top[2] : Infinity, topLv = top ? top[0] : 0;
+    // сообщения по дням из истории: окна 28 и 56 дней до вчера, и с начала события
+    const day = n => isoD(new Date(Date.parse(t + "T00:00:00Z") - n * 864e5)), y1 = day(1), w28 = day(28), w56 = day(56);
+    const rowsA = AR() || [], hasTot = rowsA.some(x => Number(x[F.chatPk]) === 0), s28 = new Map(), s56 = new Map(), since = new Map(), seen = new Set();
+    rowsA.forEach(x => {
+      if (hasTot && Number(x[F.chatPk]) !== 0) return;
+      const d = String(x[F.date] ?? "").slice(0, 10), u = String(x[F.userId] ?? ""); if (!u) return;
+      seen.add(u);
+      const v = Number(g(x, "msgs")) || 0; if (!v) return;
+      if (d >= w56 && d <= y1) { s56.set(u, (s56.get(u) || 0) + v); if (d >= w28) s28.set(u, (s28.get(u) || 0) + v); }
+      if (d >= ev.start && d <= t) since.set(u, (since.get(u) || 0) + v);
+    });
     const list = [...m.entries()].filter(([k]) => typeof isVisibleUser !== "function" || isVisibleUser(k)).map(([k, v]) => {
-      const perDay = v.xp / done, avgM = (since.get(k) || 0) / done, recM = (recent.get(k) || 0) / recDays;
-      const f = avgM > 0 ? Math.max(.3, Math.min(2.5, recM / avgM)) : (recM > 0 ? 1.5 : .5);
-      const mid = v.xp + perDay * left * (.5 + .5 * f), lo = v.xp + perDay * left * Math.min(1, f) * .8, hi = v.xp + perDay * left * Math.max(1, f) * 1.15;
-      const lvl = Math.max(v.level, lvOf(mid)), lvlLo = Math.max(v.level, lvOf(lo)), lvlHi = Math.max(lvl, lvOf(hi));
-      return {k, now:v.level, xp:v.xp, end:lvl, lo:lvlLo, hi:lvlHi, xpEnd:Math.round(mid), trend:f};
+      let a28, a56, kx = 1, src = "msgs";
+      if (seen.has(k)) {
+        a28 = (s28.get(k) || 0) / 28; a56 = (s56.get(k) || 0) / 56;
+        const sn = since.get(k) || 0; kx = sn > 0 ? Math.max(.25, Math.min(4, v.xp / sn)) : 1;
+      } else { a28 = a56 = v.xp / done; src = "xp"; kx = 1; }
+      const active = a28 > 0, rate = active ? .7 * a28 + .3 * a56 : 0;
+      const xpAt = r => v.xp + r * kx * rem;
+      const xpEnd = xpAt(rate), lv = Math.max(v.level, lvOf(xpEnd));
+      const lA = Math.max(v.level, lvOf(xpAt(active ? a28 : 0))), lB = Math.max(v.level, lvOf(xpAt(active ? a56 : 0)));
+      return {k, now:v.level, xp:v.xp, end:lv, lo:Math.min(lA, lB, lv), hi:Math.max(lA, lB, lv), xpEnd:Math.round(xpEnd), rate, xpRate:rate * kx, a28, a56, src, active,
+        trend:a56 > 0 ? a28 / a56 : (a28 > 0 ? 1.5 : 1), top:xpEnd >= topXp};
     });
     const nowRank = new Map([...list].sort((a, b) => b.xp - a.xp).map((x, i) => [x.k, i + 1]));
-    list.sort((a, b) => b.xpEnd - a.xpEnd);
+    list.sort((a, b) => b.xpEnd - a.xpEnd || b.xp - a.xp);
     list.forEach((x, i) => { x.place = i + 1; x.was = nowRank.get(x.k); });
-    return {list, left, total, done};
+    return {list, left, rem, total, done, topXp, topLv, topName:top ? top[1] : "", topN:list.filter(x => x.top).length};
   }
   window.__beta.events.forecast = id => { const ev = EVENTS.find(e => e.id === id); return ev ? forecastEvent(ev) : null; };
 
@@ -20365,19 +20519,25 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
       if (FC) {
         const thE = ev.ach.th, tierOf = l => thE.filter(x => l >= x).length, mxE = Math.max(40, ...FC.list.map(x => x.hi));
         const move = x => { const d = x.was - x.place; return d > 0 ? `<span style="color:#4ade80">▲ ${d}</span>` : d < 0 ? `<span style="color:#f87171">▼ ${-d}</span>` : `<span class="hint">—</span>`; };
-        const trend = f => f >= 1.15 ? `<span title="последние 2 недели пишет активнее обычного" style="color:#4ade80">↗ ускоряется</span>` : f <= .85 ? `<span title="последние 2 недели пишет меньше обычного" style="color:#f87171">↘ сбавляет темп</span>` : `<span class="hint">→ ровно</span>`;
-        const w = FC.list[0], newTiers = FC.list.filter(x => tierOf(x.end) > tierOf(x.now)).length, maxers = FC.list.filter(x => x.end >= thE[thE.length - 1]).length;
+        const r1 = v => (Math.round(v * 10) / 10).toFixed(1).replace(".", ",");
+        const trend = x => {
+          if (!x.active) return `<span class="hint" title="За последние 28 дней сообщений нет — бот не считает участника активным">не пишет</span>`;
+          const tip = x.src === "xp" ? "Истории сообщений нет — темп взят из опыта события" : `0,7 × ${r1(x.a28)} (28 дней) + 0,3 × ${r1(x.a56)} (56 дней)`;
+          const arrow = x.trend >= 1.15 ? ` <span style="color:#4ade80" title="последние 4 недели пишет активнее, чем за 8">↗</span>` : x.trend <= .85 ? ` <span style="color:#f87171" title="последние 4 недели пишет меньше, чем за 8">↘</span>` : "";
+          return `<span title="${esc(tip)}">${r1(x.rate)}${x.src === "xp" ? "*" : ""}</span>${arrow}`;
+        };
+        const w = FC.list[0], newTiers = FC.list.filter(x => tierOf(x.end) > tierOf(x.now)).length, hasXpSrc = FC.list.some(x => x.src === "xp");
         body += `<h2>Прогноз на конец события</h2>
-          <p class="hint">До ${fd(ev.end)} осталось ${fmtN(FC.left)} ${wf2(FC.left, ["день", "дня", "дней"])}. Опыт продлевается текущим темпом каждого участника с поправкой на то, как он пишет последние две недели; диапазон — от спокойного до активного сценария.</p>
+          <p class="hint">До ${fd(ev.end)} осталось ${fmtN(FC.left)} ${wf2(FC.left, ["день", "дня", "дней"])}. Темп считается как у бота: 0,7 × среднее число сообщений в день за последние 28 дней + 0,3 × среднее за 56 дней. С этим темпом опыт растёт до конца события; кто 28 дней не писал, остаётся на текущем уровне. Диапазон — прогноз только по 28-дневному и только по 56-дневному темпу.${hasXpSrc ? " * — истории сообщений нет, темп взят из опыта события." : ""}</p>
           <div class="tiles">
-            ${tile("Ожидаемый победитель", w ? esc(nm(w.k)) : "—", w ? `ур. ${w.end} · ${esc(rankName(ev, w.end))}` : "")}
+            ${tile("Ожидаемый победитель", w ? esc(nm(w.k)) : "—", w ? `ур. ${w.end} · ${fmtN(w.xpEnd)} опыта` : "")}
             ${tile("Средний уровень в конце", (FC.list.reduce((a, x) => a + x.end, 0) / (FC.list.length || 1)).toFixed(1).replace(".", ","), `сейчас ${(FC.list.reduce((a, x) => a + x.now, 0) / (FC.list.length || 1)).toFixed(1).replace(".", ",")}`)}
             ${tile(`Новый уровень «${esc(ev.ach.name)}»`, fmtN(newTiers), "участников поднимут уровень достижения")}
-            ${tile(`Максимум (ур. ${thE[thE.length - 1]}+)`, fmtN(maxers), "участников дойдут до VII уровня")}
+            ${tile(`Дойдут до вершины`, fmtN(FC.topN), FC.topLv ? `ур. ${FC.topLv} «${esc(FC.topName)}» — от ${fmtN(FC.topXp)} опыта` : "")}
           </div>
-          <div class="wrap"><table id="ev-fc-table"><thead><tr><th>Место в конце</th><th>Участник</th><th>Сейчас</th><th>Прогноз уровня</th><th>Диапазон</th><th>Звание в конце</th><th>«${esc(ev.ach.name)}» в конце</th><th>Место</th><th>Темп</th></tr></thead><tbody>${FC.list.map(x => {
+          <div class="wrap"><table id="ev-fc-table"><thead><tr><th>Место в конце</th><th>Участник</th><th>Сейчас</th><th>Прогноз уровня</th><th>Диапазон</th><th>Опыт к концу</th><th>Звание в конце</th><th>«${esc(ev.ach.name)}» в конце</th><th>Место</th><th>Сообщ. в день</th></tr></thead><tbody>${FC.list.map(x => {
             const tl = tierOf(x.end), TC = l => l <= 0 ? "#4a5060" : l <= 3 ? "#e3a36b" : l <= 6 ? "#c0c6d4" : "#ffd166", ROM = ["—", "I", "II", "III", "IV", "V", "VI", "VII"];
-            return `<tr style="--ec1:${ev.c1};--ec2:${ev.c2}"><td>${x.place}</td><td>${pn(x.k)}</td><td>${x.now}</td><td><span class="ev-lv"><b>${x.end}</b><i style="position:relative"><em style="width:${(x.end / mxE * 100).toFixed(1)}%;opacity:.45"></em><em style="position:absolute;inset:0 auto 0 0;width:${(x.now / mxE * 100).toFixed(1)}%"></em></i></span></td><td class="ev-rank">${x.lo === x.hi ? x.end : `${x.lo}–${x.hi}`}</td><td class="ev-rank">${esc(rankName(ev, x.end))}</td><td><span class="ev-tier" style="--tc:${TC(tl)}">${ROM[tl]}</span>${tl > tierOf(x.now) ? ` <small style="color:#4ade80">+${tl - tierOf(x.now)}</small>` : ""}</td><td>${move(x)}</td><td>${trend(x.trend)}</td></tr>`;
+            return `<tr style="--ec1:${ev.c1};--ec2:${ev.c2}"><td>${x.place}</td><td>${pn(x.k)}</td><td>${x.now}</td><td><span class="ev-lv"><b>${x.end}</b><i style="position:relative"><em style="width:${(x.end / mxE * 100).toFixed(1)}%;opacity:.45"></em><em style="position:absolute;inset:0 auto 0 0;width:${(x.now / mxE * 100).toFixed(1)}%"></em></i></span></td><td class="ev-rank">${x.lo === x.hi ? x.end : `${x.lo}–${x.hi}`}</td><td>${fmtN(x.xpEnd)}${x.top ? ` <small style="color:#ffd166" title="Прогноз не ниже порога вершины">★</small>` : ""}</td><td class="ev-rank">${esc(rankName(ev, x.end))}</td><td><span class="ev-tier" style="--tc:${TC(tl)}">${ROM[tl]}</span>${tl > tierOf(x.now) ? ` <small style="color:#4ade80">+${tl - tierOf(x.now)}</small>` : ""}</td><td>${move(x)}</td><td>${trend(x)}</td></tr>`;
           }).join("")}</tbody></table></div>`;
       }
     }
@@ -20389,6 +20549,7 @@ body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter
     out.innerHTML = `<div class="bx-head"><h2>События ${dataNote()}</h2></div>
       <p class="hint">Тематические события бота: за сообщения начисляется опыт, с ним растёт уровень, у каждого уровня — своё звание. Нажми на событие, чтобы посмотреть его участников.</p>
       <div class="ev-timeline">${cards}</div>${body}${all}`;
+    CPY.decorate(out, ev ? ev.title : "События");
   }
   document.addEventListener("click", e => {
     const c = e.target.closest?.("[data-ev]"); if (!c) return;
