@@ -1699,6 +1699,7 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
         <select id="c-type">
           <option value="bars" selected>Столбцы</option>
           <option value="donut">Кольцо</option>
+          <option value="stack">Активность по дням</option>
           <option value="trend">Динамика</option>
           <option value="years">По годам</option>
           <option value="heat">Календарь</option>
@@ -2285,7 +2286,7 @@ const DEFAULT_CUSTOM_HEAT_BANDS_CHATS = [
   {min:250, color:"#22c55e"},
   {min:500, color:"#a855f7"}
 ];
-const CHART_TYPE_LABELS = {bars:"Столбцы", donut:"Кольцо", trend:"Динамика", years:"По годам", heat:"Календарь", spiral:"Спираль года", heatrows:"Карта: участники / чаты", "heatrows-custom":"Карта: Настраиваемая", race:"Гонка", pairs:"Кто активен вместе", season:"Сезонность", bump:"График мест", spread:"Разброс по дням", gini:"Концентрация активности", multiples:"Маленькие графики", norm:"Отклонение от нормы"};
+const CHART_TYPE_LABELS = {stack:"Активность по дням", bars:"Столбцы", donut:"Кольцо", trend:"Динамика", years:"По годам", heat:"Календарь", spiral:"Спираль года", heatrows:"Карта: участники / чаты", "heatrows-custom":"Карта: Настраиваемая", race:"Гонка", pairs:"Кто активен вместе", season:"Сезонность", bump:"График мест", spread:"Разброс по дням", gini:"Концентрация активности", multiples:"Маленькие графики", norm:"Отклонение от нормы"};
 const DEFAULT_TEXT_STYLE = {
   bars:    {titleSize:36,titleColor:"#aaaaaa",subtitleSize:17,subtitleColor:"#7d8190",labelsSize:18,labelsColor:"#e6e8ee",valuesSize:18,valuesColor:"#eceef3",axisSize:19,axisColor:"#eceef3",legendSize:18,legendColor:"#f2f3f7"},
   donut:   {titleSize:36,titleColor:"#aaaaaa",subtitleSize:17,subtitleColor:"#7d8190",labelsSize:18,labelsColor:"#f2f3f7",valuesSize:18,valuesColor:"#eceef3",axisSize:17,axisColor:"#7d8190",legendSize:18,legendColor:"#aab0c0"},
@@ -4823,7 +4824,7 @@ async function renderCharts(){
     }
     out.innerHTML = requestedType === "years" ? yearsChart() : requestedType === "season" ? seasonChart() : requestedType === "norm" ? normChart() : spiralChart(); applyChartTextStyles(); syncChartFocus(); return;
   }
-  const renderer = {bars: barsChart, donut: donutChart, trend: trendChart, bump: bumpChart, spread: spreadChart, gini: giniChart, multiples: multiplesChart, heat: calendarChart, heatrows: heatRowsChart, "heatrows-custom": () => heatRowsChart(true), race: raceChart, pairs: pairsChart}[requestedType];
+  const renderer = {stack: stackChart, bars: barsChart, donut: donutChart, trend: trendChart, bump: bumpChart, spread: spreadChart, gini: giniChart, multiples: multiplesChart, heat: calendarChart, heatrows: heatRowsChart, "heatrows-custom": () => heatRowsChart(true), race: raceChart, pairs: pairsChart}[requestedType];
   out.innerHTML = renderer ? renderer() : note("Неизвестный тип графика");
   applyChartTextStyles(); syncChartFocus();
   if (requestedType === "race") raceMount();
@@ -4940,6 +4941,7 @@ async function chartBlob(){
 }
 // В картинке и видео не нужны подсказки «наведи / кликни» и слои для наведения — они там не работают.
 function stripInteractive(c){
+  if (c.dataset && c.dataset.vb0) { c.setAttribute("viewBox", c.dataset.vb0); c.classList.remove("cz-on", "cz-drag"); delete c.dataset.vb0; }
   c.querySelectorAll('[data-no-export], #hov, #xh, #mxh, [data-hover]').forEach(el => el.remove());
   // Скрытые кликом по легенде серии (полупрозрачные подписи) в картинке не показываем.
   c.querySelectorAll('.lg-item').forEach(el => { if (Number(el.getAttribute("opacity")) < 1) el.remove(); });
@@ -4947,9 +4949,11 @@ function stripInteractive(c){
   c.classList.remove("dimming"); c.querySelectorAll(".hl").forEach(el => el.classList.remove("hl"));
   return c;
 }
+// Исходный viewBox графика (без приближения колесом мыши)
+function svgBaseBox(svg){ const a = String(svg.dataset?.vb0 || "").split(/[\s,]+/).map(Number); if (a.length === 4 && a.every(isFinite)) return {x:a[0], y:a[1], width:a[2], height:a[3]}; return svg.viewBox.baseVal; }
 async function svgToPngBlob(svg, exportPrefs){
   if (!svg) throw new Error("Сейчас нет графика");
-  const vb = svg.viewBox.baseVal, W = vb.width, H = vb.height, K = 2;
+  const vb = svgBaseBox(svg), W = vb.width, H = vb.height, K = 2;
   const c = stripInteractive(svg.cloneNode(true));
   c.setAttribute("xmlns", "http://www.w3.org/2000/svg");
   c.setAttribute("width", W * K); c.setAttribute("height", H * K);
@@ -6079,6 +6083,7 @@ function chartColorTargets(){
     const years = new Map(); src.forEach(x=>{ const d=String(x[F.date]??"").slice(0,10); if(d.length!==10||+d.slice(5,7)!==mval)return; const y=d.slice(0,4); years.set(y,{kind:"y",key:y,name:y,v:1}); });
     return [...years.values()].sort((a,b)=>Number(a.key)-Number(b.key));
   }
+  if (type === "stack") { const M = stackModel(); return M.err ? [] : M.ser.map(se => ({kind:se.kind, key:String(se.k), name:se.n, v:se.tot})); }
   let list = chartAgg(metric);
   if (type === "donut") {
     const cap = barsCap(chartEntity === "users" && SEL_ACTIVE ? 14 : 8);
@@ -10942,7 +10947,7 @@ function seasonChart(){
 
 /* ===================== Видео для графиков ===================== */
 async function svgFrameKit(svg, prefs, outW){
-  const vb = svg.viewBox.baseVal, W = vb.width, H = vb.height;
+  const vb = svgBaseBox(svg), W = vb.width, H = vb.height;
   let s = outW / W; if (H * s > 2160) s = 2160 / H;
   const CW = Math.round(W * s / 2) * 2, CH = Math.round(H * s / 2) * 2;
   const bgStart = prefs.backgroundStart || "#262626", bgEnd = prefs.backgroundEnd || bgStart;
@@ -11582,6 +11587,57 @@ function giniOf(values){
   return {g:(2 * acc) / (n * sum) - (n + 1) / n, n, sum, v};
 }
 function giniWord(g){ return g < .3 ? "почти поровну" : g < .5 ? "умеренная концентрация" : g < .7 ? "высокая концентрация" : "очень высокая концентрация"; }
+/* ---------- «Активность по дням»: столбцы по дням (неделям, месяцам), внутри — доли чатов или участников ----------
+   Снизу самый активный, сверху — остальные. Над столбцом итог, в легенде — сумма за период. */
+const STACK_CAP = 6;
+function stackModel(){
+  const D = chartDaily(); if (D.err) return D;
+  const B = chartBuckets(D.from, D.n, 31);
+  const top = D.list.slice(0, STACK_CAP), rest = D.list.slice(STACK_CAP);
+  const ser = top.map(e => ({k:e.k, n:e.n, kind:chartStyleKind(), s:bucketSums(e.a, B).s, tot:e.tot}));
+  if (rest.length) { const s2 = new Float64Array(B.count); rest.forEach(e => { const b = bucketSums(e.a, B).s; for (let i = 0; i < B.count; i++) s2[i] += b[i]; }); ser.push({k:"other", n:`Остальные (${rest.length})`, kind:"special", s:s2, tot:rest.reduce((a, e) => a + e.tot, 0)}); }
+  const tot = new Float64Array(B.count); ser.forEach(x => { for (let i = 0; i < B.count; i++) tot[i] += x.s[i]; });
+  return {D, B, ser, tot, sum:ser.reduce((a, x) => a + x.tot, 0)};
+}
+function stackChart(){
+  const M = stackModel(); if (M.err) return note(M.err);
+  const {D, B, ser, tot, sum} = M, n = B.count;
+  const W = 900, L = 36, R = W - 36, T = 128, BOT = 470, gap = n > 20 ? 4 : n > 10 ? 8 : 14, cw = (R - L - gap * (n - 1)) / n, rad = Math.min(14, cw * .12);
+  const mx = Math.max(1, ...tot), sy = v => v / mx * (BOT - T - 30), defs = [];
+  const who = D.chats ? "по чатам" : "по участникам";
+  const per = chartQuick ? (chartQuick === "all" ? "все данные" : `${chartQuick} дней`) : ({day:"день", week:"неделя", month:"месяц", year:"год", all:"все данные"}[mode] || "");
+  const dS = d => `${+d.slice(8, 10)} ${MONTHS_SHORT_RU[+d.slice(5, 7) - 1]}`;
+  const sub = [MLBL[D.metric] || "", per, `${dS(D.from)} – ${dS(D.to)}`, `всего ${fmt(Math.round(sum))}`].filter(Boolean).join(" · ") + (!D.chats && $("chat").value ? ` · ${$("chat").value}` : "");
+  let o = head(`Активность ${who}`, sub);
+  const showVal = cw >= 30, every = axisEvery(n, R - L, 70);
+  for (let b = 0; b < n; b++) {
+    const x = L + b * (cw + gap), h = sy(tot[b]); if (tot[b] <= 0) { o += `<text class="chart-axis" x="${(x + cw / 2).toFixed(1)}" y="${BOT + 34}" text-anchor="middle" font-size="${n > 14 ? 13 : 17}" fill="#aab0c0">${b % every ? "" : escH(B.label(b))}</text>`; continue; }
+    const top = BOT - h, cid = "stk" + (++gid);
+    defs.push(`<clipPath id="${cid}"><rect x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${cw.toFixed(1)}" height="${h.toFixed(1)}" rx="${rad.toFixed(1)}"/></clipPath>`);
+    o += `<g clip-path="url(#${cid})">`;
+    let y = BOT;
+    ser.forEach(se => {
+      const v = se.s[b]; if (!(v > 0)) return;
+      const sh = sy(v), st = chartSeriesStyle(se.kind, se.k), pa = paint(st, 0, y - sh, 0, y); defs.push(pa.defs);
+      o += `<rect class="anim-bar-y" x="${x.toFixed(1)}" y="${(y - sh).toFixed(1)}" width="${cw.toFixed(1)}" height="${(sh + .5).toFixed(1)}" fill="${pa.p}" data-ek="${escH(se.k)}" data-tip="${escH(B.full(b))}|${escH(`${se.n}: ${fmt(Math.round(v))} · ${Math.round(v / tot[b] * 100)}% из ${fmt(Math.round(tot[b]))}`)}"/>`;
+      y -= sh;
+    });
+    o += `</g>`;
+    if (showVal) o += `<text class="chart-value" x="${(x + cw / 2).toFixed(1)}" y="${(top - 12).toFixed(1)}" text-anchor="middle" font-size="${cw >= 70 ? 22 : cw >= 45 ? 17 : 13}" font-weight="700" fill="#eceef3">${fmt(Math.round(tot[b]))}</text>`;
+    o += `<text class="chart-axis" x="${(x + cw / 2).toFixed(1)}" y="${BOT + 34}" text-anchor="middle" font-size="${n > 14 ? 13 : 17}" fill="#aab0c0">${b % every ? "" : escH(B.label(b))}</text>`;
+  }
+  // Легенда: цвет, название и сумма за период — в одну или несколько строк по центру
+  const items = ser.map(se => ({se, t:`${se.n} · ${fmt(Math.round(se.tot))}`})), lw = it => 34 + it.t.length * 9.4, lines = [[]];
+  let wsum = 0; items.forEach(it => { const w = lw(it) + 26; if (wsum + w > R - L && lines[lines.length - 1].length) { lines.push([]); wsum = 0; } lines[lines.length - 1].push(it); wsum += w; });
+  lines.forEach((ln, li) => {
+    const tw = ln.reduce((a, it) => a + lw(it) + 26, -26); let x = W / 2 - tw / 2; const y = BOT + 80 + li * 34;
+    ln.forEach(it => { const st = chartSeriesStyle(it.se.kind, it.se.k), pa = paint(st, x, y - 13, x + 24, y + 11); defs.push(pa.defs);
+      o += `<g data-ek="${escH(it.se.k)}"><rect x="${x.toFixed(1)}" y="${y - 13}" width="24" height="24" rx="6" fill="${pa.p}"/><text class="chart-legend" x="${(x + 34).toFixed(1)}" y="${y + 6}" font-size="17" fill="#d6d9e2">${escH(it.t)}</text></g>`;
+      x += lw(it) + 26; });
+  });
+  const H = BOT + 80 + lines.length * 34 + 10;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img"><defs>${defs.join("")}</defs>${o}</svg>`;
+}
 function giniChart(){
   const D = chartDaily(true); if (D.err) return note(D.err);
   const totals = D.list.map(e => e.tot), G = giniOf(totals), n = G.n;
@@ -14665,7 +14721,9 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.10.30-6", date:"2026-10-30", title:"Реакции и события — в релизе", items:[
+  {v:"2026.10.30-8", date:"2026-10-30", title:"Реакции и события — в релизе", items:[
+    {tag:"new", area:"Графики", text:"«Активность по дням»: столбцы по дням, неделям или месяцам, а в каждом — доли чатов (или участников) стопкой, итог над столбцом и суммы в легенде."},
+    {tag:"new", area:"Графики", text:"На ПК графики приближаются колесом мыши в точку под курсором и остаются чёткими; приближенный график двигается мышью, двойной клик — сбросить. Копирование и видео — всегда целиком."},
     {tag:"new", area:"Тема", text:"«Свой оттенок» в Настройках → Тема: ползунок оттенка и два цвета акцента."},
     {tag:"fix", area:"События", text:"«+1» к уровню достижения стоит в одной строке с плашкой — и на сайте, и на картинке; плашки уровня копируются с рамкой и фоном."},
     {tag:"fix", area:"Копирование", text:"Полоски уровня попадают в картинку таблицы; цвета картинок со стеклом берутся из выбранной темы, а не из синей по умолчанию."},
@@ -21034,6 +21092,103 @@ html body #s-days-table.tv-cards > tbody > tr > td.s-miss:empty::after{content:$
   window.addEventListener("load", hookWordForm);
 })();
 </script>
+<script id="chart-zoom">
+/* ===================== Приближение графиков колесом мыши (ПК) =====================
+   Меняется viewBox у SVG: график векторный, поэтому при любом масштабе остаётся чётким.
+   Колесо над графиком — приблизить или отдалить в точку под курсором; если график не приближен,
+   прокрутка вниз листает страницу как обычно. Приближенный график можно двигать мышью, двойной клик — сбросить.
+   Картинки и видео графиков всегда делаются целиком, без приближения. Масштаб переживает автообновление графика. */
+(function(){
+  const desk = matchMedia("(pointer:fine) and (min-width:721px)");
+  const MAXZ = 8, SKIP = "table, nav, button, .tile, .hub-kpi, #tab-settings, .chart-settings-panel, .hc-pop, .msel-pop, #filter-drawer, .ma-ico, .ev-card, .theme-card, [data-no-zoom]";
+  const parse = v => { const a = String(v || "").trim().split(/[\s,]+/).map(Number); return a.length === 4 && a.every(isFinite) && a[2] > 0 && a[3] > 0 ? a : null; };
+  const outer = el => { let s = el && el.closest && el.closest("svg"); while (s && s.ownerSVGElement) s = s.ownerSVGElement; return s; };
+  function zoomable(svg){
+    if (!svg || !svg.closest("main") || svg.closest(SKIP)) return false;
+    if (!parse(svg.getAttribute("viewBox"))) return false;
+    const r = svg.getBoundingClientRect(); return r.width >= 300 && r.height >= 140;
+  }
+  const state = new WeakMap(); // контейнер графика → {base, vb}
+  const base = svg => parse(svg.dataset.vb0 || svg.getAttribute("viewBox"));
+  function setVB(svg, vb){
+    const b = base(svg); if (!svg.dataset.vb0) svg.dataset.vb0 = b.join(" ");
+    const full = vb[2] >= b[2] * .999;
+    if (full) { svg.setAttribute("viewBox", svg.dataset.vb0); svg.classList.remove("cz-on"); state.delete(svg.parentElement); }
+    else { svg.setAttribute("viewBox", vb.map(v => +v.toFixed(3)).join(" ")); svg.classList.add("cz-on"); if (svg.parentElement) state.set(svg.parentElement, {base:svg.dataset.vb0, vb:vb.slice()}); }
+    badge(svg, full ? 1 : b[2] / vb[2]);
+  }
+  // Подпись масштаба в углу графика
+  let tag = null, tagT = 0;
+  function badge(svg, z){
+    if (!tag) { tag = document.createElement("div"); tag.className = "cz-badge"; document.body.appendChild(tag); }
+    clearTimeout(tagT);
+    if (z <= 1.001) { tag.classList.remove("show"); return; }
+    const r = svg.getBoundingClientRect();
+    tag.innerHTML = `×${z.toFixed(1).replace(".", ",")} <span>двойной клик — сбросить</span>`;
+    tag.style.left = Math.round(r.right - 12) + "px"; tag.style.top = Math.round(Math.max(8, r.top + 10)) + "px";
+    tag.classList.add("show"); tagT = setTimeout(() => tag.classList.remove("show"), 1800);
+  }
+  const clampVB = (svg, x, y, w, h) => { const b = base(svg); x = Math.min(Math.max(x, b[0]), b[0] + b[2] - w); y = Math.min(Math.max(y, b[1]), b[1] + b[3] - h); return [x, y, w, h]; };
+  document.addEventListener("wheel", e => {
+    if (!desk.matches || e.ctrlKey) return;
+    const svg = outer(e.target); if (!zoomable(svg)) return;
+    const b = base(svg), cur = parse(svg.getAttribute("viewBox"));
+    const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
+    const f = Math.exp(Math.max(-1, Math.min(1, dy * .0016)));
+    if (f > 1 && cur[2] >= b[2] * .999) return; // не приближен — прокрутка вниз листает страницу
+    e.preventDefault();
+    const w = Math.min(b[2], Math.max(b[2] / MAXZ, cur[2] * f)), h = w * b[3] / b[2];
+    const m = svg.getScreenCTM(); if (!m) return;
+    const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const p = pt.matrixTransform(m.inverse());
+    const k = w / cur[2];
+    setVB(svg, clampVB(svg, p.x - (p.x - cur[0]) * k, p.y - (p.y - cur[1]) * k, w, h));
+  }, {passive:false});
+  // Перетаскивание приближенного графика
+  let drag = null, moved = false;
+  document.addEventListener("pointerdown", e => {
+    if (e.button !== 0 || !desk.matches) return;
+    const svg = outer(e.target); if (!svg || !svg.classList.contains("cz-on")) return;
+    drag = {svg, x:e.clientX, y:e.clientY, vb:parse(svg.getAttribute("viewBox")), m:svg.getScreenCTM()}; moved = false;
+  });
+  document.addEventListener("pointermove", e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!moved && Math.hypot(dx, dy) < 4) return;
+    moved = true; drag.svg.classList.add("cz-drag");
+    const s = drag.m ? drag.m.a : 1, [x, y, w, h] = drag.vb;
+    setVB(drag.svg, clampVB(drag.svg, x - dx / s, y - dy / s, w, h));
+  });
+  const end = () => { if (drag) drag.svg.classList.remove("cz-drag"); drag = null; };
+  document.addEventListener("pointerup", end); document.addEventListener("pointercancel", end);
+  // после перетаскивания клик не должен срабатывать (например, скрывать серию в легенде)
+  document.addEventListener("click", e => { if (moved) { moved = false; e.stopPropagation(); e.preventDefault(); } }, true);
+  document.addEventListener("dblclick", e => {
+    const svg = outer(e.target); if (!svg || !svg.dataset.vb0 || !svg.classList.contains("cz-on")) return;
+    e.preventDefault(); setVB(svg, parse(svg.dataset.vb0));
+  });
+  // Перерисованный график (автообновление, смена фильтра того же вида) остаётся приближенным
+  const main = document.querySelector("main");
+  if (main) new MutationObserver(ms => {
+    ms.forEach(m => m.addedNodes.forEach(n => {
+      const svgs = n.nodeType !== 1 ? [] : n.tagName === "svg" ? [n] : [...(n.querySelectorAll?.("svg") || [])];
+      svgs.forEach(svg => {
+        if (svg.ownerSVGElement || svg.dataset.vb0) return;
+        const st = state.get(svg.parentElement); if (!st) return;
+        if (svg.getAttribute("viewBox")?.trim() === st.base) { svg.dataset.vb0 = st.base; svg.setAttribute("viewBox", st.vb.join(" ")); svg.classList.add("cz-on"); }
+        else state.delete(svg.parentElement);
+      });
+    }));
+  }).observe(main, {childList:true, subtree:true});
+  window.__chartZoom = {reset:svg => svg?.dataset.vb0 && setVB(svg, parse(svg.dataset.vb0))};
+})();
+</script>
+<style id="chart-zoom-css">
+svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
+.cz-badge{position:fixed;z-index:60;transform:translateX(-100%);padding:4px 10px;border-radius:999px;background:var(--tip-bg,#14161cf2);border:1px solid var(--line);color:var(--text);font-size:13px;font-weight:700;pointer-events:none;opacity:0;transition:opacity .2s}
+.cz-badge span{font-weight:400;color:var(--muted);margin-left:6px}
+.cz-badge.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.cz-badge{transition:none}}
+</style>
 <style id="design-pass">
 /* ===================== Дизайн-проход 2026.10.30 =====================
    Предмет: статистика Telegram-чата «Colony». Участники открывают сайт, чтобы понять, кто впереди и где они сами.
