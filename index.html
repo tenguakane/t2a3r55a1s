@@ -3179,8 +3179,9 @@ function renderProfile(){
     <div class="p-card"><h3>По дням недели${wd[topWd] ? ` · чаще всего ${["в понедельник","во вторник","в среду","в четверг","в пятницу","в субботу","в воскресенье"][topWd]}` : ""}</h3><div class="mbars">${wdBars}</div></div>
   </div>`;
 
-  $("p-out").innerHTML = `${hero}${typeof bioProfileHtml === "function" ? bioProfileHtml(pk, pColor) : ""}
+  $("p-out").innerHTML = `${hero}
     <h2>Сообщения</h2><div class="tiles">${tiles}</div>
+    ${typeof bioProfileHtml === "function" ? bioProfileHtml(pk, pColor) : ""}
     <h2>Серии активности</h2>${streaks}
     ${goalsHtml(pk, pColor)}
     ${forecast}
@@ -14905,7 +14906,11 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.10.31-4", date:"2026-10-31", title:"Реакции и события — в релизе", items:[
+  {v:"2026.10.31-5", date:"2026-10-31", title:"Реакции и события — в релизе", items:[
+    {tag:"imp", area:"Дизайн", text:"Пустые таблицы и графики — понятное пустое состояние; если за сегодня данных ещё нет, сразу показывается вчера (и есть кнопка «Показать вчера»)."},
+    {tag:"imp", area:"Дизайн", text:"Радужная рамка — только у главного блока вкладки; подписи под цифрами и серый текст светлее; частицы фона не ложатся на таблицы; кнопки «Копировать» одного размера."},
+    {tag:"imp", area:"Телефон", text:"Хаб начинается со сводки дня, «Кто ты?» — компактной лентой; без галочек у выбранных вкладок, у прокручиваемых полосок — затухание справа; над таблицей Статистики на один ряд меньше; название вкладки не повторяется внутри."},
+    {tag:"imp", area:"Профиль и Реакции", text:"В Профиле «Сообщения» идут перед «О участнике»; длинные пояснения в Реакциях и Событиях свёрнуты под «Подробнее»; в Хабе периоды подписаны полностью («7 дней»)."},
     {tag:"imp", area:"Графики", text:"Окно настройки графика стало компактнее: размер шрифта вводится числом вместо ползунка, строки текста идут в две колонки, подписи и цвета ужаты."},
     {tag:"imp", area:"Графики", text:"«Активность по дням»: у каждого столбца общий мягкий объём — верх светлее, низ темнее; цвета сегментов остаются плоскими."},
     {tag:"imp", area:"Графики", text:"«Динамика» за год, все данные или длинный диапазон строится по месяцам (точка на конец каждого месяца), а не по каждому дню — линии чище, подсказки короче."},
@@ -15225,7 +15230,7 @@ window.CHANGELOG = [
     let D = null, ev = {bd:[], ach:[], rec:[], misc:[]};
     if (allRows) { D = build(); try { ev = events(D); } catch (e) { console.error(e); } }
     const meta = D ? tileMeta(D, ev) : {}; LASTMETA = meta;
-    const chips = [3, 7, 14, 30].map(n => `<button class="quick-chip${n === WIN ? " active" : ""}" type="button" data-hub-win="${n}">${n} дн.</button>`).join("");
+    const chips = [3, 7, 14, 30].map(n => `<button class="quick-chip${n === WIN ? " active" : ""}" type="button" data-hub-win="${n}">${n} ${wordForm(n, ["день", "дня", "дней"])}</button>`).join("");
     const keep = document.activeElement && document.activeElement.id === "hub-find";
     out.innerHTML = `<div class="hub-hero"><div><h2>Хаб</h2><p class="hint">Все разделы сайта и то, что случилось недавно</p></div></div>
       ${D ? kpis(D) : `<div class="sk sk-poster" style="height:96px"></div>`}
@@ -21814,5 +21819,157 @@ header h1{letter-spacing:-.01em}
   .hub-kpi .v{font-size:26px}
 }
 </style>
+<style id="v43-ui">
+/* ===================== v43: правки по дизайн-ревью ===================== */
+/* Пустое состояние — на всю ширину, с действием */
+.empty-state{padding:26px 16px!important;text-align:center!important;color:var(--muted)!important;white-space:normal!important}
+.empty-state .es-ic{display:block;font-size:22px;margin-bottom:6px;opacity:.8}
+.empty-state .es-t{display:block;font-size:14.5px;color:var(--text)}
+.empty-state .es-s{display:block;font-size:12.5px;margin-top:3px}
+.empty-state .es-btn{margin-top:12px;height:36px;padding:0 16px;border-radius:12px;border:1px solid var(--nv-line,var(--line));background:var(--nv-fill,var(--panel));color:var(--text);font:inherit;font-size:14px;cursor:pointer}
+.empty-state .es-btn:hover{background:color-mix(in srgb,var(--text) 9%,var(--nv-fill,var(--panel)))}
+table tr.empty-row,table.tv-cards tr.empty-row{display:table-row!important}
+table.tv-cards tr.empty-row td,body.mapp table tr.empty-row td{display:block!important;width:auto!important;max-width:none!important;overflow:visible!important;text-overflow:clip!important;white-space:normal!important;border:0!important;background:none!important}
+table tr.empty-row td::before{display:none!important}
+html body table tr.empty-row > td.empty-state{max-width:none!important;text-align:center!important}
+@media (min-width:721px){html body table:not(.tv-cards) tr.empty-row > td.empty-state{display:table-cell!important}}
+body.mapp table tr.empty-row > td.empty-state{position:sticky!important;left:0!important;width:var(--es-w,calc(100vw - 52px))!important;box-sizing:border-box}
+.wrap:has(tr.empty-row){min-height:0}
+/* Рамка «радуга» — только у главного блока вкладки */
+body.tb-on main .wrap:has(> table):not(.tb-main){border:1px solid var(--nv-line,var(--line))!important;background:var(--nv-fill,var(--panel))!important;animation:none!important}
+body.tb-on main .wrap:has(> table):not(.tb-main)::after,body.tb-on main .chart:not(.tb-main)::after{display:none!important}
+body.tb-on main .chart:has(svg.heatrows-svg):not(.tb-main){border:1px solid var(--nv-line,var(--line))!important;background:var(--nv-fill,var(--panel))!important;animation:none!important}
+/* Подписи под цифрами в плитках — светлее, читаются на тёмном стекле */
+.tile .place,.hub-kpi .s{color:color-mix(in srgb,var(--accent) 62%,var(--text))}
+/* Частицы фона не ложатся на текст: по центру почти прозрачны */
+#fx-season{opacity:.55!important;-webkit-mask-image:linear-gradient(90deg,#000 0,#000 9%,rgba(0,0,0,.12) 17%,rgba(0,0,0,.12) 83%,#000 91%,#000 100%);mask-image:linear-gradient(90deg,#000 0,#000 9%,rgba(0,0,0,.12) 17%,rgba(0,0,0,.12) 83%,#000 91%,#000 100%)}
+/* Кнопки копирования — одного размера везде */
+html body main button.copy-btn{height:36px!important;min-height:0!important;padding:0 13px!important;border-radius:12px!important;display:inline-flex!important;align-items:center;gap:6px;font-size:14px!important}
+/* Длинные пояснения — свёрнуты до одной строки */
+details.hint-more{max-width:78ch;margin:0 0 14px;color:var(--muted);font-size:13.5px}
+details.hint-more > summary{cursor:pointer;list-style:none;display:flex;gap:6px;align-items:baseline}
+details.hint-more > summary::-webkit-details-marker{display:none}
+details.hint-more > summary .hm-first{flex:0 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+details.hint-more > summary .hm-more{flex:0 0 auto;color:var(--accent);font-size:12.5px}
+details.hint-more[open] > summary .hm-first{white-space:normal}
+details.hint-more[open] > summary .hm-more{display:none}
+details.hint-more > p{margin:4px 0 0}
+@media (max-width:720px){
+  /* Галочка у выбранного пункта не нужна: подсветки достаточно */
+  html body.mapp :is(main,#ma-fsheet,#filter-drawer) :is(.seg,.sq-seg,.group-tabs,.stat-subnav,#m3x) > button:is(.active,[aria-pressed="true"])::before,
+  html body.mapp :is(main,#ma-fsheet,#filter-drawer) .quick-ranges:not(#theme-bases) > .quick-chip:is(.active,[aria-pressed="true"])::before{content:none!important;display:none!important}
+  /* Прокручиваемые полоски вкладок — затухание справа, видно, что есть продолжение */
+  body.mapp main :is(.group-tabs,.seg).is-scroll:not(.at-end){-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent)}
+  /* «Сегодня» дублирует дату в шапке — над таблицей остаётся один ряд */
+  body.mapp #tab-stats :is(.st-today,#st-today){display:none!important}
+  /* Хаб: сначала сводка дня, выбор «Кто ты?» — компактной лентой */
+  body.mapp .me-today{display:flex!important;flex-direction:column}
+  body.mapp .me-today > .mt-pick{order:2}
+  body.mapp .mt-pick > p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  body.mapp .mt-pick .mt-chips{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 30px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 30px),transparent)}
+  body.mapp .mt-pick .mt-chips::-webkit-scrollbar{display:none}
+  body.mapp .mt-pick .mt-chips > button{flex:0 0 auto}
+  /* Название вкладки уже в шапке — внутри не повторяем, бейдж с датой данных остаётся */
+  body.mapp :is(#re-out,#ev-out) > .bx-head > h2{font-size:0!important;margin:0!important}
+  body.mapp :is(#re-out,#ev-out) > .bx-head > h2 > *{font-size:12px}
+  body.mapp :is(#re-out,#ev-out) > .bx-head > h2 .beta-badge{margin-left:0}
+}
+</style>
+<script id="v43-js">
+(() => {
+  const $q = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const pad = n => String(n).padStart(2, "0"), isoL = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const today = () => isoL(new Date()), yday = () => { const t = new Date(); return isoL(new Date(t.getFullYear(), t.getMonth(), t.getDate() - 1)); };
+  const curMode = () => (typeof mode !== "undefined" ? mode : ($q("#mode button.active")?.dataset.m || "day"));
+  const isTodayDay = () => curMode() === "day" && ($q("#day")?.value || "") === today();
+  function goYesterday(){
+    const q = $q('[data-sq="yday"]');
+    if (q) { q.click(); return; }
+    const d = $q("#day"); if (!d) return;
+    d.value = yday(); d.dispatchEvent(new Event("change", {bubbles:true}));
+    const mb = $q('#mode button[data-m="day"]'); if (mb && !mb.classList.contains("active")) mb.click();
+  }
+  const note = t => { try { if (typeof toastMsg === "function") toastMsg(t); } catch (e) {} };
+
+  /* ---------- Пустые состояния ---------- */
+  const EMPTY_RE = /^Нет данных за выбранный период/;
+  function decorate(el, isCell){
+    if (el.dataset.es) return;
+    const txt = el.textContent.trim(); if (!EMPTY_RE.test(txt)) return;
+    el.dataset.es = "1"; el.classList.add("empty-state");
+    if (isCell) el.closest("tr")?.classList.add("empty-row");
+    if (isCell) { const w = el.closest(".wrap"); if (w) el.style.setProperty("--es-w", (w.clientWidth - 2) + "px"); }
+    const td = isTodayDay();
+    el.innerHTML = `<span class="es-ic" aria-hidden="true">🗓️</span><span class="es-t">${td ? "За сегодня данных пока нет" : "Нет данных за выбранный период"}</span><span class="es-s">${td ? "Статистика за день появляется по мере обновления. Вчерашний день уже посчитан." : "Попробуй выбрать другой период или чат."}</span>${td ? `<button type="button" class="es-btn" data-go-yday>Показать вчера</button>` : ""}`;
+  }
+  let autoDone = false, userPicked = false;
+  document.addEventListener("click", e => {
+    if (e.target.closest?.("[data-go-yday]")) { goYesterday(); return; }
+    if (e.target.closest?.('[data-sq="today"]')) userPicked = true;
+  }, true);
+  function scanEmpty(){
+    $$("main section.tab.active td[colspan]").forEach(td => decorate(td, true));
+    $$("main section.tab.active .note").forEach(n => decorate(n, false));
+    // Первый заход: если за сегодня пусто — сразу показываем вчера
+    if (!autoDone && !userPicked && isTodayDay()) {
+      const sec = $q("main section.tab.active");
+      const es = sec && ["tab-stats", "tab-charts"].includes(sec.id) ? [...sec.querySelectorAll(".empty-state [data-go-yday]")].find(b => b.offsetParent) : null;
+      const empty = !!es;
+      if (empty) { autoDone = true; goYesterday(); note("За сегодня данных пока нет — показано вчера"); }
+    }
+  }
+
+  /* ---------- Радуга — только у главного блока ---------- */
+  function markMain(){
+    const sec = $q("main section.tab.active"); if (!sec) return;
+    const cand = $$(".wrap, .chart", sec).filter(el => el.offsetParent && (el.matches(".chart") || el.querySelector(":scope > table")) && !el.closest(".chart-settings-panel, details:not([open])"));
+    const main = cand[0];
+    $$(".tb-main", document).forEach(el => { if (el !== main) el.classList.remove("tb-main"); });
+    if (main && !main.classList.contains("tb-main")) main.classList.add("tb-main");
+  }
+
+  /* ---------- Длинные пояснения — «Подробнее» ---------- */
+  function foldHints(){
+    $$("#re-out > p.hint, #ev-out > p.hint").forEach(p => {
+      if (p.dataset.fold || p.textContent.length < 150) return;
+      p.dataset.fold = "1";
+      const txt = p.innerHTML, m = p.textContent.match(/^.*?[.!?](\s|$)/), first = m ? m[0].trim() : p.textContent.slice(0, 80) + "…";
+      const d = document.createElement("details"); d.className = "hint-more";
+      d.innerHTML = `<summary><span class="hm-first"></span><span class="hm-more">Подробнее</span></summary><p></p>`;
+      d.querySelector(".hm-first").textContent = first; d.querySelector("p").innerHTML = txt;
+      p.replaceWith(d);
+    });
+  }
+
+  /* ---------- Телефон: прокручиваемые полоски вкладок ---------- */
+  function scrollFade(){
+    $$("body.mapp main :is(.group-tabs,.seg)").forEach(el => {
+      const sc = el.scrollWidth > el.clientWidth + 2;
+      el.classList.toggle("is-scroll", sc);
+      el.classList.toggle("at-end", !sc || el.scrollLeft + el.clientWidth >= el.scrollWidth - 4);
+      if (sc && !el.__fadeBound) { el.__fadeBound = 1; el.addEventListener("scroll", () => el.classList.toggle("at-end", el.scrollLeft + el.clientWidth >= el.scrollWidth - 4), {passive:true}); }
+    });
+  }
+
+  /* ---------- Контраст приглушённого текста: чуть ближе к основному цвету ---------- */
+  let lastMuted = "";
+  function lift(){
+    const b = document.body; b.style.removeProperty("--muted");
+    const cs = getComputedStyle(b), m = cs.getPropertyValue("--muted").trim(), t = cs.getPropertyValue("--text").trim();
+    if (!m || !t) return;
+    const v = `color-mix(in srgb, ${m} 82%, ${t})`;
+    b.style.setProperty("--muted", v); lastMuted = m;
+  }
+
+  let raf = 0;
+  const run = () => { raf = 0; scanEmpty(); markMain(); foldHints(); scrollFade(); };
+  const later = () => { if (!raf) raf = requestAnimationFrame(run); };
+  new MutationObserver(later).observe(document.querySelector("main"), {childList:true, subtree:true, attributes:true, attributeFilter:["class", "hidden"]});
+  addEventListener("resize", later);
+  new MutationObserver(ms => { if (ms.some(m => m.attributeName === "class" || m.attributeName === "data-theme")) lift(); }).observe(document.body, {attributes:true, attributeFilter:["class", "data-theme"]});
+  document.addEventListener("click", e => { if (e.target.closest?.("#theme-grid, #theme-bases")) setTimeout(lift, 80); });
+  lift(); later();
+})();
+</script>
 </body>
 </html>
