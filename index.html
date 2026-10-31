@@ -1424,6 +1424,19 @@ body.fx-pulse .fx-pulse-dot{display:inline;animation:fxPulse 1.6s ease-out infin
   window.applySiteFont(saved);
 })();
 </script>
+<style id="chart-settings-compact">
+.chart-settings-content .chart-typography-grid{grid-template-columns:repeat(auto-fill,minmax(172px,1fr));column-gap:14px;row-gap:0}
+.chart-settings-content .chart-typography-row{grid-template-columns:minmax(0,1fr) auto 30px;gap:6px;padding:3px 0;border-bottom:1px solid var(--line)}
+.chart-settings-content .chart-typography-row .chart-setting-series-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chart-settings-content .chart-font-range{gap:3px;justify-content:flex-end}
+.chart-settings-content .chart-font-num{width:42px;min-width:0;height:26px;box-sizing:border-box;padding:2px 4px;text-align:center;font:inherit;font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--text);background:var(--panel-2,rgba(127,127,127,.08));border:1px solid var(--line);border-radius:8px;-moz-appearance:textfield;appearance:textfield}
+.chart-settings-content .chart-font-num::-webkit-inner-spin-button,.chart-settings-content .chart-font-num::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.chart-settings-content .chart-font-num:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}
+.chart-settings-content .chart-font-unit{display:none}
+.chart-settings-content .chart-font-color input[type=color]{width:30px;min-width:30px;height:24px;padding:1px}
+.chart-settings-content .chart-sub-inline{margin:0 0 4px}
+body.glass-ui .chart-settings-content .chart-bg-group,body.glass-ui .chart-settings-content .pal-bgbar{display:none}
+</style>
 </head>
 <body>
 <header>
@@ -1554,6 +1567,7 @@ html body #people-body input[data-pf="name"]{width:200px!important;min-width:0!i
 html body #people-body input[data-pf="pk"]{width:100px!important}</style>
 <style id="total-row-css">tr.total-row > td.total-label{white-space:nowrap;font-weight:600}</style>
 <style id="s-key-css">.s-people-note{margin:8px 0 0;color:#f87171}@keyframes sKeyFlash{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 0 3px var(--accent)}}.s-key-flash{animation:sKeyFlash .8s ease-in-out 3}@media (prefers-reduced-motion:reduce){.s-key-flash{animation:none;outline:2px solid var(--accent)}}</style>
+<style id="chatpick-css">#clist{display:grid!important;grid-template-columns:1fr!important;gap:2px!important;min-width:240px}#clist label{display:flex!important;align-items:center;gap:8px;white-space:nowrap}#clist label small{margin-left:auto;padding-left:12px}#chatpick .pbtn{display:flex;flex-wrap:wrap;gap:6px}</style>
 <style id="rx-copy-css">
 .rx-head{display:flex;align-items:center;gap:10px;margin:26px 0 10px}
 .rx-head > h2{margin:0!important;margin-right:auto!important}
@@ -1748,6 +1762,13 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
       </div>
       <div class="field" id="chart-events-field" hidden><label for="chart-events" title="Отметки марафонов и событий хроники на оси времени">События на оси</label>
         <select id="chart-events"><option value="none">Не показывать</option><option value="mar">Марафоны</option><option value="all">Марафоны и хроника</option></select>
+      </div>
+      <div class="field" id="f-chatpick" hidden><label>Чаты на графике</label>
+        <details class="pick" id="chatpick"><summary id="csum">Чаты: все</summary>
+          <div class="pop"><div class="plist" id="clist"></div>
+            <div class="pbtn"><button class="mini" id="c-all" type="button">Показать все</button><button class="mini" id="c-top" type="button">Только самые активные</button></div>
+          </div>
+        </details>
       </div>
       <div class="field"><label>Участники на графике</label>
         <details class="pick" id="people"><summary id="psum">Участники: авто</summary>
@@ -3995,7 +4016,7 @@ function setTipCtx(){
 }
 function periodTotalsFor(src, r, ctx){
   const m = new Map(); if (!r) return m;
-  const base = ctx.entity === "chats" ? chatRowsForChart(src) : pick(src, ctx.chat);
+  const base = ctx.entity === "chats" ? chartChatRows(src) : pick(src, ctx.chat);
   base.forEach(x => {
     const d = String(x[F.date] ?? "").slice(0, 10); if (d.length !== 10 || d < r[0] || d > r[1]) return;
     const k = ctx.entity === "chats" ? String(x[F.chatPk] ?? x[F.chat]) : String(x[F.userId] ?? x[F.name]);
@@ -4061,7 +4082,7 @@ function dayTipHtml(date){
 function spiralChart(){
   const metric = $("metric").value, chats = chartEntity === "chats";
   const hist = allRows || rows;
-  const src = chats ? chatRowsForChart(hist)
+  const src = chats ? chartChatRows(hist)
     : pick(hist, $("chat").value).filter(x => { const k = String(x[F.userId] ?? x[F.name]); return isVisibleUser(k) && (!SEL_ACTIVE || SEL.has(k)); });
   const by = new Map(), yearsWithData = new Set();
   src.forEach(x => {
@@ -4476,6 +4497,7 @@ function lineChart({title, st, series: allSeries, xMin, xMax, ticks, yMax: yMaxI
   let extra = "";
   if (xLabel) {
     lineMeta = {L, T, B, span: R - L - 20, xMin, xMax, xLabel, shares: shares && series.some(s => s.ek), valFmt, evNote: evNotes && dateOf ? x => evNotes(dateOf(x)) : null,
+      xs: [...new Set(series.flatMap(s => s.pts.map(p => p[0])))].sort((a, b) => a - b),
       series: series.map(s => ({name: s.name, c: s.st.c[0], v: new Map(s.pts.map(p => [p[0], p[1]])), fc: s.fc || null}))};
     extra = `<line id="xh" x1="0" y1="${T}" x2="0" y2="${B}" stroke="#ffffff66" stroke-width="1.5" stroke-dasharray="4 4" visibility="hidden" pointer-events="none"/><rect id="hov" x="${L}" y="${T}" width="${R - L + 20}" height="${B - T}" fill="transparent" style="touch-action:pan-y"/>`;
   }
@@ -4496,9 +4518,15 @@ function chatRowsForChart(source = rows){
   // chat_pk=0 — готовый итог «все чаты», его нужно исключать, иначе будут дубли.
   return source.filter(x => Number(x[F.chatPk]) !== 0 && (x[F.chat] || x[F.chatPk] !== undefined));
 }
+// Чаты, вручную убранные с графиков (меню «Чаты на графике»). Действует только на вкладке «Графики».
+const CHAT_OFF_KEY = "chatstats.chartChatsOff.v1";
+let CHAT_OFF = new Set();
+try { const j = JSON.parse(localStorage.getItem(CHAT_OFF_KEY) || "[]"); if (Array.isArray(j)) CHAT_OFF = new Set(j.map(String)); } catch (e) {}
+const chatKeyOf = x => String(x[F.chatPk] ?? x[F.chat]);
+function chartChatRows(source = rows){ const r = chatRowsForChart(source); return CHAT_OFF.size ? r.filter(x => !CHAT_OFF.has(chatKeyOf(x))) : r; }
 function chatsAgg(metric, source = cRows()){
   const m = new Map();
-  chatRowsForChart(source).forEach(x => {
+  chartChatRows(source).forEach(x => {
     const k = String(x[F.chatPk] ?? x[F.chat]);
     const u = m.get(k) || {n: String(x[F.chat] || `Чат ${k}`), v: 0, k};
     u.v += Number(g(x, metric)) || 0; m.set(k, u);
@@ -4593,7 +4621,7 @@ function donutChart(){
 
 function trendChart(){
   if (cMode() === "day") return note("Для динамики выберите период: неделя, месяц, год или все данные");
-  const src = chartEntity === "chats" ? chatRowsForChart(cRows()) : cScoped();
+  const src = chartEntity === "chats" ? chartChatRows(cRows()) : cScoped();
   let r = cRange(); if (!r) return note("Выберите период");
   if (cMode() === "all") {
     const ds = src.map(x => String(x[F.date] ?? "").slice(0,10)).filter(d => d.length === 10).sort();
@@ -4658,6 +4686,13 @@ function trendChart(){
   const valAt = (u, j) => NORM === "share" ? (totC[j] ? u.c[j] / totC[j] * 100 : 0) : NORM === "day" ? (u.d[j] ? u.c[j] / u.d[j] : 0) : u.c[j];
   const series = top.map(u => ({name: u.n, ek: String(u.k), seriesKey: `${chartStyleKind()}:${String(u.k)}`, st: chartSeriesStyle(chartStyleKind(), u.k), pts: Array.from({length: last}, (_, j) => [j + 1, valAt(u, j + 1)]).filter(p => NORM !== "day" || u.d[p[0]] > 0), w: 4}));
   if (last === idxOf(todayIso) || last === idxOf(addDaysIso(todayIso, -1))) series.forEach(s2 => { s2.live = true; });
+  // Год / все данные / длинный диапазон: точки по месяцам (конец каждого месяца + последний день) вместо каждого дня.
+  const trendMonthly = cMode() === "year" || cMode() === "all" || (cMode() === "range" && last > 120);
+  if (trendMonthly) {
+    const keep = new Set([1, last]);
+    for (let j = 1; j < last; j++) { const d = new Date(t0 + j * DAY); if (d.getUTCDate() === 1) keep.add(j); }
+    series.forEach(s2 => { s2.pts = s2.pts.filter(p => keep.has(p[0])); });
+  }
   if (fcOn) {
     // Темп: 60% — последние 14 дней, 40% — весь период; разброс — по дневным значениям последних 28 дней.
     const rem = fcEnd - last, monthStartIdx = Math.max(1, idxOf(fcYear ? todayIso.slice(0, 5) + "01-01" : todayIso.slice(0, 8) + "01"));
@@ -4680,7 +4715,7 @@ function trendChart(){
   const normWord = (NORM === "share" ? ", доля от всех, %" : NORM === "day" ? ", в среднем на активный день" : "") + fcWord;
   const dateOf = i => iso(new Date(t0 + (i - 1) * DAY + 12 * 3600e3)).slice(0, 10);
   return lineChart({
-    title: cPeriodLabel(), st: sub() + ", накопительно" + normWord + selectedLabel,
+    title: cPeriodLabel(), st: sub() + ", накопительно" + (trendMonthly ? ", по месяцам" : "") + normWord + selectedLabel,
     series, xMin: 1, xMax: displayN, ticks: trendTicks, yMax, appearance: TREND_STYLE,
     xLabel: i => { const d = new Date(t0 + (i - 1) * DAY); return `${pad(d.getUTCDate())}.${pad(d.getUTCMonth() + 1)}.${d.getUTCFullYear()}`; },
     valFmt: NORM === "share" ? v => fmtR(v) + "%" : NORM === "day" ? v => fmtR(v) : null,
@@ -4691,7 +4726,7 @@ function trendChart(){
 
 function yearsChart(){
   const metric = $("metric").value;
-  let src = chartEntity === "chats" ? chatRowsForChart(allRows || rows) : pick(allRows || rows, $("chat").value);
+  let src = chartEntity === "chats" ? chartChatRows(allRows || rows) : pick(allRows || rows, $("chat").value);
   if (chartEntity === "users") src = src.filter(x => isVisibleUser(x[F.userId]) && (!SEL_ACTIVE || SEL.has(String(x[F.userId]))));
   const dv = $("day").value, mv = $("month").value;
   const cm = cMode(), m = (cm === "day" || cm === "week") && dv ? +dv.slice(5,7) : cm === "month" && mv ? +mv.slice(5,7) : now.getMonth() + 1;
@@ -4833,6 +4868,9 @@ async function renderCharts(){
   // Threshold-colour mode uses absolute cell values, so the normalized heat scale is irrelevant there.
   $("heat-scale-field").hidden = requestedType !== "heatrows";
   $("people").hidden = chartEntity !== "users" || requestedType === "gini";
+  { const pf = $("people").closest(".field"); if (pf) pf.hidden = $("people").hidden; }
+  $("f-chatpick").hidden = chartEntity !== "chats";
+  if (chartEntity === "chats") renderChatPick();
   $("f-chat").hidden = chartEntity === "chats";
   const trendLabel = document.querySelector('label[for="trend-top"]');
   if (trendLabel) trendLabel.textContent = chartEntity === "chats" ? "Количество чатов" : "Количество пользователей";
@@ -4957,6 +4995,25 @@ $("p-all").onclick = () => { pickerSeedFromDisplayed = false; SEL_ACTIVE = true;
 $("p-none").onclick = () => { pickerSeedFromDisplayed = false; SEL_ACTIVE = false; SEL.clear(); saveSel(); renderPeople(); renderCharts(); if ($("chart-settings-panel")?.classList.contains("open")) renderChartSettingsPanel(); };
 document.addEventListener("click", e => { const d = $("people"); if (d.open && !d.contains(e.target)) d.open = false; });
 renderPeople();
+// ---------- «Чаты на графике»: галочка снята — чат убран со всех графиков ----------
+function chatPickList(){
+  const m = new Map(), metric = $("metric")?.value || "msgs";
+  try { chatRowsForChart(cRows()).forEach(x => { const k = chatKeyOf(x); const u = m.get(k) || {k, n:String(x[F.chat] || `Чат ${k}`), v:0}; u.v += Number(g(x, metric)) || 0; m.set(k, u); }); } catch (e) {}
+  CHAT_OFF.forEach(k => { if (!m.has(k)) m.set(k, {k, n:`Чат ${k}`, v:0}); });
+  return [...m.values()].sort((a, b) => b.v - a.v || a.n.localeCompare(b.n, "ru"));
+}
+function renderChatPick(){
+  const list = chatPickList();
+  $("clist").innerHTML = list.length ? list.map(c => `<label><input type="checkbox" value="${escH(c.k)}"${CHAT_OFF.has(c.k) ? "" : " checked"}>${escH(c.n)}${c.v ? ` <small class="hint">${fmt(Math.round(c.v))}</small>` : ""}</label>`).join("") : `<p class="hint" style="margin:6px 4px">Нет чатов за этот период</p>`;
+  $("csum").textContent = CHAT_OFF.size ? `Чаты: убрано ${CHAT_OFF.size}` : "Чаты: все";
+}
+function saveChatOff(){ try { localStorage.setItem(CHAT_OFF_KEY, JSON.stringify([...CHAT_OFF])); } catch (e) {} $("csum").textContent = CHAT_OFF.size ? `Чаты: убрано ${CHAT_OFF.size}` : "Чаты: все"; renderCharts(); if ($("chart-settings-panel")?.classList.contains("open")) renderChartSettingsPanel(); }
+$("chatpick").addEventListener("toggle", () => { if ($("chatpick").open) renderChatPick(); });
+$("clist").addEventListener("change", e => { if (!e.target.matches("input[type=checkbox]")) return; const k = String(e.target.value); e.target.checked ? CHAT_OFF.delete(k) : CHAT_OFF.add(k); saveChatOff(); });
+$("c-all").onclick = () => { CHAT_OFF.clear(); renderChatPick(); saveChatOff(); };
+// «Только самые активные»: оставить 5 чатов с наибольшей активностью за период
+$("c-top").onclick = () => { const l = chatPickList(); CHAT_OFF = new Set(l.slice(5).map(c => c.k)); renderChatPick(); saveChatOff(); };
+document.addEventListener("click", e => { const d = $("chatpick"); if (d.open && !d.contains(e.target)) d.open = false; });
 
 /* ---------- Копировать график ---------- */
 let fontCache = null;
@@ -5701,7 +5758,7 @@ const heatColor = (v, max) => {
 function calendarChart(){
   const r = cRange(); if (!r) return note("Выберите период");
   const metric = $("metric").value, DAY = 864e5;
-  const src = chartEntity === "chats" ? chatRowsForChart(cRows())
+  const src = chartEntity === "chats" ? chartChatRows(cRows())
     : cScoped().filter(x => { const k = String(x[F.userId] ?? x[F.name]); return isVisibleUser(k) && (!SEL_ACTIVE || SEL.has(k)); });
   const by = new Map();
   src.forEach(x => { const d = String(x[F.date] ?? "").slice(0, 10); if (d.length === 10) by.set(d, (by.get(d) || 0) + (Number(g(x, metric)) || 0)); });
@@ -5784,7 +5841,9 @@ function highlightDonut(seg){
     if (t.dataset && t.dataset.hover && CHART_HOVER) { CHART_HOVER(t, svgPoint(t, e), e); return; }
     if (t.id === "hov" && lineMeta) {
       const p = svgPoint(t, e), M = lineMeta, span = (M.xMax - M.xMin) || 1;
-      const x = Math.max(M.xMin, Math.min(M.xMax, Math.round(M.xMin + (p.x - M.L) / M.span * span)));
+      let x = Math.max(M.xMin, Math.min(M.xMax, Math.round(M.xMin + (p.x - M.L) / M.span * span)));
+      // Разреженные точки (помесячная «Динамика»): прилипаем к ближайшей точке внутри фактических данных.
+      if (M.xs?.length && x <= M.xs[M.xs.length - 1] && !M.series.some(s => s.v.has(x))) x = M.xs.reduce((b, c) => Math.abs(c - x) < Math.abs(b - x) ? c : b, M.xs[0]);
       const px = M.L + (x - M.xMin) / span * M.span, xh = $("xh");
       xh.setAttribute("x1", px); xh.setAttribute("x2", px); xh.setAttribute("visibility", "visible");
       let items = M.series.map(s => ({s, v: s.v.get(x)})).filter(q => q.v !== undefined).sort((a, b) => b.v - a.v);
@@ -5894,7 +5953,7 @@ function heatRowsTopSetting(type){
 function heatRowsChart(customRanges = false){
   const r = cRange(); if (!r) return note("Выберите период");
   const metric = $("metric").value, DAY = 864e5, chats = chartEntity === "chats";
-  const src = chats ? chatRowsForChart(cRows())
+  const src = chats ? chartChatRows(cRows())
     : cScoped().filter(x => { const k = String(x[F.userId] ?? x[F.name]); return isVisibleUser(k) && (!SEL_ACTIVE || SEL.has(k)); });
   const U = t => { const a = t.split("-").map(Number); return Date.UTC(a[0], a[1] - 1, a[2]); };
   let dmin = "9999-99-99";
@@ -6116,7 +6175,7 @@ function chartColorTargets(){
   if (type === "heat" || type === "spiral" || type === "heatrows" || type === "heatrows-custom" || type === "pairs" || type === "season") return [];
   if (type === "gini") return [{kind:"g", key:"main", name:"Кривая и доля", v:1}, {kind:"g", key:"top", name:"Доля топ-3", v:1}];
   if (type === "years") {
-    const src = chartEntity === "chats" ? chatRowsForChart(allRows || rows)
+    const src = chartEntity === "chats" ? chartChatRows(allRows || rows)
       : pick(allRows || rows, $("chat").value).filter(x => { const k = String(x[F.userId] ?? x[F.name]); return isVisibleUser(k) && (!SEL_ACTIVE || SEL.has(k)); });
     const mval = (mode === "day" || mode === "week") && $("day").value ? +$("day").value.slice(5,7) : mode === "month" && $("month").value ? +$("month").value.slice(5,7) : now.getMonth() + 1;
     if (chartEntity === "chats") {
@@ -6140,6 +6199,13 @@ function chartColorTargets(){
   else list = list.slice(0, type === "bars" ? barsCap(chartEntity === "users" && SEL_ACTIVE ? 40 : 20) : (chartEntity === "users" && SEL_ACTIVE ? 40 : 20));
   return list.map(u=>({kind:chartStyleKind(),key:String(u.k),name:u.n,v:u.v}));
 }
+function fontSizeVal(el, commit){
+  if (el.value === "") return null;
+  let v = Math.round(Number(el.value));
+  if (!Number.isFinite(v)) return null;
+  if (v < 8 || v > 48) { if (!commit && v < 8) return null; v = Math.min(48, Math.max(8, v)); el.value = v; }
+  return v;
+}
 function renderChartSettingsPanel(){
   const content = $("chart-settings-content"), title = $("chart-settings-title");
   if (!content || !title) return;
@@ -6151,12 +6217,12 @@ function renderChartSettingsPanel(){
   const resetButton = `<div class="chart-setting-footer"><button class="mini" type="button" id="chart-settings-reset">Сбросить настройки этого графика</button></div>`;
   const bgMode = p.backgroundMode || "linear";
   const bgModeOptions = `<option value="solid"${bgMode === "solid" ? " selected" : ""}>Один цвет</option><option value="linear"${bgMode === "linear" ? " selected" : ""}>Линейный градиент</option><option value="radial"${bgMode === "radial" ? " selected" : ""}>Радиальный градиент</option>`;
-  let html = `<div class="chart-setting-group"><h3>Фон графика</h3><div class="chart-setting-field"><label for="chart-background-mode">Тип фона</label><select id="chart-background-mode" data-chart-background-mode>${bgModeOptions}</select></div><div class="chart-bg-controls"><div class="chart-setting-field"><label>${bgMode === "solid" ? "Цвет фона" : bgMode === "radial" ? "Цвет в центре" : "Градиент · начало"}</label><input type="color" data-chart-appearance="backgroundStart" value="${p.backgroundStart}" aria-label="Цвет начала фона"></div><div class="chart-setting-field" data-chart-background-end-wrap${bgMode === "solid" ? " hidden" : ""}><label>${bgMode === "radial" ? "Цвет по краям" : "Градиент · конец"}</label><input type="color" data-chart-appearance="backgroundEnd" value="${p.backgroundEnd}" aria-label="Цвет конца фона"></div></div><div class="chart-setting-field" data-chart-background-angle-wrap${bgMode !== "linear" ? " hidden" : ""}><label>Угол градиента: <output data-range-value="backgroundAngle">${Number(p.backgroundAngle ?? 135)}°</output></label><input type="range" min="0" max="360" step="5" value="${Number(p.backgroundAngle ?? 135)}" data-chart-background-angle aria-label="Угол линейного градиента"></div><div class="chart-bg-preview" style="background:${chartBackgroundCss(p)};color:${p.fontColor}"><span>Aa 123 · Пример</span></div></div>`;
+  let html = `<div class="chart-setting-group chart-bg-group"><h3>Фон графика</h3><div class="chart-setting-field"><label for="chart-background-mode">Тип фона</label><select id="chart-background-mode" data-chart-background-mode>${bgModeOptions}</select></div><div class="chart-bg-controls"><div class="chart-setting-field"><label>${bgMode === "solid" ? "Цвет фона" : bgMode === "radial" ? "Цвет в центре" : "Градиент · начало"}</label><input type="color" data-chart-appearance="backgroundStart" value="${p.backgroundStart}" aria-label="Цвет начала фона"></div><div class="chart-setting-field" data-chart-background-end-wrap${bgMode === "solid" ? " hidden" : ""}><label>${bgMode === "radial" ? "Цвет по краям" : "Градиент · конец"}</label><input type="color" data-chart-appearance="backgroundEnd" value="${p.backgroundEnd}" aria-label="Цвет конца фона"></div></div><div class="chart-setting-field" data-chart-background-angle-wrap${bgMode !== "linear" ? " hidden" : ""}><label>Угол градиента: <output data-range-value="backgroundAngle">${Number(p.backgroundAngle ?? 135)}°</output></label><input type="range" min="0" max="360" step="5" value="${Number(p.backgroundAngle ?? 135)}" data-chart-background-angle aria-label="Угол линейного градиента"></div><div class="chart-bg-preview" style="background:${chartBackgroundCss(p)};color:${p.fontColor}"><span>Aa 123 · Пример</span></div></div>`;
   const ts = p.textStyle;
   html += `<div class="chart-setting-group chart-typography-group"><h3>Текст и размеры</h3><div class="chart-typography-grid">`;
   for (const [group,label] of TEXT_STYLE_LABELS) {
     const sizeKey = group + "Size", colorKey = group + "Color";
-    html += `<div class="chart-typography-row"><span class="chart-setting-series-name" title="${escH(label)}">${escH(label)}</span><div class="chart-font-range"><input type="range" min="8" max="48" step="1" value="${Number(ts[sizeKey]) || 18}" data-chart-font-size="${sizeKey}" aria-label="Размер: ${escH(label)}" data-text-group="${group}"><output data-range-value="${sizeKey}">${Number(ts[sizeKey]) || 18}</output></div><div class="chart-font-color"><input type="color" data-chart-appearance="${colorKey}" value="${ts[colorKey]}" title="Цвет: ${escH(label)}" aria-label="Цвет: ${escH(label)}"></div></div>`;
+    html += `<div class="chart-typography-row"><span class="chart-setting-series-name" title="${escH(label)}">${escH(label)}</span><div class="chart-font-range"><input type="number" inputmode="numeric" class="chart-font-num" min="8" max="48" step="1" value="${Number(ts[sizeKey]) || 18}" data-chart-font-size="${sizeKey}" aria-label="Размер: ${escH(label)}" title="Размер шрифта, px" data-text-group="${group}"><span class="chart-font-unit">px</span></div><div class="chart-font-color"><input type="color" data-chart-appearance="${colorKey}" value="${ts[colorKey]}" title="Цвет: ${escH(label)}" aria-label="Цвет: ${escH(label)}"></div></div>`;
   }
   html += `</div></div>`;
   if (type === "donut") {
@@ -6240,8 +6306,9 @@ $("chart-settings-content").addEventListener("input", e => {
     return;
   }
   if (e.target?.dataset?.chartFontSize) {
-    const k = e.target.dataset.chartFontSize;
-    p.textStyle = {...p.textStyle, [k]:Number(e.target.value)};
+    const k = e.target.dataset.chartFontSize, v = fontSizeVal(e.target);
+    if (v == null) return;
+    p.textStyle = {...p.textStyle, [k]:v};
     CHART_PREFS[type] = p; saveChartPrefs(); renderCharts();
     const output = e.target.parentElement?.querySelector(`[data-range-value="${k}"]`); if (output) output.textContent = e.target.value;
     return;
@@ -6307,6 +6374,13 @@ $("chart-settings-content").addEventListener("input", e => {
 });
 $("chart-settings-content").addEventListener("change", e => {
   const type = currentChartType(), p = chartPrefs(type);
+  if (e.target?.dataset?.chartFontSize) {
+    const k = e.target.dataset.chartFontSize, v = fontSizeVal(e.target, true);
+    if (v == null) { e.target.value = Number(p.textStyle?.[k]) || 18; return; }
+    p.textStyle = {...p.textStyle, [k]:v};
+    CHART_PREFS[type] = p; saveChartPrefs(); renderCharts();
+    return;
+  }
   if (type === "heatrows-custom" && e.target?.dataset?.customBandMax !== undefined) {
     const i = Number(e.target.dataset.customBandMax);
     if (!p.customBands[i] || !p.customBands[i + 1]) return;
@@ -7779,12 +7853,11 @@ function renderSelfieSettings(){
   $("s-settings-title").textContent = `Настройка · ${SELFIE_CHARTS[kind]}`;
   const mode = p.backgroundMode || "linear", ts = p.textStyle;
   const color = (label, attr, value) => `<div class="chart-setting-field"><label>${escH(label)}</label><input type="color" ${attr} value="${value}" aria-label="${escH(label)}"></div>`;
-  let html = `<div class="chart-setting-group"><h3>Фон графика</h3><div class="chart-setting-field"><label>Тип фона</label><select data-s-bgmode><option value="solid"${mode === "solid" ? " selected" : ""}>Один цвет</option><option value="linear"${mode === "linear" ? " selected" : ""}>Линейный градиент</option><option value="radial"${mode === "radial" ? " selected" : ""}>Радиальный градиент</option></select></div>
+  let html = `<div class="chart-setting-group chart-bg-group"><h3>Фон графика</h3><div class="chart-setting-field"><label>Тип фона</label><select data-s-bgmode><option value="solid"${mode === "solid" ? " selected" : ""}>Один цвет</option><option value="linear"${mode === "linear" ? " selected" : ""}>Линейный градиент</option><option value="radial"${mode === "radial" ? " selected" : ""}>Радиальный градиент</option></select></div>
     <div class="chart-bg-controls">${color(mode === "solid" ? "Цвет фона" : "Градиент · начало", 'data-s-app="backgroundStart"', p.backgroundStart)}${mode === "solid" ? "" : color("Градиент · конец", 'data-s-app="backgroundEnd"', p.backgroundEnd)}</div>
-    ${mode === "linear" ? `<div class="chart-setting-field"><label>Угол градиента: <output data-s-out="angle">${Number(p.backgroundAngle ?? 135)}°</output></label><input type="range" min="0" max="360" step="5" value="${Number(p.backgroundAngle ?? 135)}" data-s-angle></div>` : ""}
-    <div class="chart-setting-field chart-subtitle-toggle"><label><input type="checkbox" data-s-sub${p.showSubtitle !== false ? " checked" : ""}> Показывать подзаголовок</label></div></div>`;
-  html += `<div class="chart-setting-group chart-typography-group"><h3>Текст и размеры</h3><div class="chart-typography-grid">` + TEXT_STYLE_LABELS.map(([g, label]) =>
-    `<div class="chart-typography-row"><span class="chart-setting-series-name">${escH(label)}</span><div class="chart-font-range"><input type="range" min="8" max="48" step="1" value="${Number(ts[g + "Size"]) || 18}" data-s-size="${g}Size" aria-label="Размер: ${escH(label)}"><output data-s-out="${g}Size">${Number(ts[g + "Size"]) || 18}</output></div><div class="chart-font-color"><input type="color" data-s-app="${g}Color" value="${ts[g + "Color"]}" aria-label="Цвет: ${escH(label)}"></div></div>`).join("") + `</div></div>`;
+    ${mode === "linear" ? `<div class="chart-setting-field"><label>Угол градиента: <output data-s-out="angle">${Number(p.backgroundAngle ?? 135)}°</output></label><input type="range" min="0" max="360" step="5" value="${Number(p.backgroundAngle ?? 135)}" data-s-angle></div>` : ""}</div>`;
+  html += `<div class="chart-setting-group chart-typography-group"><h3>Текст и размеры</h3><div class="chart-setting-field chart-subtitle-toggle chart-sub-inline"><label><input type="checkbox" data-s-sub${p.showSubtitle !== false ? " checked" : ""}> Показывать подзаголовок</label></div><div class="chart-typography-grid">` + TEXT_STYLE_LABELS.map(([g, label]) =>
+    `<div class="chart-typography-row"><span class="chart-setting-series-name">${escH(label)}</span><div class="chart-font-range"><input type="number" inputmode="numeric" class="chart-font-num" min="8" max="48" step="1" value="${Number(ts[g + "Size"]) || 18}" data-s-size="${g}Size" aria-label="Размер: ${escH(label)}" title="Размер шрифта, px"><span class="chart-font-unit">px</span></div><div class="chart-font-color"><input type="color" data-s-app="${g}Color" value="${ts[g + "Color"]}" aria-label="Цвет: ${escH(label)}"></div></div>`).join("") + `</div></div>`;
   if (kind === "fridays") {
     html += `<div class="chart-setting-group"><h3>Столбцы</h3><div class="chart-setting-field"><label>Цвет столбцов</label><select data-s-opt="barMode"><option value="year"${o.barMode === "year" ? " selected" : ""}>По годам</option><option value="single"${o.barMode === "single" ? " selected" : ""}>Один цвет</option></select></div>${o.barMode === "single" ? color("Цвет столбцов", 'data-s-opt="bar"', o.bar) : ""}${color("Линия среднего", 'data-s-opt="avg"', o.avg)}<div class="chart-setting-field chart-subtitle-toggle"><label><input type="checkbox" data-s-opt="labels"${o.labels ? " checked" : ""}> Подписи значений</label></div></div>`;
   }
@@ -7809,7 +7882,7 @@ function sSettingsEvent(e, isChange){
   if (d.sBgmode !== undefined) { if (!isChange) return; p.backgroundMode = t.value; rebuild = true; }
   else if (d.sAngle !== undefined) { p.backgroundAngle = Number(t.value); setOut("angle", `${t.value}°`); }
   else if (d.sSub !== undefined) { if (!isChange) return; p.showSubtitle = t.checked; }
-  else if (d.sSize) { p.textStyle = {...p.textStyle, [d.sSize]:Number(t.value)}; setOut(d.sSize, t.value); }
+  else if (d.sSize) { const v = fontSizeVal(t, isChange); if (v == null) return; p.textStyle = {...p.textStyle, [d.sSize]:v}; }
   else if (d.sApp) { if (/Color$/.test(d.sApp)) p.textStyle = {...p.textStyle, [d.sApp]:t.value}; else p[d.sApp] = t.value; }
   else if (d.sOpt) {
     if ((t.tagName === "SELECT" || t.type === "checkbox") && !isChange) return;
@@ -9440,11 +9513,10 @@ function renderFcSettings(boxId){
   const box = $(boxId); if (!box) return;
   const p = chartPrefs("forecast"), o = fcOpts(p), mode = p.backgroundMode || "linear", ts = p.textStyle;
   const color = (label, attr, value) => `<div class="chart-setting-field"><label>${escH(label)}</label><input type="color" ${attr} value="${value}" aria-label="${escH(label)}"></div>`;
-  box.innerHTML = `<div class="chart-setting-group"><h3>Фон графика</h3><div class="chart-setting-field"><label>Тип фона</label><select data-fs-bgmode><option value="solid"${mode === "solid" ? " selected" : ""}>Один цвет</option><option value="linear"${mode === "linear" ? " selected" : ""}>Линейный градиент</option><option value="radial"${mode === "radial" ? " selected" : ""}>Радиальный градиент</option></select></div>
+  box.innerHTML = `<div class="chart-setting-group chart-bg-group"><h3>Фон графика</h3><div class="chart-setting-field"><label>Тип фона</label><select data-fs-bgmode><option value="solid"${mode === "solid" ? " selected" : ""}>Один цвет</option><option value="linear"${mode === "linear" ? " selected" : ""}>Линейный градиент</option><option value="radial"${mode === "radial" ? " selected" : ""}>Радиальный градиент</option></select></div>
       <div class="chart-bg-controls">${color(mode === "solid" ? "Цвет фона" : "Градиент · начало", 'data-fs-app="backgroundStart"', p.backgroundStart)}${mode === "solid" ? "" : color("Градиент · конец", 'data-fs-app="backgroundEnd"', p.backgroundEnd)}</div>
-      ${mode === "linear" ? `<div class="chart-setting-field"><label>Угол: <output data-fs-out="angle">${Number(p.backgroundAngle ?? 135)}°</output></label><input type="range" min="0" max="360" step="5" value="${Number(p.backgroundAngle ?? 135)}" data-fs-angle></div>` : ""}
-      <div class="chart-setting-field chart-subtitle-toggle"><label><input type="checkbox" data-fs-sub${p.showSubtitle !== false ? " checked" : ""}> Показывать подзаголовок</label></div></div>
-    <div class="chart-setting-group chart-typography-group"><h3>Текст и размеры</h3><div class="chart-typography-grid">${TEXT_STYLE_LABELS.filter(([g2]) => g2 !== "labels").map(([g2, label]) => `<div class="chart-typography-row"><span class="chart-setting-series-name">${escH(label)}</span><div class="chart-font-range"><input type="range" min="8" max="48" step="1" value="${Number(ts[g2 + "Size"]) || 14}" data-fs-size="${g2}Size"><output data-fs-out="${g2}Size">${Number(ts[g2 + "Size"]) || 14}</output></div><div class="chart-font-color"><input type="color" data-fs-app="${g2}Color" value="${ts[g2 + "Color"]}"></div></div>`).join("")}</div></div>
+      ${mode === "linear" ? `<div class="chart-setting-field"><label>Угол: <output data-fs-out="angle">${Number(p.backgroundAngle ?? 135)}°</output></label><input type="range" min="0" max="360" step="5" value="${Number(p.backgroundAngle ?? 135)}" data-fs-angle></div>` : ""}</div>
+    <div class="chart-setting-group chart-typography-group"><h3>Текст и размеры</h3><div class="chart-setting-field chart-subtitle-toggle chart-sub-inline"><label><input type="checkbox" data-fs-sub${p.showSubtitle !== false ? " checked" : ""}> Показывать подзаголовок</label></div><div class="chart-typography-grid">${TEXT_STYLE_LABELS.filter(([g2]) => g2 !== "labels").map(([g2, label]) => `<div class="chart-typography-row"><span class="chart-setting-series-name">${escH(label)}</span><div class="chart-font-range"><input type="number" inputmode="numeric" class="chart-font-num" min="8" max="48" step="1" value="${Number(ts[g2 + "Size"]) || 14}" data-fs-size="${g2}Size" aria-label="Размер: ${escH(label)}" title="Размер шрифта, px"><span class="chart-font-unit">px</span></div><div class="chart-font-color"><input type="color" data-fs-app="${g2}Color" value="${ts[g2 + "Color"]}"></div></div>`).join("")}</div></div>
     <div class="chart-setting-group"><h3>Линии</h3><div class="chart-palette-fields">${color("Факт", 'data-fs-color="fact"', o.fact)}${color("Прогноз и диапазон", 'data-fs-color="fcst"', o.fcst)}${color("Прошлый период", 'data-fs-color="prev"', o.prev)}</div></div>
     <div class="chart-setting-group pal-group"><h3>Готовые палитры</h3><p class="hint">Первые три цвета палитры: факт, прогноз, прошлый период.</p>${palGridHtml("cat", CAT_PALETTES, cols => sameColors(cols.slice(0, 3), [o.fact, o.fcst, o.prev]), "data-fc-pal")}</div>
     <div class="chart-setting-footer"><button class="mini" type="button" data-fs-reset>Сбросить настройки графика</button></div>`;
@@ -9458,7 +9530,7 @@ function fcSettingsEvent(e, isChange){
   if (d.fsBgmode !== undefined) { if (!isChange) return; p.backgroundMode = t.value; rebuild = true; }
   else if (d.fsAngle !== undefined) { p.backgroundAngle = Number(t.value); setOut("angle", `${t.value}°`); }
   else if (d.fsSub !== undefined) { if (!isChange) return; p.showSubtitle = t.checked; }
-  else if (d.fsSize) { p.textStyle = {...p.textStyle, [d.fsSize]:Number(t.value)}; setOut(d.fsSize, t.value); }
+  else if (d.fsSize) { const v = fontSizeVal(t, isChange); if (v == null) return; p.textStyle = {...p.textStyle, [d.fsSize]:v}; }
   else if (d.fsApp) { if (/Color$/.test(d.fsApp)) p.textStyle = {...p.textStyle, [d.fsApp]:t.value}; else p[d.fsApp] = t.value; }
   else if (d.fsColor) { p.fc = {...fcOpts(p), [d.fsColor]:t.value}; if (isChange) rebuild = true; }
   else return;
@@ -10289,7 +10361,7 @@ document.addEventListener("click", e => {
 function normChartList(list, metric){
   if (NORM !== "day" && NORM !== "share") return list;
   if (NORM === "share") { const tot = list.reduce((s2, u) => s2 + u.v, 0); return list.map(u => ({...u, v:tot ? r1(u.v / tot * 100) : 0})).sort((a, b) => b.v - a.v); }
-  const src = chartEntity === "chats" ? chatRowsForChart(cRows()) : cScoped(), days = new Map();
+  const src = chartEntity === "chats" ? chartChatRows(cRows()) : cScoped(), days = new Map();
   src.forEach(x => {
     if (!(Number(g(x, metric)) > 0)) return;
     const k = chartEntity === "chats" ? String(x[F.chatPk] ?? x[F.chat]) : String(x[F.userId] ?? x[F.name]);
@@ -10306,7 +10378,7 @@ var RACE = null, raceRaf = 0, raceSpeed = 1;
 try { raceSpeed = Number(localStorage.getItem("chatstats.raceSpeed.v1")) || 1; } catch (e) {}
 function raceData(){
   if (cMode() === "day") return {err:"Для гонки выберите период: неделя, месяц, год или все данные"};
-  const src = chartEntity === "chats" ? chatRowsForChart(cRows()) : cScoped();
+  const src = chartEntity === "chats" ? chartChatRows(cRows()) : cScoped();
   const r = cRange(); if (!r) return {err:"Выберите период"};
   const today = iso(new Date());
   let from = r[0]; const to = r[1] < today ? r[1] : today;
@@ -10877,7 +10949,7 @@ function normChart(){
   // Недели скользящие: последняя — ровно 7 дней по выбранную дату, без неполных недель.
   const firstMon = addDaysIso(end, -(7 * NW - 1)), baseFrom = addDaysIso(firstMon, -7 * BASE);
   const i0 = dayIdx(baseFrom), nDays = dayIdx(end) - i0 + 1;
-  const src = chats ? chatRowsForChart(allRows) : pick(allRows, chat);
+  const src = chats ? chartChatRows(allRows) : pick(allRows, chat);
   const keyOf = x => chats ? String(x[F.chatPk] ?? x[F.chat]) : String(x[F.userId] ?? x[F.name]);
   const per = new Map(), firstSeen = new Map();
   src.forEach(x => {
@@ -11404,7 +11476,7 @@ $("c-focus")?.addEventListener("change", e => {
 function chartDaily(ignoreSel = false){
   const r = cRange(); if (!r) return {err:"Выберите период"};
   const chats = chartEntity === "chats", metric = $("metric").value;
-  const src = chats ? chatRowsForChart(cRows()) : cScoped();
+  const src = chats ? chartChatRows(cRows()) : cScoped();
   let dmin = "9999-99-99";
   src.forEach(x => { const d = String(x[F.date] ?? "").slice(0, 10); if (d.length === 10 && d >= r[0] && d <= r[1] && d < dmin) dmin = d; });
   if (dmin === "9999-99-99") return {err:"Нет данных за выбранный период"};
@@ -11668,6 +11740,9 @@ function stackChart(){
   const {D, B, ser, tot, sum} = M, n = B.count;
   const W = 900, L = 36, R = W - 36, T = 128, BOT = 470, gap = n > 20 ? 4 : n > 10 ? 8 : 14, cw = (R - L - gap * (n - 1)) / n, rad = Math.min(14, cw * .12);
   const mx = Math.max(1, ...tot), sy = v => v / mx * (BOT - T - 30), defs = [];
+  // общий объём столбца: верх светлее, низ темнее (поверх плоских цветов сегментов)
+  const shadeId = "stkShade" + (++gid);
+  defs.push(`<linearGradient id="${shadeId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".26"/><stop offset=".45" stop-color="#fff" stop-opacity=".04"/><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".28"/></linearGradient>`);
   const who = D.chats ? "по чатам" : "по участникам";
   const per = chartQuick ? (chartQuick === "all" ? "все данные" : `${chartQuick} дней`) : ({day:"день", week:"неделя", month:"месяц", year:"год", all:"все данные"}[mode] || "");
   const dS = d => `${+d.slice(8, 10)} ${MONTHS_SHORT_RU[+d.slice(5, 7) - 1]}`;
@@ -11686,6 +11761,7 @@ function stackChart(){
       o += `<rect class="anim-bar-y" x="${x.toFixed(1)}" y="${(y - sh).toFixed(1)}" width="${cw.toFixed(1)}" height="${(sh + .5).toFixed(1)}" fill="${fill}" data-ek="${escH(se.k)}" data-tip="${escH(B.full(b))}|${escH(`${se.n}: ${fmt(Math.round(v))} · ${Math.round(v / tot[b] * 100)}% из ${fmt(Math.round(tot[b]))}`)}"/>`;
       y -= sh;
     });
+    o += `<rect class="anim-bar-y stk-shade" x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${cw.toFixed(1)}" height="${h.toFixed(1)}" fill="url(#${shadeId})" pointer-events="none"/>`;
     o += `</g>`;
     if (showVal) o += `<text class="chart-value" x="${(x + cw / 2).toFixed(1)}" y="${(top - 12).toFixed(1)}" text-anchor="middle" font-size="${cw >= 70 ? 22 : cw >= 45 ? 17 : 13}" font-weight="700" fill="#eceef3">${fmt(Math.round(tot[b]))}</text>`;
     o += `<text class="chart-axis" x="${(x + cw / 2).toFixed(1)}" y="${BOT + 34}" text-anchor="middle" font-size="${n > 14 ? 13 : 17}" fill="#aab0c0">${b % every ? "" : escH(B.label(b))}</text>`;
@@ -14794,7 +14870,14 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.10.30-13", date:"2026-10-30", title:"Реакции и события — в релизе", items:[
+  {v:"2026.10.31-4", date:"2026-10-31", title:"Реакции и события — в релизе", items:[
+    {tag:"imp", area:"Графики", text:"Окно настройки графика стало компактнее: размер шрифта вводится числом вместо ползунка, строки текста идут в две колонки, подписи и цвета ужаты."},
+    {tag:"imp", area:"Графики", text:"«Активность по дням»: у каждого столбца общий мягкий объём — верх светлее, низ темнее; цвета сегментов остаются плоскими."},
+    {tag:"imp", area:"Графики", text:"«Динамика» за год, все данные или длинный диапазон строится по месяцам (точка на конец каждого месяца), а не по каждому дню — линии чище, подсказки короче."},
+    {tag:"imp", area:"Графики", text:"В стеклянном режиме блок «Фон графика» в настройках скрыт — фон там всё равно прозрачный."},
+    {tag:"new", area:"Графики", text:"«Чаты на графике»: любой чат можно вручную убрать со всех графиков по чатам (галочка в списке), вернуть — «Показать все»; «Только самые активные» оставляет 5 чатов."},
+    {tag:"imp", area:"Телефон", text:"Полоски вкладок вверху страниц («Хаб | Селфи | …», «Участники | Чаты», периоды) — стеклянные: полупрозрачная панель с размытием фона вместо полностью прозрачного."},
+    {tag:"fix", area:"Телефон", text:"Нижняя и верхняя панели снова стеклянные: полупрозрачный цвет темы с размытием, а не полностью прозрачный фон."},
     {tag:"new", area:"Статистика и Графики", text:"Период в календаре: первый клик — начало, второй — конец (второй клик по тому же дню — только этот день). Появился режим «Период» со сравнением с прошлым периодом той же длины; стрелки ←/→ сдвигают его целиком. В «Матрице» и «Марафонах» так же выбираются поля «с — по»."},
     {tag:"new", area:"Интерфейс", text:"Свой календарь в стиле сайта вместо системного: на ПК — панель под полем, на телефоне — окно по центру; выбор месяца, кнопка «Сегодня», ограничения дат и управление с клавиатуры."},
     {tag:"imp", area:"Телефон", text:"Плотные таблицы: в «Участниках», «Чатах», «Реакциях» и уровнях «Событий» участник занимает одну строку с короткими подписями — на экран помещается в 2,5 раза больше; остальные карточки и таблицы тоже компактнее."},
@@ -21291,6 +21374,9 @@ svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
     --m3-surf:var(--panel);
     --m3-surf-hi:color-mix(in srgb,var(--text) 6%,var(--panel));
     --m3-state:color-mix(in srgb,var(--text) 12%,transparent);
+    /* стекло для полосок вкладок: полупрозрачная панель и размытие фона под ней */
+    --m3-glass:color-mix(in srgb,var(--panel) 58%,transparent);
+    --m3-blur:blur(18px) saturate(1.6);
     --ma-tabs-h:80px;
   }
   /* Верхняя панель: 64, заголовок 22, иконки 24 в кнопках 48 */
@@ -21334,7 +21420,7 @@ svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
   body.mapp #ma-fsheet .ma-done{min-height:40px;padding:0 12px;border-radius:20px;font-size:14px;font-weight:500;color:var(--m3-primary)}
   body.mapp #ma-fsheet .ma-bd{background:rgba(0,0,0,.32)}
   /* Сегменты Material 3: 40, контур, выбранный — тональный с галочкой */
-  html body.mapp :is(main,#ma-fsheet,#filter-drawer) :is(.seg,.sq-seg,.quick-ranges:not(#theme-bases),.group-tabs,.stat-subnav){gap:0!important;padding:0!important;border:1px solid var(--m3-outline)!important;border-radius:20px!important;background:transparent!important;box-shadow:none!important;overflow:hidden}
+  html body.mapp :is(main,#ma-fsheet,#filter-drawer) :is(.seg,.sq-seg,.quick-ranges:not(#theme-bases),.group-tabs,.stat-subnav){gap:0!important;padding:0!important;border:1px solid var(--m3-outline)!important;border-radius:20px!important;background:var(--m3-glass)!important;-webkit-backdrop-filter:var(--m3-blur)!important;backdrop-filter:var(--m3-blur)!important;box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent)!important;overflow:hidden}
   html body.mapp :is(main,#ma-fsheet,#filter-drawer) :is(.seg,.sq-seg,.group-tabs,.stat-subnav,#m3x) > button,html body.mapp :is(main,#ma-fsheet,#filter-drawer) .quick-ranges:not(#theme-bases) > .quick-chip{height:40px!important;min-height:40px!important;padding:0 14px!important;border-radius:0!important;border:0!important;background:transparent!important;color:var(--text)!important;font-size:14px!important;font-weight:500!important;box-shadow:none!important}
   html body.mapp :is(main,#ma-fsheet,#filter-drawer) :is(.seg,.sq-seg,.group-tabs,.stat-subnav,#m3x) > button + button,html body.mapp :is(main,#ma-fsheet,#filter-drawer) .quick-ranges:not(#theme-bases) > .quick-chip + .quick-chip{border-left:1px solid var(--m3-outline)!important}
   html body.mapp :is(main,#ma-fsheet,#filter-drawer) :is(.seg,.sq-seg,.group-tabs,.stat-subnav,#m3x) > button:is(.active,[aria-pressed="true"]),html body.mapp :is(main,#ma-fsheet,#filter-drawer) .quick-ranges:not(#theme-bases) > .quick-chip:is(.active,[aria-pressed="true"]){background:var(--m3-sec)!important}
@@ -21370,18 +21456,24 @@ svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
   /* Обычный вид таблицы на телефоне — мельче шрифт и отступы */
   html body.mapp main table:not(.tv-cards) :is(th,td){font-size:12.5px;padding:6px 7px}
 
+  /* Стекло у верхней и нижней панелей: полупрозрачная заливка цвета темы + размытие того, что под ними */
+  html body.mapp #ma-tabs{background:color-mix(in srgb,var(--m3-surf) 72%,transparent)!important;-webkit-backdrop-filter:blur(22px) saturate(1.7)!important;backdrop-filter:blur(22px) saturate(1.7)!important;box-shadow:inset 0 1px 0 color-mix(in srgb,var(--text) 8%,transparent)!important}
+  html body.mapp #ma-bar{background:color-mix(in srgb,var(--bg) 72%,transparent)!important;-webkit-backdrop-filter:blur(22px) saturate(1.7)!important;backdrop-filter:blur(22px) saturate(1.7)!important}
+  html body.mapp.glass-ui #ma-tabs{background:color-mix(in srgb,var(--m3-surf) 58%,transparent)!important}
+  html body.mapp.glass-ui #ma-bar{background:color-mix(in srgb,var(--bg) 58%,transparent)!important}
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){html body.mapp #ma-tabs{background:var(--m3-surf)!important}html body.mapp #ma-bar{background:var(--bg)!important}}
 }
 @media (max-width:720px) and (prefers-reduced-motion:reduce){body.mapp #ma-tabs button svg,body.mapp .ma-sw::after{transition:none}}
 
   /* В шторке фильтров сегменты в одну строку, без переноса */
-  html body.mapp #ma-fsheet .filters :is(.seg,#m3x){flex-wrap:nowrap!important;gap:0!important;padding:0!important;margin:0 14px 12px!important;overflow-x:auto;scrollbar-width:none}
+  html body.mapp #ma-fsheet .filters :is(.seg,#m3x){background:transparent!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;flex-wrap:nowrap!important;gap:0!important;padding:0!important;margin:0 14px 12px!important;overflow-x:auto;scrollbar-width:none}
   html body.mapp #ma-fsheet .filters :is(.seg,#m3x) > button{flex:1 1 auto!important;padding:0 8px!important;white-space:nowrap;border-radius:0!important;box-shadow:none!important}
   html body.mapp #ma-fsheet .filters :is(.seg,#m3x) > button:not(.active){background:transparent!important}
   html body.mapp #ma-fsheet .filters :is(.seg,#m3x) > button.active{background:var(--m3-sec)!important;font-weight:500}
   /* «Участники / Чаты» — сегмент из двух кнопок, без обводки на всю ширину */
   html body.mapp :is(main,#m3x) #stats-subnav.seg.stat-subnav{padding-right:0!important;border:0!important;border-radius:0!important;gap:0!important;overflow:visible;flex:0 0 auto!important;width:auto!important}
   html body.mapp :is(main,#m3x) #stats-subnav.seg.stat-subnav > button{border:1px solid var(--m3-outline)!important;padding:0 16px!important}
-  html body.mapp :is(main,#m3x) #stats-subnav.seg.stat-subnav{background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border-radius:20px!important}
+  html body.mapp :is(main,#m3x) #stats-subnav.seg.stat-subnav{background:var(--m3-glass)!important;box-shadow:none!important;backdrop-filter:var(--m3-blur)!important;-webkit-backdrop-filter:var(--m3-blur)!important;border-radius:20px!important;overflow:hidden}
   html body.mapp :is(main,#m3x) #stats-subnav.seg.stat-subnav > button:not(.active){background:transparent!important}
   html body.mapp :is(main,#m3x) #stats-subnav.seg.stat-subnav > button:first-child{border-radius:20px 0 0 20px!important}
   html body.mapp :is(main,#m3x) #stats-subnav.seg.stat-subnav > button:last-child{border-radius:0 20px 20px 0!important;border-left:0!important}
