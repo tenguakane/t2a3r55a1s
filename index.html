@@ -1953,7 +1953,7 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
     <div class="top-tools"><label class="top-search"><span aria-hidden="true">🔍</span><input type="search" id="m-q" placeholder="Найти месяц: март, 2024, 03.2024" autocomplete="off" aria-label="Поиск месяца"></label></div>
     <p class="status" id="m-status"></p>
     <div class="wrap"><table id="months-table">
-      <thead><tr><th style="text-align:center">Место</th><th style="text-align:left">Месяц</th><th>Сообщения</th><th>Стикеры</th><th>Голосовые</th><th>Видеосообщения</th><th class="rx-th">Поставлено реакций</th><th class="rx-th">Получено реакций</th></tr></thead>
+      <thead><tr><th style="text-align:center">Место</th><th style="text-align:left">Месяц</th><th>Сообщения</th><th>Стикеры</th><th>Голосовые</th><th>Видеосообщения</th><th class="rx-th" title="Поставлено реакций">Поставлено ❤️</th><th class="rx-th" title="Получено реакций">Получено ❤️</th></tr></thead>
       <tbody id="m-body"></tbody>
     </table></div>
     <div class="top-more" id="m-more"></div>
@@ -1978,7 +1978,7 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
     <div class="top-tools"><label class="top-search"><span aria-hidden="true">🔍</span><input type="search" id="d-q" placeholder="Найти день: 15 марта, 15.03.2024, пятница" autocomplete="off" aria-label="Поиск дня"></label></div>
     <p class="status" id="d-status"></p>
     <div class="wrap"><table id="days-table">
-      <thead><tr><th style="text-align:center">Место</th><th style="text-align:left">День</th><th>Сообщения</th><th>Стикеры</th><th>Голосовые</th><th>Видеосообщения</th><th class="rx-th">Поставлено реакций</th><th class="rx-th">Получено реакций</th></tr></thead>
+      <thead><tr><th style="text-align:center">Место</th><th style="text-align:left">День</th><th>Сообщения</th><th>Стикеры</th><th>Голосовые</th><th>Видеосообщения</th><th class="rx-th" title="Поставлено реакций">Поставлено ❤️</th><th class="rx-th" title="Получено реакций">Получено ❤️</th></tr></thead>
       <tbody id="d-body"></tbody>
     </table></div>
     <div class="top-more" id="d-more"></div>
@@ -2273,7 +2273,7 @@ const COLS = [
   {k:"voice", t:"Голосовые"},
   {k:"video", t:"Видеосообщения"},
   {k:"stick", t:"Стикеры"},
-  ...(RX_ON ? [{k:"rgive", t:"Поставил(а) реакций"}, {k:"rgot", t:"Получил(а) реакций"}] : []),
+  ...(RX_ON ? [{k:"rgive", t:"Поставил ❤️", full:"Поставил(а) реакций"}, {k:"rgot", t:"Получил ❤️", full:"Получил(а) реакций"}] : []),
 ];
 const $ = id => document.getElementById(id);
 const CHART_BG_KEY = "chatstats.chartBackground.v1";
@@ -2986,7 +2986,7 @@ function render(){
   if (title) title.textContent = participantsPeriodTitle() + normSuffix();
 
   $("head").innerHTML = COLS.map(c =>
-    `<th tabindex="0" data-k="${c.k}" class="${sort.k===c.k?"sorted":""}">${c.t}${sort.k===c.k?(sort.dir<0?" ↓":" ↑"):""}</th>`).join("");
+    `<th tabindex="0" data-k="${c.k}" class="${sort.k===c.k?"sorted":""}"${c.full ? ` title="${c.full}"` : ""}>${c.t}${sort.k===c.k?(sort.dir<0?" ↓":" ↑"):""}</th>`).join("");
   document.querySelectorAll("#head th").forEach(th => {
     const go = () => { const k = th.dataset.k; if (k === "place") return; sort = {k, dir: sort.k===k ? -sort.dir : -1}; render(); };
     th.onclick = go; th.onkeydown = e => { if (e.key === "Enter") go(); };
@@ -6543,7 +6543,7 @@ function ensureOuterResizeHandles(table){
   const row = table.tHead?.rows?.[0] || table.rows?.[0];
   if (!row || !row.cells.length) return;
   table.classList.add("resizable-table-width");
-  const edges = [[row.cells[0], "left", "Изменить ширину таблицы с левого края"], [row.cells[row.cells.length - 1], "right", "Изменить ширину таблицы с правого края"]];
+  const edges = [[row.cells[0], "left", "Изменить ширину таблицы с левого края. Двойной клик — выровнять столбцы по содержимому"], [row.cells[row.cells.length - 1], "right", "Изменить ширину таблицы с правого края. Двойной клик — выровнять столбцы по содержимому"]];
   for (const [cell, side, label] of edges){
     cell.classList.add("table-outer-resize-cell");
     if (cell.querySelector(`:scope > .table-outer-resize-handle.${side}`)) continue;
@@ -6559,6 +6559,29 @@ function ensureOuterResizeHandles(table){
     cell.appendChild(handle);
   }
 }
+// Выравнивание: сбрасывает ручные ширины столбцов и таблицы — каждый столбец снова занимает ровно столько, сколько нужно его содержимому.
+function autoFitTable(any){
+  const key = any?.dataset?.resizeKey || (any && columnTableKey(any));
+  const table = (key && realTableForResizeKey(key)) || any; if (!table) return;
+  delete savedColumnWidths[key]; delete savedTableWidths[key];
+  try { localStorage.setItem(COLUMN_WIDTH_STORAGE_KEY, JSON.stringify(savedColumnWidths)); localStorage.setItem(TABLE_WIDTH_STORAGE_KEY, JSON.stringify(savedTableWidths)); } catch (e) {}
+  const tables = [table, ...document.querySelectorAll(".sticky-table-head table")].filter(t => t === table || t.dataset.resizeKey === key);
+  tables.forEach(t => {
+    t.querySelector(":scope > colgroup[data-user-resize]")?.remove();
+    ["table-layout", "width", "min-width", "max-width", "margin-left", "margin-right", "--table-sticky-left"].forEach(p => t.style.removeProperty(p));
+    t.classList.remove("resizable-table-width");
+    const wrap = t.closest(".wrap");
+    if (wrap) { wrap.classList.remove("resizable-table-wrap"); ["width", "max-width", "margin-left", "margin-right"].forEach(p => wrap.style.removeProperty(p)); }
+  });
+  ensureOuterResizeHandles(table);
+  try { window.dispatchEvent(new Event("resize")); } catch (e) {}
+  if (typeof toastMsg === "function") toastMsg("Столбцы выровнены по содержимому");
+}
+document.addEventListener("dblclick", e => {
+  const h = e.target.closest?.(".column-resize-handle, .table-outer-resize-handle"); if (!h) return;
+  e.preventDefault(); e.stopPropagation();
+  autoFitTable(h.closest("table"));
+}, true);
 function setupResizableTable(table){
   if (!table || table.closest(".table-image-measure") || table.closest(".sticky-table-head")) return;
   if (!table.dataset.resizeKey) table.dataset.resizeKey = columnTableKey(table);
@@ -6582,7 +6605,7 @@ function setupResizableTable(table){
     handle.setAttribute("role", "separator");
     handle.setAttribute("aria-orientation", "vertical");
     handle.setAttribute("aria-label", `Изменить ширину столбца «${(th.textContent || "").trim()}»`);
-    handle.title = "Перетащите границу, чтобы изменить ширину столбцов";
+    handle.title = "Перетащите границу, чтобы изменить ширину столбцов. Двойной клик — выровнять все столбцы по содержимому";
     handle.addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); });
     th.appendChild(handle);
   });
@@ -14888,6 +14911,8 @@ window.CHANGELOG = [
     {tag:"imp", area:"Графики", text:"«Динамика» за год, все данные или длинный диапазон строится по месяцам (точка на конец каждого месяца), а не по каждому дню — линии чище, подсказки короче."},
     {tag:"imp", area:"Графики", text:"Убран блок «Период графика» — период выбирается датой над графиком. Список «Чаты на графике» больше не прячется под соседними блоками."},
     {tag:"imp", area:"Графики", text:"«Активность по дням» на «Все данные»: один столбец — один год."},
+    {tag:"imp", area:"Статистика", text:"Короткие заголовки реакций в таблицах: «Поставил ❤️» и «Получил ❤️» (полное название — во всплывающей подсказке)."},
+    {tag:"new", area:"Таблицы", text:"Двойной клик по границе столбца (или по краю таблицы) выравнивает все столбцы: каждый занимает ровно столько места, сколько нужно содержимому. Ручные ширины этой таблицы сбрасываются."},
     {tag:"imp", area:"Графики", text:"В стеклянном режиме блок «Фон графика» в настройках скрыт — фон там всё равно прозрачный."},
     {tag:"new", area:"Графики", text:"«Чаты на графике»: любой чат можно вручную убрать со всех графиков по чатам (галочка в списке), вернуть — «Показать все»; «Только самые активные» оставляет 5 чатов."},
     {tag:"imp", area:"Телефон", text:"Полоски вкладок вверху страниц («Хаб | Селфи | …», «Участники | Чаты», периоды) — стеклянные: полупрозрачная панель с размытием фона вместо полностью прозрачного."},
@@ -17717,7 +17742,7 @@ tbody tr.qv-able{cursor:pointer}
   }
   function cols(t){ const r = t.tHead && t.tHead.rows[t.tHead.rows.length - 1]; return r ? [...r.cells].map(c => String(c.dataset.hcName || c.textContent).replace(/[▲▼△▽↑↓⇅⬍↕]/g, "").replace(/\s+/g, " ").trim()) : []; }
   const SHORT = {"Видеосообщения":"Кружки","Видеосообщений":"Кружки","Голосовые сообщения":"Голосовые","Пересланные":"Пересл.","Пересланных":"Пересл.","Активных дней":"Дней",
-    "Сообщения":"Сообщ.","Голосовые":"Голос.","Поставил(а) реакций":"Поставил","Получил(а) реакций":"Получил","Поставил(а)":"Поставил","Получил(а)":"Получил","Любимая реакция":"Любимая","Достижение":"Дост.","Стикеры":"Стикер."};
+    "Сообщения":"Сообщ.","Голосовые":"Голос.","Поставил(а) реакций":"Поставил","Получил(а) реакций":"Получил","Поставил ❤️":"Поставил","Получил ❤️":"Получил","Поставлено ❤️":"Поставлено","Получено ❤️":"Получено","Поставил(а)":"Поставил","Получил(а)":"Получил","Любимая реакция":"Любимая","Достижение":"Дост.","Стикеры":"Стикер."};
   function labelRows(t){
     const names = cols(t);
     qsa(":scope > :is(tbody,tfoot) > tr", t).forEach(tr => { let col = 0; [...tr.cells].forEach(c => { const span = Number(c.dataset.hcCs || c.colSpan) || 1; if (span === 1 && !c.dataset.hcCs) { const n = names[col] && (SHORT[names[col]] || names[col]); if (n && c.dataset.label !== n) c.dataset.label = n; } col += span; }); });
