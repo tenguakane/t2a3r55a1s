@@ -1567,7 +1567,7 @@ html body #people-body input[data-pf="name"]{width:200px!important;min-width:0!i
 html body #people-body input[data-pf="pk"]{width:100px!important}</style>
 <style id="total-row-css">tr.total-row > td.total-label{white-space:nowrap;font-weight:600}</style>
 <style id="s-key-css">.s-people-note{margin:8px 0 0;color:#f87171}@keyframes sKeyFlash{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 0 3px var(--accent)}}.s-key-flash{animation:sKeyFlash .8s ease-in-out 3}@media (prefers-reduced-motion:reduce){.s-key-flash{animation:none;outline:2px solid var(--accent)}}</style>
-<style id="chatpick-css">#clist{display:grid!important;grid-template-columns:1fr!important;gap:2px!important;min-width:240px}#clist label{display:flex!important;align-items:center;gap:8px;white-space:nowrap}#clist label small{margin-left:auto;padding-left:12px}#chatpick .pbtn{display:flex;flex-wrap:wrap;gap:6px}</style>
+<style id="chatpick-css">#c-quick{display:none!important}.field:has(> details.pick[open]){position:relative;z-index:60}details.pick[open] > .pop{z-index:61}#clist{display:grid!important;grid-template-columns:1fr!important;gap:2px!important;min-width:240px}#clist label{display:flex!important;align-items:center;gap:8px;white-space:nowrap}#clist label small{margin-left:auto;padding-left:12px}#chatpick .pbtn{display:flex;flex-wrap:wrap;gap:6px}</style>
 <style id="rx-copy-css">
 .rx-head{display:flex;align-items:center;gap:10px;margin:26px 0 10px}
 .rx-head > h2{margin:0!important;margin-right:auto!important}
@@ -1819,7 +1819,7 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
       <div class="chart-settings-heading"><h2 id="chart-settings-title">Настройка графика</h2><button class="mini" id="chart-settings-close" type="button">Свернуть</button></div>
       <div id="chart-settings-content" class="chart-settings-content"></div>
     </div>
-    <div class="quick-ranges" id="c-quick" role="group" aria-label="Быстрый период графика"><span class="qr-label">Период графика:</span><button type="button" class="quick-chip" data-q="">Как в фильтре</button><button type="button" class="quick-chip" data-q="7">7д</button><button type="button" class="quick-chip" data-q="30">30д</button><button type="button" class="quick-chip" data-q="90">90д</button><button type="button" class="quick-chip" data-q="365">Год</button><button type="button" class="quick-chip" data-q="all">Всё</button></div>
+    <div class="quick-ranges" id="c-quick" hidden role="group" aria-label="Быстрый период графика"><span class="qr-label">Период графика:</span><button type="button" class="quick-chip" data-q="">Как в фильтре</button><button type="button" class="quick-chip" data-q="7">7д</button><button type="button" class="quick-chip" data-q="30">30д</button><button type="button" class="quick-chip" data-q="90">90д</button><button type="button" class="quick-chip" data-q="365">Год</button><button type="button" class="quick-chip" data-q="all">Всё</button></div>
     <div class="chart" id="c-out"></div>
     <div class="series-chips" id="c-chips" hidden></div>
   </section>
@@ -3930,7 +3930,8 @@ const note = t => `<div class="note">${escH(t)}</div>`;
 /* ---------- Быстрые диапазоны графиков (не зависят от общего режима) ---------- */
 const CHART_QUICK_KEY = "chatstats.chartQuick.v1";
 let chartQuick = "";
-try { const q = localStorage.getItem(CHART_QUICK_KEY); if (["7", "30", "90", "365", "all"].includes(q)) chartQuick = q; } catch (e) {}
+// Быстрый «Период графика» убран: период берётся из выбора даты над графиком. Старое сохранённое значение сбрасываем.
+try { localStorage.removeItem(CHART_QUICK_KEY); } catch (e) {}
 let dayTipCtx = null, tipCtx = null, tipCache = null, tipHistoryRequested = false;
 let cRowsCache = {q:null, src:null, to:null, data:[]};
 function syncQuickChips(){
@@ -11495,7 +11496,18 @@ function chartDaily(ignoreSel = false){
   return {from, to, n, d0, list, metric, chats, date:i => addDaysIso(from, i)};
 }
 // Деление периода на отрезки: дни, недели или месяцы.
-function chartBuckets(from, n, maxBuckets = 40){
+function chartBuckets(from, n, maxBuckets = 40, forceKind = null){
+  if (forceKind === "y") {
+    // Один столбец — один календарный год (первый и последний годы могут быть неполными).
+    const y0 = +from.slice(0, 4), to = addDaysIso(from, n - 1), count = +to.slice(0, 4) - y0 + 1;
+    const start = b => { const s = `${y0 + b}-01-01`; return s < from ? from : s; };
+    const end = b => b >= count - 1 ? to : `${y0 + b}-12-31`;
+    const idx = new Int32Array(n); let yy = y0, next = `${y0 + 1}-01-01`;
+    for (let i = 0; i < n; i++) { const d = addDaysIso(from, i); while (d >= next) { yy++; next = `${yy + 1}-01-01`; } idx[i] = yy - y0; }
+    const dShort = d => `${+d.slice(8, 10)} ${MONTHS_SHORT_RU[+d.slice(5, 7) - 1]}`;
+    const full = b => { const s = start(b), e = end(b), y = y0 + b; return s.slice(5) === "01-01" && e.slice(5) === "12-31" ? `${y} год` : `${y} год (${dShort(s)} — ${dShort(e)})`; };
+    return {kind:"y", count, idx, start, end, label:b => String(y0 + b), full, word:"годам"};
+  }
   const kind = n <= Math.min(maxBuckets, 45) ? "d" : n <= maxBuckets * 7 ? "w" : "m";
   const d0 = dayIdx(from), y0 = +from.slice(0, 4), m0 = +from.slice(5, 7) - 1;
   const of = i => kind === "d" ? i : kind === "w" ? Math.floor(i / 7) : (() => { const d = addDaysIso(from, i); return (+d.slice(0, 4) - y0) * 12 + (+d.slice(5, 7) - 1 - m0); })();
@@ -11728,7 +11740,7 @@ function giniWord(g){ return g < .3 ? "почти поровну" : g < .5 ? "у
 const STACK_CAP = 6;
 function stackModel(){
   const D = chartDaily(); if (D.err) return D;
-  const B = chartBuckets(D.from, D.n, 31);
+  const B = chartBuckets(D.from, D.n, 31, cMode() === "all" ? "y" : null);
   const top = D.list.slice(0, STACK_CAP), rest = D.list.slice(STACK_CAP);
   const ser = top.map(e => ({k:e.k, n:e.n, kind:chartStyleKind(), s:bucketSums(e.a, B).s, tot:e.tot}));
   if (rest.length) { const s2 = new Float64Array(B.count); rest.forEach(e => { const b = bucketSums(e.a, B).s; for (let i = 0; i < B.count; i++) s2[i] += b[i]; }); ser.push({k:"other", n:`Остальные (${rest.length})`, kind:"special", s:s2, tot:rest.reduce((a, e) => a + e.tot, 0)}); }
@@ -11745,7 +11757,7 @@ function stackChart(){
   defs.push(`<linearGradient id="${shadeId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".26"/><stop offset=".45" stop-color="#fff" stop-opacity=".04"/><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".28"/></linearGradient>`);
   const who = D.chats ? "по чатам" : "по участникам";
   const per = chartQuick ? (chartQuick === "all" ? "все данные" : `${chartQuick} дней`) : ({day:"день", week:"неделя", month:"месяц", year:"год", all:"все данные"}[mode] || "");
-  const dS = d => `${+d.slice(8, 10)} ${MONTHS_SHORT_RU[+d.slice(5, 7) - 1]}`;
+  const dS = d => `${+d.slice(8, 10)} ${MONTHS_SHORT_RU[+d.slice(5, 7) - 1]}${B.kind === "y" ? " " + d.slice(0, 4) : ""}`;
   const sub = [MLBL[D.metric] || "", per, `${dS(D.from)} – ${dS(D.to)}`, `всего ${fmt(Math.round(sum))}`].filter(Boolean).join(" · ") + (!D.chats && $("chat").value ? ` · ${$("chat").value}` : "");
   let o = head(`Активность ${who}`, sub);
   const showVal = cw >= 30, every = axisEvery(n, R - L, 70);
@@ -14874,6 +14886,8 @@ window.CHANGELOG = [
     {tag:"imp", area:"Графики", text:"Окно настройки графика стало компактнее: размер шрифта вводится числом вместо ползунка, строки текста идут в две колонки, подписи и цвета ужаты."},
     {tag:"imp", area:"Графики", text:"«Активность по дням»: у каждого столбца общий мягкий объём — верх светлее, низ темнее; цвета сегментов остаются плоскими."},
     {tag:"imp", area:"Графики", text:"«Динамика» за год, все данные или длинный диапазон строится по месяцам (точка на конец каждого месяца), а не по каждому дню — линии чище, подсказки короче."},
+    {tag:"imp", area:"Графики", text:"Убран блок «Период графика» — период выбирается датой над графиком. Список «Чаты на графике» больше не прячется под соседними блоками."},
+    {tag:"imp", area:"Графики", text:"«Активность по дням» на «Все данные»: один столбец — один год."},
     {tag:"imp", area:"Графики", text:"В стеклянном режиме блок «Фон графика» в настройках скрыт — фон там всё равно прозрачный."},
     {tag:"new", area:"Графики", text:"«Чаты на графике»: любой чат можно вручную убрать со всех графиков по чатам (галочка в списке), вернуть — «Показать все»; «Только самые активные» оставляет 5 чатов."},
     {tag:"imp", area:"Телефон", text:"Полоски вкладок вверху страниц («Хаб | Селфи | …», «Участники | Чаты», периоды) — стеклянные: полупрозрачная панель с размытием фона вместо полностью прозрачного."},
