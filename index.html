@@ -14974,7 +14974,10 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.11.01-8", date:"2026-11-01", title:"Реакции и события — в релизе", items:[
+  {v:"2026.11.01-9", date:"2026-11-01", title:"Реакции и события — в релизе", items:[
+    {tag:"fix", area:"Везде", text:"Стрелка во всех выпадающих списках (Матрица, Статистика, Графики, Сравнение и др.) больше не налезает на текст."},
+    {tag:"fix", area:"Графики", text:"Список «Выделить» в боковой шторке фильтров раскрывается внутри шторки на всю её ширину и хорошо виден."},
+    {tag:"imp", area:"Настройки", text:"«Частицы на фоне» и «Рамка таблиц и графиков» — такими же плитками, как остальные эффекты, с предпросмотром справа (рамка показывает выбранный стиль и скорость)."},
     {tag:"imp", area:"Настройки", text:"Настройки на всю ширину: каждый пункт — плитка одинакового размера в ровной сетке; включённые подсвечены рамкой цвета темы."},
     {tag:"new", area:"Настройки", text:"У каждого эффекта — живой предпросмотр справа в плитке (неон, блеск, конфетти, бегущая рамка и т. д.); у выключенного он серый и стоит на месте."},
     {tag:"del", area:"Дизайн", text:"Сетка точек с фона убрана."},
@@ -22260,7 +22263,7 @@ html body.ds{background-image:none!important}
   html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > :is(label.checkline,.field)[hidden]{display:none!important}
   html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > .field > label{font-size:13px!important;color:var(--muted)!important}
   html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > .field :is(select,input:not([type=checkbox]):not([type=radio])){width:100%!important;max-width:none!important}
-  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > :not(label.checkline):not(.field){grid-column:1/-1;align-self:center;justify-self:start;width:auto!important}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > :not(label.checkline):not(.field):not(.set-frow){grid-column:1/-1;align-self:center;justify-self:start;width:auto!important}
   html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane > :is(p.hint,h2){max-width:78ch}
 }
 /* Предпросмотр эффекта */
@@ -22348,6 +22351,47 @@ label.checkline:not(:has(input:checked)) .fx-pv *{animation-play-state:paused!im
   }
   add();
   new MutationObserver(add).observe(document.getElementById("tab-settings"), {childList:true, subtree:true});
+})();
+</script>
+<style id="fix-1101">
+/* Выпадающие списки в строке фильтров: стрелка не налезает на текст */
+html body:is(.zq.zq.zq.zq,*) .msel:not(#zq1):not(#zq2){padding-right:24px!important}
+html body:is(.zq.zq.zq.zq,*) .msel:not(#zq1):not(#zq2)::after{right:7px!important}
+html body:is(.zq.zq.zq.zq,*) .msel > span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+/* «Выделить» и «Участники на графике» в шторке фильтров: список раскрывается внутри шторки, на всю её ширину */
+#filter-drawer .pick[open] > .pop{position:static!important;inset:auto!important;transform:none!important;width:100%!important;box-sizing:border-box;max-width:none!important;margin:6px 0 4px!important;max-height:320px;overflow:auto;background:var(--panel)!important;border:1px solid var(--nv-line,var(--line))!important;border-radius:12px!important;box-shadow:none!important}
+/* Настройки: блоки «Частицы на фоне» и «Рамка таблиц и графиков» — такими же плитками */
+@media (min-width:721px){
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters:has(> .set-frow){display:grid!important;grid-template-columns:repeat(auto-fill,minmax(440px,1fr))!important;grid-auto-rows:1fr;gap:12px!important;align-items:stretch!important;background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:0!important;margin:0 0 18px!important;width:100%!important;max-width:none!important}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > .set-frow{max-width:none!important;min-width:0;margin:0!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto;grid-auto-rows:min-content;align-content:start;column-gap:12px!important;row-gap:4px!important;padding:14px 16px!important;border-radius:14px!important;background:var(--nv-fill,var(--panel))!important;border:1px solid var(--nv-line,var(--line))!important;box-shadow:inset 0 1px 0 var(--glass-hi,transparent)!important;box-sizing:border-box;min-height:96px}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > .set-frow > :not(.fx-pv){grid-column:1}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > .set-frow > .fx-pv{grid-column:2;grid-row:1 / span 3;align-self:start;width:112px}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > .set-frow[hidden]{display:none!important}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > .set-frow > .sf-main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:4px}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > .set-frow .field{background:none!important;border:0!important;padding:0!important;box-shadow:none!important;min-height:0!important}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > .set-frow .set-fdesc{padding:0!important;font-size:13px;color:var(--muted)}
+}
+.pv-tb{width:78px;height:44px;border-radius:9px;position:relative;background:#22262f}
+.pv-tb::before{content:"";position:absolute;inset:-2px;border-radius:11px;z-index:-1;background:conic-gradient(from var(--pva,0deg),var(--tb-c,#7aa2f7,#7aa2f7));animation:pvSpin calc(3s / var(--pv-sp,1)) linear infinite}
+body:not(.tb-on) .pv-tb::before{background:var(--nv-line,#444);animation:none}
+</style>
+<script id="fix-1101-js">
+(() => {
+  // Плитки «Частицы» и «Рамка»: текст слева, предпросмотр справа
+  const dots = n => Array.from({length:n}, (_, i) => `<i class="pv-dot" style="left:${8 + i * (96 / n)}%;background:${["#d39064", "#e8c26a", "#c97b63", "#e6e2c3"][i % 4]};animation-delay:${-(i * .37) % 1.8}s"></i>`).join("");
+  const PV = {"tb-style":`<i class="pv-tb"></i>`, "tb-speed":`<i class="pv-tb"></i>`, "fx-season-kind":dots(8), "fx-season-density":dots(12), "fx-season-size":dots(6)};
+  function wrap(){
+    document.querySelectorAll("#tab-settings .set-pane .filters > .set-frow").forEach(r => {
+      if (r.querySelector(":scope > .fx-pv") || r.parentElement.closest(".set-frow")) return;
+      const id = r.querySelector("select, input")?.id || "";
+      const key = Object.keys(PV).find(k => id.startsWith(k));
+      if (key) { const d = document.createElement("span"); d.className = "fx-pv"; d.setAttribute("aria-hidden", "true"); d.innerHTML = PV[key]; r.appendChild(d); }
+    });
+  }
+  wrap(); new MutationObserver(wrap).observe(document.getElementById("tab-settings"), {childList:true, subtree:true});
+  const sp = document.getElementById("tb-speed");
+  const syncSp = () => { const v = sp?.value || ""; const k = /slow|медл/i.test(v) ? .5 : /fast|быстр/i.test(v) ? 2 : 1; document.documentElement.style.setProperty("--pv-sp", k); };
+  sp?.addEventListener("change", syncSp); syncSp();
 })();
 </script>
 </body>
