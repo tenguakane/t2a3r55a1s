@@ -2107,7 +2107,7 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
     <div class="theme-grid" id="theme-grid"></div>
     <div class="filters" id="theme-custom"></div>
     <h2>Эффекты</h2>
-    <div class="filters"><label class="checkline" title="Цвет каждого участника в графиках — лёгкий градиент: начало темнее, конец светлее. Работает и с готовыми палитрами"><input type="checkbox" id="set-soft-grad" checked>Лёгкий градиент в цветах участников</label><label class="checkline" title="Экспериментально. Линии «Динамики» и «По годам» светятся как неон и сужаются к началу — словно стрелка проявляется из ничего"><input type="checkbox" id="set-neon">Неоновые линии в «Динамике» и «По годам» (эксперимент)</label><label class="checkline" title="Призовые места в таблицах (1 — радужный перелив, 2 — серебряный, 3 — бронзовый), победитель дуэли, номинанты «Итогов года» и максимальные достижения переливаются голографическим градиентом. В скопированных картинках — обычный текст"><input type="checkbox" id="set-holo-text">Переливающийся текст у победителей</label><label class="checkline" title="Карточки достижений, профиля, итогов года, сравнения, хаба и тем наклоняются за курсором, на них появляется блик; у алмазных достижений — радужная голограмма"><input type="checkbox" id="set-holo">3D-наклон и голографические блики на карточках</label></div>
+    <div class="filters"><label class="checkline" title="Цвет каждого участника в графиках — лёгкий градиент: начало темнее, конец светлее. Работает и с готовыми палитрами"><input type="checkbox" id="set-soft-grad" checked>Лёгкий градиент в цветах участников</label><label class="checkline" title="Экспериментально. Все линейные графики сайта — тонкая светлая линия с неоновым свечением: проявляется из темноты в начале и ярко светится на конце"><input type="checkbox" id="set-neon">Неоновые линии на всех линейных графиках (эксперимент)</label><label class="checkline" title="Призовые места в таблицах (1 — радужный перелив, 2 — серебряный, 3 — бронзовый), победитель дуэли, номинанты «Итогов года» и максимальные достижения переливаются голографическим градиентом. В скопированных картинках — обычный текст"><input type="checkbox" id="set-holo-text">Переливающийся текст у победителей</label><label class="checkline" title="Карточки достижений, профиля, итогов года, сравнения, хаба и тем наклоняются за курсором, на них появляется блик; у алмазных достижений — радужная голограмма"><input type="checkbox" id="set-holo">3D-наклон и голографические блики на карточках</label></div>
     <div class="filters" id="fx-list"></div>
     <div class="filters">
       <div class="field"><label for="fx-season-kind">Частицы на фоне</label><select id="fx-season-kind"></select></div>
@@ -10359,7 +10359,7 @@ renderCacheInfo();
 
 
 /* ===================== Сгруппированные вкладки: «Профиль» (+ Достижения) и «Другое» ===================== */
-const TAB_GROUPS = {profile:["profile", "achievements"], other:["records", "months", "days", "forecast", "marathons", "time", "yearreview", "chronicle", "birthdays", "selfie", "usermap", "vk"]};
+const TAB_GROUPS = {profile:["profile", "achievements"], other:["records", "months", "days", "forecast", "marathons", "time", "yearreview", "chronicle", "birthdays", "usermap", "vk"]};
 const GROUP_KEY = "chatstats.tabGroups.v1";
 (function(){
   const nav = document.querySelector("nav");
@@ -11989,7 +11989,7 @@ function multiplesChart(){
     const line = p.v.map((v, b) => `${b ? "L" : "M"}${X(b).toFixed(1)},${Math.max(y0, Y(v)).toFixed(1)}`).join("");
     { const yTop = Math.max(y0, Math.min(...p.v.map(v => Y(v)))), gA = "mlA" + i + "_" + (++softGid), sp = SOFT_GRAD ? softPair(c) : [c, c], gS = "mlS" + i + "_" + softGid;
       o += `<defs><linearGradient id="${gA}" x1="0" y1="${yTop.toFixed(1)}" x2="0" y2="${y1}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${sp[1]}" stop-opacity=".42"/><stop offset=".45" stop-color="${sp[1]}" stop-opacity=".14"/><stop offset=".85" stop-color="${sp[1]}" stop-opacity="0"/></linearGradient><linearGradient id="${gS}" x1="${x0}" y1="0" x2="${x1}" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${sp[0]}"/><stop offset="1" stop-color="${sp[1]}"/></linearGradient></defs>`;
-      o += `<path d="${line} L${x1.toFixed(1)},${y1} L${x0.toFixed(1)},${y1} Z" fill="url(#${gA})"/><path d="${line}" fill="none" stroke="url(#${gS})" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`; }
+      o += `<path d="${line} L${x1.toFixed(1)},${y1} L${x0.toFixed(1)},${y1} Z" fill="url(#${gA})"/><path data-nl="1" d="${line}" fill="none" stroke="url(#${gS})" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`; }
     const my = Y(p.mean); if (my >= y0) o += `<line x1="${x0}" y1="${my.toFixed(1)}" x2="${x1}" y2="${my.toFixed(1)}" stroke="#ffffff" stroke-opacity=".35" stroke-dasharray="3 4"/>`;
     const mxv = p.v[p.mi], mxX = X(p.mi), mxY = Math.max(y0, Y(mxv));
     o += `<circle cx="${mxX.toFixed(1)}" cy="${mxY.toFixed(1)}" r="3.5" fill="${c}" stroke="#12141b" stroke-width="1.5"/><text class="chart-value" x="${Math.min(x1 - 2, Math.max(x0 + 2, mxX)).toFixed(1)}" y="${(mxY - 6).toFixed(1)}" text-anchor="${mxX > x1 - 40 ? "end" : mxX < x0 + 40 ? "start" : "middle"}" font-size="11" fill="#cfd3dc">${vfmt(mxv)}</text>`;
@@ -12589,7 +12589,9 @@ function multiplesChart(){
     base().users.forEach((u, k) => { if (!NAMES[k] && u.msgs > 0) entries.push([k, `ID ${k}`]); });
     s2.innerHTML = entries.map(([k, n]) => `<option value="${escH(k)}">${escH(n)}</option>`).join("");
     // Достижения — часть профиля: по умолчанию тот же участник, что открыт в профиле.
-    let want = (typeof person !== "undefined" && person.value && [...s2.options].some(o => o.value === person.value)) ? person.value : cur;
+    // Переход из Хаба / Хроники к достижениям конкретного человека — главнее участника из Профиля
+    const asked = window.__achWant; window.__achWant = "";
+    let want = asked && [...s2.options].some(o => o.value === String(asked)) ? String(asked) : (typeof person !== "undefined" && person.value && [...s2.options].some(o => o.value === person.value)) ? person.value : cur;
     try { if (!want) want = localStorage.getItem("chatstats.achPerson.v1") || ""; } catch (e) {}
     if (!want || ![...s2.options].some(o => o.value === want)) want = (typeof person !== "undefined" && person.value) || "";
     if (!want || ![...s2.options].some(o => o.value === want)) {
@@ -14985,7 +14987,11 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.11.01-11", date:"2026-11-01", title:"Реакции и события — в релизе", items:[
+  {v:"2026.11.01-12", date:"2026-11-01", title:"Реакции и события — в релизе", items:[
+    {tag:"imp", area:"Профиль и Хаб", text:"Главный аватар участника заметно крупнее (Профиль, сводка «Ты» в Хабе); аватары в топе дня в Хабе — чуть крупнее."},
+    {tag:"fix", area:"Хаб", text:"Нажатие на новое достижение в Хабе открывает достижения именно этого участника, а не свои."},
+    {tag:"imp", area:"Навигация", text:"«Селфи» — снова отдельная вкладка в меню, между «Событиями» и «Рекордами» (убрана из переключателя Хаба)."},
+    {tag:"imp", area:"Графики", text:"Неоновые линии (эксперимент) переделаны: тонкая светлая сердцевина с цветным свечением, линия проявляется из темноты и ярко светится на конце. Работают на всех линейных графиках сайта — Графики, Профиль, Сравнение, Прогноз, Итоги года и др.; пунктирные линии светятся тише."},
     {tag:"imp", area:"Селфи", text:"«Отметить селфи»: участники по алфавиту; в списке только те, кто делал селфи за последние полгода (или уже отмечен в эту пятницу). Остальных можно найти через «Добавить по имени»."},
     {tag:"imp", area:"Эффекты", text:"Частицы «Падающие цифры» — в цвет выбранной темы и перекрашиваются сразу при её смене."},
     {tag:"imp", area:"Плитки", text:"Подписи под крупными цифрами в плитках — белые; проценты роста и падения остаются зелёными и красными."},
@@ -19127,6 +19133,7 @@ body.glass-ui::before{
       const s = $("ach-person"); if (s && [...s.options].some(o => o.value === pk)) s.value = pk;
     } catch (e) {}
     const b = document.querySelector('nav button[data-tab="achievements"]'); if (!b) return false;
+    window.__achWant = String(pk);
     b.click();
     setTimeout(() => { try { const s = $("ach-person"); if (s && s.value !== pk && [...s.options].some(o => o.value === pk)) { s.value = pk; s.dispatchEvent(new Event("change", {bubbles:true})); } } catch (e) {} }, 350);
     try { window.scrollTo({top:0, behavior:"smooth"}); } catch (e) { window.scrollTo(0, 0); }
@@ -20609,22 +20616,24 @@ td .ev-tier + small{display:inline!important;margin-left:4px;font-size:12.5px;fo
 
   /* ---------- Навигация: «Топы», Селфи/Время/ДР в Хабе, новые вкладки ---------- */
   const nav = document.querySelector("nav");
-  const HUB_SUB = ["selfie", "time", "birthdays"], TOPS = ["months", "days"];
+  const HUB_SUB = ["time", "birthdays"], TOPS = ["months", "days"];
   const hideBtns = () => {
     nav.querySelectorAll("button[data-tab]").forEach(b => {
       const t = b.dataset.tab;
       if (b.classList.contains("nav-hidden") && (t === "days" || HUB_SUB.includes(t))) b.classList.add("beta-hide");
       if (b.classList.contains("nav-hidden") && t === "months") { b.textContent = "Топы"; b.title = "Топы"; b.dataset.betaTops = "1"; }
-      if (t === "reactions") b.style.order = "20";
-      if (t === "events") b.style.order = "21";
+      if (t === "reactions") b.style.order = "17";
+      if (t === "events") b.style.order = "18";
+      // «Селфи» — отдельная вкладка на главной панели, между «Событиями» и «Рекордами»
+      if (t === "selfie") { b.style.order = "19"; b.classList.remove("nav-hidden", "beta-hide", "side-skip"); b.classList.add("selfie-main"); }
     });
   };
   hideBtns();
   // В переключателях «Другое» (верхнее меню): одна кнопка «Топы», без перенесённых в Хаб
   document.querySelectorAll('.seg.group-tabs[data-group-seg="other"]').forEach(seg => {
-    seg.querySelectorAll("button[data-gtab]").forEach(b => { const t = b.dataset.gtab; if (t === "days" || HUB_SUB.includes(t)) b.classList.add("beta-hide"); if (t === "months") { b.textContent = "Топы"; b.dataset.betaTops = "1"; } });
+    seg.querySelectorAll("button[data-gtab]").forEach(b => { const t = b.dataset.gtab; if (t === "days" || t === "selfie" || HUB_SUB.includes(t)) b.classList.add("beta-hide"); if (t === "months") { b.textContent = "Топы"; b.dataset.betaTops = "1"; } });
     const sec = seg.closest("section.tab");
-    if (sec && HUB_SUB.includes(sec.id.slice(4))) seg.classList.add("beta-hide");
+    if (sec && (HUB_SUB.includes(sec.id.slice(4)) || sec.id === "tab-selfie")) seg.classList.add("beta-hide");
     if (sec && TOPS.includes(sec.id.slice(4))) { const b = seg.querySelector('[data-beta-tops]'); if (b) b.classList.add("active"); }
   });
   // «Топ месяцев | Топ дней» внутри вкладки «Топы»
@@ -20685,11 +20694,12 @@ td .ev-tier + small{display:inline!important;margin-left:4px;font-size:12.5px;fo
     });
     const first = maMenu.querySelector('[data-ma-go="records"]');
     if (first && !maMenu.querySelector('[data-ma-go="reactions"]')) {
+      const sf = maMenu.querySelector('[data-ma-go="selfie"]'); if (sf) first.before(sf);
       ["reactions", "events"].forEach(t => {
         const c = first.cloneNode(true); c.dataset.maGo = t; c.classList.remove("cur");
         const ic = c.querySelector(".ma-ico"); if (ic) { ic.innerHTML = window.__lineIcon?.forTab(t) || "•"; ic.style.setProperty("--c", t === "reactions" ? "#ff375f" : "#bf5af2"); }
         const sp = c.querySelector(".ma-txt > span"); if (sp) sp.innerHTML = (sp.querySelector(".li-lead")?.outerHTML || "") + (t === "reactions" ? "Реакции" : "События");
-        first.before(c);
+        (sf || first).before(c);
       });
     }
   }
@@ -22199,67 +22209,101 @@ html body.ds.ds.ds :is(main,#ds-x) :is(button.mini,.copy-btn,.tv-btn,.hc-btn):no
 })();
 </script>
 <script id="neon-lines">
-/* ===================== Эксперимент: неоновые линии-стрелки =====================
-   Линия строится как полоса переменной ширины: в начале почти ноль, к концу — полная толщина;
-   поверх — размытое свечение цвета линии и светлая сердцевина. Выключается в «Настройки → Эффекты». */
+/* ===================== Эксперимент: неоновые линии =====================
+   Все линейные графики сайта: тонкая светлая сердцевина, цветное свечение вокруг,
+   линия проявляется из прозрачности в начале и ярко светится на конце (точка или наконечник).
+   Пунктирные линии (сравнение, прогноз) — тоже светятся, но тише. Выключается в «Настройки → Эффекты». */
 window.NEON_ON = (() => { try { return localStorage.getItem("chatstats.neonLines.v1") === "1"; } catch (e) { return false; } })();
 (() => {
   const NS = "http://www.w3.org/2000/svg";
-  let fid = 0;
-  function ensureFilter(svg){
-    let f = svg.querySelector("filter.neon-glow"); if (f) return f.id;
-    let defs = svg.querySelector("defs"); if (!defs) { defs = document.createElementNS(NS, "defs"); svg.prepend(defs); }
-    f = document.createElementNS(NS, "filter"); f.id = "neonGlow" + (++fid); f.setAttribute("class", "neon-glow");
-    f.setAttribute("x", "-20%"); f.setAttribute("y", "-40%"); f.setAttribute("width", "140%"); f.setAttribute("height", "180%");
-    f.innerHTML = '<feGaussianBlur stdDeviation="7" result="b1"/><feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="b2"/><feMerge><feMergeNode in="b1"/><feMergeNode in="b2"/></feMerge>';
-    defs.appendChild(f); return f.id;
+  let uid = 0;
+  const SEL = ":is(path,polyline).anim-line, path[data-neon], path[data-nl]";
+  function defsOf(svg){ let d = svg.querySelector(":scope > defs"); if (!d) { d = document.createElementNS(NS, "defs"); svg.prepend(d); } return d; }
+  function filters(svg){
+    if (svg.__neonF) return svg.__neonF;
+    const d = defsOf(svg), id = "nf" + (++uid);
+    const f = document.createElementNS(NS, "filter");
+    f.id = id; f.setAttribute("x", "-30%"); f.setAttribute("y", "-60%"); f.setAttribute("width", "160%"); f.setAttribute("height", "220%");
+    f.innerHTML = '<feGaussianBlur stdDeviation="6"/>';
+    const f2 = document.createElementNS(NS, "filter");
+    f2.id = id + "s"; f2.setAttribute("x", "-30%"); f2.setAttribute("y", "-60%"); f2.setAttribute("width", "160%"); f2.setAttribute("height", "220%");
+    f2.innerHTML = '<feGaussianBlur stdDeviation="2"/>';
+    d.append(f, f2);
+    return svg.__neonF = {wide:id, soft:id + "s"};
   }
-  function taper(path){
-    const L = path.getTotalLength(); if (!(L > 4)) return null;
-    const wMax = Math.max(3, Number(path.dataset.neon) * 1.35 || 5), wMin = .4, N = Math.max(24, Math.min(260, Math.round(L / 3)));
-    const pts = []; for (let i = 0; i <= N; i++) { const p = path.getPointAtLength(L * i / N); pts.push([p.x, p.y]); }
-    const left = [], right = [];
-    for (let i = 0; i <= N; i++) {
-      const a = pts[Math.max(0, i - 1)], b = pts[Math.min(N, i + 1)];
-      let dx = b[0] - a[0], dy = b[1] - a[1]; const n = Math.hypot(dx, dy) || 1; dx /= n; dy /= n;
-      const t = i / N, w = (wMin + (wMax - wMin) * Math.pow(t, .75)) / 2;
-      left.push(`${(pts[i][0] - dy * w).toFixed(1)},${(pts[i][1] + dx * w).toFixed(1)}`);
-      right.push(`${(pts[i][0] + dy * w).toFixed(1)},${(pts[i][1] - dx * w).toFixed(1)}`);
-    }
-    return "M" + left.join("L") + "L" + right.reverse().join("L") + "Z";
+  function colorOf(el){
+    const st = el.getAttribute("stroke") || "";
+    if (/^url\(/.test(st)) { const g = el.ownerSVGElement?.querySelector(st.slice(4, -1).replace(/["']/g, "")); const stops = g ? [...g.querySelectorAll("stop")] : []; return stops.length ? stops[stops.length - 1].getAttribute("stop-color") : "#7aa2f7"; }
+    return st || "#7aa2f7";
   }
   function apply(svg){
-    const lines = svg.querySelectorAll("path[data-neon]:not([data-neon-done])"); if (!lines.length) return;
-    const fidv = ensureFilter(svg);
-    lines.forEach(p => {
-      p.dataset.neonDone = "1";
-      const d = taper(p); if (!d) return;
-      const fill = p.getAttribute("stroke"), op = p.getAttribute("stroke-opacity") || "1", c = p.dataset.neonC || fill, n = p.getAttribute("data-n");
-      const mk = (cls, attrs) => { const e = document.createElementNS(NS, "path"); e.setAttribute("d", d); e.setAttribute("class", cls); if (n != null) e.setAttribute("data-n", n); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
-      const glow = mk("neon-glow-l", {fill:c, "fill-opacity":(op * .85).toFixed(2), filter:`url(#${fidv})`});
-      const body = mk("neon-body", {fill, "fill-opacity":op});
-      const core = mk("neon-core", {fill:"#ffffff", "fill-opacity":(op * .55).toFixed(2), transform:"", style:"mix-blend-mode:screen"});
-      // светлая сердцевина — та же форма, но уже: сжимаем через отдельный узкий проход
-      const thin = p.cloneNode(); thin.setAttribute("data-neon", String(Number(p.dataset.neon) * .38)); thin.removeAttribute("data-neon-done");
-      p.after(thin); const dCore = taper(thin); thin.remove(); if (dCore) core.setAttribute("d", dCore);
-      p.style.display = "none";
-      p.after(glow, body, core);
+    const els = [...svg.querySelectorAll(SEL)].filter(el => !el.dataset.neonDone && !el.closest("defs, [data-no-export]") && el.getAttribute("fill") !== el.getAttribute("stroke"));
+    if (!els.length) return;
+    const F = filters(svg), D = defsOf(svg);
+    els.forEach(el => {
+      let bb; try { bb = el.getBBox(); } catch (e) { return; }
+      if (!bb || bb.width < 8) return; // график ещё скрыт — обработаем, когда станет видимым
+      el.dataset.neonDone = "1";
+      const dash = el.getAttribute("stroke-dasharray"), c = colorOf(el), w = Math.max(1.2, Math.min(3, (Number(el.getAttribute("stroke-width")) || 2) * .55));
+      const op = Number(el.getAttribute("stroke-opacity") || 1);
+      // проявление из прозрачности слева направо
+      const mid = "nm" + (++uid), gid = mid + "g";
+      const lg = document.createElementNS(NS, "linearGradient");
+      lg.id = gid; lg.setAttribute("gradientUnits", "userSpaceOnUse");
+      lg.setAttribute("x1", bb.x); lg.setAttribute("x2", bb.x + bb.width); lg.setAttribute("y1", 0); lg.setAttribute("y2", 0);
+      lg.innerHTML = '<stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".28" stop-color="#fff" stop-opacity=".55"/><stop offset=".75" stop-color="#fff" stop-opacity="1"/>';
+      const mk = document.createElementNS(NS, "mask");
+      mk.id = mid; mk.setAttribute("maskUnits", "userSpaceOnUse"); mk.setAttribute("x", bb.x - 40); mk.setAttribute("y", bb.y - 40); mk.setAttribute("width", bb.width + 80); mk.setAttribute("height", bb.height + 80);
+      mk.innerHTML = `<rect x="${bb.x - 40}" y="${bb.y - 40}" width="${bb.width + 80}" height="${bb.height + 80}" fill="url(#${gid})"/>`;
+      D.append(lg, mk);
+      const g = document.createElementNS(NS, "g");
+      g.setAttribute("class", "neon-l"); g.setAttribute("mask", `url(#${mid})`);
+      for (const a of ["data-n", "data-ek", "style"]) if (el.hasAttribute(a)) g.setAttribute(a, el.getAttribute(a));
+      const layer = (stroke, width, opacity, filter) => {
+        const l = el.cloneNode(false);
+        ["class", "data-n", "data-ek", "style", "data-neon", "data-neon-c", "data-nl", "pathLength"].forEach(a => l.removeAttribute(a));
+        l.setAttribute("stroke", stroke); l.setAttribute("stroke-width", width); l.setAttribute("stroke-opacity", (opacity * op).toFixed(2)); l.setAttribute("fill", "none");
+        l.setAttribute("stroke-linecap", "round"); l.setAttribute("stroke-linejoin", "round");
+        if (filter) l.setAttribute("filter", `url(#${filter})`);
+        if (dash) l.setAttribute("stroke-dasharray", dash);
+        return l;
+      };
+      g.append(layer(c, w * 5, dash ? .35 : .55, F.wide), layer(c, w * 2.2, dash ? .5 : .85, F.soft), layer(c, w * 1.3, 1), layer(`color-mix(in srgb, ${c} 35%, #ffffff)`, Math.max(.8, w * .55), dash ? .6 : .95));
+      el.style.display = "none";
+      el.after(g);
+      // яркий конец линии
+      if (!dash) {
+        let L = 0; try { L = el.getTotalLength(); } catch (e) {}
+        if (L > 0) {
+          const pt = el.getPointAtLength(L), dot = document.createElementNS(NS, "g");
+          dot.setAttribute("class", "neon-tip"); for (const a of ["data-n"]) if (el.hasAttribute(a)) dot.setAttribute(a, el.getAttribute(a));
+          dot.innerHTML = `<circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="${(w * 4).toFixed(1)}" fill="${c}" opacity=".5" filter="url(#${F.wide})"/><circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="${(w * 1.6).toFixed(1)}" fill="color-mix(in srgb, ${c} 30%, #ffffff)"/>`;
+          g.after(dot);
+        }
+      }
     });
-    svg.querySelectorAll("polygon[data-neon-head]:not([data-neon-done])").forEach(h => { h.dataset.neonDone = "1"; h.setAttribute("filter", `url(#${fidv})`); });
+    svg.querySelectorAll("polygon[data-neon-head]:not([data-neon-done])").forEach(h => { h.dataset.neonDone = "1"; h.setAttribute("filter", `url(#${F.soft})`); });
     svg.classList.add("neon-on");
   }
-  const scan = () => document.querySelectorAll("main svg").forEach(svg => { if (svg.querySelector("path[data-neon]:not([data-neon-done])")) apply(svg); });
-  let raf = 0; const later = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; scan(); }); };
-  new MutationObserver(later).observe(document.querySelector("main"), {childList:true, subtree:true});
+  const scan = () => { if (!window.NEON_ON) return; document.querySelectorAll("main svg").forEach(svg => { if (svg.querySelector(SEL)) apply(svg); }); };
+  let raf = 0; const later = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; setTimeout(scan, 30); }); };
+  new MutationObserver(later).observe(document.querySelector("main"), {childList:true, subtree:true, attributes:true, attributeFilter:["open", "hidden", "class"]});
+  addEventListener("scroll", later, {passive:true});
+  const rerender = () => {
+    try { renderCharts(); } catch (e) {}
+    const t = document.querySelector("main > section.tab.active")?.id;
+    try { if (t === "tab-profile") renderProfile(); if (t === "tab-compare") renderCompare(); if (t === "tab-yearreview") renderYearReviewSync(); if (t === "tab-forecast" && typeof loadForecast === "function") loadForecast(); } catch (e) {}
+  };
   const cb = document.getElementById("set-neon");
-  if (cb) { cb.checked = window.NEON_ON; cb.addEventListener("change", () => { window.NEON_ON = cb.checked; try { localStorage.setItem("chatstats.neonLines.v1", cb.checked ? "1" : "0"); } catch (e) {} try { renderCharts(); } catch (e) {} try { if (typeof renderProfile === "function" && document.querySelector("#tab-profile.active")) renderProfile(); } catch (e) {} }); }
+  if (cb) { cb.checked = window.NEON_ON; cb.addEventListener("change", () => { window.NEON_ON = cb.checked; try { localStorage.setItem("chatstats.neonLines.v1", cb.checked ? "1" : "0"); } catch (e) {} rerender(); }); }
+  later();
 })();
 </script>
 <style id="neon-lines-css">
-svg.neon-on .neon-body{animation:neonIn .9s ease-out both}
-svg.neon-on .neon-glow-l,svg.neon-on .neon-core{animation:neonIn 1.1s ease-out both}
+svg.neon-on .neon-l,svg.neon-on .neon-tip{animation:neonIn 1s ease-out both}
+svg.neon-on .neon-tip{animation-delay:.4s}
 @keyframes neonIn{from{opacity:0}to{opacity:1}}
-@media (prefers-reduced-motion:reduce){svg.neon-on :is(.neon-body,.neon-glow-l,.neon-core){animation:none}}
+@media (prefers-reduced-motion:reduce){svg.neon-on :is(.neon-l,.neon-tip){animation:none}}
 </style>
 <style id="set-grid">
 /* ===================== Настройки: вся ширина, одинаковые плитки, предпросмотр эффектов ===================== */
@@ -22411,5 +22455,20 @@ body:not(.tb-on) .pv-tb::before{background:var(--nv-line,#444);animation:none}
   sp?.addEventListener("change", syncSp); syncSp();
 })();
 </script>
+<style id="ava-big">
+/* Главный аватар участника — крупнее: Профиль и сводка «Ты» в Хабе; в топе дня в Хабе — чуть крупнее */
+html body #p-out .p-hero > .p-avatar{flex:0 0 112px!important;width:112px!important;height:112px!important;font-size:48px!important;box-shadow:0 0 0 5px color-mix(in srgb,var(--p-color) 28%,transparent)!important}
+html body .mt-who .mt-ava{flex:0 0 80px!important;width:80px!important;height:80px!important;font-size:34px!important}
+html body .mt-who .mt-ava *:not(img){font-size:34px!important;line-height:1}
+html body .mt-row .mt-mini *:not(img){font-size:15px!important;line-height:1}
+html body .mt-who b{font-size:22px}
+html body .mt-row .mt-mini{flex:0 0 34px!important;width:34px!important;height:34px!important;font-size:15px!important}
+html body .mt-row{padding:9px 12px!important}
+@media (max-width:720px){
+  html body #p-out .p-hero > .p-avatar{flex-basis:88px!important;width:88px!important;height:88px!important;font-size:38px!important}
+  html body .mt-who .mt-ava{flex-basis:64px!important;width:64px!important;height:64px!important;font-size:28px!important}
+  html body .mt-row .mt-mini{flex-basis:30px!important;width:30px!important;height:30px!important}
+}
+</style>
 </body>
 </html>
