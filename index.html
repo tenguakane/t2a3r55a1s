@@ -14922,7 +14922,8 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.11.01-1", date:"2026-11-01", title:"Реакции и события — в релизе", items:[
+  {v:"2026.11.01-2", date:"2026-11-01", title:"Реакции и события — в релизе", items:[
+    {tag:"new", area:"Дизайн", text:"Стиль «Колония»: плитки собраны в одно табло с разделителями; переключатели вида — вкладки с подчёркиванием; фильтры — строкой («подпись сверху, значение с пунктиром»), без коробок; выбранный пункт меню — черта цвета темы; места 1–3 в таблицах — золото, серебро, бронза; шапка — словесный знак «Colony Stats»; фон в один оттенок с сеткой точек. Выключается в «Настройки → Оформление»."},
     {tag:"new", area:"Матрица", text:"«По годам» + «Месяц»: каждый столбец — выбранный месяц своего года (например, ноябрь каждого года); клик по году открывает этот месяц по дням, «Сравнение» показывает разницу с тем же месяцем прошлого года."},
     {tag:"new", area:"Реакции и События", text:"Плашка «данные на …» стала кнопкой: нажатие загружает свежие данные. Если сервер статистики их не отдал — под заголовком написано почему (например, адрес не пропущен прокси)."},
     {tag:"imp", area:"Дизайн", text:"Пустые таблицы и графики — понятное пустое состояние; если за сегодня данных ещё нет, сразу показывается вчера (и есть кнопка «Показать вчера»)."},
@@ -21998,6 +21999,121 @@ details.hint-more > p{margin:4px 0 0}
   new MutationObserver(ms => { if (ms.some(m => m.attributeName === "class" || m.attributeName === "data-theme")) lift(); }).observe(document.body, {attributes:true, attributeFilter:["class", "data-theme"]});
   document.addEventListener("click", e => { if (e.target.closest?.("#theme-grid, #theme-bases")) setTimeout(lift, 80); });
   lift(); later();
+})();
+</script>
+<style id="ds-colony">
+/* ===================== Стиль «Колония» (2026.11.01) =====================
+   Предмет: таблица лидеров компании друзей. Сайт смотрят, чтобы узнать, кто впереди, и найти себя.
+   Отсюда характер: табло, а не набор карточек.
+   • Главное — цифры табло: плитки собраны в одну полосу с тонкими разделителями, цифра крупная, подпись тихая.
+   • Места 1–3 в таблицах — цветом медали (это единственная «яркая» деталь в таблицах).
+   • Переключатели вида («Участники | Чаты», «Хаб | Селфи…») — вкладки с подчёркиванием, без капсул.
+   • Фильтры читаются как строка запроса: подпись мелко сверху, значение — текстом с пунктиром.
+   • Меню: выбранный пункт — светлый текст и вертикальная черта цвета темы, без заливки.
+   • Фон — спокойный, в один оттенок темы, с едва заметной сеткой точек «миллиметровки».
+   Всё включается классом body.ds (по умолчанию включено, выключается в «Настройки → Оформление»). */
+html body.ds{--ds-line:color-mix(in srgb,var(--text) 10%,transparent);--ds-line-2:color-mix(in srgb,var(--text) 16%,transparent);--ds-gold:#e8c26a;--ds-silver:#b9c2d0;--ds-bronze:#d39064}
+
+/* ---------- Фон: один оттенок темы и сетка точек ---------- */
+html body.ds.glass-ui::before{background:radial-gradient(55% 45% at 12% 8%,color-mix(in srgb,var(--accent) 26%,transparent),transparent 70%),radial-gradient(50% 50% at 92% 96%,color-mix(in srgb,var(--accent) 16%,transparent),transparent 72%)!important;filter:blur(30px)!important}
+html body.ds{background-image:radial-gradient(color-mix(in srgb,var(--text) 7%,transparent) 1px,transparent 1.3px);background-size:24px 24px;background-attachment:fixed}
+
+/* ---------- Шапка: словесный знак ---------- */
+html body.ds.ds.ds header h1{font-weight:800;letter-spacing:-.03em}
+html body.ds.ds.ds header h1 .wm-b{font-weight:400;color:var(--muted);margin-left:.18em;letter-spacing:-.01em}
+html body.ds.ds.ds header .app-ver{background:none!important;border:0!important;padding:0!important;font-size:12px!important;color:var(--muted)!important;opacity:.8}
+
+/* ---------- Меню слева: черта вместо заливки ---------- */
+@media (min-width:721px){
+  html body.ds.side-nav nav .side-grp button[data-tab]:is(.side-active,.active){background:color-mix(in srgb,var(--text) 5%,transparent)!important;border-color:transparent!important;color:var(--text)!important;box-shadow:inset 2px 0 0 var(--accent)!important;border-radius:6px 10px 10px 6px!important;font-weight:600}
+  html body.ds.side-nav nav .side-grp button[data-tab]:is(.side-active,.active)::before{background:var(--accent)!important;opacity:1!important}
+  html body.ds.side-nav nav .side-grp button[data-tab]:not(.side-active):not(.active){color:var(--muted)!important}
+  html body.ds.side-nav nav .side-grp button[data-tab]:not(.side-active):not(.active):hover{color:var(--text)!important;background:color-mix(in srgb,var(--text) 4%,transparent)!important}
+}
+
+/* ---------- Переключатели вида — вкладки с подчёркиванием ---------- */
+html body.ds.ds.ds :is(main,#ds-x) :is(.group-tabs,.stat-subnav,.ach-view-seg,#hub-seg){background:none!important;border:0!important;border-bottom:1px solid var(--ds-line)!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:0!important;gap:22px!important;display:flex!important;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;align-items:stretch}
+html body.ds.ds.ds :is(main,#ds-x) :is(.group-tabs,.stat-subnav,.ach-view-seg,#hub-seg)::-webkit-scrollbar{display:none}
+html body.ds.ds.ds :is(main,#ds-x) :is(.group-tabs,.stat-subnav,.ach-view-seg,#hub-seg) > button{flex:0 0 auto;height:40px!important;min-height:0!important;padding:0 1px!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;color:var(--muted)!important;font-size:15px!important;font-weight:600!important;margin-bottom:-1px}
+html body.ds.ds.ds :is(main,#ds-x) :is(.group-tabs,.stat-subnav,.ach-view-seg,#hub-seg) > button:hover{color:var(--text)!important}
+html body.ds.ds.ds :is(main,#ds-x) :is(.group-tabs,.stat-subnav,.ach-view-seg,#hub-seg) > button:is(.active,[aria-pressed="true"]){color:var(--text)!important;box-shadow:inset 0 -2px 0 var(--accent)!important}
+html body.ds.ds.ds :is(main,#ds-x) :is(.group-tabs,.stat-subnav,.ach-view-seg,#hub-seg) > button::before{content:none!important}
+
+/* ---------- Табло: плитки — одна полоса с разделителями ---------- */
+html body.ds.ds.ds main :is(.tiles,.hub-kpis){gap:0!important;background:var(--nv-fill,var(--panel));border:1px solid var(--ds-line-2);border-radius:18px;overflow:hidden}
+html body.ds.glass-ui main :is(.tiles,.hub-kpis){-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur)}
+html body.ds.ds.ds main :is(.tiles > .tile,.hub-kpis > .hub-kpi){background:none!important;border:0!important;border-radius:0!important;box-shadow:-1px 0 0 var(--ds-line),0 -1px 0 var(--ds-line)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:18px 20px 16px!important;transform:none!important}
+html body.ds.ds.ds main :is(.tiles > .tile,.hub-kpis > .hub-kpi)::after{display:none!important}
+html body.ds.ds.ds main .tile .num,html body.ds.ds.ds main .hub-kpi .v{font-size:min(40px,17cqi)!important;letter-spacing:-.035em!important}
+html body.ds.ds.ds main .tile .lbl,html body.ds.ds.ds main .hub-kpi .l{font-size:13px!important;color:var(--muted)!important;font-weight:500}
+
+/* ---------- Таблицы: места 1–3 цветом медали ---------- */
+html body.ds.ds.ds main table tbody td.medal-1{color:var(--ds-gold)!important;font-weight:800!important}
+html body.ds.ds.ds main table tbody td.medal-2{color:var(--ds-silver)!important;font-weight:800!important}
+html body.ds.ds.ds main table tbody td.medal-3{color:var(--ds-bronze)!important;font-weight:800!important}
+html body.ds.ds.ds main table thead th{font-weight:600;letter-spacing:0}
+html body.ds.ds.ds main table tbody td{font-variant-numeric:tabular-nums}
+
+/* ---------- Заголовки разделов: больше воздуха, крупнее ---------- */
+html body.ds.ds.ds main h2{font-size:21px;font-weight:750;letter-spacing:-.02em;margin-top:30px}
+html body.ds.ds.ds main section.tab > h2:first-child,html body.ds.ds.ds main section.tab > :first-child h2:first-child{margin-top:4px}
+
+/* ---------- Фильтры: строка запроса ---------- */
+@media (min-width:721px){
+  html body.ds.ds.ds :is(main,#filter-drawer) .filters:not(.fr-keep:empty){gap:6px 26px!important;align-items:flex-end!important}
+  html body.ds.ds.ds main > section.tab > .filters,html body.ds.ds.ds main #shared .filters{background:none!important;border:0!important;border-bottom:1px solid var(--ds-line)!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:0 0 14px!important}
+  html body.ds.ds.ds :is(main,#filter-drawer) .filters .field:not(:has(> .seg)):not([data-fr-keep] .field){flex-direction:column!important;align-items:flex-start!important;gap:2px!important;background:none!important;border:0!important;box-shadow:none!important;padding:0!important;height:auto!important;min-height:0!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  html body.ds.ds.ds :is(main,#filter-drawer) .filters .field:not(:has(> .seg)) > label{font-size:12px!important;color:var(--muted)!important;padding:0!important;border:0!important;height:auto!important;line-height:1.3!important;background:none!important}
+  html body.ds.ds.ds :is(main,#filter-drawer) .filters .field:not(:has(> .seg)) > label::after{content:none!important}
+  html body.ds.ds.ds :is(main,#filter-drawer) .filters .field:not(:has(> .seg)) :is(select,.msel,input:not([type=checkbox]):not([type=radio])){height:30px!important;min-height:0!important;padding:0 18px 0 0!important;border:0!important;border-bottom:1px dashed var(--ds-line-2)!important;border-radius:0!important;background-color:transparent!important;box-shadow:none!important;font-size:15px!important;font-weight:600!important;color:var(--text)!important}
+  html body.ds.ds.ds :is(main,#filter-drawer) .filters .field:not(:has(> .seg)) :is(select,.msel,input):hover{border-bottom-color:var(--accent)!important}
+  html body.ds.ds.ds :is(main,#filter-drawer) .filters .field:has(> .seg) > label{font-size:12px!important;color:var(--muted)!important}
+  /* переключатели внутри фильтров — тоже вкладками с подчёркиванием */
+  html body.ds.ds.ds :is(main,#ds-x) .filters :is(.seg,.field > .seg){background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:0!important;gap:16px!important;height:auto!important}
+  html body.ds.ds.ds :is(main,#ds-x) .filters .seg > button{height:34px!important;min-height:0!important;padding:0 1px!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;color:var(--muted)!important;font-size:15px!important;font-weight:600!important}
+  html body.ds.ds.ds :is(main,#ds-x) .filters .seg > button:hover{color:var(--text)!important}
+  html body.ds.ds.ds :is(main,#ds-x) .filters .seg > button:is(.active,[aria-pressed="true"]){color:var(--text)!important;box-shadow:inset 0 -2px 0 var(--accent)!important}
+  html body.ds.ds.ds :is(main,#ds-x) .filters .field:has(> .seg){flex-direction:column!important;align-items:flex-start!important;gap:0!important;background:none!important;border:0!important;box-shadow:none!important;padding:0!important;height:auto!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  html body.ds.ds.ds :is(main,#ds-x) .filters .field:has(> .seg) > label{padding:0!important;border:0!important;height:auto!important;line-height:1.3!important;background:none!important}
+  html body.ds.ds.ds :is(main,#ds-x) .filters .field:has(> .seg) > label::after{content:none!important}
+  html body.ds.ds.ds :is(main,#ds-x) .filters > .seg{align-self:flex-end}
+}
+
+/* скрытые поля фильтров остаются скрытыми */
+html body.ds.ds.ds :is(main,#filter-drawer,#ds-x) .filters :is(.field,label)[hidden]{display:none!important}
+html body.ds.ds.ds :is(main,#filter-drawer,#ds-x) .filters .field{overflow:visible!important}
+
+/* ---------- Кнопки действий — тише ---------- */
+html body.ds.ds.ds :is(main,#ds-x) :is(button.mini,.copy-btn,.tv-btn,.hc-btn):not(.seg *):not(.group-tabs *):not(:is(.active,.on,[aria-expanded="true"])){background:transparent!important;border-color:var(--ds-line-2)!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html body.ds.ds.ds :is(main,#ds-x) :is(button.mini,.copy-btn,.tv-btn,.hc-btn):not(.seg *):not(.group-tabs *):hover{background:color-mix(in srgb,var(--text) 6%,transparent)!important;border-color:color-mix(in srgb,var(--text) 26%,transparent)!important}
+
+/* ---------- Телефон ---------- */
+@media (max-width:720px){
+  html body.ds.ds.ds main :is(.tiles,.hub-kpis){border-radius:16px}
+  html body.ds.ds.ds main :is(.tiles > .tile,.hub-kpis > .hub-kpi){padding:14px 14px 12px!important}
+  html body.ds.ds.ds main .tile .num,html body.ds.ds.ds main .hub-kpi .v{font-size:min(30px,16cqi)!important}
+  html body.ds.ds.ds :is(main,#ds-x) :is(.group-tabs,.stat-subnav,.ach-view-seg,#hub-seg){gap:18px!important;margin-left:-2px;margin-right:-2px}
+  html body.ds.ds.ds :is(main,#ds-x) :is(.group-tabs,.stat-subnav,.ach-view-seg,#hub-seg) > button{height:44px!important;font-size:15.5px!important}
+  html body.ds.ds.ds main h2{font-size:19px}
+}
+@media (prefers-reduced-motion:reduce){html body.ds.ds.ds *{scroll-behavior:auto}}
+</style>
+<script id="ds-colony-js">
+(() => {
+  const KEY = "chatstats.dsColony.v1";
+  let on = true; try { on = localStorage.getItem(KEY) !== "0"; } catch (e) {}
+  document.body.classList.toggle("ds", on);
+  // Словесный знак: «Colony» — жирно, «Stats» — тише
+  const h1 = document.querySelector("header h1");
+  if (h1 && !h1.querySelector(".wm-a")) { const t = h1.textContent.trim(), m = t.match(/^(\S+)\s+(.+)$/); if (m) h1.innerHTML = `<span class="wm-a">${m[1]}</span><span class="wm-b">${m[2]}</span>`; }
+  // Переключатель в «Настройки → Оформление»
+  const anchor = document.getElementById("theme-grid");
+  if (anchor && !document.getElementById("set-ds")) {
+    const box = document.createElement("div"); box.className = "filters";
+    box.innerHTML = `<label class="checkline" title="Табло вместо карточек, вкладки с подчёркиванием, фильтры строкой, спокойный фон с сеткой точек"><input type="checkbox" id="set-ds"${on ? " checked" : ""}>Стиль «Колония»</label>`;
+    anchor.after(box);
+    box.querySelector("input").addEventListener("change", e => { on = e.target.checked; document.body.classList.toggle("ds", on); try { localStorage.setItem(KEY, on ? "1" : "0"); } catch (err) {} });
+  }
 })();
 </script>
 </body>
