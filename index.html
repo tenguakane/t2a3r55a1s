@@ -1685,6 +1685,7 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
       <label class="checkline" hidden><input type="checkbox" id="dm-year">Год</label>
       <label class="checkline" title="Колонки — недели (с понедельника). Можно выбрать период до двух лет"><input type="checkbox" id="dm-week">По неделям</label>
       <label class="checkline" title="Колонки — годы, за всё время. Если включены данные VK, они тоже попадают в таблицу"><input type="checkbox" id="dm-years">По годам</label>
+      <div class="field" id="dm-ym-field" data-fr-keep hidden title="Сравнить один месяц разных лет: каждый столбец — этот месяц в своём году"><label for="dm-ym">Месяц</label><select id="dm-ym"><option value="">Весь год</option><option value="01">Январь</option><option value="02">Февраль</option><option value="03">Март</option><option value="04">Апрель</option><option value="05">Май</option><option value="06">Июнь</option><option value="07">Июль</option><option value="08">Август</option><option value="09">Сентябрь</option><option value="10">Октябрь</option><option value="11">Ноябрь</option><option value="12">Декабрь</option></select></div>
       <label class="checkline"><input type="checkbox" id="dm-compare">Сравнение</label>
       <div class="field"><label for="dm-from">С</label><input type="date" id="dm-from"></div>
       <div class="field"><label for="dm-to">По</label><input type="date" id="dm-to"></div>
@@ -8016,6 +8017,7 @@ function dmSyncControls(){
   $("dm-year").checked = Boolean(DM.year) && !yearsMode; $("dm-year").disabled = yearsMode;
   if ($("dm-week")) { $("dm-week").checked = Boolean(DM.week) && !DM.year && !yearsMode; $("dm-week").disabled = Boolean(DM.year) || yearsMode; }
   if ($("dm-years")) $("dm-years").checked = yearsMode;
+  if ($("dm-ym")) { $("dm-ym").value = DM.ym || ""; const f = $("dm-ym-field"); if (f) f.hidden = !yearsMode; }
   document.querySelectorAll("#dm-quick button").forEach(b => b.classList.toggle("active", !yearsMode && b.dataset.q === DM.quick));
   const quickField = $("dm-quick")?.closest(".field"); if (quickField) quickField.hidden = Boolean(DM.year) || yearsMode;
   // «По годам» берёт всю историю — даты «С / По» не нужны.
@@ -8133,7 +8135,18 @@ function renderDayMatrix(from = DM.from, to = DM.to){
   const yearsView = Boolean(DM.years);
   const metric = DM.metric, today = iso(new Date()), yearView = !yearsView && Boolean(DM.year), weekView = !yearsView && !yearView && Boolean(DM.week), year = Number(from.slice(0,4));
   let columns;
-  if (yearsView) {
+  const ymSel = yearsView && /^\d{2}$/.test(DM.ym || "") ? DM.ym : "";
+  if (yearsView && ymSel) {
+    // «Один месяц по годам»: каждый столбец — выбранный месяц своего года
+    const y1 = Number(to.slice(0, 4)), mi = +ymSel - 1, cols = [];
+    for (let y = year; y <= y1; y++) {
+      const a = `${y}-${ymSel}-01`, b = iso(new Date(y, mi + 1, 0));
+      if (a > to || b < from) continue;
+      const part = to >= a && to < b;
+      cols.push({key:`${y}-${ymSel}`, y, label:String(y), sub:part ? `по ${+to.slice(8)} ${DM_MONTHS[mi]}` : DM_MONTHS[mi], index:cols.length, date:a, from:a, to:b});
+    }
+    columns = cols;
+  } else if (yearsView) {
     const y1 = Number(to.slice(0, 4));
     columns = Array.from({length:y1 - year + 1}, (_, i) => { const y = year + i, part = i === y1 - year && to < `${y}-12-31`; return {key:String(y), label:String(y), sub:part ? `по ${+to.slice(8)} ${DM_MONTHS[+to.slice(5,7)-1]}` : "", index:i, date:`${y}-01-01`, from:`${y}-01-01`, to:`${y}-12-31`}; });
   } else if (yearView) {
@@ -8149,6 +8162,7 @@ function renderDayMatrix(from = DM.from, to = DM.to){
   }
   const ncol = columns.length;
   const colOf = d => {
+    if (yearsView && ymSel) { if (d.slice(5, 7) !== ymSel) return -1; return columns.findIndex(c => c.y === +d.slice(0, 4)); }
     if (yearsView) return Number(d.slice(0, 4)) - year;
     if (yearView) { if (d.slice(0, 4) !== String(year)) return -1; return Number(d.slice(5, 7)) - 1; }
     if (weekView) return Math.floor((dayIdx(d) - dayIdx(columns[0].from)) / 7);
@@ -8214,10 +8228,11 @@ function renderDayMatrix(from = DM.from, to = DM.to){
   const arrow = k => sk === k ? (sd < 0 ? " ↓" : " ↑") : "";
   const sth = (k, label, cls = "", extra = "") => `<th data-dm-sort="${k}" class="${cls}${sk === k ? " sorted" : ""}" tabindex="0" title="Сортировать"${extra}>${label}${arrow(k)}</th>`;
   const upBtn = yearView ? `<button type="button" class="dm-up" data-dm-up="years" data-no-export="1">← Все годы</button>` : (!yearsView && !weekView && DM.drill === "month" && from.slice(0, 7) === to.slice(0, 7)) ? `<button type="button" class="dm-up" data-dm-up="year" data-no-export="1">← ${from.slice(0, 4)} по месяцам</button>` : "";
-  const head1 = `<tr class="dm-bars"><th colspan="2" class="dm-corner">${upBtn}${escH(chatName)}<small>${escH(MLBL[metric].toLowerCase())}${yearsView ? " · по годам" : yearView ? ` · ${year} год` : weekView ? " · по неделям" : ""}</small></th>${columns.map((c, i) => `<th class="dm-barcell">${!yearView && c.from > today ? "" : bar(colTot[i], i)}</th>`).join("")}<th colspan="${tailCols}" class="dm-grand"></th></tr>`;
+  const head1 = `<tr class="dm-bars"><th colspan="2" class="dm-corner">${upBtn}${escH(chatName)}<small>${escH(MLBL[metric].toLowerCase())}${yearsView ? (ymSel ? ` · ${MONTHS[+ymSel - 1].toLowerCase()} по годам` : " · по годам") : yearView ? ` · ${year} год` : weekView ? " · по неделям" : ""}</small></th>${columns.map((c, i) => `<th class="dm-barcell">${!yearView && c.from > today ? "" : bar(colTot[i], i)}</th>`).join("")}<th colspan="${tailCols}" class="dm-grand"></th></tr>`;
   const head2 = `<tr class="dm-labels"><th class="dm-no">№</th>${sth("name", chatsMode ? "Чат" : "Имя", "dm-name")}${columns.map((c, i) => {
     const wd = new Date(c.date + "T00:00:00Z").getUTCDay(), weekend = !yearView && !weekView && !yearsView && (wd === 0 || wd === 6);
     const label = weekView || c.sub ? `${escH(c.label)}<small>${escH(c.sub)}</small>` : escH(c.label);
+    if (yearsView && ymSel) return `<th class="dm-drill" data-dm-drill="month" data-m="${c.key}" tabindex="0" title="Открыть ${escH(MONTHS[+ymSel - 1].toLowerCase())} ${c.y} по дням">${label}</th>`;
     if (yearsView) return `<th class="dm-drill" data-dm-drill="year" data-y="${c.key}" tabindex="0" title="Открыть ${c.key} год по месяцам">${label}</th>`;
     if (yearView) return `<th class="dm-drill" data-dm-drill="month" data-m="${c.key}" tabindex="0" title="Открыть ${escH(MONTHS[i].toLowerCase())} по дням">${label}</th>`;
     return sth("c" + i, label, weekend ? "dm-weekend" : "", ` data-col="${i}"`);
@@ -8346,7 +8361,7 @@ $("dm-table").closest(".wrap")?.addEventListener("scroll", () => dmPopClose(), {
 addEventListener("resize", () => { if ($("tab-daymatrix")?.classList.contains("active")) dmSticky(); });
 function dmTitle(){
   const f = DM.from <= DM.to ? DM.from : DM.to, t = DM.from <= DM.to ? DM.to : DM.from;
-  if (DM.years && dmLast?.yearsView) { const c = dmLast.columns; return `${MLBL[DM.metric]} по годам · ${DM.entity === "chats" ? "сравнение чатов" : (DM.chat || "Все чаты")} · ${c[0]?.label || ""} — ${c[c.length - 1]?.label || ""}`; }
+  if (DM.years && dmLast?.yearsView) { const c = dmLast.columns, ym = /^\d{2}$/.test(DM.ym || "") ? `${MONTHS[+DM.ym - 1].toLowerCase()} ` : ""; return `${MLBL[DM.metric]} · ${ym}по годам · ${DM.entity === "chats" ? "сравнение чатов" : (DM.chat || "Все чаты")} · ${c[0]?.label || ""} — ${c[c.length - 1]?.label || ""}`; }
   return `${MLBL[DM.metric]} ${DM.year ? "по месяцам" : DM.week ? "по неделям" : "по дням"} · ${DM.entity === "chats" ? "сравнение чатов" : (DM.chat || "Все чаты")} · ${DM.year ? f.slice(0,4) + " год" : sFmtDate(f) + " — " + sFmtDate(t)}`;
 }
 document.querySelectorAll("#dm-quick button").forEach(b => b.onclick = () => { DM.quick = b.dataset.q; DM.year = false; DM.years = false; DM.drill = ""; if (b.dataset.q === "182") DM.week = true; dmSave(); loadDayMatrix(); });
@@ -8368,6 +8383,7 @@ $("dm-hide-noname").onchange = () => { DM.hideNoName = $("dm-hide-noname").check
   else { DM.from = $("dm-from").value; DM.to = $("dm-to").value; }
   dmSave(); loadDayMatrix();
 });
+$("dm-ym").onchange = () => { DM.ym = $("dm-ym").value; DM.sort = {k:"tot", dir:-1}; dmSave(); if (DM.years && dmRows) renderDayMatrix(); else loadDayMatrix(); };
 $("dm-years").onchange = () => {
   DM.years = $("dm-years").checked;
   if (!DM.years && !DM.from) { DM.quick = "30"; [DM.from, DM.to] = dmQuickRange("30"); }
@@ -14906,7 +14922,9 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.10.31-5", date:"2026-10-31", title:"Реакции и события — в релизе", items:[
+  {v:"2026.11.01-1", date:"2026-11-01", title:"Реакции и события — в релизе", items:[
+    {tag:"new", area:"Матрица", text:"«По годам» + «Месяц»: каждый столбец — выбранный месяц своего года (например, ноябрь каждого года); клик по году открывает этот месяц по дням, «Сравнение» показывает разницу с тем же месяцем прошлого года."},
+    {tag:"new", area:"Реакции и События", text:"Плашка «данные на …» стала кнопкой: нажатие загружает свежие данные. Если сервер статистики их не отдал — под заголовком написано почему (например, адрес не пропущен прокси)."},
     {tag:"imp", area:"Дизайн", text:"Пустые таблицы и графики — понятное пустое состояние; если за сегодня данных ещё нет, сразу показывается вчера (и есть кнопка «Показать вчера»)."},
     {tag:"imp", area:"Дизайн", text:"Радужная рамка — только у главного блока вкладки; подписи под цифрами и серый текст светлее; частицы фона не ложатся на таблицы; кнопки «Копировать» одного размера."},
     {tag:"imp", area:"Телефон", text:"Хаб начинается со сводки дня, «Кто ты?» — компактной лентой; без галочек у выбранных вкладок, у прокручиваемых полосок — затухание справа; над таблицей Статистики на один ряд меньше; название вкладки не повторяется внутри."},
@@ -20145,6 +20163,10 @@ html body:not(.nv-off) :is(main,#filter-drawer) :is(input[type=text],input[type=
 html body.beta-re nav button.beta-hide{display:none!important}
 html body.beta-re :is(.group-tabs,.seg) > button.beta-hide{display:none!important}
 html body.beta-re section.tab > .seg.group-tabs[data-group-seg="other"].beta-hide{display:none!important}
+.rx-refresh{cursor:pointer;font-family:inherit;line-height:1.5}
+.rx-refresh:hover{background:color-mix(in srgb,var(--accent) 22%,transparent)}
+.rx-refresh.err{color:#f8a3a3;border-color:color-mix(in srgb,#f87171 45%,transparent);background:color-mix(in srgb,#f87171 12%,transparent)}
+.rx-err{display:block;margin-top:6px;font-size:12.5px;font-weight:400;color:#f8a3a3;letter-spacing:0}
 .rx-badge{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:600;letter-spacing:.02em;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);vertical-align:middle}
 .bx-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 14px}
 .bx-head h2{margin:0 auto 0 0!important}
@@ -20433,11 +20455,14 @@ td .ev-tier + small{display:inline!important;margin-left:4px;font-size:12.5px;fo
     return items;
   }
   const addUser = u => { if (!u || !(u.telegram_user_id > 0)) return 0; DATA.users[String(u.telegram_user_id)] = [u.username || "", u.first_name || "", u.last_name || ""]; return u.telegram_user_id; };
-  let LIVE_P = null;
-  function refreshLive(){
+  let LIVE_P = null, LIVE_ERR = "", LIVE_TRY = "";
+  const errText = (what, e) => { const m = String(e?.message || e || ""); return `${what}: ${/404/.test(m) ? "сервер статистики не пропускает этот адрес (404)" : /40[13]/.test(m) ? "сервер отказал в доступе (" + m.replace(/\D+/g, "") + ")" : /abort/i.test(m) ? "сервер не ответил за 20 секунд" : /fetch|network/i.test(m) ? "нет связи с сервером статистики" : m}`; };
+  function refreshLive(force){
+    if (force) LIVE_P = null;
     if (LIVE_P || typeof CONFIG === "undefined" || !CONFIG.BASE_URL) return LIVE_P;
+    LIVE_TRY = "1";
     return LIVE_P = (async () => {
-      let changed = false;
+      let changed = false; const errs = [];
       try {
         const items = await getAll("/api/v1/reactions/daily"), m = new Map();
         items.forEach(x => {
@@ -20446,7 +20471,7 @@ td .ev-tier + small{display:inline!important;margin-left:4px;font-size:12.5px;fo
           m.set(k, (m.get(k) || 0) + (Number(x.reaction_count) || 1));
         });
         if (m.size) { DATA.daily = [...m.entries()].map(([k, n]) => { const [d, f, t, e, c] = k.split("\u0001"); return [d, +f, +t, e, n, c]; }); changed = true; }
-      } catch (e) {}
+      } catch (e) { errs.push(errText("Реакции", e)); }
       try {
         const evs = await getAll("/api/v1/events"), prog = await getAll("/api/v1/event-progress");
         const full = await Promise.all(evs.map(async e => {
@@ -20458,8 +20483,10 @@ td .ev-tier + small{display:inline!important;margin-left:4px;font-size:12.5px;fo
           DATA.progress = prog.map(x => { if (!DATA.users[String(x.telegram_user_id)]) DATA.users[String(x.telegram_user_id)] = ["", "", ""]; return [x.event_id, x.telegram_user_id, x.level?.order || 0, x.experience || 0]; });
           buildEvents(); changed = true;
         }
-      } catch (e) {}
-      if (changed) { LIVE_AT = new Date().toISOString(); VER++; rerender(); }
+      } catch (e) { errs.push(errText("События", e)); }
+      LIVE_ERR = errs.join(" · "); LIVE_TRY = "";
+      if (changed) { LIVE_AT = new Date().toISOString(); VER++; }
+      rerender();
     })();
   }
 
@@ -20596,7 +20623,8 @@ td .ev-tier + small{display:inline!important;margin-left:4px;font-size:12.5px;fo
   const dataNote = () => {
     const d = LIVE_AT || DATA.generated_at, dt = new Date(d); if (!d || isNaN(dt)) return "";
     const s = dt.toLocaleString("ru-RU", {day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"});
-    return `<span class="rx-badge" title="${LIVE_AT ? "Загружено с сервера статистики" : "Снимок API, встроенный в сайт"}">${LIVE_AT ? "обновлено" : "данные на"} ${s}</span>`;
+    const tip = LIVE_TRY ? "Загружаю свежие данные…" : LIVE_ERR ? "Свежие данные не загрузились — " + LIVE_ERR + ". Нажми, чтобы попробовать ещё раз" : LIVE_AT ? "Загружено с сервера статистики. Нажми, чтобы обновить" : "Снимок, встроенный в сайт. Нажми, чтобы загрузить свежие данные";
+    return `<button type="button" class="rx-badge rx-refresh${LIVE_ERR && !LIVE_AT ? " err" : ""}" data-rx-refresh title="${esc(tip)}">${LIVE_TRY ? "обновляю…" : `${LIVE_AT ? "обновлено" : "данные на"} ${s}`} <span aria-hidden="true">⟳</span></button>${LIVE_ERR && !LIVE_TRY ? `<span class="rx-err">${esc(LIVE_ERR)}</span>` : ""}`;
   };
   const loading = id => { const o = document.getElementById(id); if (o) o.innerHTML = `<div class="sk sk-poster" style="height:120px"></div>`; };
 
@@ -20975,6 +21003,7 @@ td .ev-tier + small{display:inline!important;margin-left:4px;font-size:12.5px;fo
   if (curTab() === "reactions" || curTab() === "events") open(curTab());
   // свежие дневные реакции и события — сразу при загрузке, чтобы их видели и остальные вкладки
   refreshLive();
+  document.addEventListener("click", e => { if (e.target.closest?.("[data-rx-refresh]") && !LIVE_TRY) { refreshLive(true); rerender(); } });
 })();
 </script>
 
