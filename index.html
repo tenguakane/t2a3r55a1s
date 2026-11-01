@@ -14556,6 +14556,8 @@ function multiplesChart(){
   // ---------- Частицы на фоне ----------
   const sc = document.createElement("canvas"); sc.id = "fx-season"; document.body.appendChild(sc);
   const sctx = sc.getContext("2d"); let flakes = [], sraf = 0, sKind = "";
+  // смена темы: падающие цифры сразу перекрашиваются в новый цвет
+  document.addEventListener("click", e => { if (!e.target.closest?.("#theme-grid, #theme-bases")) return; setTimeout(() => { const ac = (getComputedStyle(document.body).getPropertyValue("--accent") || "").trim(); if (!ac) return; flakes.forEach(f => { if (f.ch && /^\d$/.test(f.ch)) f.c = Math.random() < .5 ? ac : `color-mix(in srgb, ${ac} 55%, #ffffff)`; }); }, 120); });
   const PK_KEY = "chatstats.fxParticles.v1";
   let PK = {kind:"auto", density:"mid", size:"m"};
   try { Object.assign(PK, JSON.parse(localStorage.getItem(PK_KEY) || "{}")); } catch (e) {}
@@ -14616,7 +14618,12 @@ function multiplesChart(){
     if (K.rain) return makeDrop(K, initial);
     const f = {x:Math.random() * innerWidth, y:initial ? Math.random() * innerHeight : (K.vy[1] < 0 ? innerHeight + 20 : -20), r:rnd(K.r[0], K.r[1]), vy:rnd(K.vy[0], K.vy[1]), vx:(Math.random() - .5) * K.vx, ph:Math.random() * 6, rot:Math.random() * 6, c:K.col[Math.floor(Math.random() * K.col.length)]};
     if (K.shoot) { f.x = Math.random() * innerWidth * 1.2; f.y = initial ? Math.random() * innerHeight * .5 : -20; f.vx = -f.vy * .8; f.wait = Math.random() * 400; }
-    if (K.digits) f.ch = String(Math.floor(Math.random() * 10));
+    if (K.digits) {
+      f.ch = String(Math.floor(Math.random() * 10));
+      // цифры — в цвет выбранной темы: часть ярче, часть тише
+      const ac = (getComputedStyle(document.body).getPropertyValue("--accent") || "").trim() || "#7aa2f7";
+      f.c = Math.random() < .5 ? ac : `color-mix(in srgb, ${ac} 55%, #ffffff)`;
+    }
     if (K.emoji) f.ch = K.emoji[Math.floor(Math.random() * K.emoji.length)];
     if (K.blizzard) { f.vx = 1.6 + Math.random() * 2.4; f.vy *= .6 + f.r / 4; }
     if (K.bokeh) { f.a = .05 + Math.random() * .12; f.vx = (Math.random() - .5) * K.vx; }
@@ -14974,8 +14981,10 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.11.01-9", date:"2026-11-01", title:"Реакции и события — в релизе", items:[
-    {tag:"fix", area:"Везде", text:"Стрелка во всех выпадающих списках (Матрица, Статистика, Графики, Сравнение и др.) больше не налезает на текст."},
+  {v:"2026.11.01-10", date:"2026-11-01", title:"Реакции и события — в релизе", items:[
+    {tag:"imp", area:"Эффекты", text:"Частицы «Падающие цифры» — в цвет выбранной темы и перекрашиваются сразу при её смене."},
+    {tag:"imp", area:"Плитки", text:"Подписи под крупными цифрами в плитках — белые; проценты роста и падения остаются зелёными и красными."},
+    {tag:"fix", area:"Везде", text:"Переключатели-вкладки («Участники | Чаты» и др.): подчёркивание прямое, без загиба у края. Стрелка во всех выпадающих списках (Матрица, Статистика, Графики, Сравнение и др.) больше не налезает на текст."},
     {tag:"fix", area:"Графики", text:"Список «Выделить» в боковой шторке фильтров раскрывается внутри шторки на всю её ширину и хорошо виден."},
     {tag:"imp", area:"Настройки", text:"«Частицы на фоне» и «Рамка таблиц и графиков» — такими же плитками, как остальные эффекты, с предпросмотром справа (рамка показывает выбранный стиль и скорость)."},
     {tag:"imp", area:"Настройки", text:"Настройки на всю ширину: каждый пункт — плитка одинакового размера в ровной сетке; включённые подсвечены рамкой цвета темы."},
@@ -21931,14 +21940,14 @@ table.tv-cards tr.empty-row td,body.mapp table tr.empty-row td{display:block!imp
 table tr.empty-row td::before{display:none!important}
 html body table tr.empty-row > td.empty-state{max-width:none!important;text-align:center!important}
 @media (min-width:721px){html body table:not(.tv-cards) tr.empty-row > td.empty-state{display:table-cell!important}}
-body.mapp table tr.empty-row > td.empty-state{position:sticky!important;left:0!important;width:var(--es-w,calc(100vw - 52px))!important;box-sizing:border-box}
+body.mapp table tr.empty-row > td.empty-state{position:sticky!important;left:0!important;width:min(var(--es-w,100vw),calc(100vw - 48px))!important;box-sizing:border-box}
 .wrap:has(tr.empty-row){min-height:0}
 /* Рамка «радуга» — только у главного блока вкладки */
 body.tb-on main .wrap:has(> table):not(.tb-main){border:1px solid var(--nv-line,var(--line))!important;background:var(--nv-fill,var(--panel))!important;animation:none!important}
 body.tb-on main .wrap:has(> table):not(.tb-main)::after,body.tb-on main .chart:not(.tb-main)::after{display:none!important}
 body.tb-on main .chart:has(svg.heatrows-svg):not(.tb-main){border:1px solid var(--nv-line,var(--line))!important;background:var(--nv-fill,var(--panel))!important;animation:none!important}
 /* Подписи под цифрами в плитках — светлее, читаются на тёмном стекле */
-.tile .place,.hub-kpi .s{color:color-mix(in srgb,var(--accent) 62%,var(--text))}
+.tile .place,.hub-kpi .s{color:color-mix(in srgb,var(--text) 82%,transparent)}
 /* Частицы фона не ложатся на текст: по центру почти прозрачны */
 #fx-season{opacity:.55!important;-webkit-mask-image:linear-gradient(90deg,#000 0,#000 9%,rgba(0,0,0,.12) 17%,rgba(0,0,0,.12) 83%,#000 91%,#000 100%);mask-image:linear-gradient(90deg,#000 0,#000 9%,rgba(0,0,0,.12) 17%,rgba(0,0,0,.12) 83%,#000 91%,#000 100%)}
 /* Кнопки копирования — одного размера везде */
@@ -22358,6 +22367,9 @@ label.checkline:not(:has(input:checked)) .fx-pv *{animation-play-state:paused!im
 html body:is(.zq.zq.zq.zq,*) .msel:not(#zq1):not(#zq2){padding-right:24px!important}
 html body:is(.zq.zq.zq.zq,*) .msel:not(#zq1):not(#zq2)::after{right:7px!important}
 html body:is(.zq.zq.zq.zq,*) .msel > span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+/* Переключатели-вкладки: подчёркивание прямое, без скругления по краям */
+html body.ds:is(.zq.zq.zq.zq,*) main :is(.seg,.group-tabs,.stat-subnav,#hub-seg):not(#zq1):not(#zq2) > button{border-radius:0!important}
+html body.ds:is(.zq.zq.zq.zq,*) main :is(.seg,.group-tabs,.stat-subnav,#hub-seg):not(#zq1):not(#zq2) > button:is(.active,[aria-pressed="true"]){box-shadow:inset 0 -2px 0 var(--accent)!important;background:none!important}
 /* «Выделить» и «Участники на графике» в шторке фильтров: список раскрывается внутри шторки, на всю её ширину */
 #filter-drawer .pick[open] > .pop{position:static!important;inset:auto!important;transform:none!important;width:100%!important;box-sizing:border-box;max-width:none!important;margin:6px 0 4px!important;max-height:320px;overflow:auto;background:var(--panel)!important;border:1px solid var(--nv-line,var(--line))!important;border-radius:12px!important;box-shadow:none!important}
 /* Настройки: блоки «Частицы на фоне» и «Рамка таблиц и графиков» — такими же плитками */
