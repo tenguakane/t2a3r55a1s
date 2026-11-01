@@ -1789,7 +1789,11 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
         </select>
       </div>
       <div class="field" id="c-focus-field" hidden><label for="c-focus" title="Выделенная линия или строка остаётся яркой, остальные затемняются — и на экране, и в картинке">Выделить</label>
-        <select id="c-focus"><option value="">— никого —</option></select>
+        <details class="pick" id="c-focus"><summary id="c-focus-sum">Никого</summary>
+          <div class="pop"><div class="plist" id="c-focus-list"></div>
+            <div class="pbtn"><button class="mini" type="button" id="c-focus-clear">Снять выделение</button></div>
+          </div>
+        </details>
       </div>
       <div class="field" id="trend-fc-field" hidden><label for="trend-forecast" title="Пунктир от сегодняшнего дня до конца месяца или года: куда придёт каждый при нынешнем темпе">Прогноз</label>
         <select id="trend-forecast"><option value="off">Не показывать</option><option value="month">До конца месяца</option><option value="year">До конца года</option></select>
@@ -11510,32 +11514,53 @@ document.querySelectorAll("nav button[data-tab]").forEach(b => b.addEventListene
   const f = $("f-norm"); if (f) f.hidden = b.dataset.tab === "charts" && !CHART_NORM_TYPES.includes(cType);
 }));
 
-/* ---------- «Выделить»: одна линия / строка яркая, остальные затемнены ---------- */
-var CHART_FOCUS = "";
-try { CHART_FOCUS = localStorage.getItem("chatstats.chartFocus.v1") || ""; } catch (e) {}
+/* ---------- «Выделить»: выбранные линии / строки яркие, остальные затемнены (можно несколько) ---------- */
+var CHART_FOCUS = new Set();
+try {
+  const raw = localStorage.getItem("chatstats.chartFocus.v1") || "";
+  if (raw.startsWith("[")) JSON.parse(raw).forEach(n => CHART_FOCUS.add(String(n))); else if (raw) CHART_FOCUS.add(raw); // раньше хранилось одно имя
+} catch (e) {}
+const saveChartFocus = () => { try { localStorage.setItem("chatstats.chartFocus.v1", JSON.stringify([...CHART_FOCUS])); } catch (e) {} };
+function chartFocusOn(names){ return [...CHART_FOCUS].some(n => names.includes(n)); }
 function applyChartFocus(){
   const svg = $("c-out")?.querySelector("svg"); if (!svg) return;
+  const names = [...new Set([...svg.querySelectorAll("[data-n]")].map(x => x.dataset.n).filter(Boolean))];
+  const on = chartFocusOn(names);
   // Инлайн-прозрачность (а не класс), чтобы выделение попадало и в скачанную картинку.
-  svg.querySelectorAll("[data-n]").forEach(x => { if (CHART_FOCUS && x.dataset.n !== CHART_FOCUS) x.style.opacity = ".13"; else x.style.removeProperty("opacity"); });
+  svg.querySelectorAll("[data-n]").forEach(x => { if (on && !CHART_FOCUS.has(x.dataset.n)) x.style.opacity = ".13"; else x.style.removeProperty("opacity"); });
+}
+function chartFocusSummary(names){
+  const act = names.filter(n => CHART_FOCUS.has(n));
+  const sum = $("c-focus-sum"); if (!sum) return;
+  sum.textContent = !act.length ? "Никого" : act.length <= 2 ? act.join(", ") : `${act.slice(0, 2).join(", ")} и ещё ${act.length - 2}`;
 }
 function syncChartFocus(){
-  const sel = $("c-focus"), field = $("c-focus-field"), svg = $("c-out")?.querySelector("svg");
-  if (!sel || !field) return;
+  const list = $("c-focus-list"), field = $("c-focus-field"), svg = $("c-out")?.querySelector("svg");
+  if (!list || !field) return;
   const names = svg ? [...new Set([...svg.querySelectorAll("[data-n]")].map(x => x.dataset.n).filter(Boolean))] : [];
   field.hidden = names.length < 2;
-  const word = cType === "years" ? "год" : chartEntity === "chats" ? "чат" : "участника";
-  sel.innerHTML = `<option value="">— никого —</option>` + names.map(n => `<option value="${escH(n)}">${escH(n)}</option>`).join("");
-  sel.title = `Выделить ${word}`;
-  // Если выделенного нет на этом графике — выделение не применяется, но запоминается.
-  sel.value = names.includes(CHART_FOCUS) ? CHART_FOCUS : "";
-  if (names.includes(CHART_FOCUS)) applyChartFocus();
+  const word = cType === "years" ? "годы" : chartEntity === "chats" ? "чаты" : "участников";
+  $("c-focus").title = `Выделить ${word}: отметь одного или нескольких`;
+  // Если выделенных нет на этом графике — выделение не применяется, но запоминается.
+  list.innerHTML = names.map(n => `<label><input type="checkbox" value="${escH(n)}"${CHART_FOCUS.has(n) ? " checked" : ""}>${escH(n)}</label>`).join("");
+  chartFocusSummary(names);
+  if (chartFocusOn(names)) applyChartFocus();
 }
-$("c-focus")?.addEventListener("change", e => {
-  CHART_FOCUS = e.target.value;
-  try { localStorage.setItem("chatstats.chartFocus.v1", CHART_FOCUS); } catch (err) {}
+$("c-focus-list")?.addEventListener("change", e => {
+  const cb = e.target.closest?.("input[type=checkbox]"); if (!cb) return;
+  cb.checked ? CHART_FOCUS.add(cb.value) : CHART_FOCUS.delete(cb.value);
+  saveChartFocus();
   // Смена выделения не должна заново проигрывать анимацию появления линий.
   $("c-out")?.querySelector("svg")?.classList.add("focus-static");
   applyChartFocus();
+  const svg = $("c-out")?.querySelector("svg");
+  chartFocusSummary(svg ? [...new Set([...svg.querySelectorAll("[data-n]")].map(x => x.dataset.n).filter(Boolean))] : []);
+});
+$("c-focus-clear")?.addEventListener("click", e => {
+  e.preventDefault(); CHART_FOCUS.clear(); saveChartFocus();
+  $("c-focus-list")?.querySelectorAll("input").forEach(i => i.checked = false);
+  $("c-out")?.querySelector("svg")?.classList.add("focus-static");
+  applyChartFocus(); chartFocusSummary([]);
 });
 
 /* ---------- Общие данные: значения по дням для каждого участника или чата ---------- */
@@ -14949,7 +14974,11 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.11.01-6", date:"2026-11-01", title:"Реакции и события — в релизе", items:[
+  {v:"2026.11.01-8", date:"2026-11-01", title:"Реакции и события — в релизе", items:[
+    {tag:"imp", area:"Настройки", text:"Настройки на всю ширину: каждый пункт — плитка одинакового размера в ровной сетке; включённые подсвечены рамкой цвета темы."},
+    {tag:"new", area:"Настройки", text:"У каждого эффекта — живой предпросмотр справа в плитке (неон, блеск, конфетти, бегущая рамка и т. д.); у выключенного он серый и стоит на месте."},
+    {tag:"del", area:"Дизайн", text:"Сетка точек с фона убрана."},
+    {tag:"imp", area:"Графики", text:"«Выделить» — теперь можно отметить нескольких участников (чатов, лет): выбранные остаются яркими, остальные затемняются; «Снять выделение» — сбросить всех."},
     {tag:"imp", area:"Палитры", text:"Палитры обновлены: у шкал (тепловые карты) теперь по 5 оттенков от тёмного к светлому, у палитр участников — по 8–12 цветов. Убраны палитры с похожими цветами (Ягоды, Лес, Океан, Монохром, Сумерки, Карамель и др.); каждая проверена, чтобы соседние цвета не сливались. Свои палитры сохранены."},
     {tag:"imp", area:"Графики", text:"Тепловые карты в цветах темы идут от тёмного через цвет темы к почти белому — «больше» всегда ярче, разница между днями видна сразу."},
     {tag:"imp", area:"Графики", text:"«Гонка»: при обгоне подписи переезжающих строк приглушаются и не накладываются; дата — в правом верхнем углу, полосы её не закрывают."},
@@ -22215,5 +22244,111 @@ svg.neon-on .neon-glow-l,svg.neon-on .neon-core{animation:neonIn 1.1s ease-out b
 @keyframes neonIn{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){svg.neon-on :is(.neon-body,.neon-glow-l,.neon-core){animation:none}}
 </style>
+<style id="set-grid">
+/* ===================== Настройки: вся ширина, одинаковые плитки, предпросмотр эффектов ===================== */
+/* Фон без сетки точек */
+html body.ds{background-image:none!important}
+@media (min-width:721px){
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters:has(> label.checkline),
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters:has(> .field){display:grid!important;grid-template-columns:repeat(auto-fill,minmax(440px,1fr))!important;grid-auto-rows:1fr;gap:12px!important;align-items:stretch!important;background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:0!important;margin:0 0 18px!important;width:100%!important;max-width:none!important}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > :is(label.checkline,.field){margin:0!important;width:auto!important;max-width:none!important;min-width:0!important;height:auto!important;min-height:96px;box-sizing:border-box;display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:6px!important;padding:14px 16px!important;border-radius:14px!important;background:var(--nv-fill,var(--panel))!important;border:1px solid var(--nv-line,var(--line))!important;box-shadow:inset 0 1px 0 var(--glass-hi,transparent)!important;position:relative}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > label.checkline{flex-direction:row!important;align-items:flex-start!important;gap:12px!important;cursor:pointer}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > label.checkline:hover{border-color:color-mix(in srgb,var(--text) 24%,transparent)!important}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > label.checkline:has(input:checked){border-color:color-mix(in srgb,var(--accent) 40%,transparent)!important}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > label.checkline > input{margin-top:2px!important;flex:0 0 auto}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > label.checkline .set-txt{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:4px}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > :is(label.checkline,.field)[hidden]{display:none!important}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > .field > label{font-size:13px!important;color:var(--muted)!important}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > .field :is(select,input:not([type=checkbox]):not([type=radio])){width:100%!important;max-width:none!important}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > :not(label.checkline):not(.field){grid-column:1/-1;align-self:center;justify-self:start;width:auto!important}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane > :is(p.hint,h2){max-width:78ch}
+}
+/* Предпросмотр эффекта */
+.fx-pv{flex:0 0 112px;height:64px;border-radius:10px;overflow:hidden;position:relative;background:color-mix(in srgb,var(--text) 5%,transparent);border:1px solid var(--nv-line,var(--line));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;color:var(--text);font-variant-numeric:tabular-nums;isolation:isolate;pointer-events:none}
+label.checkline:not(:has(input:checked)) .fx-pv{filter:grayscale(1);opacity:.45}
+label.checkline:not(:has(input:checked)) .fx-pv *{animation-play-state:paused!important}
+@media (max-width:720px){.fx-pv{flex-basis:84px;height:52px;font-size:16px}}
+@media (prefers-reduced-motion:reduce){.fx-pv *{animation:none!important}}
+.fx-pv .pv-bar{position:absolute;left:12px;right:12px;height:10px;border-radius:5px}
+.pv-grad{background:linear-gradient(90deg,#3f8a8f,#9ff3e8)}
+.pv-holo{background:linear-gradient(90deg,#ff7ad9,#ffd36e,#7cf7c0,#6fe3ff,#b195ff,#ff7ad9);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:pvHolo 3s linear infinite}
+@keyframes pvHolo{to{background-position:200% 0}}
+.pv-card{width:58px;height:40px;border-radius:8px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 40%,#222),#2a2e39);position:relative;overflow:hidden;animation:pvTilt 3s ease-in-out infinite;transform:perspective(200px)}
+.pv-card::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.55) 45%,transparent 60%);animation:pvShine 3s ease-in-out infinite}
+@keyframes pvTilt{0%,100%{transform:perspective(200px) rotateY(-14deg) rotateX(6deg)}50%{transform:perspective(200px) rotateY(14deg) rotateX(-4deg)}}
+@keyframes pvShine{0%{transform:translateX(-100%)}60%,100%{transform:translateX(100%)}}
+.pv-odo{display:inline-block;height:1.2em;overflow:hidden;line-height:1.2em}
+.pv-odo > span{display:block;animation:pvOdo 2.6s cubic-bezier(.3,.7,.2,1) infinite}
+@keyframes pvOdo{0%{transform:translateY(0)}55%,100%{transform:translateY(-83.333%)}}
+.pv-shimmer{background:linear-gradient(100deg,var(--text) 40%,#ffe9a8 50%,var(--text) 60%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:pvShim 2.4s linear infinite}
+@keyframes pvShim{from{background-position:120% 0}to{background-position:-120% 0}}
+.pv-neon{color:#fff;text-shadow:0 0 6px var(--accent),0 0 14px var(--accent);font-size:17px}
+.pv-fire{font-size:24px;animation:pvFire .5s ease-in-out infinite alternate;display:inline-block;transform-origin:50% 90%}
+@keyframes pvFire{from{transform:scale(1) rotate(-4deg)}to{transform:scale(1.12) rotate(4deg)}}
+.pv-type{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;border-right:2px solid var(--accent);width:0;animation:pvType 3s steps(10) infinite}
+@keyframes pvType{0%{width:0}60%,100%{width:10ch}}
+.pv-border{width:74px;height:40px;border-radius:9px;position:relative;background:#22262f}
+.pv-border::before{content:"";position:absolute;inset:-2px;border-radius:11px;z-index:-1;background:conic-gradient(from var(--pva,0deg),#ff7ad9,#ffd36e,#7cf7c0,#6fe3ff,#b195ff,#ff7ad9);animation:pvSpin 3s linear infinite}
+@property --pva{syntax:"<angle>";inherits:false;initial-value:0deg}
+@keyframes pvSpin{to{--pva:360deg}}
+.pv-glass{width:76px;height:34px;border-radius:9px;background:rgba(255,255,255,.12);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.25);position:relative;z-index:2}
+.pv-glass-bg{position:absolute;inset:0;background:repeating-linear-gradient(45deg,var(--accent) 0 6px,transparent 6px 14px);opacity:.5}
+.pv-par{position:absolute;inset:-20%;background:radial-gradient(circle at 30% 40%,color-mix(in srgb,var(--accent) 60%,transparent),transparent 40%),radial-gradient(circle at 70% 70%,#ff6fb5aa,transparent 40%);animation:pvPar 4s ease-in-out infinite alternate}
+@keyframes pvPar{to{transform:translate(12%,-10%)}}
+.pv-dot{position:absolute;width:6px;height:6px;border-radius:2px;top:-8px;animation:pvFall 1.8s linear infinite}
+@keyframes pvFall{to{transform:translateY(80px) rotate(360deg)}}
+.pv-spark{position:absolute;width:4px;height:4px;border-radius:50%;left:50%;top:50%;animation:pvBurst 1.6s ease-out infinite}
+@keyframes pvBurst{0%{transform:translate(-50%,-50%) scale(.2);opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1);opacity:0}}
+.pv-chip{padding:3px 10px;border-radius:999px;font-size:13px;font-weight:700;color:#7aa2f7;border:1px solid #7aa2f7;animation:pvPulse 1.6s ease-in-out infinite}
+@keyframes pvPulse{0%,100%{box-shadow:0 0 0 0 #7aa2f766}50%{box-shadow:0 0 0 6px #7aa2f700}}
+.pv-pdot{width:10px;height:10px;border-radius:50%;background:var(--accent);position:relative}
+.pv-pdot::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid var(--accent);animation:pvRing 1.4s ease-out infinite}
+@keyframes pvRing{to{transform:scale(2.6);opacity:0}}
+.pv-cols{display:flex;align-items:flex-end;gap:5px;height:40px}
+.pv-cols i{width:10px;border-radius:3px 3px 0 0;background:var(--accent);animation:pvMorph 2.4s ease-in-out infinite alternate}
+.pv-cols i:nth-child(2){animation-delay:-.6s}.pv-cols i:nth-child(3){animation-delay:-1.2s}.pv-cols i:nth-child(4){animation-delay:-1.8s}
+@keyframes pvMorph{from{height:20%}to{height:100%}}
+.pv-frame{width:70px;height:40px;border-radius:7px;background:#22262f;border:2px solid transparent;background:linear-gradient(#22262f,#22262f) padding-box,linear-gradient(90deg,#7cf7c0,#6fe3ff,#b195ff,#ff7ad9) border-box}
+</style>
+<script id="set-grid-js">
+(() => {
+  // Предпросмотр: каждому эффекту — маленькая сцена справа в его плитке
+  const dots = (n, cols, cls = "pv-dot") => Array.from({length:n}, (_, i) => `<i class="${cls}" style="left:${8 + i * (96 / n)}%;background:${cols[i % cols.length]};animation-delay:${-(i * .37) % 1.8}s"></i>`).join("");
+  const sparks = () => Array.from({length:10}, (_, i) => { const a = i / 10 * 6.283; return `<i class="pv-spark" style="--dx:${(Math.cos(a) * 34).toFixed(0)}px;--dy:${(Math.sin(a) * 22).toFixed(0)}px;background:${["#ffd36e", "#ff7ad9", "#6fe3ff"][i % 3]};animation-delay:${(i % 3) * .15}s"></i>`; }).join("");
+  const line = (neon) => `<svg viewBox="0 0 100 50" width="96" height="50"><defs><filter id="pvGl${neon ? 1 : 0}"><feGaussianBlur stdDeviation="2.5"/></filter></defs>${neon ? `<path d="M6 44 L6 44 C30 40 50 22 94 8 L94 13 C50 26 30 43 6 45 Z" fill="var(--accent)" filter="url(#pvGl1)" opacity=".9"/><path d="M6 44.5 C30 41 50 23 94 9 L94 12 C50 25 30 43 6 44.6 Z" fill="var(--accent)"/><path d="M40 33 C55 25 70 17 94 10 L94 11.2 C70 18 55 26 40 34Z" fill="#fff" opacity=".7"/>` : `<path d="M6 44 C30 40 50 22 94 8" stroke="var(--accent)" stroke-width="3" fill="none" filter="url(#pvGl0)"/><path d="M6 44 C30 40 50 22 94 8" stroke="var(--accent)" stroke-width="2" fill="none"/>`}</svg>`;
+  const PV = {
+    "set-soft-grad":`<i class="pv-bar pv-grad" style="top:16px"></i><i class="pv-bar" style="top:34px;background:linear-gradient(90deg,#a8325a,#ff9ab8)"></i>`,
+    "set-neon":line(true),
+    "set-holo-text":`<span class="pv-holo">1-е</span>`,
+    "set-holo":`<i class="pv-card"></i>`,
+    odometer:`<span class="pv-odo"><span>0<br>2<br>4<br>6<br>8<br>1&nbsp;204</span></span>`,
+    shimmer:`<span class="pv-shimmer">12 840</span>`,
+    neon:`<span class="pv-neon">Саша</span>`,
+    fire:`<span style="font-size:15px">14</span><span class="pv-fire">🔥</span>`,
+    type:`<span class="pv-type">Самый ак…</span>`,
+    border:`<i class="pv-border"></i>`,
+    glass:`<i class="pv-glass-bg"></i><i class="pv-glass"></i>`,
+    parallax:`<i class="pv-par"></i>`,
+    confetti:dots(9, ["#ff7ad9", "#ffd36e", "#7cf7c0", "#6fe3ff"]),
+    fireworks:sparks(),
+    season:dots(7, ["#d39064", "#e8c26a", "#c97b63"]),
+    misha:`<span style="font-size:24px">🥚</span>`,
+    yearchips:`<span class="pv-chip">2025</span>`,
+    glow:line(false),
+    pulse:`<i class="pv-pdot"></i>`,
+    morph:`<span class="pv-cols"><i></i><i></i><i></i><i></i></span>`,
+    "tb-export":`<i class="pv-frame"></i>`,
+  };
+  function add(){
+    document.querySelectorAll('#tab-settings .set-pane[data-cat="fx"] label.checkline').forEach(l => {
+      if (l.querySelector(".fx-pv")) return;
+      const i = l.querySelector("input"); const k = i && (i.dataset.fx || i.id); const h = k && PV[k]; if (!h) return;
+      const d = document.createElement("span"); d.className = "fx-pv"; d.setAttribute("aria-hidden", "true"); d.innerHTML = h; l.appendChild(d);
+    });
+  }
+  add();
+  new MutationObserver(add).observe(document.getElementById("tab-settings"), {childList:true, subtree:true});
+})();
+</script>
 </body>
 </html>
