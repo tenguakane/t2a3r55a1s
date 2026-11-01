@@ -5751,7 +5751,7 @@ const HEAT_PRESETS = {
   "Зелёный": ["#1f3d2b", "#2f8f4e", "#8ef0a8"], "Огонь": ["#4a1f1f", "#d9531e", "#ffd166"],
 };
 let HEAT = {z: "#2a2e39", c: [...HEAT_PRESETS["Розовый"]]};
-try { const j = JSON.parse(localStorage.getItem(HEAT_KEY) || "null"); if (j && j.z && Array.isArray(j.c) && j.c.length === 3) HEAT = j; } catch (e) {}
+try { const j = JSON.parse(localStorage.getItem(HEAT_KEY) || "null"); if (j && j.z && Array.isArray(j.c) && j.c.length >= 2) HEAT = j; } catch (e) {}
 const heatRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
 const heatMix = (a, b, t) => { const A = heatRgb(a), B = heatRgb(b); return "#" + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, "0")).join(""); };
 // HEAT_LO: самое маленькое ненулевое значение на графике. Если задано, шкала растягивается от него до максимума,
@@ -5762,7 +5762,10 @@ const heatColor = (v, max) => {
   if (!v) return palette.z;
   const lo = HEAT_LO > 0 && HEAT_LO < max ? HEAT_LO : 0;
   const t = lo ? Math.min(1, Math.max(0, .06 + .94 * Math.pow((v - lo) / (max - lo), .8))) : Math.pow(v / max, 0.6), c = palette.c;
-  return t <= 0.5 ? heatMix(c[0], c[1], t / 0.5) : heatMix(c[1], c[2], (t - 0.5) / 0.5);
+  // Палитра из любого числа оттенков: t делится на равные отрезки между соседними цветами
+  if (c.length < 2) return c[0] || palette.z;
+  const pos = Math.min(c.length - 1 - 1e-9, t * (c.length - 1)), k = Math.floor(pos);
+  return heatMix(c[k], c[k + 1], pos - k);
 };
 
 function calendarChart(){
@@ -6245,7 +6248,7 @@ function renderChartSettingsPanel(){
     html += `<div class="chart-setting-group"><h3>Размер и форма ячеек</h3><div class="chart-setting-field"><label for="chart-heat-cell-shape">Форма ячеек</label><select id="chart-heat-cell-shape" data-chart-heat-cell-shape><option value="square"${shape === "square" ? " selected" : ""}>Квадраты</option><option value="circle"${shape === "circle" ? " selected" : ""}>Круги</option></select></div><div class="chart-setting-field"><label>Масштаб сетки: <output data-range-value="heatCellScale">${p.heatCellScale}%</output></label><input type="range" min="60" max="150" step="5" value="${p.heatCellScale}" data-chart-heat-cell-scale="1" aria-label="Масштаб сетки"></div>${shape === "circle" ? `<div class="chart-setting-field"><label>Диаметр кружков: <output data-range-value="heatCircleScale">${circleScale}%</output></label><input type="range" min="10" max="100" step="5" value="${circleScale}" data-chart-heat-circle-size="1" aria-label="Диаметр кружков"></div>` : ""}<div class="chart-setting-field chart-subtitle-toggle"><label><input type="checkbox" data-chart-heat-subtitle${p.showSubtitle !== false ? " checked" : ""}> Показывать подзаголовок</label></div><p class="hint">Масштаб сетки задаёт расстояние между ячейками. Для кругов диаметр регулируется отдельно — вплоть до 10%, без сжатия самой сетки.</p></div>`;
   }
   if (type === "pairs") {
-    html += `<div class="chart-setting-group"><h3>Цветовая шкала</h3><div class="chart-palette-fields">${field("Меньше совпадений", "heatC0", p.heat.c[0])}${field("Средне", "heatC1", p.heat.c[1])}${field("Больше совпадений", "heatC2", p.heat.c[2])}</div></div>` + mainPaletteGroupHtml(type, p);
+    html += `<div class="chart-setting-group"><h3>Цветовая шкала</h3><div class="chart-palette-fields">${field("Меньше совпадений", "heatC0", p.heat.c[0])}${field("Средне", "heatC1", p.heat.c[Math.floor((p.heat.c.length - 1) / 2)])}${field("Больше совпадений", "heatC2", p.heat.c[p.heat.c.length - 1])}</div></div>` + mainPaletteGroupHtml(type, p);
   }
   if (type === "season") {
     const curColor = p.seriesColors["season:cur"] || "#7aa2f7";
@@ -6275,7 +6278,7 @@ function renderChartSettingsPanel(){
     html += `<div class="chart-setting-group"><h3>Линии и наконечники</h3>${trange("Толщина линий","line",1,8,.5)}${trange("Размер точек","point",1,10,.5)}${trange("Длина наконечников","arrowLength",6,32,1)}${trange("Ширина наконечников","arrowSize",6,28,1)}</div>`;
   }
   if (type === "heat" || type === "heatrows" || type === "spiral") {
-    html += `<div class="chart-setting-group"><h3>Свои цвета</h3><div class="chart-palette-fields">${field("Нет активности","heatZ",p.heat.z)}${field("Мало","heatC0",p.heat.c[0])}${field("Средне","heatC1",p.heat.c[1])}${field("Много","heatC2",p.heat.c[2])}</div></div>` + mainPaletteGroupHtml(type, p);
+    html += `<div class="chart-setting-group"><h3>Свои цвета</h3><div class="chart-palette-fields">${field("Нет активности","heatZ",p.heat.z)}${field("Мало","heatC0",p.heat.c[0])}${field("Средне","heatC1",p.heat.c[Math.floor((p.heat.c.length - 1) / 2)])}${field("Много","heatC2",p.heat.c[p.heat.c.length - 1])}</div></div>` + mainPaletteGroupHtml(type, p);
   }
   if (type !== "heat" && type !== "heatrows" && type !== "heatrows-custom" && type !== "spiral" && type !== "pairs" && type !== "season") {
     const targets = chartColorTargets();
@@ -6348,9 +6351,11 @@ $("chart-settings-content").addEventListener("input", e => {
     else if (key === "backgroundEnd") p.backgroundEnd = e.target.value;
     else if (key === "fontColor") p.fontColor = e.target.value;
     else if (key === "heatZ") p.heat.z = e.target.value;
-    else if (key === "heatC0") p.heat.c[0] = e.target.value;
-    else if (key === "heatC1") p.heat.c[1] = e.target.value;
-    else if (key === "heatC2") p.heat.c[2] = e.target.value;
+    else if (/^heatC[012]$/.test(key)) {
+      // ручная правка: многоцветная шкала сводится к трём опорным цветам (мало · средне · много)
+      const c = p.heat.c; if (c.length !== 3) p.heat.c = [c[0], c[Math.floor((c.length - 1) / 2)], c[c.length - 1]];
+      p.heat.c[+key.slice(-1)] = e.target.value;
+    }
     else if (key === "seasonCur") p.seriesColors = {...p.seriesColors, "season:cur":e.target.value};
     else if (key === "seasonAvg") p.seriesColors = {...p.seriesColors, "season:avg":e.target.value};
     CHART_PREFS[type] = p; saveChartPrefs(); applyChartAppearance(type); renderCharts();
@@ -8420,76 +8425,85 @@ $("dm-copy").onclick = () => {
 // Последовательные палитры (мало → средне → много): календарь, спираль, карта участников/чатов.
 const SEQ_PALETTES = [
   ["Тёплые", [
-    ["Розовый", ["#4a2a45","#a8325a","#ff4d6d"]], ["Огонь", ["#4a1f1f","#d9531e","#ffd166"]], ["Закат", ["#3b1f4a","#c2416b","#ffb36b"]],
-    ["Лава", ["#3a0d0d","#b3261e","#ff8a3d"]], ["Янтарь", ["#3d2a10","#c2861b","#ffe08a"]], ["Коралл", ["#40232a","#e0605a","#ffc2a8"]],
-    ["Магма", ["#2a0f3d","#b5367a","#fcd581"]], ["Карамель", ["#3a2a1f","#a8683a","#f2c48d"]], ["Вишня", ["#33141c","#9b1d3a","#ff8fab"]]]],
+    ["Огонь",["#2a0b0b","#7a1a12","#d9481e","#ff9a3c","#ffe9a8"]],
+    ["Закат",["#241033","#6b1f5c","#c2416b","#ff8a5c","#ffe0a3"]],
+    ["Роза",["#2a0f1f","#6e1a3f","#c23266","#ff7aa2","#ffd6e3"]],
+    ["Янтарь",["#261a08","#6b4510","#c2861b","#f2c14e","#fff1c2"]],
+    ["Медь",["#1f130c","#5c3220","#a8603a","#e0a070","#fde3c8"]]]],
   ["Холодные", [
-    ["Синий", ["#1f3a5f","#2f6fb3","#7ac7ff"]], ["Океан", ["#102a3a","#1f7a8c","#7fe3d6"]], ["Лёд", ["#1c2a3a","#5a8fc2","#e0f2ff"]],
-    ["Индиго", ["#1e1b4b","#4f46e5","#a5b4fc"]], ["Бирюза", ["#0f3333","#14b8a6","#99f6e4"]], ["Полночь", ["#141a33","#3b5bdb","#b4c6ff"]],
-    ["Глубина", ["#0b1d33","#0e6ba8","#a6e1fa"]]]],
+    ["Океан",["#081a26","#0c3d5c","#1f7a8c","#4cc4c9","#cffaf2"]],
+    ["Синий",["#0b1430","#1c3b7a","#2f6fd6","#74b3ff","#dcefff"]],
+    ["Индиго",["#120f33","#2e2a7a","#4f46e5","#9a9cff","#e6e6ff"]],
+    ["Лёд",["#121a24","#2c4a63","#5a8fc2","#a7cdf0","#f3faff"]]]],
   ["Природные", [
-    ["Зелёный", ["#1f3d2b","#2f8f4e","#8ef0a8"]], ["Лес", ["#1b2e1f","#4d7c3a","#c5e17a"]], ["Мох", ["#26301c","#7a8f3a","#e3e8a5"]],
-    ["Весна", ["#203a2a","#5cbf60","#f2f78a"]], ["Пустыня", ["#3a301f","#b8894d","#f5deb3"]], ["Сакура", ["#3a2533","#d07aa0","#ffe0ef"]],
-    ["Лаванда", ["#2a2740","#a29bfe","#f3e8ff"]]]],
+    ["Лес",["#0e1f14","#1f4a2b","#3f8a4a","#8fcf6a","#e9f7b8"]],
+    ["Мята",["#0b2420","#13564a","#2bb39a","#7fe8cf","#e2fff6"]],
+    ["Пустыня",["#241a10","#5c4428","#a8804d","#dcb67f","#f8ead2"]],
+    ["Сакура",["#24131d","#5c2a48","#a8507e","#e48fb6","#ffe3f0"]]]],
   ["Неон", [
-    ["Кибер", ["#1a1033","#9333ea","#22d3ee"]], ["Кислота", ["#0f2a1a","#22c55e","#e9ff70"]], ["Плазма", ["#2a0a4a","#e0457b","#fde047"]],
-    ["Вейпорвейв", ["#2b1a4a","#ff6ad5","#8af1ff"]], ["Аврора", ["#0f2a3a","#2ed8a3","#c792ea"]], ["Синтвейв", ["#24123d","#f72585","#4cc9f0"]]]],
-  ["Спокойные", [
-    ["Графит", ["#2a2d35","#6b7280","#e5e7eb"]], ["Серебро", ["#30343d","#9aa3b5","#ffffff"]], ["Сепия", ["#2f2620","#8a6d52","#e8d5bc"]],
-    ["Фиолетовый", ["#2a1f45","#7c4dcc","#d4b8ff"]], ["Пастель", ["#2e2a3a","#b8a1e3","#ffd6e8"]], ["Зефир", ["#2d3340","#9fc5e8","#fff1c1"]]]],
+    ["Синтвейв",["#170a2e","#5b1a8a","#f72585","#ff9e64","#fff0a8"]],
+    ["Кибер",["#0d0a26","#3b1a8a","#9333ea","#22d3ee","#d9fbff"]],
+    ["Кислота",["#0a1f12","#145c2e","#22c55e","#b8f54a","#f6ffc2"]],
+    ["Вейпорвейв",["#1a1033","#6a2c91","#ff6ad5","#8af1ff","#f2feff"]]]],
   ["Научные", [
-    ["Виридис", ["#3b1f5c","#21908d","#fde725"]], ["Инферно", ["#2a0b3d","#bc3754","#fcffa4"]], ["Плазма+", ["#1f0c6b","#cc4778","#f0f921"]],
-    ["Цивидис", ["#1d2e4f","#7c7b78","#fde845"]], ["Мако", ["#1f1a33","#357ba3","#def5e5"]], ["Рокет", ["#2a0f2e","#cb1b4f","#faebdd"]],
-    ["Турбо", ["#30123b","#1ae4b6","#fb8022"]]]],
-  ["Ещё", [
-    ["Мята", ["#12312b","#2bb39a","#c8fff0"]], ["Малина", ["#33101f","#c2185b","#ffb0d0"]], ["Небо", ["#14263d","#3d8bfd","#cfe6ff"]],
-    ["Медь", ["#2b1a12","#b8693a","#ffd2a6"]], ["Лимон", ["#28301a","#a3c021","#f7ffad"]], ["Слива", ["#2a1530","#8e3fae","#f1c6ff"]],
-    ["Морская волна", ["#0e2b30","#0ea5b7","#b6fbff"]], ["Ржавчина", ["#2b140e","#a8431e","#ffbe8f"]], ["Ночь и луна", ["#151a2e","#5867a8","#fff3c4"]]]],
+    ["Виридис",["#440154","#3b528b","#21918c","#5ec962","#fde725"]],
+    ["Инферно",["#000004","#57106e","#bc3754","#f98e09","#fcffa4"]],
+    ["Магма",["#000004","#51127c","#b73779","#fc8961","#fcfdbf"]],
+    ["Мако",["#0b0405","#3e356b","#357ba3","#60cea9","#def5e5"]],
+    ["Рокет",["#03051a","#701f57","#e13342","#f6956a","#faebdd"]]]],
+  ["Спокойные", [
+    ["Графит",["#1a1c22","#3b3f4a","#6b7280","#a9afbb","#eef0f4"]],
+    ["Сепия",["#1f1812","#4a3a2c","#8a6d52","#c4a684","#f3e6d2"]],
+    ["Лаванда",["#1d1a33","#3f3870","#7c6fd6","#b9b0ff","#f1edff"]],
+    ["Ночь и луна",["#0f1428","#2a3466","#5867a8","#b2a9c9","#fff3c4"]]]],
 ];
 // Категориальные палитры: цвета участников, чатов, лет и диапазонов.
 const CAT_PALETTES = [
   ["Яркие", [
-    ["Стандарт", ["#ff4d6d","#7aa2f7","#e0af68","#9ece6a","#bb9af7","#2ac3de","#f7768e","#73daca"]],
-    ["Токио", ["#7aa2f7","#bb9af7","#7dcfff","#9ece6a","#e0af68","#f7768e","#ff9e64","#73daca","#c0caf5","#2ac3de"]],
-    ["Неон", ["#ff2bd6","#00f0ff","#b6ff00","#ffe600","#ff6a00","#8a2bff","#00ff9c","#ff3366"]],
-    ["Кибер", ["#00f5d4","#00bbf9","#fee440","#f15bb5","#9b5de5","#ff006e","#3a86ff","#8338ec"]],
-    ["Конфеты", ["#ff6f91","#ffc75f","#f9f871","#845ec2","#00c9a7","#ff9671","#d65db1","#4b9dff"]],
-    ["Ретро", ["#e76f51","#f4a261","#e9c46a","#2a9d8f","#8ab17d","#d62828","#f77f00","#fcbf49"]]]],
+    ["Стандарт",["#ff4d6d","#7aa2f7","#e0af68","#9ece6a","#bb9af7","#2ac3de","#ff9e64","#73daca","#e879f9","#f7f3a1","#c0caf5"]],
+    ["Неон",["#ff2bd6","#00f0ff","#b6ff00","#ffe600","#ff6a00","#8a2bff","#00ff9c","#ff3366","#3d7bff","#ffffff"]],
+    ["Конфеты",["#ff6f91","#ffc75f","#f9f871","#845ec2","#00c9a7","#ff9671","#4b9dff","#c34a36","#b0e57c","#d0a2f7"]],
+    ["Ретро",["#e76f51","#f4a261","#e9c46a","#2a9d8f","#8ab17d","#d62828","#264653","#9c6644","#f2e8cf","#6d597a"]],
+    ["Тропики",["#ff595e","#ffca3a","#8ac926","#1982c4","#6a4c93","#ff924c","#52a675","#c5ca30","#36949d","#ff70a6"]]]],
   ["Мягкие", [
-    ["Пастель", ["#ffb3c6","#bde0fe","#cdb4db","#caffbf","#fdffb6","#ffd6a5","#a0c4ff","#9bf6ff"]],
-    ["Винтаж", ["#c97b63","#e0a96d","#8fb9a8","#fcd0ba","#f1828d","#a68a9a","#fefad4","#a8c69f"]],
-    ["Земля", ["#bc6c25","#dda15e","#a3b18a","#588157","#e9edc9","#ccd5ae","#d4a373","#faedcd"]],
-    ["Монохром", ["#ffffff","#d4d8e1","#b0b6c3","#8c93a3","#6b7280","#e5e7eb","#9ca3af","#575d6b"]]]],
+    ["Пастель",["#ffadad","#ffd6a5","#fdffb6","#a8e6a1","#9bf6ff","#a0c4ff","#d4a5ff","#ffc6ff"]],
+    ["Винтаж",["#c97b63","#e0a96d","#8fb9a8","#fcd0ba","#a68a9a","#5f7f9e","#f2e9a0","#7c9a5e","#b15e6c","#3f4a5a"]],
+    ["Земля",["#bc6c25","#dda15e","#a3b18a","#588157","#e9edc9","#7f5539","#b08968","#2b4a6b","#c9ada7","#e07a5f"]]]],
   ["Тематические", [
-    ["Океан", ["#4cc9f0","#4895ef","#4361ee","#56cfe1","#72efdd","#80ffdb","#64dfdf","#5390d9"]],
-    ["Закат", ["#ff7b54","#ffb26b","#ffd56b","#ff5d8f","#c06c84","#f67280","#f8b195","#e84a5f"]],
-    ["Осень", ["#d1495b","#edae49","#e07a5f","#a7754c","#c08552","#f2cc8f","#8d5a3b","#bc4749"]],
-    ["Лес", ["#52b788","#95d5b2","#74c69d","#b7e4c7","#40916c","#d9ed92","#99d98c","#76c893"]],
-    ["Ягоды", ["#e63946","#c9184a","#ff4d6d","#a4133c","#ff758f","#ff8fa3","#d00000","#ffb3c1"]],
-    ["Северное сияние", ["#2ed8a3","#00c2ff","#7b61ff","#c792ea","#38f9d7","#43e97b","#a18cd1","#5ee7df"]],
-    ["Космос", ["#b5179e","#f72585","#4361ee","#4cc9f0","#7209b7","#9d4edd","#4895ef","#e0aaff"]]]],
+    ["Закат",["#ff7b54","#ffd56b","#ff5d8f","#c06c84","#6c5b7b","#3fb8af","#f8b195","#99b898","#ffe8d6","#2a363b"]],
+    ["Осень",["#d1495b","#edae49","#00798c","#30638e","#a7754c","#5c3d2e","#f2cc8f","#6a994e","#9b5de5","#e5e5c8"]],
+    ["Северное сияние",["#2ed8a3","#00c2ff","#7b61ff","#c792ea","#ff6ec7","#f9f871","#43e97b","#5e60ce","#ffa69e","#e0fbfc"]],
+    ["Космос",["#b5179e","#f72585","#4361ee","#4cc9f0","#7209b7","#ffd60a","#06d6a0","#ff8500","#e0aaff","#ffffff"]]]],
   ["Удобные для глаз", [
-    ["Для дальтоников", ["#e69f00","#56b4e9","#009e73","#f0e442","#0072b2","#d55e00","#cc79a7","#ffffff"]],
-    ["Контраст", ["#ffffff","#ffd166","#06d6a0","#118ab2","#ef476f","#8338ec","#fb5607","#3a86ff"]],
-    ["Окабэ — Ито", ["#e69f00","#56b4e9","#009e73","#f0e442","#0072b2","#d55e00","#cc79a7","#999999"]],
-    ["Тол", ["#4477aa","#66ccee","#228833","#ccbb44","#ee6677","#aa3377","#bbbbbb","#88ccee"]]]],
-  ["Ещё", [
-    ["Катпуччин", ["#f38ba8","#89b4fa","#a6e3a1","#f9e2af","#cba6f7","#94e2d5","#fab387","#89dceb"]],
-    ["Дракула", ["#ff79c6","#8be9fd","#50fa7b","#f1fa8c","#bd93f9","#ffb86c","#ff5555","#6272a4"]],
-    ["Норд", ["#88c0d0","#81a1c1","#a3be8c","#ebcb8b","#b48ead","#d08770","#bf616a","#8fbcbb"]],
-    ["Грувбокс", ["#fb4934","#b8bb26","#fabd2f","#83a598","#d3869b","#8ec07c","#fe8019","#a89984"]],
-    ["Тропики", ["#ff595e","#ffca3a","#8ac926","#1982c4","#6a4c93","#ff924c","#52a675","#4267ac"]],
-    ["Драгоценности", ["#e0115f","#0f52ba","#50c878","#ffbf00","#9966cc","#40e0d0","#ff7f50","#c0c0c0"]],
-    ["Сумерки", ["#ffadad","#ffd6a5","#fdffb6","#caffbf","#9bf6ff","#a0c4ff","#bdb2ff","#ffc6ff"]],
-    ["Карамель", ["#d4a373","#e9c46a","#f4a261","#e76f51","#a68a64","#ccd5ae","#faedcd","#bc6c25"]]]],
+    ["Окабэ — Ито",["#e69f00","#56b4e9","#009e73","#f0e442","#0072b2","#d55e00","#cc79a7","#999999","#ffffff"]],
+    ["Тол",["#4477aa","#66ccee","#228833","#ccbb44","#ee6677","#aa3377","#bbbbbb","#ee8866","#44bb99","#ffaabb"]],
+    ["Контраст",["#ffffff","#ffd166","#06d6a0","#118ab2","#ef476f","#8338ec","#fb5607","#b5e48c","#9b5de5","#ff99c8"]]]],
+  ["Темы редакторов", [
+    ["Катпуччин",["#f38ba8","#89b4fa","#a6e3a1","#f9e2af","#cba6f7","#94e2d5","#fab387","#74c7ec","#f5c2e7","#cdd6f4"]],
+    ["Дракула",["#ff79c6","#8be9fd","#50fa7b","#f1fa8c","#bd93f9","#ffb86c","#ff5555","#6272a4","#f8f8f2"]],
+    ["Норд",["#88c0d0","#bf616a","#a3be8c","#ebcb8b","#b48ead","#d08770","#5e81ac","#eceff4","#4c566a"]],
+    ["Грувбокс",["#fb4934","#b8bb26","#fabd2f","#83a598","#d3869b","#8ec07c","#fe8019","#ebdbb2","#928374"]],
+    ["Токио",["#7aa2f7","#bb9af7","#7dcfff","#9ece6a","#e0af68","#f7768e","#ff9e64","#73daca","#ffffff","#db4b4b"]]]],
 ];
 // Пары «селфи / пропуск» для карты посещаемости.
 const PAIR_PALETTES = [
   ["Пары", [
-    ["Классика", ["#9ece6a","#f7768e"]], ["Для дальтоников", ["#56b4e9","#e69f00"]], ["Неон", ["#00f5d4","#ff006e"]],
-    ["Пастель", ["#caffbf","#ffadad"]], ["Океан", ["#4cc9f0","#f4a261"]], ["Фиолет", ["#bb9af7","#e0af68"]],
-    ["Монохром", ["#e5e7eb","#575d6b"]], ["Закат", ["#ffd56b","#c06c84"]], ["Лес", ["#52b788","#bc6c25"]], ["Лёд", ["#a0c4ff","#ff8fa3"]],
-    ["Мята и коралл", ["#5eead4","#ff7f6e"]], ["Лайм и слива", ["#a3e635","#a855f7"]], ["Золото и графит", ["#e8c26a","#4b5563"]], ["Небо и малина", ["#7dd3fc","#e11d74"]]]],
+    ["Классика",["#9ece6a","#f7768e"]],
+    ["Для дальтоников",["#56b4e9","#e69f00"]],
+    ["Неон",["#00f5d4","#ff006e"]],
+    ["Пастель",["#caffbf","#ffadad"]],
+    ["Океан",["#4cc9f0","#f4a261"]],
+    ["Фиолет",["#bb9af7","#e0af68"]],
+    ["Монохром",["#e5e7eb","#575d6b"]],
+    ["Закат",["#ffd56b","#c06c84"]],
+    ["Лес",["#52b788","#bc6c25"]],
+    ["Лёд",["#a0c4ff","#ff8fa3"]],
+    ["Мята и коралл",["#5eead4","#ff7f6e"]],
+    ["Лайм и слива",["#a3e635","#a855f7"]],
+    ["Золото и графит",["#e8c26a","#4b5563"]],
+    ["Небо и малина",["#7dd3fc","#e11d74"]],
+    ["Бирюза и янтарь",["#2dd4bf","#f59e0b"]],
+    ["Индиго и персик",["#6366f1","#fdba74"]]]],
 ];
 const palMap = groups => new Map(groups.flatMap(([, items]) => items));
 const SEQ_MAP = palMap(SEQ_PALETTES), CAT_MAP = palMap(CAT_PALETTES), PAIR_MAP = palMap(PAIR_PALETTES);
@@ -14935,7 +14949,8 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.11.01-5", date:"2026-11-01", title:"Реакции и события — в релизе", items:[
+  {v:"2026.11.01-6", date:"2026-11-01", title:"Реакции и события — в релизе", items:[
+    {tag:"imp", area:"Палитры", text:"Палитры обновлены: у шкал (тепловые карты) теперь по 5 оттенков от тёмного к светлому, у палитр участников — по 8–12 цветов. Убраны палитры с похожими цветами (Ягоды, Лес, Океан, Монохром, Сумерки, Карамель и др.); каждая проверена, чтобы соседние цвета не сливались. Свои палитры сохранены."},
     {tag:"imp", area:"Графики", text:"Тепловые карты в цветах темы идут от тёмного через цвет темы к почти белому — «больше» всегда ярче, разница между днями видна сразу."},
     {tag:"imp", area:"Графики", text:"«Гонка»: при обгоне подписи переезжающих строк приглушаются и не накладываются; дата — в правом верхнем углу, полосы её не закрывают."},
     {tag:"imp", area:"Графики", text:"«Кольцо»: у «Остальных» в легенде такая же штриховка, как на кольце."},
@@ -18649,7 +18664,7 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
   }
   function themePalette(kind){
     const t = theme();
-    if (kind === "seq") return [pbMix(t.panel, t.a, .26), t.a, pbMix(t.a, "#ffffff", .78)]; // тёмный → цвет темы → почти белый: «больше» всегда ярче
+    if (kind === "seq") return [pbMix(t.panel, t.a, .2), pbMix(t.panel, t.a, .55), t.a, pbMix(t.a, "#ffffff", .45), pbMix(t.a, "#ffffff", .82)]; // тёмный → цвет темы → почти белый: «больше» всегда ярче
     if (kind === "pair") return [t.a, t.b];
     if (kind === "dm") return [t.b, t.a];
     const out = [t.a, t.b, rot(t.a, 150), rot(t.b, 150), rot(t.a, 70), rot(t.b, 70), rot(t.a, 220), rot(t.b, 220)];
