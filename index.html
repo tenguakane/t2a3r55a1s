@@ -146,6 +146,7 @@ input[type=color]{min-width:0;width:44px;height:32px;padding:2px;cursor:pointer}
 /* Activity matrix: natural size (the SVG is already fitted to the chart width), never wider than the panel. */
 #c-out > svg.heatrows-svg{width:auto !important;max-width:100% !important;height:auto !important;margin-left:auto;margin-right:auto}
 #c-out > svg.wide-svg{width:96%;max-width:1180px}
+#c-out > svg.cal-svg{width:96%;max-width:1240px}
 @media(max-width:720px){#c-out > svg{width:70%;max-width:70%}#c-out > svg.wide-svg{width:100%;max-width:100%}#c-out > svg.heatrows-svg{width:100% !important;max-width:100% !important;height:auto !important}}
 .pick{position:relative}
 .pick summary{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 10px;cursor:pointer;min-width:150px;list-style:none}
@@ -4111,7 +4112,7 @@ function spiralChart(){
   if (active[0] < `${years[0]}-01-01`) active = [`${years[0]}-01-01`, active[1]];
   const actTo = active[1] < todayIso ? active[1] : todayIso;
   let max = 0, total = 0;
-  by.forEach((v, d) => { if (d >= active[0] && d <= actTo) { total += v; if (v > max) max = v; } });
+  HEAT_LO = 0; by.forEach((v, d) => { if (d >= active[0] && d <= actTo) { total += v; if (v > max) max = v; if (v > 0 && (!HEAT_LO || v < HEAT_LO)) HEAT_LO = v; } });
   if (!max) return note("Нет данных за выбранный период");
   const dates = []; for (let d = active[0]; d <= actTo; d = addDaysIso(d, 1)) dates.push(d);
   const zs = anomalyScores(dates.map(d => by.get(d) || 0));
@@ -4160,7 +4161,7 @@ function spiralChart(){
   o += `<text class="chart-value" x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="34" fill="#eceef3">${fmt(total)}</text><text class="chart-subtitle" x="${cx}" y="${cy + 30}" text-anchor="middle" font-size="15" fill="#7d8190">${escH(MLBL[metric].toLowerCase())}</text>`;
   const ly = cy + Rmax + 62;
   o += `<text class="chart-legend" x="${cx - 190}" y="${ly + 14}" font-size="14" fill="#7d8190">Меньше</text>`;
-  for (let k = 0; k <= 4; k++) o += `<rect x="${cx - 128 + k * 20}" y="${ly + 2}" width="16" height="16" rx="3" fill="${heatColor(k / 4 * max, max)}"/>`;
+  for (let k = 0; k <= 4; k++) o += `<rect x="${cx - 128 + k * 20}" y="${ly + 2}" width="16" height="16" rx="3" fill="${heatColor(k === 0 ? 0 : HEAT_LO > 0 ? HEAT_LO + (k - 1) / 3 * (max - HEAT_LO) : k / 4 * max, max)}"/>`;
   o += `<text class="chart-legend" x="${cx - 18}" y="${ly + 14}" font-size="14" fill="#7d8190">Больше · максимум за день: ${fmt(max)}</text>`;
   if (ANOM.on) o += anomLegend(cx - 190, ly + 46);
   const H = ly + 34 + (ANOM.on ? 32 : 0);
@@ -4608,9 +4609,11 @@ function donutChart(){
     const attrs = u.others
       ? ` data-donut-toggle="1" data-tip="${escH(`Остальные · ${u.count}`)}|${escH(`${fmt(u.v)} · ${pct}% — нажми, чтобы раскрыть`)}"`
       : ` data-ek="${escH(u.k)}"`;
-    segs += `<g class="donut-seg" data-seg="${i}" data-n="${escH(u.n)}"${attrs} style="--dx:${(Math.cos(mid) * push).toFixed(1)}px;--dy:${(Math.sin(mid) * push).toFixed(1)}px"><path d="${arc(a0, a1)}" fill="${pa.p}"/></g>`;
+    // «Остальные» — тихая штриховка, а не большой серый сектор, который перетягивает внимание
+    if (u.others && !defs.some(d => d.includes('id="donutOther"'))) defs.push(`<pattern id="donutOther" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#8a90a2" fill-opacity=".14"/><rect width="2.4" height="8" fill="#c0c6d4" fill-opacity=".3"/></pattern>`);
+    segs += `<g class="donut-seg" data-seg="${i}" data-n="${escH(u.n)}"${attrs} style="--dx:${(Math.cos(mid) * push).toFixed(1)}px;--dy:${(Math.sin(mid) * push).toFixed(1)}px"><path d="${arc(a0, a1)}" fill="${u.others ? "url(#donutOther)" : pa.p}"/></g>`;
     const y = 130 + i * rowH, fs = rowH < 30 ? 15 : 18;
-    legend += `<g class="donut-leg" data-seg="${i}" data-n="${escH(u.n)}"${attrs}><rect x="360" y="${y - rowH / 2}" width="450" height="${rowH}" fill="transparent"/><circle cx="372" cy="${y}" r="7" fill="${pa.a}"/><text class="chart-label" x="392" y="${y + 6}" font-size="${fs}" fill="#f2f3f7">${escH(u.n)}${u.others ? `<tspan data-no-export="1"> ▾</tspan>` : ""}</text>
+    legend += `<g class="donut-leg" data-seg="${i}" data-n="${escH(u.n)}"${attrs}><rect x="360" y="${y - rowH / 2}" width="450" height="${rowH}" fill="transparent"/><circle cx="372" cy="${y}" r="7" fill="${u.others ? "url(#donutOther)" : pa.a}"${u.others ? ' stroke="#c0c6d4" stroke-opacity=".45" stroke-width="1"' : ""}/><text class="chart-label" x="392" y="${y + 6}" font-size="${fs}" fill="#f2f3f7">${escH(u.n)}${u.others ? `<tspan data-no-export="1"> ▾</tspan>` : ""}</text>
       <text class="chart-value" x="800" y="${y + 6}" text-anchor="end" font-size="${fs}"><tspan class="chart-value-main" fill="#f2f3f7">${fmt(u.v)}</tspan><tspan class="chart-value-separator" fill="#707789"> • </tspan><tspan class="chart-value-percent" fill="#aab0c0">${pct}%</tspan></text></g>`;
   });
   if (canCollapse) {
@@ -5751,10 +5754,14 @@ let HEAT = {z: "#2a2e39", c: [...HEAT_PRESETS["Розовый"]]};
 try { const j = JSON.parse(localStorage.getItem(HEAT_KEY) || "null"); if (j && j.z && Array.isArray(j.c) && j.c.length === 3) HEAT = j; } catch (e) {}
 const heatRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
 const heatMix = (a, b, t) => { const A = heatRgb(a), B = heatRgb(b); return "#" + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, "0")).join(""); };
+// HEAT_LO: самое маленькое ненулевое значение на графике. Если задано, шкала растягивается от него до максимума,
+// иначе в «Календаре» и «Спирали», где почти каждый день активный, все клетки получались одного цвета.
+var HEAT_LO = 0;
 const heatColor = (v, max) => {
   const palette = chartPrefs(currentChartType()).heat || HEAT;
   if (!v) return palette.z;
-  const t = Math.pow(v / max, 0.6), c = palette.c;
+  const lo = HEAT_LO > 0 && HEAT_LO < max ? HEAT_LO : 0;
+  const t = lo ? Math.min(1, Math.max(0, .06 + .94 * Math.pow((v - lo) / (max - lo), .8))) : Math.pow(v / max, 0.6), c = palette.c;
   return t <= 0.5 ? heatMix(c[0], c[1], t / 0.5) : heatMix(c[1], c[2], (t - 0.5) / 0.5);
 };
 
@@ -5772,7 +5779,7 @@ function calendarChart(){
   const days = Math.round((U(to) - U(from)) / DAY) + 1;
   if (days < 1) return note("Этот период ещё не начался");
   const big = days <= 62, cs = big ? 30 : 12, gap = big ? 4 : 3, x0 = 40, step = cs + gap;
-  let max = 0; by.forEach((v, d) => { if (d >= from && d <= to && v > max) max = v; });
+  let max = 0; HEAT_LO = 0; by.forEach((v, d) => { if (d >= from && d <= to && v > 0) { if (v > max) max = v; if (!HEAT_LO || v < HEAT_LO) HEAT_LO = v; } });
   const calDates = []; for (let t = U(from); t <= U(to); t += DAY) calDates.push(new Date(t).toISOString().slice(0, 10));
   const calZ = anomalyScores(calDates.map(d => by.get(d) || 0));
   const zByDate = new Map(calZ ? calDates.map((d, i) => [d, calZ[i]]) : []);
@@ -5807,7 +5814,7 @@ function calendarChart(){
     yy = gy + 7 * step + 22;
   });
   o += `<text class="chart-legend" x="40" y="${yy + 14}" font-size="14" fill="#7d8190">Меньше</text>`;
-  for (let k = 0; k <= 4; k++) o += `<rect x="${100 + k * 20}" y="${yy + 2}" width="16" height="16" rx="3" fill="${heatColor(k / 4 * max, max)}"/>`;
+  for (let k = 0; k <= 4; k++) o += `<rect x="${100 + k * 20}" y="${yy + 2}" width="16" height="16" rx="3" fill="${heatColor(k === 0 ? 0 : HEAT_LO > 0 ? HEAT_LO + (k - 1) / 3 * (max - HEAT_LO) : k / 4 * max, max)}"/>`;
   o += `<text class="chart-legend" x="210" y="${yy + 14}" font-size="14" fill="#7d8190">Больше</text><text class="chart-value" x="290" y="${yy + 14}" font-size="14" fill="#7d8190">максимум за день: ${fmt(max)}</text>`;
   if (ANOM.on) o += anomLegend(40, yy + 44);
   let evH = 0;
@@ -5816,7 +5823,7 @@ function calendarChart(){
     o += `<circle cx="48" cy="${ey - 5}" r="5" fill="${calEvents.bands[0]?.color || "#9ece6a"}"/><text class="chart-legend" x="60" y="${ey}" font-size="14" fill="#7d8190">марафон</text><circle cx="150" cy="${ey - 5}" r="5" fill="${EV_FLAG}"/><text class="chart-legend" x="162" y="${ey}" font-size="14" fill="#7d8190">событие хроники<tspan data-no-export="1"> (подробности — при наведении)</tspan></text>`;
     evH = 30;
   }
-  return `<svg viewBox="0 0 900 ${yy + 34 + (ANOM.on ? 30 : 0) + evH}" role="img">${o}</svg>`;
+  return `<svg class="cal-svg" viewBox="0 0 900 ${yy + 34 + (ANOM.on ? 30 : 0) + evH}" role="img">${o}</svg>`;
 }
 /* <<< heat */
 
@@ -6037,7 +6044,7 @@ function heatRowsChart(customRanges = false){
     if (lab !== "") o += `<text class="chart-axis" x="${LBL + c * cw + cw / 2}" y="${gy - 8}" text-anchor="middle" font-size="${axisFont}" fill="#aab0c0">${lab}</text>`;
   }
   list.forEach((e, i) => {
-    const y = gy + i * RH, max = perRow ? Math.max(...e.a, 1) : gmax;
+    HEAT_LO = 0; const y = gy + i * RH, max = perRow ? Math.max(...e.a, 1) : gmax;
     o += `<text class="chart-label" x="${LBL - 8}" y="${y + RH / 2}" dominant-baseline="middle" text-anchor="end" font-size="${labelFont}" fill="#e6e8ee" data-ek="${escH(e.k)}">${escH(shownName(e.name))}</text>`;
     const zs = ANOM.on ? anomalyScores(e.a) : null;
     e.a.forEach((v, c) => {
@@ -10455,7 +10462,7 @@ function raceChart(){
   const L = Math.min(250, Math.max(130, Math.max(...D.ents.map(e => e.n.length)) * 9.6 + 22)), R = W - 110;
   RACE = {...D, t:REDUCED_MOTION ? D.FR - 1 : 0, playing:!REDUCED_MOTION, y:new Map(), maxV:0, geo:{W, T, rh, H, L, R}};
   let o = head(cPeriodLabel(), sub() + " · накопительно");
-  o += `<text id="race-date" x="${W - 24}" y="${H - 16}" text-anchor="end" font-size="46" font-weight="700" fill="#ffffff" fill-opacity=".2"></text>`;
+  o += `<text id="race-date" x="${W - 24}" y="${T - 22}" text-anchor="end" font-size="30" font-weight="700" fill="#ffffff" fill-opacity=".55"></text>`;
   o += D.ents.map(e => { const c = chartSeriesStyle(chartStyleKind(), e.k).c[0]; return `<g class="race-row" data-k="${escH(e.k)}" transform="translate(0,${H})" opacity="0">${(sv => sv.d + `<rect x="${L}" y="0" height="${rh - 8}" rx="6" width="0" fill="${sv.f}"/>`)(softSvg(c))}<text class="chart-label" x="${L - 10}" y="${((rh - 8) / 2 + 6).toFixed(1)}" text-anchor="end" font-size="18" fill="#e6e8ee">${escH(e.n)}</text><text class="chart-value" x="${L + 8}" y="${((rh - 8) / 2 + 6).toFixed(1)}" font-size="18" fill="#eceef3"></text></g>`; }).join("");
   const sp = [0.5, 1, 2, 4].map(v => `<option value="${v}"${v === raceSpeed ? " selected" : ""}>${String(v)}×</option>`).join("");
   return `<svg id="race-svg" viewBox="0 0 ${W} ${H}" role="img">${o}</svg>
@@ -10465,7 +10472,7 @@ function raceMount(){
   cancelAnimationFrame(raceRaf);
   const svg = $("race-svg"); if (!svg || !RACE) return;
   const R0 = RACE, {T, rh, H, L, R} = R0.geo;
-  const els = new Map([...svg.querySelectorAll(".race-row")].map(gr => [gr.dataset.k, {gr, rect:gr.querySelector("rect"), val:gr.querySelector(".chart-value")}]));
+  const els = new Map([...svg.querySelectorAll(".race-row")].map(gr => [gr.dataset.k, {gr, rect:gr.querySelector("rect"), val:gr.querySelector(".chart-value"), lab:gr.querySelector(".chart-label")}]));
   const dateEl = $("race-date"), pos = $("race-pos"), play = $("race-play");
   const fps = Math.max(2, R0.FR / 22);
   const updBtn = () => { play.textContent = R0.playing ? "❚❚ Пауза" : "▶ Пуск"; };
@@ -10488,6 +10495,10 @@ function raceMount(){
       const w = Math.max(2, o.v / R0.maxV * (R - L));
       el.gr.setAttribute("transform", `translate(0,${ny.toFixed(1)})`);
       el.gr.setAttribute("opacity", show ? "1" : "0");
+      // Пока строка переезжает на другое место, её подпись приглушена — имена при обгоне не накладываются друг на друга.
+      const moving = Math.min(1, Math.abs(target - ny) / (rh * .5));
+      if (el.lab) el.lab.setAttribute("fill-opacity", (1 - moving * .85).toFixed(2));
+      el.val.setAttribute("fill-opacity", (1 - moving * .85).toFixed(2));
       el.rect.setAttribute("width", w.toFixed(1));
       el.val.setAttribute("x", (L + w + 8).toFixed(1));
       el.val.textContent = fmt(Math.round(o.v));
@@ -11095,7 +11106,7 @@ function seasonChart(){
   const W = 900, L = 70, R = 880, T = 120, B = 440, H = 600, slot = (R - L) / 12;
   const mx = Math.max(1, ...rows.flatMap(x => [x.cur, x.max, x.avg].filter(v => v != null))), {max, step} = niceMax(mx), sy = v => B - v / max * (B - T);
   const st = chartPrefs("season"), c1 = st.seriesColors?.["season:cur"] || "#7aa2f7", c2 = st.seriesColors?.["season:avg"] || "#e0af68";
-  const yrs = years.length ? `${years[0]}–${years[years.length - 1]}` : "";
+  const yrs = !years.length ? "" : years.length === 1 ? `${years[0]} год` : `${years[0]}–${years[years.length - 1]}`;
   let o = head(`Сезонность · ${ref}`, `${MLBL[metric]} в день: ${ref} против среднего за ${yrs}${chat ? " · " + chat : ""}`);
   for (let v = 0; v <= max + 1e-9; v += step) o += `<line x1="${L}" y1="${sy(v).toFixed(1)}" x2="${R}" y2="${sy(v).toFixed(1)}" stroke="#ffffff" stroke-opacity="0.07"/><text class="chart-axis" x="${L - 10}" y="${(sy(v) + 5).toFixed(1)}" text-anchor="end" font-size="15" fill="#c0c6d4">${fmtR(v)}</text>`;
   rows.forEach((x, i) => {
@@ -11518,10 +11529,11 @@ function chartDaily(ignoreSel = false){
   const r = cRange(); if (!r) return {err:"Выберите период"};
   const chats = chartEntity === "chats", metric = $("metric").value;
   const src = chats ? chartChatRows(cRows()) : cScoped();
-  let dmin = "9999-99-99";
-  src.forEach(x => { const d = String(x[F.date] ?? "").slice(0, 10); if (d.length === 10 && d >= r[0] && d <= r[1] && d < dmin) dmin = d; });
+  let dmin = "9999-99-99", dmax = "";
+  src.forEach(x => { const d = String(x[F.date] ?? "").slice(0, 10); if (d.length === 10 && d >= r[0] && d <= r[1]) { if (d < dmin) dmin = d; if (d > dmax) dmax = d; } });
   if (dmin === "9999-99-99") return {err:"Нет данных за выбранный период"};
-  const todayIso = iso(now), from = r[0] > dmin ? r[0] : dmin, to = r[1] < todayIso ? r[1] : todayIso;
+  // Конец — последний день, за который уже есть данные: иначе в конце графиков «провал» до нуля за ещё не посчитанные дни.
+  const todayIso = iso(now), lastIso = dmax && dmax < todayIso ? dmax : todayIso, from = r[0] > dmin ? r[0] : dmin, to = r[1] < lastIso ? r[1] : lastIso;
   const n = dayIdx(to) - dayIdx(from) + 1; if (n < 1) return {err:"Этот период ещё не начался"};
   const d0 = dayIdx(from), ents = new Map();
   src.forEach(x => {
@@ -11793,7 +11805,8 @@ function stackChart(){
   const W = 900, L = 36, R = W - 36, T = 128, BOT = 470, gap = n > 20 ? 4 : n > 10 ? 8 : 14, cw = (R - L - gap * (n - 1)) / n, rad = Math.min(14, cw * .12);
   const mx = Math.max(1, ...tot), sy = v => v / mx * (BOT - T - 30), defs = [];
   // общий объём столбца: верх светлее, низ темнее (поверх плоских цветов сегментов)
-  const shadeId = "stkShade" + (++gid);
+  const shadeId = "stkShade" + (++gid), otherId = "stkOther" + (++gid);
+  defs.push(`<pattern id="${otherId}" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#8a90a2" fill-opacity=".16"/><rect width="2.2" height="7" fill="#c0c6d4" fill-opacity=".32"/></pattern>`);
   defs.push(`<linearGradient id="${shadeId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".26"/><stop offset=".45" stop-color="#fff" stop-opacity=".04"/><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".28"/></linearGradient>`);
   const who = D.chats ? "по чатам" : "по участникам";
   const per = chartQuick ? (chartQuick === "all" ? "все данные" : `${chartQuick} дней`) : ({day:"день", week:"неделя", month:"месяц", year:"год", all:"все данные"}[mode] || "");
@@ -11809,7 +11822,7 @@ function stackChart(){
     let y = BOT;
     ser.forEach(se => {
       const v = se.s[b]; if (!(v > 0)) return;
-      const sh = sy(v), fill = chartSeriesStyle(se.kind, se.k).c[0]; // плоский цвет, без градиента
+      const sh = sy(v), fill = se.k === "other" ? `url(#${otherId})` : chartSeriesStyle(se.kind, se.k).c[0]; // плоский цвет; «Остальные» — тихая штриховка, чтобы не забивать названных
       o += `<rect class="anim-bar-y" x="${x.toFixed(1)}" y="${(y - sh).toFixed(1)}" width="${cw.toFixed(1)}" height="${(sh + .5).toFixed(1)}" fill="${fill}" data-ek="${escH(se.k)}" data-tip="${escH(B.full(b))}|${escH(`${se.n}: ${fmt(Math.round(v))} · ${Math.round(v / tot[b] * 100)}% из ${fmt(Math.round(tot[b]))}`)}"/>`;
       y -= sh;
     });
@@ -11823,7 +11836,7 @@ function stackChart(){
   let wsum = 0; items.forEach(it => { const w = lw(it) + 26; if (wsum + w > R - L && lines[lines.length - 1].length) { lines.push([]); wsum = 0; } lines[lines.length - 1].push(it); wsum += w; });
   lines.forEach((ln, li) => {
     const tw = ln.reduce((a, it) => a + lw(it) + 26, -26); let x = W / 2 - tw / 2; const y = BOT + 80 + li * 34;
-    ln.forEach(it => { const fill = chartSeriesStyle(it.se.kind, it.se.k).c[0];
+    ln.forEach(it => { const fill = it.se.k === "other" ? `url(#${otherId})` : chartSeriesStyle(it.se.kind, it.se.k).c[0];
       o += `<g data-ek="${escH(it.se.k)}"><rect x="${x.toFixed(1)}" y="${y - 13}" width="24" height="24" rx="6" fill="${fill}"/><text class="chart-legend" x="${(x + 34).toFixed(1)}" y="${y + 6}" font-size="17" fill="#d6d9e2">${escH(it.t)}</text></g>`;
       x += lw(it) + 26; });
   });
@@ -14922,7 +14935,14 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.11.01-3", date:"2026-11-01", title:"Реакции и события — в релизе", items:[
+  {v:"2026.11.01-5", date:"2026-11-01", title:"Реакции и события — в релизе", items:[
+    {tag:"imp", area:"Графики", text:"Тепловые карты в цветах темы идут от тёмного через цвет темы к почти белому — «больше» всегда ярче, разница между днями видна сразу."},
+    {tag:"imp", area:"Графики", text:"«Гонка»: при обгоне подписи переезжающих строк приглушаются и не накладываются; дата — в правом верхнем углу, полосы её не закрывают."},
+    {tag:"imp", area:"Графики", text:"«Кольцо»: у «Остальных» в легенде такая же штриховка, как на кольце."},
+    {tag:"fix", area:"Графики", text:"Графики заканчиваются на последнем дне с данными: в конце месяца больше нет «провала» до нуля за ещё не посчитанные дни (Маленькие графики, Активность по дням, Концентрация, График мест и др.)."},
+    {tag:"imp", area:"Графики", text:"«Остальные» в «Кольце» и «Активности по дням» — тихая штриховка вместо большого серого блока: названные участники читаются первыми."},
+    {tag:"imp", area:"Графики", text:"«Календарь» и «Спираль года»: цветовая шкала растянута от самого тихого до самого активного дня — разница между днями видна, легенда показывает реальный диапазон. «Календарь» стал крупнее."},
+    {tag:"fix", area:"Графики", text:"«Сезонность»: подпись «против среднего за 2024 год» вместо «за 2024–2024»."},
     {tag:"new", area:"Графики", text:"Эксперимент: неоновые линии в «Динамике» и «По годам» — свечение цвета линии, светлая сердцевина и сужение к началу, будто стрелка проявляется. Включается в «Настройки → Эффекты»."},
     {tag:"new", area:"Дизайн", text:"Стиль «Колония»: плитки собраны в одно табло с разделителями; переключатели вида — вкладки с подчёркиванием; фильтры — строкой («подпись сверху, значение с пунктиром»), без коробок; выбранный пункт меню — черта цвета темы; места 1–3 в таблицах — золото, серебро, бронза; шапка — словесный знак «Colony Stats»; фон в один оттенок с сеткой точек. Выключается в «Настройки → Оформление»."},
     {tag:"new", area:"Матрица", text:"«По годам» + «Месяц»: каждый столбец — выбранный месяц своего года (например, ноябрь каждого года); клик по году открывает этот месяц по дням, «Сравнение» показывает разницу с тем же месяцем прошлого года."},
@@ -18629,7 +18649,7 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
   }
   function themePalette(kind){
     const t = theme();
-    if (kind === "seq") return [pbMix(t.panel, t.a, .34), t.a, pbMix(t.b, "#ffffff", .32)];
+    if (kind === "seq") return [pbMix(t.panel, t.a, .26), t.a, pbMix(t.a, "#ffffff", .78)]; // тёмный → цвет темы → почти белый: «больше» всегда ярче
     if (kind === "pair") return [t.a, t.b];
     if (kind === "dm") return [t.b, t.a];
     const out = [t.a, t.b, rot(t.a, 150), rot(t.b, 150), rot(t.a, 70), rot(t.b, 70), rot(t.a, 220), rot(t.b, 220)];
