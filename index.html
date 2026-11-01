@@ -7618,7 +7618,11 @@ function renderSelfieMark(m){
   const end = addDaysIso(F, 6);
   $("s-friday-hint").innerHTML = `Засчитается в пятницу <b>${sFmtDate(F)}</b> (окно ${sShort(F)}–${sShort(end)}) · уже отмечено: ${fmt([...done].filter(sVisible).length)}. Нажми на имя, чтобы поставить или снять отметку.`;
   const people = sKnownPeople(m);
-  $("s-people").innerHTML = people.map(u => `<button type="button" class="s-chip" data-s-pk="${escH(u.pk)}" aria-pressed="${done.has(u.pk)}" title="Всего селфи: ${fmt(u.total)}">${escH(u.name)}<small>${u.total ? fmt(u.total) : ""}</small></button>`).join("");
+  // В списке — только те, кто делал селфи за последние полгода (26 пятниц) или уже отмечен в эту пятницу; по алфавиту.
+  // Остальные находятся через «Добавить по имени».
+  const chips = people.filter(u => u.rec > 0 || done.has(u.pk)).sort((a, b) => a.name.localeCompare(b.name, "ru"));
+  const hidden = people.length - chips.length;
+  $("s-people").innerHTML = chips.map(u => `<button type="button" class="s-chip" data-s-pk="${escH(u.pk)}" aria-pressed="${done.has(u.pk)}" title="Всего селфи: ${fmt(u.total)}">${escH(u.name)}<small>${u.total ? fmt(u.total) : ""}</small></button>`).join("") + (hidden ? `<span class="hint" style="align-self:center;margin-left:4px">ещё ${fmt(hidden)} — без селфи за полгода, найди через «Добавить по имени»</span>` : "");
   $("s-names").innerHTML = people.map(u => `<option value="${escH(u.name)}"></option>`).join("");
 }
 $("s-people").addEventListener("click", e => {
@@ -14981,7 +14985,8 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.11.01-10", date:"2026-11-01", title:"Реакции и события — в релизе", items:[
+  {v:"2026.11.01-11", date:"2026-11-01", title:"Реакции и события — в релизе", items:[
+    {tag:"imp", area:"Селфи", text:"«Отметить селфи»: участники по алфавиту; в списке только те, кто делал селфи за последние полгода (или уже отмечен в эту пятницу). Остальных можно найти через «Добавить по имени»."},
     {tag:"imp", area:"Эффекты", text:"Частицы «Падающие цифры» — в цвет выбранной темы и перекрашиваются сразу при её смене."},
     {tag:"imp", area:"Плитки", text:"Подписи под крупными цифрами в плитках — белые; проценты роста и падения остаются зелёными и красными."},
     {tag:"fix", area:"Везде", text:"Переключатели-вкладки («Участники | Чаты» и др.): подчёркивание прямое, без загиба у края. Стрелка во всех выпадающих списках (Матрица, Статистика, Графики, Сравнение и др.) больше не налезает на текст."},
