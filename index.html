@@ -2102,7 +2102,7 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
     <div class="theme-grid" id="theme-grid"></div>
     <div class="filters" id="theme-custom"></div>
     <h2>Эффекты</h2>
-    <div class="filters"><label class="checkline" title="Цвет каждого участника в графиках — лёгкий градиент: начало темнее, конец светлее. Работает и с готовыми палитрами"><input type="checkbox" id="set-soft-grad" checked>Лёгкий градиент в цветах участников</label><label class="checkline" title="Призовые места в таблицах (1 — радужный перелив, 2 — серебряный, 3 — бронзовый), победитель дуэли, номинанты «Итогов года» и максимальные достижения переливаются голографическим градиентом. В скопированных картинках — обычный текст"><input type="checkbox" id="set-holo-text">Переливающийся текст у победителей</label><label class="checkline" title="Карточки достижений, профиля, итогов года, сравнения, хаба и тем наклоняются за курсором, на них появляется блик; у алмазных достижений — радужная голограмма"><input type="checkbox" id="set-holo">3D-наклон и голографические блики на карточках</label></div>
+    <div class="filters"><label class="checkline" title="Цвет каждого участника в графиках — лёгкий градиент: начало темнее, конец светлее. Работает и с готовыми палитрами"><input type="checkbox" id="set-soft-grad" checked>Лёгкий градиент в цветах участников</label><label class="checkline" title="Экспериментально. Линии «Динамики» и «По годам» светятся как неон и сужаются к началу — словно стрелка проявляется из ничего"><input type="checkbox" id="set-neon">Неоновые линии в «Динамике» и «По годам» (эксперимент)</label><label class="checkline" title="Призовые места в таблицах (1 — радужный перелив, 2 — серебряный, 3 — бронзовый), победитель дуэли, номинанты «Итогов года» и максимальные достижения переливаются голографическим градиентом. В скопированных картинках — обычный текст"><input type="checkbox" id="set-holo-text">Переливающийся текст у победителей</label><label class="checkline" title="Карточки достижений, профиля, итогов года, сравнения, хаба и тем наклоняются за курсором, на них появляется блик; у алмазных достижений — радужная голограмма"><input type="checkbox" id="set-holo">3D-наклон и голографические блики на карточках</label></div>
     <div class="filters" id="fx-list"></div>
     <div class="filters">
       <div class="field"><label for="fx-season-kind">Частицы на фоне</label><select id="fx-season-kind"></select></div>
@@ -4456,8 +4456,8 @@ function lineChart({title, st, series: allSeries, xMin, xMax, ticks, yMax: yMaxI
       defs.push(`<linearGradient id="${gid}" x1="0" y1="${yTop.toFixed(1)}" x2="0" y2="${B}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${pa.z}" stop-opacity=".42"/><stop offset=".45" stop-color="${pa.z}" stop-opacity=".14"/><stop offset=".82" stop-color="${pa.z}" stop-opacity="0"/></linearGradient>`);
       o += `<path class="li-area anim-fade-late" d="${smooth(P)} L${P[P.length - 1][0].toFixed(1)},${B} L${P[0][0].toFixed(1)},${B} Z" fill="url(#${gid})" fill-opacity="${lineOpacity}" stroke="none"/>`;
     }
-    o += `<path${dn}${s.dash ? "" : ' class="anim-line" pathLength="1"'} d="${hasArrow ? tr.d : smooth(P)}" fill="none" stroke="${pa.p}" stroke-opacity="${lineOpacity}" stroke-width="${lineWidth}" stroke-linecap="butt" stroke-linejoin="round"${s.dash ? ` stroke-dasharray="${s.dash}"` : ""}/>`;
-    if (!s.dash) o += `<circle${dn} cx="${P[0][0].toFixed(1)}" cy="${P[0][1].toFixed(1)}" r="${many ? pointRadius * .6 : pointRadius}" fill="${pa.a}" fill-opacity="${lineOpacity}"/>`;
+    o += `<path${dn}${s.dash ? "" : ' class="anim-line" pathLength="1"'}${!s.dash && window.NEON_ON ? ` data-neon="${lineWidth}" data-neon-c="${pa.z}"` : ""} d="${hasArrow ? tr.d : smooth(P)}" fill="none" stroke="${pa.p}" stroke-opacity="${lineOpacity}" stroke-width="${lineWidth}" stroke-linecap="butt" stroke-linejoin="round"${s.dash ? ` stroke-dasharray="${s.dash}"` : ""}/>`;
+    if (!s.dash && !window.NEON_ON) o += `<circle${dn} cx="${P[0][0].toFixed(1)}" cy="${P[0][1].toFixed(1)}" r="${many ? pointRadius * .6 : pointRadius}" fill="${pa.a}" fill-opacity="${lineOpacity}"/>`;
     if (many && P.length > 1 && !s.dash) { const tip = P[P.length - 1]; o += `<circle${dn} class="anim-fade-late" cx="${tip[0].toFixed(1)}" cy="${tip[1].toFixed(1)}" r="${Math.max(4, pointRadius * .75)}" fill="${pa.z}" fill-opacity="${lineOpacity}"/>`; }
     if (s.live && P.length) { const lp = P[P.length - 1]; o += `<circle class="fx-pulse-dot" data-no-export="1" data-n="${escH(s.name)}" cx="${lp[0].toFixed(1)}" cy="${lp[1].toFixed(1)}" r="4" fill="none" stroke="${pa.z}" stroke-width="2" pointer-events="none"/>`; }
     if (s.fc) {
@@ -4478,7 +4478,7 @@ function lineChart({title, st, series: allSeries, xMin, xMax, ticks, yMax: yMaxI
       const p1 = `${(baseX + nx * half).toFixed(2)},${(baseY + ny * half).toFixed(2)}`;
       const p2 = `${tip[0].toFixed(2)},${tip[1].toFixed(2)}`;
       const p3 = `${(baseX - nx * half).toFixed(2)},${(baseY - ny * half).toFixed(2)}`;
-      o += `<polygon${dn} class="anim-fade-late" points="${p1} ${p2} ${p3}" fill="${pa.z}" fill-opacity="${lineOpacity}"/>`;
+      o += `<polygon${dn} class="anim-fade-late"${window.NEON_ON ? ` data-neon-head="${pa.z}"` : ""} points="${p1} ${p2} ${p3}" fill="${pa.z}" fill-opacity="${lineOpacity}"/>`;
     }
   });
   o += `</g>`;
@@ -14922,7 +14922,8 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.11.01-2", date:"2026-11-01", title:"Реакции и события — в релизе", items:[
+  {v:"2026.11.01-3", date:"2026-11-01", title:"Реакции и события — в релизе", items:[
+    {tag:"new", area:"Графики", text:"Эксперимент: неоновые линии в «Динамике» и «По годам» — свечение цвета линии, светлая сердцевина и сужение к началу, будто стрелка проявляется. Включается в «Настройки → Эффекты»."},
     {tag:"new", area:"Дизайн", text:"Стиль «Колония»: плитки собраны в одно табло с разделителями; переключатели вида — вкладки с подчёркиванием; фильтры — строкой («подпись сверху, значение с пунктиром»), без коробок; выбранный пункт меню — черта цвета темы; места 1–3 в таблицах — золото, серебро, бронза; шапка — словесный знак «Colony Stats»; фон в один оттенок с сеткой точек. Выключается в «Настройки → Оформление»."},
     {tag:"new", area:"Матрица", text:"«По годам» + «Месяц»: каждый столбец — выбранный месяц своего года (например, ноябрь каждого года); клик по году открывает этот месяц по дням, «Сравнение» показывает разницу с тем же месяцем прошлого года."},
     {tag:"new", area:"Реакции и События", text:"Плашка «данные на …» стала кнопкой: нажатие загружает свежие данные. Если сервер статистики их не отдал — под заголовком написано почему (например, адрес не пропущен прокси)."},
@@ -22116,5 +22117,68 @@ html body.ds.ds.ds :is(main,#ds-x) :is(button.mini,.copy-btn,.tv-btn,.hc-btn):no
   }
 })();
 </script>
+<script id="neon-lines">
+/* ===================== Эксперимент: неоновые линии-стрелки =====================
+   Линия строится как полоса переменной ширины: в начале почти ноль, к концу — полная толщина;
+   поверх — размытое свечение цвета линии и светлая сердцевина. Выключается в «Настройки → Эффекты». */
+window.NEON_ON = (() => { try { return localStorage.getItem("chatstats.neonLines.v1") === "1"; } catch (e) { return false; } })();
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  let fid = 0;
+  function ensureFilter(svg){
+    let f = svg.querySelector("filter.neon-glow"); if (f) return f.id;
+    let defs = svg.querySelector("defs"); if (!defs) { defs = document.createElementNS(NS, "defs"); svg.prepend(defs); }
+    f = document.createElementNS(NS, "filter"); f.id = "neonGlow" + (++fid); f.setAttribute("class", "neon-glow");
+    f.setAttribute("x", "-20%"); f.setAttribute("y", "-40%"); f.setAttribute("width", "140%"); f.setAttribute("height", "180%");
+    f.innerHTML = '<feGaussianBlur stdDeviation="7" result="b1"/><feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="b2"/><feMerge><feMergeNode in="b1"/><feMergeNode in="b2"/></feMerge>';
+    defs.appendChild(f); return f.id;
+  }
+  function taper(path){
+    const L = path.getTotalLength(); if (!(L > 4)) return null;
+    const wMax = Math.max(3, Number(path.dataset.neon) * 1.35 || 5), wMin = .4, N = Math.max(24, Math.min(260, Math.round(L / 3)));
+    const pts = []; for (let i = 0; i <= N; i++) { const p = path.getPointAtLength(L * i / N); pts.push([p.x, p.y]); }
+    const left = [], right = [];
+    for (let i = 0; i <= N; i++) {
+      const a = pts[Math.max(0, i - 1)], b = pts[Math.min(N, i + 1)];
+      let dx = b[0] - a[0], dy = b[1] - a[1]; const n = Math.hypot(dx, dy) || 1; dx /= n; dy /= n;
+      const t = i / N, w = (wMin + (wMax - wMin) * Math.pow(t, .75)) / 2;
+      left.push(`${(pts[i][0] - dy * w).toFixed(1)},${(pts[i][1] + dx * w).toFixed(1)}`);
+      right.push(`${(pts[i][0] + dy * w).toFixed(1)},${(pts[i][1] - dx * w).toFixed(1)}`);
+    }
+    return "M" + left.join("L") + "L" + right.reverse().join("L") + "Z";
+  }
+  function apply(svg){
+    const lines = svg.querySelectorAll("path[data-neon]:not([data-neon-done])"); if (!lines.length) return;
+    const fidv = ensureFilter(svg);
+    lines.forEach(p => {
+      p.dataset.neonDone = "1";
+      const d = taper(p); if (!d) return;
+      const fill = p.getAttribute("stroke"), op = p.getAttribute("stroke-opacity") || "1", c = p.dataset.neonC || fill, n = p.getAttribute("data-n");
+      const mk = (cls, attrs) => { const e = document.createElementNS(NS, "path"); e.setAttribute("d", d); e.setAttribute("class", cls); if (n != null) e.setAttribute("data-n", n); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+      const glow = mk("neon-glow-l", {fill:c, "fill-opacity":(op * .85).toFixed(2), filter:`url(#${fidv})`});
+      const body = mk("neon-body", {fill, "fill-opacity":op});
+      const core = mk("neon-core", {fill:"#ffffff", "fill-opacity":(op * .55).toFixed(2), transform:"", style:"mix-blend-mode:screen"});
+      // светлая сердцевина — та же форма, но уже: сжимаем через отдельный узкий проход
+      const thin = p.cloneNode(); thin.setAttribute("data-neon", String(Number(p.dataset.neon) * .38)); thin.removeAttribute("data-neon-done");
+      p.after(thin); const dCore = taper(thin); thin.remove(); if (dCore) core.setAttribute("d", dCore);
+      p.style.display = "none";
+      p.after(glow, body, core);
+    });
+    svg.querySelectorAll("polygon[data-neon-head]:not([data-neon-done])").forEach(h => { h.dataset.neonDone = "1"; h.setAttribute("filter", `url(#${fidv})`); });
+    svg.classList.add("neon-on");
+  }
+  const scan = () => document.querySelectorAll("main svg").forEach(svg => { if (svg.querySelector("path[data-neon]:not([data-neon-done])")) apply(svg); });
+  let raf = 0; const later = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; scan(); }); };
+  new MutationObserver(later).observe(document.querySelector("main"), {childList:true, subtree:true});
+  const cb = document.getElementById("set-neon");
+  if (cb) { cb.checked = window.NEON_ON; cb.addEventListener("change", () => { window.NEON_ON = cb.checked; try { localStorage.setItem("chatstats.neonLines.v1", cb.checked ? "1" : "0"); } catch (e) {} try { renderCharts(); } catch (e) {} try { if (typeof renderProfile === "function" && document.querySelector("#tab-profile.active")) renderProfile(); } catch (e) {} }); }
+})();
+</script>
+<style id="neon-lines-css">
+svg.neon-on .neon-body{animation:neonIn .9s ease-out both}
+svg.neon-on .neon-glow-l,svg.neon-on .neon-core{animation:neonIn 1.1s ease-out both}
+@keyframes neonIn{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){svg.neon-on :is(.neon-body,.neon-glow-l,.neon-core){animation:none}}
+</style>
 </body>
 </html>
