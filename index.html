@@ -5475,10 +5475,10 @@ async function tableImageBlob(tableId, title, rowLimit = null){
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Браузер не смог создать изображение");
     ctx.scale(scale, scale);
-    const bg = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#14161c";
-    const panel = getComputedStyle(document.documentElement).getPropertyValue("--panel").trim() || "#1c1f27";
-    const lineColor = getComputedStyle(document.documentElement).getPropertyValue("--line").trim() || "#2c303b";
-    const textColor = getComputedStyle(document.documentElement).getPropertyValue("--text").trim() || "#e6e8ee";
+    const bg = getComputedStyle(document.body).getPropertyValue("--bg").trim() || "#14161c";
+    const panel = getComputedStyle(document.body).getPropertyValue("--panel").trim() || "#1c1f27";
+    const lineColor = getComputedStyle(document.body).getPropertyValue("--line").trim() || "#2c303b";
+    const textColor = getComputedStyle(document.body).getPropertyValue("--text").trim() || "#e6e8ee";
     // «Со стеклом»: таблица рисуется сразу на матовом стекле — без линий, заголовок и итоги чуть светлее, углы картинки прямые.
     const glass = typeof window.__glassWanted === "function" && window.__glassWanted() && typeof window.__glassBackdrop === "function";
     if (glass) window.__glassBackdrop(ctx, W, H);
@@ -5538,7 +5538,7 @@ async function tableImageBlob(tableId, title, rowLimit = null){
           if (headFootBg === undefined) {
             const ft = row.closest("table") && row.closest("table").querySelector("tfoot td,tfoot th");
             let c = ft ? getComputedStyle(ft).backgroundColor : "";
-            if (!c || c === "transparent" || /rgba\([^)]*,\s*0\)$/.test(c)) c = getComputedStyle(document.documentElement).getPropertyValue("--foot").trim();
+            if (!c || c === "transparent" || /rgba\([^)]*,\s*0\)$/.test(c)) c = getComputedStyle(document.body).getPropertyValue("--foot").trim();
             headFootBg = c || "#262b3b";
           }
           ctx.fillStyle = canvasColor(headFootBg, panel); ctx.fillRect(x, y, cr.width, cr.height);
@@ -6151,7 +6151,7 @@ try { const j = JSON.parse(localStorage.getItem(EXP_KEY) || "null"); if (j) EXP.
 
 function sparkSvg(a){
   if (!a || !a.length) return '<span class="spark-empty">—</span>';
-  const AC = (getComputedStyle(document.documentElement).getPropertyValue("--accent") || "").trim() || "#7aa2f7";
+  const AC = (getComputedStyle(document.body).getPropertyValue("--accent") || "").trim() || "#7aa2f7";
   const W = 96, H = 24, max = Math.max(...a, 1), n = a.length;
   const px = i => n > 1 ? 2 + i * (W - 4) / (n - 1) : W / 2, py = v => H - 3 - (v / max) * (H - 6);
   if (n === 1) {
@@ -9877,7 +9877,7 @@ const cmpPeriodKind = () => /^\d{4}-\d{2}$/.test(CMP.period) ? "month" : /^\d{4}
 function cmpPeriodLabel(){ const k = cmpPeriodKind(); return k === "all" ? "за всё время" : k === "365" ? "за последние 365 дней" : k === "year" ? `за ${CMP.period} год` : `за ${MONTHS[+CMP.period.slice(5) - 1].toLowerCase()} ${CMP.period.slice(0, 4)}`; }
 const cmpMonthName = m => `${MONTHS[+m.slice(5) - 1]} ${m.slice(0, 4)}`;
 const cmpMonthLast = m => { const [y, mm] = m.split("-").map(Number); return `${m}-${pad(new Date(Date.UTC(y, mm, 0)).getUTCDate())}`; };
-const cmpThemeVar = (n, f) => (getComputedStyle(document.documentElement).getPropertyValue(n) || "").trim() || f;
+const cmpThemeVar = (n, f) => (getComputedStyle(document.body).getPropertyValue(n) || "").trim() || f;
 function cmpExportPrefs(){ return {backgroundMode:"linear", backgroundStart:cmpThemeVar("--panel-2", "#1d212b"), backgroundEnd:cmpThemeVar("--bg", "#0f1117"), backgroundAngle:160, keepTextColors:true}; }
 function cmpChatList(){
   const hasT = allRows.some(x => Number(x[F.chatPk]) === 0), tot = new Map();
@@ -15105,7 +15105,8 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.11.02-21", date:"2026-11-02", title:"«Табло»: фильтры, кнопки, таблицы", items:[{tag:"imp", area:"Оформление", text:"«Табло»: переключатели периода в «Статистике» и «Хабе» — вкладками с подчёркиванием, как на «Графиках» и в «Матрице»; поле даты — строкой с пунктиром, без рамки (название месяца больше не налезает на значок)."},{tag:"imp", area:"Оформление", text:"«Табло»: все кнопки действий одной высоты и формы («Копировать», «Карточки», «Таблица»), в шторке фильтров и на телефоне переключатели — спокойные чипы; цветные метки у фильтров, подсветка включённых карточек настроек и цветная рамка уведомления убраны; шапки таблиц — серые."},{tag:"fix", area:"Телефон", text:"В строках-карточках «Участников», «Чатов», «Реакций» и «Событий» числа больше не обрезаются до «1 …»: ширина колонок подстраивается под число, мини-график «Динамика» на телефоне скрыт."},{tag:"fix", area:"Оформление", text:"«Табло»: крупные числа снова обычным шрифтом с ровными цифрами — моноширинный шрифт растягивал пробел в «35 766»."}]},
+  {v:"2026.11.02-22", date:"2026-11-02", title:"«Табло»: картинки и фон графиков", items:[{tag:"fix", area:"Экспорт", text:"Таблица картинкой в «Табло»: первый столбец больше не отличается от остальных — фон, шапка и строка «Всего» на картинке графитовые, как на сайте."},{tag:"fix", area:"Графики", text:"«Табло» больше не перекрывает фон графика из «⚙ Настройка»: градиенты на «Динамике» и других графиках вернулись."}]},
+{v:"2026.11.02-21", date:"2026-11-02", title:"«Табло»: фильтры, кнопки, таблицы", items:[{tag:"imp", area:"Оформление", text:"«Табло»: переключатели периода в «Статистике» и «Хабе» — вкладками с подчёркиванием, как на «Графиках» и в «Матрице»; поле даты — строкой с пунктиром, без рамки (название месяца больше не налезает на значок)."},{tag:"imp", area:"Оформление", text:"«Табло»: все кнопки действий одной высоты и формы («Копировать», «Карточки», «Таблица»), в шторке фильтров и на телефоне переключатели — спокойные чипы; цветные метки у фильтров, подсветка включённых карточек настроек и цветная рамка уведомления убраны; шапки таблиц — серые."},{tag:"fix", area:"Телефон", text:"В строках-карточках «Участников», «Чатов», «Реакций» и «Событий» числа больше не обрезаются до «1 …»: ширина колонок подстраивается под число, мини-график «Динамика» на телефоне скрыт."},{tag:"fix", area:"Оформление", text:"«Табло»: крупные числа снова обычным шрифтом с ровными цифрами — моноширинный шрифт растягивал пробел в «35 766»."}]},
 {v:"2026.11.02-20", date:"2026-11-02", title:"Стиль «Табло»", items:[{tag:"new", area:"Оформление", text:"Новый стиль «Табло», включён по умолчанию: тихий графит и один акцент темы, без радужных рамок, цветных полосок, свечения и пятен на фоне. Цвет остался только там, где он что-то значит, — у участников на графиках и в таблицах и у медалей достижений."},{tag:"imp", area:"Оформление", text:"«Табло»: эмодзи в интерфейсе заменены линейными иконками или убраны (реакции и данные не трогаются), веса шрифта 400–500 вместо жирного, крупные числа и места — моноширинными цифрами, как на табло, заголовки графиков без капса, бейдж NEW убран."},{tag:"imp", area:"Оформление", text:"В «Табло» эффекты (частицы, рамки, блеск, неон, голограмма, стекло, параллакс) выключены. Вернуть прежний вид — снять «Стиль «Табло»» в «Настройки → Оформление»."}]},
 {v:"2026.11.02-19", date:"2026-11-02", title:"Реакции и события — в релизе", items:[{tag:"imp", area:"Графики", text:"«По годам» с выбранными днями: у текущего года справа видно и сколько уже набрано за эти дни, и прогноз на конец окна — «500 → ≈2.5K». Прогноз считается только до последнего выбранного дня."},{tag:"new", area:"Графики", text:"«По годам»: в «⚙ Настройка» появились толщина линий, размер точек, длина и ширина наконечников. Они свои, отдельные от «Динамики»."},{tag:"new", area:"Графики", text:"«По годам»: выбор дней месяца — «Все», «5 дней», «7 дней» или свои (например, 10–20). «5 дней» и «7 дней» держат сегодняшнее число в центре: 2-го — 1–5, 11-го — 9–13, 30-го — 27–31. Накопление и прогноз считаются внутри выбранных дней."},{tag:"fix", area:"Матрица", text:"Убрана тонкая тёмная полоса между столбиками и «Всего» в шапке «По годам». Её давал золотой блеск итоговой ячейки при дробной ширине столбцов."},{tag:"fix", area:"Таблицы", text:"Тёмная полоса в Матрице убрана: разделитель перед «Всего» в шапке и пустое место справа от узкой таблицы. Рамка и стеклянный фон теперь облегают узкие таблицы (Матрица «по годам», Рекорды, Реакции, События), а не тянутся на всю ширину."},{tag:"new", area:"Телефон", text:"В Матрице кнопка «📅 1–2 ноября по годам» есть и в строке быстрых фильтров над таблицей."},{tag:"new", area:"Матрица", text:"«По годам»: выбор дней месяца — «Все», «По сегодня» (с 1-го по сегодняшнее число) или свои дни, например 7–10 октября в каждом году. Без выбранного месяца «По сегодня» сравнивает годы с 1 января по сегодняшнюю дату."},{tag:"new", area:"Матрица", text:"Кнопка быстрого доступа «📅 1–2 ноября по годам» (дата меняется сама): одним нажатием включает «По годам», текущий месяц и дни по сегодня. Повторное нажатие возвращает весь месяц."},{tag:"imp", area:"Языки", text:"Новые надписи — реакции, события и прогноз, поиск, «Кто ты?», карточка игрока, описания эффектов и настроек, матрица по месяцам — переведены на английский, украинский, белорусский, казахский, французский и польский."},{tag:"fix", area:"Языки", text:"Буквы в аватарах больше не «переводятся» (вместо «С» было «From»)."},
     {tag:"new", area:"Везде", text:"Поиск по сайту: «/» или Ctrl+K (на телефоне — лупа вверху). Вкладки, участники (профиль, достижения, сравнить со мной), месяцы («октябрь 2025»), разделы настроек; стрелки и Enter."},
@@ -18728,8 +18729,8 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
   // Фон стеклянной картинки: тёмная основа, размытые цветные пятна и матовый слой стекла поверх них.
   function glassBackdrop(c, W, H){
     const M = Math.max(W, H), acc = (getComputedStyle(document.body).getPropertyValue("--accent") || "").trim() || "#7aa2f7";
-    const tbg = (getComputedStyle(document.documentElement).getPropertyValue("--bg") || "").trim() || "#0d1018";
-    const tpanel = (getComputedStyle(document.documentElement).getPropertyValue("--panel") || "").trim() || "#141720";
+    const tbg = (getComputedStyle(document.body).getPropertyValue("--bg") || "").trim() || "#0d1018";
+    const tpanel = (getComputedStyle(document.body).getPropertyValue("--panel") || "").trim() || "#141720";
     c.fillStyle = tbg; c.fillRect(0, 0, W, H);
     const spot = (x, y, r, col) => { const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, col); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(0, 0, W, H); };
     c.save(); c.globalAlpha = .55; spot(W * .14, H * .2, M * .45, acc); c.globalAlpha = .4; { const bs = getComputedStyle(document.body), a2 = (bs.getPropertyValue("--accent-2") || "").trim() || "#ff6fb5", c3 = (bs.getPropertyValue("--theme-c3") || "").trim() || "#4fd8ff", c4 = (bs.getPropertyValue("--theme-c4") || "").trim() || "#9b7bff"; spot(W * .9, H * .25, M * .4, a2); spot(W * .6, H * .95, M * .5, c3); c.globalAlpha = .33; spot(W * .3, H * .75, M * .35, c4); } c.restore();
@@ -18831,7 +18832,7 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
 (function(){
   const NAME = "Тема сайта", GROUP = "По теме сайта";
   window.THEME_PAL = NAME;
-  const css = n => { try { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); } catch (e) { return ""; } };
+  const css = n => { try { return getComputedStyle(document.body).getPropertyValue(n).trim(); } catch (e) { return ""; } };
   const hex = (v, d) => /^#[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : d;
   const toHsl = h => { let [r, g, b] = pbRgb(h).map(v => v / 255); const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2; let s = 0, hh = 0;
     if (mx !== mn) { const d = mx - mn; s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn); hh = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; hh *= 60; }
@@ -21802,7 +21803,7 @@ svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
   if (tabs) new MutationObserver(() => tabs.querySelectorAll("button").forEach(b => b.classList.contains("on") ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"))).observe(tabs, {subtree:true, attributes:true, attributeFilter:["class"]});
   // Цвет системной панели = фон темы
   const meta = document.querySelector('meta[name="theme-color"]') || (() => { const m = document.createElement("meta"); m.name = "theme-color"; document.head.appendChild(m); return m; })();
-  const paint = () => { const c = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim(); if (c && meta.content !== c) meta.content = c; };
+  const paint = () => { const c = getComputedStyle(document.body).getPropertyValue("--bg").trim(); if (c && meta.content !== c) meta.content = c; };
   paint(); new MutationObserver(paint).observe(document.documentElement, {attributes:true, attributeFilter:["style", "class"]});
   // Системная кнопка «назад» закрывает шторку фильтров, а не уводит со страницы
   const fs = document.getElementById("ma-fsheet"); if (!fs) return;
@@ -22364,7 +22365,7 @@ html body.ds.ds.ds :is(main,#ds-x) :is(button.mini,.copy-btn,.tv-btn,.hc-btn):no
    Эффекты (частицы, рамки, блеск, неон, стекло) в этом стиле выключены. */
 html body.tablo{
   --bg:#141415!important;--panel:#19191b!important;--raised:#202022;--line:rgba(237,237,237,.08)!important;--line-2:rgba(237,237,237,.14);
-  --text:#ededed!important;--muted:#a1a1a6!important;--faint:#85858b;--chart-bg:#19191b!important;
+  --text:#ededed!important;--muted:#a1a1a6!important;--faint:#85858b;
   --ctrl:#202022!important;--ctrl-2:#26262a;--accent-bg:color-mix(in srgb,var(--accent) 14%,#19191b)!important;--m3-glass:#19191b;--m3-surf-hi:#202022;--m3-blur:none;
   --th-bg:#1e1e20!important;--dm-head-bg:#1e1e20!important;--nv-fill:#19191b;--ds-line:rgba(237,237,237,.08);--ds-line-2:rgba(237,237,237,.12);
   --t-ease:cubic-bezier(.22,1,.36,1);
@@ -22376,7 +22377,7 @@ html body.tablo header{background:#141415!important}
 html body.tablo #fx-season,html body.tablo #fx-confetti{display:none!important}
 
 /* ---------- Поверхности: одна плоскость, тонкая линия, без градиентов и цветных теней ---------- */
-html body.tablo.tablo :is(main,#ds-x) :is(.p-card,.p-hero,.cmp-hero,.cmp-side,.cmp-verdict,.yr-chart-card,.yr-award,.ach-hero,.ach-card,.chart,.tile,.hub-kpi,.ev-card,.hub-card,.hub-box,.vk-card,.mt-card,.hub-who,.hub-today){background:var(--panel)!important;background-image:none!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html body.tablo.tablo :is(main,#ds-x) :is(.p-card,.p-hero,.cmp-hero,.cmp-side,.cmp-verdict,.yr-award,.ach-hero,.ach-card,.tile,.hub-kpi,.ev-card,.hub-card,.hub-box,.vk-card,.mt-card,.hub-who,.hub-today){background:var(--panel)!important;background-image:none!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 html body.tablo.tablo :is(main,#ds-x) :is(.p-card,.p-hero,.cmp-hero,.cmp-side,.cmp-verdict,.yr-chart-card,.yr-award,.ach-hero,.ach-card,.chart,.ev-card,.hub-card,.vk-card){border:1px solid var(--line)!important;border-radius:14px!important}
 html body.tablo.tablo main :is(.tiles,.hub-kpis){background:var(--panel)!important;border:1px solid var(--line)!important;border-radius:14px!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 html body.tablo.tablo main :is(.tile,.hub-kpi,.ev-card,.ach-hero,.ach-card,.p-hero,.yr-tile,.streak-card)::before,html body.tablo.tablo main :is(h2,h3)::before{content:none!important;display:none!important}
@@ -22384,7 +22385,6 @@ html body.tablo.tablo main :is(.tile,.hub-kpi,.ev-card,.ach-card,.yr-award,.p-ca
 html body.tablo.tablo main .ev-card.on{border-color:color-mix(in srgb,var(--accent) 55%,transparent)!important}
 html body.tablo.tablo main .ach-card{border-left-width:1px!important}
 html body.tablo.tablo main .wrap{border-radius:14px!important;box-shadow:none!important;background:var(--panel)!important;border:1px solid var(--line)!important}
-html body.tablo.tablo main :is(.chart,.yr-chart-card) svg{background:none}
 
 /* ---------- Шрифт: иерархия размером и цветом, веса 400–500 ---------- */
 html body.tablo.tablo{font-weight:400}
@@ -22440,6 +22440,8 @@ html body.tablo #fcat-legend{display:none!important}
 /* Подписи легенд графиков */
 html body.tablo.tablo :is(main) :is(.series-chips,.lg-chips,.chart-legend-chips) :is(button,span,b){font-weight:500!important}
 /* Шапки таблиц: тихая серая ступенька */
+html body.tablo.tablo.tablo:not(#zq1) :is(main,.table-image-measure) table :is(tfoot td,tfoot th){background-color:#1e1e20!important}
+html body.tablo.tablo.tablo:not(#zq1) .table-image-measure table thead th{background-color:#1e1e20!important}
 html body.tablo.tablo main table thead th{background-color:#1e1e20!important;color:var(--muted)!important;font-weight:500!important}
 html body.tablo.tablo main table thead th:is(.sorted,[aria-sort="ascending"],[aria-sort="descending"]){color:var(--text)!important}
 
