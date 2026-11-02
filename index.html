@@ -4515,7 +4515,7 @@ function lineChart({title, st, series: allSeries, xMin, xMax, ticks, yMax: yMaxI
     const fs = Math.max(12, Math.min(18, gap - 4)), lx = R + 26, short = v => v >= 1000 ? shortNum(v) : fmt(Math.round(v));
     ends.forEach(e => {
       const c = e.s.st.c[0], nm = e.s.name.length > 15 ? e.s.name.slice(0, 14) + "…" : e.s.name;
-      o += gi(e.s, `<path data-n="${escH(e.s.name)}" d="M${(e.x + 6).toFixed(1)},${e.y.toFixed(1)} C${(R + 12).toFixed(1)},${e.y.toFixed(1)} ${(R + 8).toFixed(1)},${e.ly.toFixed(1)} ${(lx - 6).toFixed(1)},${e.ly.toFixed(1)}" fill="none" stroke="${c}" stroke-opacity=".55" stroke-width="1.6"/><circle data-n="${escH(e.s.name)}" cx="${lx - 4}" cy="${e.ly.toFixed(1)}" r="3.5" fill="${c}"/><text data-n="${escH(e.s.name)}" class="end-label" x="${lx + 4}" y="${(e.ly + fs * .35).toFixed(1)}" font-size="${fs.toFixed(0)}" fill="${chartFontColor || "#f2f3f7"}">${escH(nm)}<tspan fill-opacity=".6" font-size="${(fs * .82).toFixed(0)}"> ${e.fc ? "≈" : ""}${short(e.v)}</tspan></text>`);
+      o += gi(e.s, `<path data-n="${escH(e.s.name)}" d="M${(e.x + 6).toFixed(1)},${e.y.toFixed(1)} C${(R + 12).toFixed(1)},${e.y.toFixed(1)} ${(R + 8).toFixed(1)},${e.ly.toFixed(1)} ${(lx - 6).toFixed(1)},${e.ly.toFixed(1)}" fill="none" stroke="${c}" stroke-opacity=".55" stroke-width="1.6"/><circle data-n="${escH(e.s.name)}" cx="${lx - 4}" cy="${e.ly.toFixed(1)}" r="3.5" fill="${c}"/><text data-n="${escH(e.s.name)}" class="end-label" x="${lx + 4}" y="${(e.ly + fs * .35).toFixed(1)}" font-size="${fs.toFixed(0)}" fill="${chartFontColor || "#f2f3f7"}">${escH(nm)}<tspan fill-opacity=".6" font-size="${(fs * .82).toFixed(0)}"> ${e.fc && e.s.fc.now != null ? `${short(e.s.fc.now)} → ` : ""}${e.fc ? "≈" : ""}${short(e.v)}</tspan></text>`);
     });
   }
   let extra = "";
@@ -4753,6 +4753,7 @@ function trendChart(){
 /* «По годам»: какие дни месяца показывать. "" — все, "5"/"7" — окно вокруг сегодняшнего числа, "a-b" — свои. */
 const YD_KEY = "chatstats.yearsDays.v1";
 let YD = ""; try { YD = localStorage.getItem(YD_KEY) || ""; } catch (e) {}
+function yearsStyle(){ const t = chartPrefs("years")?.trendStyle || {}; const o = {...DEFAULT_TREND_STYLE}; for (const k of ["line", "point", "arrowLength", "arrowSize"]) if (t[k] !== undefined) o[k] = clampTrendStyle(k, t[k]); return o; }
 function ydWindow(dim){
   const v = YD, td = new Date().getDate();
   if (v === "5" || v === "7") {
@@ -4818,7 +4819,7 @@ function yearsChart(){
       yMax = Math.max(yMax,total);
       return {name:u.name, st:chartSeriesStyle("c",u.key), pts, w:4};
     });
-    return lineChart({title:MONTHS[m-1], st:sub()+ydWord+", накопительно по чатам (топ-"+series.length+")", series, xMin:xA, xMax, ticks:ydTicks(), yMax, xLabel: i => `${pad(i)}.${pad(m)}`});
+    return lineChart({title:MONTHS[m-1], st:sub()+ydWord+", накопительно по чатам (топ-"+series.length+")", series, xMin:xA, xMax, ticks:ydTicks(), yMax, appearance:yearsStyle(), xLabel: i => `${pad(i)}.${pad(m)}`});
   }
   const by = {};
   src.forEach(x => {
@@ -4859,14 +4860,14 @@ function yearsChart(){
       // В окне дней прогноз — только до конца окна: доля оставшегося до конца месяца.
       const k = (currentMonthDays - n) > 0 ? (fcEndX - n) / (currentMonthDays - n) : 1;
       const endValue = lastV + (forecast.forecast - forecast.current) * k;
-      cur.fc = {x0:n, y0:lastV, x1:fcEndX, y1:endValue, lo:Math.max(lastV, lastV + (forecast.lo - forecast.current) * k), hi:lastV + (forecast.hi - forecast.current) * k, month:endValue, place:1, nowPlace:1,
+      cur.fc = {x0:n, y0:lastV, x1:fcEndX, y1:endValue, now:YW ? lastV : null, lo:Math.max(lastV, lastV + (forecast.lo - forecast.current) * k), hi:lastV + (forecast.hi - forecast.current) * k, month:endValue, place:1, nowPlace:1,
         note:"темп — как на вкладке «Прогноз»"};
       // С чем сравнить: итог того же месяца в прошлые годы.
       cur.fc.prev = series.filter(s2 => s2 !== cur && s2.pts.length).map(s2 => ({name:s2.name, v:s2.pts[s2.pts.length - 1][1]}));
       yMax = Math.max(yMax, cur.fc.hi);
     }
   }
-  return lineChart({title: MONTHS[m - 1], st: sub() + ydWord + ", накопительно по годам" + (cur && cur.fc ? `, прогноз до ${cur.fc.x1}.${pad(m)}` : ""), series, xMin: xA, xMax, ticks: ydTicks(), yMax, xLabel: i => `${pad(i)}.${pad(m)}`});
+  return lineChart({title: MONTHS[m - 1], st: sub() + ydWord + ", накопительно по годам" + (cur && cur.fc ? `, прогноз до ${cur.fc.x1}.${pad(m)}` : ""), series, xMin: xA, xMax, ticks: ydTicks(), yMax, appearance: yearsStyle(), xLabel: i => `${pad(i)}.${pad(m)}`});
 }
 
 function applyChartTextStyles(){
@@ -6327,8 +6328,8 @@ function renderChartSettingsPanel(){
     }).join("");
     html += `<div class="chart-setting-group chart-custom-ranges"><h3>Цвета по значениям — ${chartEntity === "chats" ? "чаты" : "участники"}</h3><p class="hint">Диапазоны и цвета сохраняются отдельно для ${chartEntity === "chats" ? "чатов" : "участников"}. Редактируй границу «До»: следующий цвет начнётся со следующего целого числа. Первый диапазон начинается с 0. У последнего показывается начало «От».</p><div class="chart-custom-bands-list">${rows}</div><button class="mini" type="button" data-custom-band-add="1">+ Добавить диапазон</button></div>` + mainPaletteGroupHtml(type, p);
   }
-  if (type === "trend") {
-    const trend = {...DEFAULT_TREND_STYLE, ...TREND_STYLE, ...(p.trendStyle || {})};
+  if (type === "trend" || type === "years") {
+    const trend = type === "years" ? yearsStyle() : {...DEFAULT_TREND_STYLE, ...TREND_STYLE, ...(p.trendStyle || {})};
     const trange = (label,key,min,max,step) => `<div class="chart-setting-field"><label>${label}: <output data-range-value="${key}">${trend[key]}${key === "opacity" ? "%" : ""}</output></label><input type="range" min="${min}" max="${max}" step="${step}" value="${trend[key]}" data-chart-trend="${key}" aria-label="${label}"></div>`;
     html += `<div class="chart-setting-group"><h3>Линии и наконечники</h3>${trange("Толщина линий","line",1,8,.5)}${trange("Размер точек","point",1,10,.5)}${trange("Длина наконечников","arrowLength",6,32,1)}${trange("Ширина наконечников","arrowSize",6,28,1)}</div>`;
   }
@@ -6420,6 +6421,13 @@ $("chart-settings-content").addEventListener("input", e => {
   }
   if (e.target?.dataset?.chartTrend) {
     const k = e.target.dataset.chartTrend;
+    if (type === "years") {
+      // У «По годам» свои толщина линий и наконечники — «Динамику» не трогаем.
+      const v = clampTrendStyle(k, e.target.value);
+      p.trendStyle = {...(p.trendStyle || {}), [k]:v}; CHART_PREFS[type] = p; saveChartPrefs();
+      const out = e.target.parentElement?.querySelector(`[data-range-value="${k}"]`); if (out) out.textContent = String(v);
+      renderCharts(); return;
+    }
     TREND_STYLE[k] = clampTrendStyle(k, e.target.value);
     p.trendStyle = {...(p.trendStyle || {}), [k]:TREND_STYLE[k]};
     CHART_PREFS[type] = p; saveChartPrefs(); saveTrendStyle();
@@ -15096,7 +15104,7 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.11.02-18", date:"2026-11-02", title:"Реакции и события — в релизе", items:[{tag:"new", area:"Графики", text:"«По годам»: выбор дней месяца — «Все», «5 дней», «7 дней» или свои (например, 10–20). «5 дней» и «7 дней» держат сегодняшнее число в центре: 2-го — 1–5, 11-го — 9–13, 30-го — 27–31. Накопление и прогноз считаются внутри выбранных дней."},{tag:"fix", area:"Матрица", text:"Убрана тонкая тёмная полоса между столбиками и «Всего» в шапке «По годам». Её давал золотой блеск итоговой ячейки при дробной ширине столбцов."},{tag:"fix", area:"Таблицы", text:"Тёмная полоса в Матрице убрана: разделитель перед «Всего» в шапке и пустое место справа от узкой таблицы. Рамка и стеклянный фон теперь облегают узкие таблицы (Матрица «по годам», Рекорды, Реакции, События), а не тянутся на всю ширину."},{tag:"new", area:"Телефон", text:"В Матрице кнопка «📅 1–2 ноября по годам» есть и в строке быстрых фильтров над таблицей."},{tag:"new", area:"Матрица", text:"«По годам»: выбор дней месяца — «Все», «По сегодня» (с 1-го по сегодняшнее число) или свои дни, например 7–10 октября в каждом году. Без выбранного месяца «По сегодня» сравнивает годы с 1 января по сегодняшнюю дату."},{tag:"new", area:"Матрица", text:"Кнопка быстрого доступа «📅 1–2 ноября по годам» (дата меняется сама): одним нажатием включает «По годам», текущий месяц и дни по сегодня. Повторное нажатие возвращает весь месяц."},{tag:"imp", area:"Языки", text:"Новые надписи — реакции, события и прогноз, поиск, «Кто ты?», карточка игрока, описания эффектов и настроек, матрица по месяцам — переведены на английский, украинский, белорусский, казахский, французский и польский."},{tag:"fix", area:"Языки", text:"Буквы в аватарах больше не «переводятся» (вместо «С» было «From»)."},
+  {v:"2026.11.02-19", date:"2026-11-02", title:"Реакции и события — в релизе", items:[{tag:"imp", area:"Графики", text:"«По годам» с выбранными днями: у текущего года справа видно и сколько уже набрано за эти дни, и прогноз на конец окна — «500 → ≈2.5K». Прогноз считается только до последнего выбранного дня."},{tag:"new", area:"Графики", text:"«По годам»: в «⚙ Настройка» появились толщина линий, размер точек, длина и ширина наконечников. Они свои, отдельные от «Динамики»."},{tag:"new", area:"Графики", text:"«По годам»: выбор дней месяца — «Все», «5 дней», «7 дней» или свои (например, 10–20). «5 дней» и «7 дней» держат сегодняшнее число в центре: 2-го — 1–5, 11-го — 9–13, 30-го — 27–31. Накопление и прогноз считаются внутри выбранных дней."},{tag:"fix", area:"Матрица", text:"Убрана тонкая тёмная полоса между столбиками и «Всего» в шапке «По годам». Её давал золотой блеск итоговой ячейки при дробной ширине столбцов."},{tag:"fix", area:"Таблицы", text:"Тёмная полоса в Матрице убрана: разделитель перед «Всего» в шапке и пустое место справа от узкой таблицы. Рамка и стеклянный фон теперь облегают узкие таблицы (Матрица «по годам», Рекорды, Реакции, События), а не тянутся на всю ширину."},{tag:"new", area:"Телефон", text:"В Матрице кнопка «📅 1–2 ноября по годам» есть и в строке быстрых фильтров над таблицей."},{tag:"new", area:"Матрица", text:"«По годам»: выбор дней месяца — «Все», «По сегодня» (с 1-го по сегодняшнее число) или свои дни, например 7–10 октября в каждом году. Без выбранного месяца «По сегодня» сравнивает годы с 1 января по сегодняшнюю дату."},{tag:"new", area:"Матрица", text:"Кнопка быстрого доступа «📅 1–2 ноября по годам» (дата меняется сама): одним нажатием включает «По годам», текущий месяц и дни по сегодня. Повторное нажатие возвращает весь месяц."},{tag:"imp", area:"Языки", text:"Новые надписи — реакции, события и прогноз, поиск, «Кто ты?», карточка игрока, описания эффектов и настроек, матрица по месяцам — переведены на английский, украинский, белорусский, казахский, французский и польский."},{tag:"fix", area:"Языки", text:"Буквы в аватарах больше не «переводятся» (вместо «С» было «From»)."},
     {tag:"new", area:"Везде", text:"Поиск по сайту: «/» или Ctrl+K (на телефоне — лупа вверху). Вкладки, участники (профиль, достижения, сравнить со мной), месяцы («октябрь 2025»), разделы настроек; стрелки и Enter."},
     {tag:"new", area:"Профиль", text:"«Карточка игрока» — картинка 1080×1350 с местом, сообщениями, лучшим днём, серией, лучшими достижениями и уровнем в событии: скопировать, скачать или переслать."},
     {tag:"new", area:"Первый вход", text:"При первом открытии сайт спрашивает «Кто ты?» — выбор с поиском, можно пропустить."},
