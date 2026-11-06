@@ -5137,6 +5137,8 @@ async function chartBlob(){
 function stripInteractive(c){
   if (c.dataset && c.dataset.vb0) { c.setAttribute("viewBox", c.dataset.vb0); c.classList.remove("cz-on", "cz-drag"); delete c.dataset.vb0; }
   c.querySelectorAll('[data-no-export], #hov, #xh, #mxh, [data-hover]').forEach(el => el.remove());
+  // Числа, которые ещё «докручиваются», — сразу в итоговое значение; переходы столбцов не попадают в картинку
+  c.querySelectorAll('[data-num-final]').forEach(el => { el.textContent = el.dataset.numFinal; el.removeAttribute("data-num-final"); });
   // Скрытые кликом по легенде серии (полупрозрачные подписи) в картинке не показываем.
   c.querySelectorAll('.lg-item').forEach(el => { if (Number(el.getAttribute("opacity")) < 1) el.remove(); });
   c.querySelectorAll('[style*="cursor"]').forEach(el => { el.style.cursor = ""; });
@@ -5489,7 +5491,7 @@ async function tableImageBlob(tableId, title, rowLimit = null){
     const tableWidth = Math.ceil(Math.max(table.scrollWidth || 0, tableRect.width || 0, 1));
     const tableHeight = Math.ceil(Math.max(table.scrollHeight || 0, tableRect.height || 0, ...rowRects.map(r => r.bottom-tableRect.top)));
 
-    const pad = 18, titleFont = '22px "Samsung Sans", "SamsungOne", "Segoe UI", sans-serif';
+    const pad = 28, titleFont = '22px "Samsung Sans", "SamsungOne", "Segoe UI", sans-serif';
     const titleLineHeight = 32, titleGap = 10, scale = 2;
     const titleText = String(title || "Статистика");
     const titleMeasure = document.createElement("canvas").getContext("2d");
@@ -5514,10 +5516,11 @@ async function tableImageBlob(tableId, title, rowLimit = null){
     if (glass) window.__glassBackdrop(ctx, W, H);
     else if (!(typeof window.__pageBgPaint === "function" && window.__pageBgPaint(ctx, W, H))) { ctx.fillStyle = bg; ctx.fillRect(0,0,W,H); }
     ctx.font = titleFont; ctx.textBaseline = "middle"; ctx.fillStyle = textColor;
-    ctx.fillText(titleText, pad, pad+titleLineHeight/2);
+    // Таблица — по центру картинки; если заголовок шире таблицы, таблица встаёт по центру под ним
+    const tableX = pad + Math.max(0, Math.round((contentWidth - tableWidth) / 2));
+    ctx.fillText(titleText, titleWidth > tableWidth ? pad : tableX, pad+titleLineHeight/2);
 
     const tableY = pad+titleLineHeight+titleGap;
-    const tableX = pad;
     const tableRadius = glass ? 12 : 8;
     ctx.fillStyle = glass ? "rgba(255,255,255,.035)" : panel;
     ctx.beginPath();
@@ -5620,6 +5623,8 @@ async function tableImageBlob(tableId, title, rowLimit = null){
     const out = await new Promise((resolve,reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Не удалось создать PNG")), "image/png"));
     if (glass) window.__glassRendered = {size: out.size, t: Date.now()};
     if (framed) window.__frameRendered = {size: out.size, t: Date.now()};
+    // Таблица уже лежит на фоне с полями — повторно в «карточку» не заворачиваем
+    window.__padRendered = {size: out.size, t: Date.now()};
     return out;
   } finally {
     measureHost.remove();
@@ -11523,10 +11528,12 @@ function animateNumber(el, opt = {}){
   if (from == null || from === P.v || (from === 0 && !(P.v > 0))) return;
   const t0 = performance.now(), dur = prev != null ? 600 : 700;
   el.dataset.animated = "1";
+  // Итоговое число — чтобы картинка, скопированная во время перехода, получила настоящее значение
+  el.dataset.numFinal = txt;
   const step = now => {
     if (!el.isConnected) return;
     const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
-    if (k >= 1) { el.textContent = txt; return; }
+    if (k >= 1) { el.textContent = txt; delete el.dataset.numFinal; return; }
     el.textContent = P.pre + (from + (P.v - from) * e).toLocaleString("ru-RU", {minimumFractionDigits:P.dec, maximumFractionDigits:P.dec}) + P.post;
     requestAnimationFrame(step);
   };
@@ -15264,7 +15271,9 @@ window.CHANGELOG = [
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
   {v:"2026.11.06-1", date:"2026-11-06", title:"Фон страницы, «Места: месяцы × годы», чистка настроек графиков", items:[{tag:"new", area:"Оформление", text:"«Фон страницы» в «Настройки → Оформление»: цветные пятна, один цвет или лёгкий градиент. Скопированные и скачанные таблицы получают такой же фон, стеклянные картинки — тоже без пятен."},
     {tag:"new", area:"Графики", text:"«Места: месяцы × годы» — разновидность «Графика мест»: по горизонтали месяцы, по вертикали годы, в строке каждого года — места по месяцам (накопительно с начала года или за каждый месяц)."},
-    {tag:"del", area:"Графики", text:"Убраны настройки, которые ничего не меняли: «Участники | Чаты» на «Сезонности» и «Кто активен вместе», «Убрать вышедших» для чатов, «Доля, %» на графиках мест, «День» на «Динамике», «Гонке», «Графике мест» и «Маленьких графиках», лишние режимы на «Сезонности» (важен только год)."}]},
+    {tag:"del", area:"Графики", text:"Убраны настройки, которые ничего не меняли: «Участники | Чаты» на «Сезонности» и «Кто активен вместе», «Убрать вышедших» для чатов, «Доля, %» на графиках мест, «День» на «Динамике», «Гонке», «Графике мест» и «Маленьких графиках», лишние режимы на «Сезонности» (важен только год)."},
+    {tag:"imp", area:"Экспорт", text:"Все графики и карточки, скопированные или скачанные картинкой, лежат на фоне с ровными полями со всех сторон; рамка — по настройке «Рамка на скопированных и скачанных картинках». Таблицы — по центру картинки, поля чуть шире."},
+    {tag:"fix", area:"Экспорт", text:"График, скопированный сразу после переключения, больше не получает «недокрученные» числа."}]},
   {v:"2026.11.02-22", date:"2026-11-02", title:"«Табло»: картинки и фон графиков", items:[{tag:"fix", area:"Экспорт", text:"Таблица картинкой в «Табло»: первый столбец больше не отличается от остальных — фон, шапка и строка «Всего» на картинке графитовые, как на сайте."},{tag:"fix", area:"Графики", text:"«Табло» больше не перекрывает фон графика из «⚙ Настройка»: градиенты на «Динамике» и других графиках вернулись."}]},
 {v:"2026.11.02-21", date:"2026-11-02", title:"«Табло»: фильтры, кнопки, таблицы", items:[{tag:"imp", area:"Оформление", text:"«Табло»: переключатели периода в «Статистике» и «Хабе» — вкладками с подчёркиванием, как на «Графиках» и в «Матрице»; поле даты — строкой с пунктиром, без рамки (название месяца больше не налезает на значок)."},{tag:"imp", area:"Оформление", text:"«Табло»: все кнопки действий одной высоты и формы («Копировать», «Карточки», «Таблица»), в шторке фильтров и на телефоне переключатели — спокойные чипы; цветные метки у фильтров, подсветка включённых карточек настроек и цветная рамка уведомления убраны; шапки таблиц — серые."},{tag:"fix", area:"Телефон", text:"В строках-карточках «Участников», «Чатов», «Реакций» и «Событий» числа больше не обрезаются до «1 …»: ширина колонок подстраивается под число, мини-график «Динамика» на телефоне скрыт."},{tag:"fix", area:"Оформление", text:"«Табло»: крупные числа снова обычным шрифтом с ровными цифрами — моноширинный шрифт растягивал пробел в «35 766»."}]},
 {v:"2026.11.02-20", date:"2026-11-02", title:"Стиль «Табло»", items:[{tag:"new", area:"Оформление", text:"Новый стиль «Табло», включён по умолчанию: тихий графит и один акцент темы, без радужных рамок, цветных полосок, свечения и пятен на фоне. Цвет остался только там, где он что-то значит, — у участников на графиках и в таблицах и у медалей достижений."},{tag:"imp", area:"Оформление", text:"«Табло»: эмодзи в интерфейсе заменены линейными иконками или убраны (реакции и данные не трогаются), веса шрифта 400–500 вместо жирного, крупные числа и места — моноширинными цифрами, как на табло, заголовки графиков без капса, бейдж NEW убран."},{tag:"imp", area:"Оформление", text:"В «Табло» эффекты (частицы, рамки, блеск, неон, голограмма, стекло, параллакс) выключены. Вернуть прежний вид — снять «Стиль «Табло»» в «Настройки → Оформление»."}]},
@@ -18840,11 +18849,63 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
     return await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error("Не удалось создать PNG")), "image/png"));
   }
   // Общая обработка картинки перед копированием или скачиванием: стекло, затем рамка.
+  // Общая обработка картинки перед копированием или скачиванием: график (или карточка) ложится
+  // на фон страницы с полями со всех сторон; стекло и рамка — по настройкам.
   async function exportPng(blob){
-    let b = blob;
-    if (glassOn()) b = await glassify(b);
-    if (frameOn()) b = await framePng(b);
-    return b;
+    const done = window.__padRendered;
+    if (done && done.size === blob.size && Date.now() - done.t < 15000) return blob;
+    return await cardPng(blob);
+  }
+  // Полупрозрачный фон самой картинки (для стекла): частые тёмные малонасыщенные цвета становятся прозрачнее.
+  function glassAlpha(sx, W, H){
+    const img = sx.getImageData(0, 0, W, H), d = img.data, hist = new Map();
+    for (let i = 0; i < d.length; i += 4 * 7) {
+      const r = d[i], g = d[i + 1], b = d[i + 2], mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+      if (d[i + 3] < 200 || mx - mn > 40 || mx > 120) continue;
+      const key = (r >> 3) << 10 | (g >> 3) << 5 | (b >> 3);
+      hist.set(key, (hist.get(key) || 0) + 1);
+    }
+    const total = [...hist.values()].reduce((a, v) => a + v, 0) || 1;
+    const bgs = [...hist.entries()].sort((a, b) => b[1] - a[1]).filter(([, n]) => n / total > .04).slice(0, 4)
+      .map(([key]) => [((key >> 10) & 31) * 8 + 4, ((key >> 5) & 31) * 8 + 4, (key & 31) * 8 + 4]);
+    if (bgs.length) for (let i = 0; i < d.length; i += 4) {
+      let best = 1e9;
+      for (const c of bgs) { const dr = d[i] - c[0], dg = d[i + 1] - c[1], db = d[i + 2] - c[2], v = dr * dr + dg * dg + db * db; if (v < best) best = v; }
+      const t = Math.max(0, Math.min(1, (Math.sqrt(best) - 10) / 46));
+      d[i + 3] = Math.round(d[i + 3] * (.2 + .8 * t));
+    }
+    sx.putImageData(img, 0, 0);
+  }
+  async function cardPng(blob){
+    const bmp = await createImageBitmap(blob);
+    const W = bmp.width, H = bmp.height;
+    const m = Math.round(Math.max(24, Math.min(90, Math.max(W, H) * .03))), r = Math.round(Math.max(12, m * .55));
+    const OW = W + m * 2, OH = H + m * 2, glass = glassOn(), style = frameOn() ? tbStyle() : "";
+    const out = document.createElement("canvas"); out.width = OW; out.height = OH;
+    const c = out.getContext("2d");
+    // Фон вокруг: стекло — пятна за матовым стеклом (или фон страницы, если он выбран), иначе фон страницы или тема
+    if (glass) glassBackdrop(c, OW, OH);
+    else if (!(typeof window.__pageBgPaint === "function" && window.__pageBgPaint(c, OW, OH))) { c.fillStyle = (getComputedStyle(document.body).getPropertyValue("--bg") || "").trim() || "#0f1117"; c.fillRect(0, 0, OW, OH); }
+    let img = bmp;
+    if (glass) {
+      const src = document.createElement("canvas"); src.width = W; src.height = H;
+      const sx = src.getContext("2d"); sx.drawImage(bmp, 0, 0); glassAlpha(sx, W, H); img = src;
+    } else {
+      // лёгкая тень, чтобы карточка отделялась от фона
+      c.save(); c.shadowColor = "rgba(0,0,0,.35)"; c.shadowBlur = m * .6; c.shadowOffsetY = m * .12;
+      rrect(c, m, m, W, H, r); c.fillStyle = "#000"; c.fill(); c.restore();
+    }
+    c.save(); rrect(c, m, m, W, H, r); c.clip();
+    if (glass) { c.fillStyle = "rgba(255,255,255,.035)"; c.fillRect(m, m, W, H); }
+    c.drawImage(img, m, m, W, H); c.restore();
+    if (glass && !style) { c.strokeStyle = "rgba(255,255,255,.14)"; c.lineWidth = Math.max(1, Math.round(W / 1200)); rrect(c, m + .5, m + .5, W - 1, H - 1, r); c.stroke(); }
+    if (style) {
+      const k = Math.max(1, W / 900), lw = Math.max(2, Math.round(2.2 * k));
+      const {grad, glow} = frameGradient(c, style, OW / 2, OH / 2, W, H);
+      c.save(); c.shadowColor = glow; c.shadowBlur = 14 * k; c.strokeStyle = grad; c.lineWidth = lw; c.globalAlpha = .55; rrect(c, m - lw / 2, m - lw / 2, W + lw, H + lw, r + lw / 2); c.stroke(); c.restore();
+      c.strokeStyle = grad; c.lineWidth = lw; rrect(c, m - lw / 2, m - lw / 2, W + lw, H + lw, r + lw / 2); c.stroke();
+    }
+    return await new Promise((res, rej) => out.toBlob(b => b ? res(b) : rej(new Error("Не удалось создать PNG")), "image/png"));
   }
   window.__exportPng = exportPng;
   async function glassify(blob){
@@ -18919,7 +18980,7 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
     const cb = navigator.clipboard; if (!cb || !cb.write || cb.write.__glass) return;
     const orig = cb.write.bind(cb);
     const w = function(items){
-      if (typeof ClipboardItem === "undefined" || !(glassOn() || frameOn())) return orig(items);
+      if (typeof ClipboardItem === "undefined") return orig(items);
       const out = [...items].map(it => it && it.types && it.types.includes("image/png") ? new ClipboardItem({"image/png": it.getType("image/png").then(exportPng)}) : it);
       return orig(out);
     };
@@ -18931,7 +18992,7 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
   if (typeof downloadBlob === "function" && !downloadBlob.__fx) {
     const origDl = downloadBlob;
     const dl = function(blob, name){
-      if (blob && blob.type === "image/png" && (glassOn() || frameOn())) { exportPng(blob).then(b => origDl(b, name), () => origDl(blob, name)); return; }
+      if (blob && blob.type === "image/png") { exportPng(blob).then(b => origDl(b, name), () => origDl(blob, name)); return; }
       return origDl(blob, name);
     };
     dl.__fx = true;
