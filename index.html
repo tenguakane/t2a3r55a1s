@@ -2610,6 +2610,12 @@ document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
   b.scrollIntoView?.({inline: "center", block: "nearest"});
   const view = t === "stats" ? statsView : t;
   $("shared").hidden = !["stats","charts"].includes(t);
+  if (t !== "charts") {
+    $("f-mode").hidden = false;
+    $("f-day").hidden = !(mode === "day" || mode === "week" || mode === "range");
+    $("f-month").hidden = mode !== "month";
+    $("f-year").hidden = mode !== "year";
+  }
   $("chats-toolbar-controls").hidden = view !== "chats";
   syncComparisonControls();
   if ($("f-chat")) $("f-chat").hidden = view === "chats" || (t === "charts" && chartEntity === "chats");
@@ -2666,8 +2672,19 @@ window.__statsRange = {
     if (mode === "range") { clearChartQuick(); load(); } else rb.click();
   }
 };
-["day","month","year"].forEach(id => $(id).onchange = () => { clearChartQuick(); load(); });
-$("chat").onchange = render;
+["day","month","year"].forEach(id => $(id).onchange = () => {
+  clearChartQuick();
+  if (id === "month" && $("tab-charts").classList.contains("active") && $("c-type").value === "years") {
+    renderCharts();
+    if ($("chart-settings-panel")?.classList.contains("open")) renderChartSettingsPanel();
+    return;
+  }
+  load();
+});
+$("chat").onchange = () => {
+  if ($("tab-charts")?.classList.contains("active")) renderCharts();
+  else render();
+};
 $("participants-top").onchange = render;
 
 function range(){
@@ -3891,6 +3908,16 @@ const YPAL = {2019:"#6b6b6b",2020:"#3f7f7f",2021:"#7a4a7a",2022:"#44468a",2023:"
 const CUR = "#ff4d6d";
 let cType = "bars";
 let chartEntity = "users";
+// «По годам» compares the same month across years: show the month picker,
+// but do not expose the unrelated day/week/year period selector.
+function syncYearsChartFilterFields(){
+  const active = $("tab-charts")?.classList.contains("active") && cType === "years";
+  if ($("f-mode")) $("f-mode").hidden = active;
+  if ($("f-day")) $("f-day").hidden = active ? true : !(mode === "day" || mode === "week" || mode === "range");
+  if ($("f-month")) $("f-month").hidden = active ? false : mode !== "month";
+  if ($("f-year")) $("f-year").hidden = active ? true : mode !== "year";
+  return active;
+}
 const TREND_STYLE_KEY = "chatstats.trendAppearance.v4";
 const DEFAULT_TREND_STYLE = Object.freeze({line: 4, point: 4.5, arrowLength: 22, arrowSize: 16, opacity: 100});
 const clampTrendStyle = (key, value) => {
@@ -4784,10 +4811,10 @@ document.querySelectorAll("#years-days button").forEach(b => b.onclick = () => {
 }));
 function yearsChart(){
   const metric = $("metric").value;
-  let src = chartEntity === "chats" ? chartChatRows(allRows || rows) : pick(allRows || rows, $("chat").value);
-  if (chartEntity === "users") src = src.filter(x => isVisibleUser(x[F.userId]) && (!SEL_ACTIVE || SEL.has(String(x[F.userId]))));
-  const dv = $("day").value, mv = $("month").value;
-  const cm = cMode(), m = (cm === "day" || cm === "week") && dv ? +dv.slice(5,7) : cm === "month" && mv ? +mv.slice(5,7) : now.getMonth() + 1;
+  let src = pick(allRows || rows, $("chat").value);
+  src = src.filter(x => isVisibleUser(x[F.userId]));
+  const mv = $("month").value;
+  const m = mv ? +mv.slice(5,7) : now.getMonth() + 1;
   const today = new Date(), cy = today.getFullYear(), todayDay = today.getDate(), isCur = m === today.getMonth() + 1;
   const currentMonthDays = new Date(cy, m, 0).getDate();
   // Используем полную длину месяца. В сравнении февраля разных лет учитываем 29-е число,
@@ -4800,28 +4827,6 @@ function yearsChart(){
   const xMax0 = maxDaysInData, YW = ydWindow(xMax0), xA = YW ? YW.a : 1, xMax = YW ? YW.b : xMax0;
   const ydTicks = () => YW ? Array.from({length:xMax - xA + 1}, (_, i) => ({x:xA + i, label:pad(xA + i)})).filter((t, i, arr) => arr.length <= 16 || (t.x - xA) % 2 === 0 || i === arr.length - 1) : makeTicks(Date.UTC(cy, m - 1, 1), xMax, 600, true);
   const ydWord = YW ? `, ${xA === xMax ? xA : `${xA}–${xMax}`} ${["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"][m - 1]}` : "";
-  if (chartEntity === "chats") {
-    const groups = new Map();
-    src.forEach(x => {
-      const d = String(x[F.date] ?? "").slice(0,10);
-      if (d.length !== 10 || Number(d.slice(5,7)) !== m) return;
-      const day = Number(d.slice(8,10));
-      if (day < xA || day > xMax) return;
-      const k = String(x[F.chatPk] ?? x[F.chat]);
-      const cur = groups.get(k) || {key:k, name:String(x[F.chat] || `Чат ${k}`), daily:Array(32).fill(0), total:0};
-      cur.daily[day] += Number(g(x, metric)) || 0; cur.total += Number(g(x, metric)) || 0; groups.set(k, cur);
-    });
-    const list = [...groups.values()].filter(x => x.total > 0).sort((a,b) => b.total - a.total).slice(0,10);
-    if (!list.length) return note("Нет данных по чатам за этот месяц");
-    let yMax = 0;
-    const series = list.map(u => {
-      let total = 0; const pts = [];
-      for (let d = xA; d <= xMax; d++) { total += u.daily[d]; pts.push([d,total]); }
-      yMax = Math.max(yMax,total);
-      return {name:u.name, st:chartSeriesStyle("c",u.key), pts, w:4};
-    });
-    return lineChart({title:MONTHS[m-1], st:sub()+ydWord+", накопительно по чатам (топ-"+series.length+")", series, xMin:xA, xMax, ticks:ydTicks(), yMax, appearance:yearsStyle(), xLabel: i => `${pad(i)}.${pad(m)}`});
-  }
   const by = {};
   src.forEach(x => {
     const d = String(x[F.date] ?? "").slice(0,10); if (d.length !== 10 || +d.slice(5,7) !== m) return;
@@ -4837,7 +4842,8 @@ function yearsChart(){
   Object.keys(by).map(Number).sort((a, b) => a - b).forEach(y => {
     const dim = new Date(y, m, 0).getDate(), lim = Math.min(xMax, (y === cy && isCur) ? Math.min(todayDay, dim) : dim);
     let s = 0; const pts = [];
-    for (let d = xA; d <= lim; d++) { s += by[y][d]; pts.push([d, s]); }
+    for (let d = 1; d < xA; d++) s += by[y][d] || 0;
+    for (let d = xA; d <= lim; d++) { s += by[y][d] || 0; pts.push([d, s]); }
     if (!pts.length || (!s && !(y === cy && isCur))) return;
     yMax = Math.max(yMax, s);
     series.push({name: String(y), st: chartSeriesStyle("y", y), pts, w: 4, y});
@@ -4868,7 +4874,8 @@ function yearsChart(){
       yMax = Math.max(yMax, cur.fc.hi);
     }
   }
-  return lineChart({title: MONTHS[m - 1], st: sub() + ydWord + ", накопительно по годам" + (cur && cur.fc ? `, прогноз до ${cur.fc.x1}.${pad(m)}` : ""), series, xMin: xA, xMax, ticks: ydTicks(), yMax, appearance: yearsStyle(), xLabel: i => `${pad(i)}.${pad(m)}`});
+  const yearsSubtitle = `${MLBL[metric]}, ${$("chat").value || "все чаты"}`;
+  return lineChart({title: MONTHS[m - 1], st: yearsSubtitle + ydWord + ", накопительно с начала месяца по годам" + (cur && cur.fc ? `, прогноз до ${cur.fc.x1}.${pad(m)}` : ""), series, xMin: xA, xMax, ticks: ydTicks(), yMax, appearance: yearsStyle(), xLabel: i => `${pad(i)}.${pad(m)}`});
 }
 
 function applyChartTextStyles(){
@@ -4893,6 +4900,7 @@ async function renderCharts(){
   const renderSeq = ++chartRenderSequence;
   lineSeriesInfo = null;
   const requestedType = cType;
+  const yearsUi = syncYearsChartFilterFields();
   applyChartAppearance(requestedType);
   if (requestedType === "trend") loadTrendStyleForChartType(requestedType);
 
@@ -4930,11 +4938,13 @@ async function renderCharts(){
   syncChartNormField(requestedType);
   // Threshold-colour mode uses absolute cell values, so the normalized heat scale is irrelevant there.
   $("heat-scale-field").hidden = requestedType !== "heatrows";
-  $("people").hidden = chartEntity !== "users" || requestedType === "gini";
+  const entityField = $("c-entity")?.closest(".field");
+  if (entityField) entityField.hidden = yearsUi;
+  $("people").hidden = yearsUi || chartEntity !== "users" || requestedType === "gini";
   { const pf = $("people").closest(".field"); if (pf) pf.hidden = $("people").hidden; }
-  $("f-chatpick").hidden = chartEntity !== "chats";
-  if (chartEntity === "chats") renderChatPick();
-  $("f-chat").hidden = chartEntity === "chats";
+  $("f-chatpick").hidden = yearsUi || chartEntity !== "chats";
+  if (chartEntity === "chats" && !yearsUi) renderChatPick();
+  $("f-chat").hidden = !yearsUi && chartEntity === "chats";
   const trendLabel = document.querySelector('label[for="trend-top"]');
   if (trendLabel) trendLabel.textContent = chartEntity === "chats" ? "Количество чатов" : "Количество пользователей";
   const topSelect = $("trend-top");
@@ -4950,7 +4960,7 @@ async function renderCharts(){
     }
     if (renderSeq !== chartRenderSequence || requestedType !== cType) return;
   }
-  if (!cRange()) { out.innerHTML = note("Выберите период"); applyChartTextStyles(); return; }
+  if (!cRange() && requestedType !== "years") { out.innerHTML = note("Выберите период"); applyChartTextStyles(); return; }
   setTipCtx();
   if (!allRows && !$("chart-events-field").hidden && $("chart-events").value === "all") {
     out.innerHTML = `<div class="sk sk-block"></div>`;
