@@ -4906,7 +4906,7 @@ async function renderCharts(){
   lineSeriesInfo = null;
   const requestedType = cType;
   // «Сезонность» и «Кто активен вместе» считаются только по участникам: переключатель «Чаты» там ничего не давал.
-  if ((requestedType === "season" || requestedType === "pairs") && chartEntity === "chats") {
+  if ((requestedType === "season" || requestedType === "pairs" || requestedType === "bumpyears") && chartEntity === "chats") {
     chartEntity = "users";
     document.querySelectorAll("#c-entity button").forEach(x => x.classList.toggle("active", x.dataset.entity === "users"));
   }
@@ -4924,7 +4924,7 @@ async function renderCharts(){
     }).catch(e => { leftFilterError = e.message || String(e); });
   }
 
-  $("trend-count-field").hidden = !["trend", "race", "pairs", "bump", "bumpyears", "spread", "multiples"].includes(requestedType);
+  $("trend-count-field").hidden = !["trend", "race", "pairs", "bump", "spread", "multiples"].includes(requestedType);
   $("y-ceil-field").hidden = !["trend", "years"].includes(requestedType);
   $("trend-fc-field").hidden = requestedType !== "trend";
   if ($("years-days-field")) { $("years-days-field").hidden = requestedType !== "years"; ydSync(); }
@@ -4939,8 +4939,7 @@ async function renderCharts(){
     heatTopSelect.value = String(heatRowsTopSetting(requestedType));
     const hl = document.querySelector('label[for="heatrows-custom-top"]'); if (hl) hl.textContent = chartEntity === "chats" ? "Чаты на карте" : "Участники на карте";
   }
-  $("bump-mode-field").hidden = requestedType !== "bump" && requestedType !== "bumpyears";
-  { const bo = $("bump-mode")?.options; if (bo && bo.length === 2) { const yrs = requestedType === "bumpyears"; bo[0].textContent = yrs ? "Накопительно с начала года" : "Накопительно (как в рейтинге)"; bo[1].textContent = yrs ? "За каждый месяц" : "За каждый отрезок"; } }
+  $("bump-mode-field").hidden = requestedType !== "bump";
   if ($("norm-weeks-field")) $("norm-weeks-field").hidden = requestedType !== "norm";
   $("spread-zero-field").hidden = requestedType !== "spread" || chartEntity !== "users";
   $("spread-scale-field").hidden = requestedType !== "spread";
@@ -4950,9 +4949,9 @@ async function renderCharts(){
   // Threshold-colour mode uses absolute cell values, so the normalized heat scale is irrelevant there.
   $("heat-scale-field").hidden = requestedType !== "heatrows";
   const entityField = $("c-entity")?.closest(".field");
-  if (entityField) entityField.hidden = yearsUi || requestedType === "season" || requestedType === "pairs";
+  if (entityField) entityField.hidden = yearsUi || requestedType === "season" || requestedType === "pairs" || requestedType === "bumpyears";
   syncUselessChartControls(requestedType);
-  $("people").hidden = yearsUi || chartEntity !== "users" || requestedType === "gini";
+  $("people").hidden = yearsUi || chartEntity !== "users" || requestedType === "gini" || requestedType === "bumpyears";
   { const pf = $("people").closest(".field"); if (pf) pf.hidden = $("people").hidden; }
   $("f-chatpick").hidden = yearsUi || chartEntity !== "chats";
   if (chartEntity === "chats" && !yearsUi) renderChatPick();
@@ -5013,14 +5012,6 @@ function displayedUserKeys(){
   if (cType === "donut") {
     const cap = barsCap(SEL_ACTIVE ? 14 : 8);
     return usersAgg(metric).slice(0, cap).map(u => String(u.k));
-  }
-  if (cType === "bumpyears") {
-    const totals = new Map();
-    pick(allRows || rows, $("chat").value).forEach(x => {
-      const k = String(x[F.userId] ?? x[F.name]); if (!isVisibleUser(k) || (SEL_ACTIVE && !SEL.has(k))) return;
-      totals.set(k, (totals.get(k) || 0) + (Number(g(x, metric)) || 0));
-    });
-    return [...totals.entries()].filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, trendTop()).map(e => e[0]);
   }
   if (cType === "trend" || cType === "bump" || cType === "multiples" || cType === "spread") {
     if (cMode() === "day") return [];
@@ -6300,7 +6291,7 @@ function chartColorTargets(){
     if (rest > 0) list.push({kind:"special", key:"other", name:"Остальные", v:rest});
     return list;
   }
-  if (type === "trend" || type === "bump" || type === "bumpyears" || type === "spread" || type === "multiples") list = list.slice(0, trendTop());
+  if (type === "trend" || type === "bump" || type === "spread" || type === "multiples") list = list.slice(0, trendTop());
   else list = list.slice(0, type === "bars" ? barsCap(chartEntity === "users" && SEL_ACTIVE ? 40 : 20) : (chartEntity === "users" && SEL_ACTIVE ? 40 : 20));
   return list.map(u=>({kind:chartStyleKind(),key:String(u.k),name:u.n,v:u.v}));
 }
@@ -11659,12 +11650,12 @@ function liveApply(){
 /* ===================== Новые графики: места, разброс, концентрация, маленькие графики ===================== */
 // Всё объявлено через function/var: renderCharts может вызваться раньше, чем исполнится этот блок.
 var CHART_HOVER = null;
-var CHART_NORM_TYPES = ["bars", "trend", "bump", "bumpyears", "multiples"];
+var CHART_NORM_TYPES = ["bars", "trend", "bump", "multiples"];
 var EV_FLAG = "#ffd166", EV_MAR_PAL = ["#9ece6a", "#2ac3de", "#bb9af7", "#ff9e64", "#73daca", "#f7768e"];
 function syncChartNormField(type){
   const f = $("f-norm"); if (!f) return;
   // список может быть ещё не задан, если график рисуется в самом начале загрузки
-  f.hidden = $("tab-charts").classList.contains("active") && !(CHART_NORM_TYPES || ["bars", "trend", "bump", "bumpyears", "multiples"]).includes(type || cType);
+  f.hidden = $("tab-charts").classList.contains("active") && !(CHART_NORM_TYPES || ["bars", "trend", "bump", "multiples"]).includes(type || cType);
 }
 try { const nw = localStorage.getItem(NORM_WEEKS_KEY); if (nw && $("norm-weeks")?.querySelector(`option[value="${nw}"]`)) $("norm-weeks").value = nw; } catch (e) {}
 $("norm-weeks")?.addEventListener("change", () => { try { localStorage.setItem(NORM_WEEKS_KEY, $("norm-weeks").value); } catch (e) {} renderCharts(); });
@@ -11698,7 +11689,7 @@ function syncChartFocus(){
   if (!list || !field) return;
   const names = svg ? [...new Set([...svg.querySelectorAll("[data-n]")].map(x => x.dataset.n).filter(Boolean))] : [];
   field.hidden = names.length < 2;
-  const word = cType === "years" ? "годы" : chartEntity === "chats" ? "чаты" : "участников";
+  const word = cType === "years" || cType === "bumpyears" ? "годы" : chartEntity === "chats" ? "чаты" : "участников";
   $("c-focus").title = `Выделить ${word}: отметь одного или нескольких`;
   // Если выделенных нет на этом графике — выделение не применяется, но запоминается.
   list.innerHTML = names.map(n => `<label><input type="checkbox" value="${escH(n)}"${CHART_FOCUS.has(n) ? " checked" : ""}>${escH(n)}</label>`).join("");
@@ -11917,115 +11908,59 @@ function bumpChart(){
 }
 
 /* ---------- Места: месяцы × годы (разновидность «Графика мест») ----------
-   По горизонтали — месяцы, по вертикали — годы. Внутри строки года — маленький график мест:
-   чем выше точка в строке, тем выше место. Места считаются среди всех участников (или чатов), выбор влияет только на то, кого показывать. */
+   По горизонтали — месяцы, по вертикали — годы. В каждой клетке — место этого месяца среди таких же месяцев
+   других лет по общей сумме: самый активный октябрь из всех — 1-е место и так далее. Справа — места годов целиком. */
+var MONTHS_PL_GEN = ["январей","февралей","мартов","апрелей","маев","июней","июлей","августов","сентябрей","октябрей","ноябрей","декабрей"];
 function bumpYearsChart(){
   if (!allRows) return note("Загружаю историю…");
-  const chats = chartEntity === "chats", metric = $("metric").value, kindKey = chartStyleKind();
-  const cum = $("bump-mode").value !== "each", perDay = NORM === "day", todayIso = iso(now);
-  const src = chats ? chartChatRows(allRows) : pick(allRows, $("chat").value);
-  const ents = new Map(); let firstM = "9999-99", lastM = "0000-00";
-  src.forEach(x => {
+  const metric = $("metric").value, todayIso = iso(now), curMk = todayIso.slice(0, 7);
+  const sums = new Map(); let firstM = "9999-99", lastM = "0000-00";
+  pick(allRows, $("chat").value).forEach(x => {
     const d = String(x[F.date] ?? "").slice(0, 10); if (d.length !== 10 || d > todayIso) return;
-    const k = chats ? String(x[F.chatPk] ?? x[F.chat]) : String(x[F.userId] ?? x[F.name]);
-    if (!chats && !isVisibleUser(k)) return;
+    if (!isVisibleUser(String(x[F.userId] ?? x[F.name]))) return;
     const v = Number(g(x, metric)) || 0; if (!v) return;
     const mk = d.slice(0, 7); if (mk < firstM) firstM = mk; if (mk > lastM) lastM = mk;
-    let e = ents.get(k); if (!e) ents.set(k, e = {k, n: chats ? String(x[F.chat] || `Чат ${k}`) : who(x), m:new Map(), ds:new Set(), tot:0});
-    e.m.set(mk, (e.m.get(mk) || 0) + v); e.ds.add(d); e.tot += v;
+    sums.set(mk, (sums.get(mk) || 0) + v);
   });
-  if (!ents.size) return note("Нет данных");
-  const y0 = +firstM.slice(0, 4), y1 = +lastM.slice(0, 4), nY = y1 - y0 + 1;
+  if (!sums.size) return note("Нет данных");
+  const y0 = +firstM.slice(0, 4), y1 = +lastM.slice(0, 4), years = [];
+  for (let y = y0; y <= y1; y++) years.push(y);
   const mkOf = (y, i) => `${y}-${String(i + 1).padStart(2, "0")}`;
   const valid = (y, i) => { const mk = mkOf(y, i); return mk >= firstM && mk <= lastM; };
-  const list = [...ents.values()];
-  // Активные дни по месяцам — для режима «На активный день»
-  list.forEach(e => { e.act = new Map(); e.ds.forEach(d => { const mk = d.slice(0, 7); e.act.set(mk, (e.act.get(mk) || 0) + 1); }); e.fv = perDay ? (e.ds.size ? e.tot / e.ds.size : 0) : e.tot; });
-  // Значения и места: строка года, 12 месяцев
-  list.forEach(e => { e.v = []; e.raw = []; e.rk = []; });
-  const totals = [];
-  for (let yi = 0; yi < nY; yi++) {
-    const y = y0 + yi; totals.push(new Float64Array(12));
-    list.forEach(e => { e.v.push(new Float64Array(12)); e.raw.push(new Float64Array(12)); e.rk.push(new Array(12).fill(null)); });
-    for (let i = 0; i < 12; i++) {
-      if (!valid(y, i)) continue;
-      list.forEach(e => {
-        let s = 0, a = 0;
-        for (let j = cum ? 0 : i; j <= i; j++) { const mk = mkOf(y, j); s += e.m.get(mk) || 0; a += e.act.get(mk) || 0; }
-        e.raw[yi][i] = s; e.v[yi][i] = perDay ? (a ? s / a : 0) : s; totals[yi][i] += s;
-      });
-      const order = list.filter(e => e.v[yi][i] > 0).sort((p, q) => q.v[yi][i] - p.v[yi][i]);
-      order.forEach((e, k) => { e.rk[yi][i] = k > 0 && e.v[yi][i] === order[k - 1].v[yi][i] ? order[k - 1].rk[yi][i] : k + 1; });
-    }
-  }
-  const pool = (!chats && SEL_ACTIVE) ? list.filter(e => SEL.has(String(e.k))) : list;
-  const shownAll = pool.filter(e => e.fv > 0).sort((p, q) => q.fv - p.fv).slice(0, trendTop());
-  if (!shownAll.length) return note(SEL_ACTIVE && !chats ? "У выбранных участников нет данных" : "Нет данных");
-  lineSeriesInfo = shownAll.map(e => ({name:e.n, color:chartSeriesStyle(kindKey, e.k).c[0]}));
-  const shown = shownAll.filter(e => !hiddenSeries.has(e.n));
-  const nShown = shownAll.length;
-  // Сколько мест показывать в строке года: все показанные плюс немного запаса, но не больше 30
-  let maxSeen = 1; shownAll.forEach(e => e.rk.forEach(row => row.forEach(r => { if (r && r > maxSeen) maxSeen = r; })));
-  const maxRank = Math.max(2, Math.min(30, Math.max(nShown, Math.min(maxSeen, nShown + 4))));
-  const W = 1100, L = 92, Rr = W - 214, colW = (Rr - L) / 12, T = 132;
-  const labGap = 16, slot = Math.max(9, Math.min(22, Math.max(Math.floor(150 / maxRank), Math.ceil(labGap * (nShown - 1) / (maxRank - 1)))));
-  const inner = (maxRank - 1) * slot, rowPad = 18, rowH = inner + rowPad * 2, rowGap = 10;
-  const rowTop = yi => T + yi * (rowH + rowGap);
-  const xs = i => L + colW * (i + .5), ys = (yi, r) => rowTop(yi) + rowPad + (r - 1) * slot;
-  const big = slot >= 15 && colW >= 44, pr = big ? 8 : Math.max(3.5, Math.min(6, slot / 2.6));
-  const vfmt = v => perDay ? fmtR(v) : fmt(Math.round(v));
-  const word = chats ? "чатов" : "участников";
-  let o = head(cum ? "Места по месяцам" : "Места за каждый месяц", `${sub()} · по горизонтали месяцы, по вертикали годы${cum ? ", место по сумме с начала года" : ""}${perDay ? ", по среднему за активный день" : ""}`, W);
-  // Шапка месяцев
-  for (let i = 0; i < 12; i++) o += `<text class="chart-axis" x="${xs(i).toFixed(1)}" y="${T - 14}" text-anchor="middle" font-size="15" fill="#aab0c0">${MONTHS_SHORT_RU[i]}</text>`;
-  for (let yi = 0; yi < nY; yi++) {
-    const y = y0 + yi, top = rowTop(yi);
-    o += `<rect x="${L - 84}" y="${top}" width="${Rr - L + 84 + 6}" height="${rowH}" rx="10" fill="#ffffff" fill-opacity="${yi % 2 ? .025 : .045}"/>`;
-    o += `<text class="chart-label" x="${L - 46}" y="${(top + rowH / 2 + 7).toFixed(1)}" text-anchor="middle" font-size="20" font-weight="700" fill="#e6e8ee">${y}</text>`;
-    // тонкие линии 1-го, 2-го и 3-го мест
-    for (let r = 1; r <= Math.min(3, maxRank); r++) o += `<line x1="${L}" y1="${ys(yi, r).toFixed(1)}" x2="${Rr}" y2="${ys(yi, r).toFixed(1)}" stroke="${["#ffd166", "#c0c6d4", "#e3a36b"][r - 1]}" stroke-opacity=".12" stroke-width="1"/>`;
-    for (let i = 1; i < 12; i++) o += `<line x1="${(L + colW * i).toFixed(1)}" y1="${top + 6}" x2="${(L + colW * i).toFixed(1)}" y2="${top + rowH - 6}" stroke="#ffffff" stroke-opacity=".05"/>`;
-    for (let i = 0; i < 12; i++) if (!valid(y, i) && mkOf(y, i) > lastM) o += `<text class="chart-axis" x="${xs(i).toFixed(1)}" y="${(top + rowH / 2 + 5).toFixed(1)}" text-anchor="middle" font-size="14" fill="#5c6170">·</text>`;
-    const placeWord = cum ? `с начала ${y} года` : "за этот месяц";
-    [...shown].reverse().forEach(e => {
-      const rk = e.rk[yi], c = chartSeriesStyle(kindKey, e.k).c[0];
-      let d = "", prev = null;
-      for (let i = 0; i < 12; i++) {
-        const r = rk[i]; if (!r || r > maxRank) { prev = null; continue; }
-        const px = xs(i), py = ys(yi, r);
-        if (!prev) d += `M${px.toFixed(1)},${py.toFixed(1)}`;
-        else { const mx = (prev[0] + px) / 2; d += ` C${mx.toFixed(1)},${prev[1].toFixed(1)} ${mx.toFixed(1)},${py.toFixed(1)} ${px.toFixed(1)},${py.toFixed(1)}`; }
-        prev = [px, py];
-      }
-      if (d.includes("C")) o += `<path class="anim-line" pathLength="1" data-n="${escH(e.n)}" d="${d}" fill="none" stroke="${c}" stroke-width="${big ? 3 : 2.4}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity=".85"/>`;
-      for (let i = 0; i < 12; i++) {
-        const r = rk[i]; if (!r || r > maxRank) continue;
-        const share = totals[yi][i] ? e.raw[yi][i] / totals[yi][i] : 0;
-        const tip = `${e.n} · ${MONTHS[i]} ${y}|${r} место ${placeWord} · ${vfmt(e.v[yi][i])}${perDay ? " в активный день" : ""} · ${pctStr(share)} всех`;
-        o += `<g data-n="${escH(e.n)}" data-tip="${escH(tip)}"><circle cx="${xs(i).toFixed(1)}" cy="${ys(yi, r).toFixed(1)}" r="${pr}" fill="${c}" stroke="#12141b" stroke-width="2"/>`
-          + (big ? `<text class="chart-value" x="${xs(i).toFixed(1)}" y="${(ys(yi, r) + 3.6).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#12141b" pointer-events="none">${r}</text>` : "") + `</g>`;
-      }
+  // Места: колонка месяца — среди этого же месяца в другие годы; колонка «Год» — годы целиком
+  const rankCol = items => { const o = items.filter(t => t.ok).sort((a, b) => b.v - a.v); o.forEach((t, k) => { t.r = k > 0 && t.v === o[k - 1].v ? o[k - 1].r : k + 1; t.n = o.length; t.best = o[0]; t.second = o[1] || null; }); return o; };
+  const cells = years.map(y => Array.from({length:12}, (_, i) => ({y, i, ok:valid(y, i), v:sums.get(mkOf(y, i)) || 0, part:mkOf(y, i) === curMk, r:null})));
+  const colMax = [];
+  for (let i = 0; i < 12; i++) { const col = rankCol(cells.map(row => row[i])); colMax.push(col.length ? col[0].v : 0); }
+  const yearCells = years.map((y, yi) => ({y, ok:true, v:cells[yi].reduce((a, c) => a + c.v, 0), part:y === +curMk.slice(0, 4) || y === y0 && firstM.slice(5) !== "01", r:null}));
+  rankCol(yearCells); const yMax = Math.max(...yearCells.map(t => t.v), 1);
+  const W = 1100, L = 84, gap = 6, sepW = 16, colW = (W - L - 20 - sepW - gap * 12) / 13, cellH = 60, T = 128;
+  const cx = i => L + i * (colW + gap) + (i === 12 ? sepW : 0), cy = yi => T + yi * (cellH + gap);
+  const medal = ["#ffd166", "#d3d9e6", "#e3a36b"];
+  const fillOf = (t, max) => t.r <= 3 && t.n > 1 ? {f:medal[t.r - 1], o:.92, txt:"#14161d", sub:"#3a3d48"} : {f:"#7aa2f7", o:+(.1 + .32 * (max ? t.v / max : 0)).toFixed(3), txt:"#f2f3f7", sub:"#aab0c0"};
+  const cell = (t, x, y, max, tip) => {
+    const c = fillOf(t, max);
+    return `<g data-n="${t.y}" data-tip="${escH(tip)}"><rect x="${x.toFixed(1)}" y="${y}" width="${colW.toFixed(1)}" height="${cellH}" rx="10" fill="${c.f}" fill-opacity="${c.o}"${t.part ? ` stroke="#ffffff" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 4"` : ""}/>`
+      + `<text x="${(x + colW / 2).toFixed(1)}" y="${y + 31}" text-anchor="middle" font-size="25" font-weight="800" fill="${c.txt}" style="fill:${c.txt} !important">${t.r}</text>`
+      + `<text x="${(x + colW / 2).toFixed(1)}" y="${y + 50}" text-anchor="middle" font-size="12.5" font-weight="600" fill="${c.sub}" style="fill:${c.sub} !important">${fmt(Math.round(t.v))}</text></g>`;
+  };
+  const vs = t => t.r === 1 ? (t.second ? ` · на ${fmt(Math.round(t.v - t.second.v))} больше, чем в ${t.second.y}` : "") : ` · лучший — ${t.best.y} (${fmt(Math.round(t.best.v))})`;
+  let o = head("Места месяцев по годам", `${sub()} · место месяца среди таких же месяцев других лет`, W);
+  for (let i = 0; i < 13; i++) o += `<text class="chart-axis" x="${(cx(i) + colW / 2).toFixed(1)}" y="${T - 14}" text-anchor="middle" font-size="15" fill="#aab0c0"${i === 12 ? ' font-weight="700"' : ""}>${i === 12 ? "Год" : MONTHS_SHORT_RU[i]}</text>`;
+  years.forEach((y, yi) => {
+    o += `<text x="${L - 16}" y="${cy(yi) + cellH / 2 + 7}" text-anchor="end" font-size="20" font-weight="700" fill="#e6e8ee" data-n="${y}">${y}</text>`;
+    cells[yi].forEach((t, i) => {
+      const x = cx(i);
+      if (!t.ok) { if (mkOf(y, i) < firstM) o += `<rect x="${x.toFixed(1)}" y="${cy(yi)}" width="${colW.toFixed(1)}" height="${cellH}" rx="10" fill="#ffffff" fill-opacity=".03"/>`; return; }
+      o += cell(t, x, cy(yi), colMax[i], `${MONTHS[i]} ${y}${t.part ? " (месяц ещё идёт)" : ""}|${t.r}-е место из ${t.n} ${MONTHS_PL_GEN[i]} · ${fmt(Math.round(t.v))}${vs(t)}`);
     });
-    // Подписи справа: место в последнем месяце строки (при накопительном режиме — место за год)
-    const ends = shownAll.map(e => {
-      let li = 11; while (li >= 0 && (!e.rk[yi][li] || e.rk[yi][li] > maxRank)) li--;
-      let lr = null; for (let i = 11; i >= 0; i--) if (e.rk[yi][i]) { lr = e.rk[yi][i]; break; }
-      return {e, li, lr, y: li >= 0 ? ys(yi, e.rk[yi][li]) : ys(yi, maxRank) + slot};
-    }).sort((a, b) => a.y - b.y || (a.lr || 1e9) - (b.lr || 1e9));
-    let prevY = -1e9;
-    ends.forEach(t => { t.ly = Math.max(t.y, prevY + labGap); prevY = t.ly; });
-    const over = prevY - (top + rowH - 8); if (over > 0) ends.forEach(t => { t.ly -= over; });
-    ends.forEach(t => {
-      const c = chartSeriesStyle(kindKey, t.e.k).c[0], off = hiddenSeries.has(t.e.n);
-      const place = t.lr ? `${t.lr}-е` : "—";
-      o += `<g class="lg-item" data-name="${escH(t.e.n)}" data-ek="${escH(t.e.k)}" opacity="${off ? .35 : 1}" style="cursor:pointer"><rect x="${Rr + 12}" y="${(t.ly - labGap / 2).toFixed(1)}" width="196" height="${labGap}" fill="transparent"/>`
-        + (t.li >= 0 && !off ? `<path d="M${(xs(t.li) + pr + 2).toFixed(1)},${t.y.toFixed(1)} L${(Rr + 18).toFixed(1)},${t.ly.toFixed(1)}" stroke="${c}" stroke-opacity=".3" stroke-width="1.1" fill="none"/>` : "")
-        + `<circle cx="${Rr + 24}" cy="${t.ly.toFixed(1)}" r="4.5" fill="${c}"/><text class="chart-legend" x="${Rr + 35}" y="${(t.ly + 4.5).toFixed(1)}" font-size="13.5" fill="#f2f3f7">${escH(shortName(t.e.n, 14))}<tspan class="chart-value" font-size="12" fill="#9aa0b0"> ${place}</tspan></text></g>`;
-    });
-  }
-  const Bt = rowTop(nY) - rowGap;
-  o += `<text class="chart-legend" x="${L - 84}" y="${Bt + 30}" font-size="13" fill="#7d8190">В строке года: чем выше точка, тем выше место среди всех ${word}${cum ? " по сумме с начала года" : " за месяц"}. Справа — место ${cum ? "по итогам года (у текущего — на сегодня)" : "в последнем месяце года"}.</text>`;
-  o += `<text class="chart-legend" x="${L - 84}" y="${Bt + 50}" font-size="13" fill="#7d8190">Клик по имени скрывает линию, «Выделить» оставляет яркими нужных.</text>`;
+    const t = yearCells[yi];
+    o += cell(t, cx(12), cy(yi), yMax, `${y} год${t.part ? " (неполный)" : ""}|${t.r}-е место из ${t.n} ${t.n % 10 === 1 && t.n % 100 !== 11 ? "года" : "лет"} · ${fmt(Math.round(t.v))}${vs(t)}`);
+  });
+  const Bt = cy(years.length) - gap;
+  o += `<line x1="${(cx(12) - sepW / 2 - gap / 2).toFixed(1)}" y1="${T - 30}" x2="${(cx(12) - sepW / 2 - gap / 2).toFixed(1)}" y2="${Bt}" stroke="#ffffff" stroke-opacity=".12"/>`;
+  o += `<text class="chart-legend" x="${L}" y="${Bt + 30}" font-size="13" fill="#7d8190">Крупная цифра — место месяца среди таких же месяцев других лет, ниже — сумма. Золото, серебро, бронза — 1–3 места.</text>`;
+  o += `<text class="chart-legend" x="${L}" y="${Bt + 50}" font-size="13" fill="#7d8190">Пунктир — месяц или год ещё не закончился или посчитан не с начала. «Год» — места годов целиком.</text>`;
   return `<svg class="wide-svg" viewBox="0 0 ${W} ${Bt + 64}" role="img">${o}</svg>`;
 }
 
@@ -12037,7 +11972,7 @@ function syncUselessChartControls(type){
   // «Сезонность»: важен только год
   b.classList.toggle("cs-yearonly", type === "season");
   // «Доля, %» не меняет места: доля и сумма упорядочивают одинаково
-  b.classList.toggle("cs-noshare", type === "bump" || type === "bumpyears");
+  b.classList.toggle("cs-noshare", type === "bump");
   // «Убрать вышедших» действует только на участников; у чатов в итогах все сообщения
   const hl = $("hide-left-charts")?.closest("label");
   if (hl) hl.hidden = chartEntity === "chats" && type !== "years";
@@ -14129,7 +14064,7 @@ function multiplesChart(){
   const host = $("c-chips"), out = $("c-out"); if (!host || !out) return;
   function render(){
     const info = typeof lineSeriesInfo !== "undefined" ? lineSeriesInfo : null;
-    if (!info || !info.length || !["trend", "years", "bump", "bumpyears", "spread", "multiples"].includes(cType)) { host.hidden = true; host.innerHTML = ""; return; }
+    if (!info || !info.length || !["trend", "years", "bump", "spread", "multiples"].includes(cType)) { host.hidden = true; host.innerHTML = ""; return; }
     const word = cType === "years" ? "Годы" : (chartEntity === "chats" ? "Чаты" : "Участники");
     host.innerHTML = `<span class="lbl">${word}:</span>` + info.map(s => `<button type="button" class="chip${hiddenSeries.has(s.name) ? " off" : ""}" style="--c:${escH(s.color)}" data-series="${escH(s.name)}" aria-pressed="${!hiddenSeries.has(s.name)}" title="${hiddenSeries.has(s.name) ? "Показать" : "Скрыть"}"><i></i>${escH(s.name)}</button>`).join("")
       + `<button type="button" class="mini" data-series-all="1">Показать все</button>` + (info.length > 1 ? `<button type="button" class="mini" data-series-none="1">Скрыть все</button>` : "");
@@ -15270,7 +15205,7 @@ window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
   {v:"2026.11.06-1", date:"2026-11-06", title:"Фон страницы, «Места: месяцы × годы», чистка настроек графиков", items:[{tag:"new", area:"Оформление", text:"«Фон страницы» в «Настройки → Оформление»: цветные пятна, один цвет или лёгкий градиент. Скопированные и скачанные таблицы получают такой же фон, стеклянные картинки — тоже без пятен."},
-    {tag:"new", area:"Графики", text:"«Места: месяцы × годы» — разновидность «Графика мест»: по горизонтали месяцы, по вертикали годы, в строке каждого года — места по месяцам (накопительно с начала года или за каждый месяц)."},
+    {tag:"new", area:"Графики", text:"«Места: месяцы × годы» — разновидность «Графика мест»: по горизонтали месяцы, по вертикали годы. В клетке — место месяца среди таких же месяцев других лет по общей сумме (самый активный октябрь — 1-е место), справа — места годов целиком."},
     {tag:"del", area:"Графики", text:"Убраны настройки, которые ничего не меняли: «Участники | Чаты» на «Сезонности» и «Кто активен вместе», «Убрать вышедших» для чатов, «Доля, %» на графиках мест, «День» на «Динамике», «Гонке», «Графике мест» и «Маленьких графиках», лишние режимы на «Сезонности» (важен только год)."},
     {tag:"imp", area:"Экспорт", text:"Все графики и карточки, скопированные или скачанные картинкой, лежат на фоне с ровными полями со всех сторон; рамка — по настройке «Рамка на скопированных и скачанных картинках». Таблицы — по центру картинки, поля чуть шире."},
     {tag:"fix", area:"Экспорт", text:"График, скопированный сразу после переключения, больше не получает «недокрученные» числа."}]},
@@ -23355,8 +23290,9 @@ main :is(td,.tile .num,.hub-kpi .v,.mt-num .v,.ach-val b){font-variant-numeric:t
 </script>
 <style id="page-bg-css">
 /* ===================== Фон страницы: цветные пятна, один цвет или лёгкий градиент ===================== */
-html:has(body.pbg-on){background:var(--pbg-base)!important}
-html body.pbg-on.pbg-on{background:var(--pbg)!important;background-attachment:fixed!important;background-size:auto!important}
+/* Фон рисуется на html (самый нижний слой), body прозрачный — иначе он перекрывал частицы и другие слои с z-index:-1 */
+html:has(body.pbg-on){background:var(--pbg)!important;background-color:var(--pbg-base)!important;background-attachment:fixed!important;background-size:auto!important;min-height:100%}
+html body.pbg-on.pbg-on{background:transparent!important}
 html body.pbg-on.pbg-on::before{display:none!important}
 html body.pbg-on #fx-bg{display:none!important}
 @media (max-width:720px){
