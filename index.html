@@ -15204,7 +15204,8 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.11.06-1", date:"2026-11-06", title:"Фон страницы, «Места: месяцы × годы», чистка настроек графиков", items:[{tag:"new", area:"Оформление", text:"«Фон страницы» в «Настройки → Оформление»: цветные пятна, один цвет или лёгкий градиент. Скопированные и скачанные таблицы получают такой же фон, стеклянные картинки — тоже без пятен."},
+  {v:"2026.11.06-2", date:"2026-11-07", title:"Фон страницы, «Места: месяцы × годы», чистка настроек графиков", items:[{tag:"imp", area:"Оформление", text:"Переключатели — как «Участники / Чаты»: период, «Таблица / Карточки», режимы и сортировки стали вкладками с линией под активным пунктом, без рамок и заливок. Кнопки «Копировать» и «Столбцы» — тихий текст без рамки, дата — строка с пунктиром. Панель «Фильтры» стала плоской: без рамок в рамках, а «Параметры» убраны — переключатели выведены сразу. Чипы — один тихий вид."},
+    {tag:"new", area:"Оформление", text:"«Фон страницы» в «Настройки → Оформление»: цветные пятна, один цвет или лёгкий градиент. Скопированные и скачанные таблицы получают такой же фон, стеклянные картинки — тоже без пятен."},
     {tag:"new", area:"Графики", text:"«Места: месяцы × годы» — разновидность «Графика мест»: по горизонтали месяцы, по вертикали годы. В клетке — место месяца среди таких же месяцев других лет по общей сумме (самый активный октябрь — 1-е место), справа — места годов целиком."},
     {tag:"del", area:"Графики", text:"Убраны настройки, которые ничего не меняли: «Участники | Чаты» на «Сезонности» и «Кто активен вместе», «Убрать вышедших» для чатов, «Доля, %» на графиках мест, «День» на «Динамике», «Гонке», «Графике мест» и «Маленьких графиках», лишние режимы на «Сезонности» (важен только год)."},
     {tag:"imp", area:"Экспорт", text:"Все графики и карточки, скопированные или скачанные картинкой, лежат на фоне с ровными полями со всех сторон; рамка — по настройке «Рамка на скопированных и скачанных картинках». Таблицы — по центру картинки, поля чуть шире."},
@@ -23411,6 +23412,171 @@ body.cs-yearonly:has(#tab-charts.active) #f-mode:has(button[data-m="year"].activ
     "Места по месяцам":["Places by month","Місця за місяцями","Месцы па месяцах","Айлар бойынша орындар","Places par mois","Miejsca według miesięcy"],
     "Места за каждый месяц":["Places for each month","Місця за кожен місяць","Месцы за кожны месяц","Әр айдағы орындар","Places pour chaque mois","Miejsca za każdy miesiąc"]
   });
+})();
+</script>
+<style id="tabs-unify">
+/* ===================== Переключатели вместо кнопок (2026.11.07) =====================
+   Всё, что выбирает «одно из нескольких» (период, Таблица/Карточки, режимы, сортировки),
+   оформлено как «Участники / Чаты»: текст и линия под активным пунктом, без рамок и заливок.
+   Кнопки-действия («Копировать», «Столбцы») — тихий текст без рамки. Только ПК; на телефоне всё как раньше. */
+@media (min-width:721px){
+  /* ---------- Переключатели: вкладки с подчёркиванием ---------- */
+  html body:not(#tu1):not(#tu2):not(#tu3) :is(main,#filter-drawer) :is(.seg,.sq-seg,#hub-period,.hub-period-seg,.quick-ranges:not(#theme-bases):not(#ch-types)):not(.stat-subnav):not(.group-tabs):not(.ach-view-seg):not(#hub-seg):not(#tab-settings *){
+    display:inline-flex!important;flex-wrap:wrap;align-items:stretch;width:fit-content;max-width:100%;gap:0 18px!important;padding:0!important;
+    background:none!important;background-image:none!important;border:0!important;border-bottom:1px solid var(--ds-line,var(--line))!important;border-radius:0!important;
+    box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;overflow:visible!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) :is(main,#filter-drawer) :is(.seg,.sq-seg,#hub-period,.hub-period-seg,.quick-ranges:not(#theme-bases):not(#ch-types)):not(.stat-subnav):not(.group-tabs):not(.ach-view-seg):not(#hub-seg):not(#tab-settings *) > :is(button,.quick-chip){
+    flex:0 0 auto!important;width:auto!important;min-width:0!important;height:36px!important;min-height:0!important;padding:0 1px!important;margin:0 0 -1px!important;
+    border:0!important;border-radius:0!important;background:none!important;background-image:none!important;box-shadow:none!important;
+    color:var(--muted)!important;font-size:14px!important;font-weight:500!important;white-space:nowrap;text-align:center}
+  html body:not(#tu1):not(#tu2):not(#tu3) :is(main,#filter-drawer) :is(.seg,.sq-seg,#hub-period,.hub-period-seg,.quick-ranges:not(#theme-bases):not(#ch-types)):not(.stat-subnav):not(.group-tabs):not(.ach-view-seg):not(#hub-seg):not(#tab-settings *) > :is(button,.quick-chip):hover{color:var(--text)!important;background:none!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) :is(main,#filter-drawer) :is(.seg,.sq-seg,#hub-period,.hub-period-seg,.quick-ranges:not(#theme-bases):not(#ch-types)):not(.stat-subnav):not(.group-tabs):not(.ach-view-seg):not(#hub-seg):not(#tab-settings *) > :is(button,.quick-chip):is(.active,[aria-pressed="true"],[aria-selected="true"]){
+    color:var(--text)!important;background:none!important;box-shadow:inset 0 -2px 0 var(--accent)!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) :is(main,#filter-drawer) :is(.seg,.sq-seg,#hub-period,.hub-period-seg,.quick-ranges:not(#theme-bases):not(#ch-types)):not(.stat-subnav):not(.group-tabs):not(.ach-view-seg):not(#hub-seg):not(#tab-settings *) > :is(button,.quick-chip)::before{content:none!important}
+
+  html body:not(#tu1):not(#tu2):not(#tu3) main .quick-ranges:not(#theme-bases):not(#ch-types) > .qr-label{align-self:center;margin:0 -4px 0 0!important;color:var(--faint,var(--muted))}
+
+  /* Строка статистики: те же 40 px и тот же шрифт, что у «Участники / Чаты» — линии лежат на одной высоте */
+  html body:not(#tu1):not(#tu2):not(#tu3):not(#tu4):not(#tu5):not(#tu6):not(#tu7):not(#tu8):not(#tu9) .stats-topbar .sq-seg{gap:0 16px!important}
+  html body:not(#tu1):not(#tu2):not(#tu3):not(#tu4):not(#tu5):not(#tu6):not(#tu7):not(#tu8):not(#tu9) .stats-topbar .sq-seg > button{height:40px!important;font-size:15px!important;font-weight:600!important}
+  html body:not(#tu1):not(#tu2):not(#tu3):not(#tu4):not(#tu5):not(#tu6):not(#tu7):not(#tu8):not(#tu9) .stats-topbar .tv-seg > button{height:40px!important;font-size:15px!important;font-weight:600!important}
+  @container (max-width:1500px){
+    html body:not(#tu1):not(#tu2):not(#tu3):not(#tu4):not(#tu5):not(#tu6):not(#tu7):not(#tu8):not(#tu9) .stats-topbar .sq-seg{gap:0 12px!important}
+    html body:not(#tu1):not(#tu2):not(#tu3):not(#tu4):not(#tu5):not(#tu6):not(#tu7):not(#tu8):not(#tu9) .stats-topbar .sq-seg > button{font-size:14px!important}
+  }
+
+  /* ---------- «Таблица | Карточки»: настоящий переключатель; старая кнопка остаётся скрытой и по-прежнему всё делает ---------- */
+  html body:not(#tu1):not(#tu2):not(#tu3) .tv-btn[data-tu-seg]{display:none!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .tv-seg[hidden]{display:none!important}
+  .tv-seg{display:none}
+  html body:not(#tu1):not(#tu2):not(#tu3) .tv-seg:not([hidden]){display:inline-flex!important}
+
+  /* ---------- Дата: строка с пунктирной линией, как остальные фильтры ---------- */
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date{height:40px!important;min-height:0!important;padding:0 2px!important;gap:6px!important;
+    background:none!important;background-image:none!important;border:0!important;border-bottom:1px dashed var(--ds-line-2,var(--line-2))!important;border-radius:0!important;
+    box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;font-size:15px!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date > span[aria-hidden]{display:none!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date input{background:none!important;border:0!important;box-shadow:none!important;color:var(--text)!important;font:inherit!important;font-weight:500!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date:is(:hover,:focus-within){border-bottom-color:var(--accent)!important}
+
+  /* ---------- Кнопки-действия: тихий текст без рамки ---------- */
+  html body:not(#tu1):not(#tu2):not(#tu3) main :is(.st-desk-tools .hc-btn,.hc-bar .hc-btn,.table-export-actions .copy-btn,.table-export-actions button.mini){
+    height:36px!important;min-height:0!important;padding:0 2px!important;gap:6px!important;border:0!important;border-radius:0!important;background:none!important;background-image:none!important;
+    box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;color:var(--muted)!important;font-size:14px!important;font-weight:500!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick :is(.st-desk-tools .hc-btn,.table-export-actions .copy-btn,.table-export-actions button.mini){height:40px!important;font-size:15px!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) main :is(.st-desk-tools .hc-btn,.hc-bar .hc-btn,.table-export-actions .copy-btn,.table-export-actions button.mini):is(:hover,[aria-expanded="true"]){color:var(--text)!important;background:none!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .st-desk-tools .hc-btn .st-hc-lbl{display:inline!important}
+
+  /* ---------- Панель «Фильтры»: плоская, без рамок в рамках ---------- */
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body :is(.filters,.field,.checkline,.table-export-actions,.opt-pop,.opt-list){
+    background:none!important;background-image:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body :is(.field,.checkline,.opt-pop,.table-export-actions)::before,
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body :is(.field,.checkline,.opt-pop,.table-export-actions)::after{content:none!important;display:none!important}
+  /* галочки — просто строки с переключателем */
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .checkline{display:flex!important;align-items:center;justify-content:flex-start!important;gap:10px!important;width:100%;min-height:0!important;height:auto!important;padding:7px 0!important;color:var(--text)!important;font-size:15px!important;font-weight:500!important}
+  /* «Параметры» не нужны: переключатели выведены прямо в панель */
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .opt-pop{display:block!important;width:100%;flex:0 0 auto}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .opt-pop > summary{display:none!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .opt-pop .opt-list{position:static!important;display:flex!important;flex-direction:column;gap:0!important;min-width:0!important;width:100%;margin:0!important;padding:0!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .opt-pop::details-content{content-visibility:visible!important;display:block!important}
+  /* кнопки «Копировать / Видео / Настройка» — тихий текст в ряд */
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .table-export-actions{display:flex!important;flex-wrap:wrap;justify-content:flex-start!important;gap:2px 18px!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .table-export-actions :is(button,.mini,.copy-btn){flex:0 0 auto!important;width:auto!important;height:32px!important;min-height:0!important;padding:0!important;margin:0!important;
+    border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;color:var(--muted)!important;font-size:15px!important;font-weight:500!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .table-export-actions :is(button,.mini,.copy-btn):hover{color:var(--text)!important;background:none!important}
+  /* Ultimate / VK — два переключателя без коробок */
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer .fd-top{gap:22px!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer .fd-top .ult-btn{flex:0 0 auto!important;width:auto!important;height:auto!important;min-height:0!important;padding:6px 2px!important;justify-content:flex-start;
+    border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+
+  /* выравнивание: подписи и вкладки встают в один левый край с остальными полями */
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .filters{align-items:stretch!important;gap:14px!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .field:has(> .seg) > label{padding:0 0 2px!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .field > .seg{margin:2px 0 4px!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .opt-pop{margin:0 0 6px!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .checkline{padding:6px 0!important}
+  /* ряды кнопок («Копировать», «Видео», «Настройка») — тихий текст */
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body :is(.field > .pbtn,.field > button.mini){display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start!important;gap:2px 18px;padding:0!important;margin:0!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body :is(.field > .pbtn > :is(button,.mini),.field > button.mini){flex:0 0 auto!important;width:auto!important;height:32px!important;min-height:0!important;padding:0!important;margin:0!important;
+    border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;color:var(--muted)!important;font-size:15px!important;font-weight:500!important;justify-content:flex-start!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body :is(.field > .pbtn > :is(button,.mini),.field > button.mini):hover{color:var(--text)!important;background:none!important}
+  /* выбор участников/чатов — как остальные списки: пунктир и стрелка */
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .field > .pick{position:relative;width:100%}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .field > .pick > summary{display:flex!important;align-items:center;width:100%;height:34px!important;min-height:0!important;padding:0 22px 0 0!important;
+    border:0!important;border-bottom:1px dashed var(--ds-line-2,var(--line-2))!important;border-radius:0!important;background:none!important;box-shadow:none!important;color:var(--text)!important;font-size:15px!important;font-weight:600!important;list-style:none}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .field > .pick > summary::-webkit-details-marker{display:none}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .field > .pick > summary::after{content:""!important;display:block!important;position:absolute;right:3px;top:12px;width:6px;height:6px;border-right:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:rotate(45deg);opacity:.55}
+
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .filters{margin:0!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .filters + .filters{margin-top:14px!important}
+  /* строка чипов «Показывать» — без общей рамки, как и сами чипы */
+  html body:not(#d1):not(#d2):not(#d3) main #ch-types{background:none!important;background-image:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;gap:8px!important}
+
+  /* ---------- Чипы: один тихий вид ---------- */
+  html body:not(#d1):not(#d2):not(#d3) :is(main,#filter-drawer) :is(#ch-types .quick-chip,.series-chips .chip,.s-chip,.ychip-btn){
+    height:30px!important;min-height:0!important;padding-top:0!important;padding-bottom:0!important;border:1px solid var(--ds-line-2,var(--line-2))!important;border-radius:8px!important;
+    background:none!important;background-image:none!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+    color:var(--muted)!important;font-size:13.5px!important;font-weight:500!important}
+  html body:not(#d1):not(#d2):not(#d3) :is(main,#filter-drawer) :is(#ch-types .quick-chip,.series-chips .chip,.s-chip,.ychip-btn):hover{color:var(--text)!important;border-color:color-mix(in srgb,var(--text) 32%,transparent)!important;background:none!important}
+  html body:not(#d1):not(#d2):not(#d3) :is(main,#filter-drawer) :is(#ch-types .quick-chip.active,.series-chips .chip:not(.off),.s-chip[aria-pressed="true"]){
+    color:var(--text)!important;border-color:color-mix(in srgb,var(--accent) 55%,transparent)!important;background:var(--accent-bg)!important}
+  html body:not(#d1):not(#d2):not(#d3) :is(main,#filter-drawer) .ychip-btn.active{color:var(--text)!important;border-color:var(--yc,var(--accent))!important;background:color-mix(in srgb,var(--yc,var(--accent)) 16%,transparent)!important}
+  html body:not(#d1):not(#d2):not(#d3) :is(main,#filter-drawer) .series-chips .chip.off{color:var(--faint,var(--muted))!important;text-decoration:line-through;border-style:dashed!important}
+}
+</style>
+<script id="tabs-unify-js">
+/* Переключатель «Таблица | Карточки» поверх прежней кнопки «.tv-btn»: прежняя кнопка скрыта и продолжает работать как раньше
+   (хранит режим, меняет таблицу), а новые пункты лишь нажимают её и повторяют её состояние. */
+(() => {
+  "use strict";
+  const LBL = {table: "Таблица", cards: "Карточки"};
+  let queued = false;
+
+  function build(btn){
+    const seg = document.createElement("div");
+    seg.className = "seg tv-seg"; seg.setAttribute("role", "tablist"); seg.setAttribute("aria-label", "Как показывать: таблицей или карточками");
+    seg.dataset.noExport = "1";
+    seg.innerHTML = `<button type="button" role="tab" data-tv-set="table">${LBL.table}</button><button type="button" role="tab" data-tv-set="cards">${LBL.cards}</button>`;
+    seg.addEventListener("click", e => {
+      const b = e.target.closest("[data-tv-set]"); if (!b) return;
+      if ((btn.dataset.tvMode || "table") !== b.dataset.tvSet) btn.click();
+    });
+    btn.dataset.tuSeg = "1";
+    btn._tuSeg = seg;
+    new MutationObserver(() => sync(btn)).observe(btn, {attributes: true, attributeFilter: ["data-tv-mode", "hidden"]});
+    btn.before(seg);
+    sync(btn);
+  }
+  function sync(btn){
+    const seg = btn._tuSeg; if (!seg) return;
+    const mode = btn.dataset.tvMode || "table";
+    if (seg.hidden !== btn.hidden) seg.hidden = btn.hidden;
+    seg.querySelectorAll("[data-tv-set]").forEach(b => {
+      const on = b.dataset.tvSet === mode;
+      if (b.classList.contains("active") !== on) b.classList.toggle("active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+  }
+  function scan(){
+    queued = false;
+    document.querySelectorAll("main .tv-btn").forEach(btn => {
+      if (!btn._tuSeg) build(btn);
+      else if (btn.previousElementSibling !== btn._tuSeg) btn.before(btn._tuSeg); // кнопку переставили — переключатель идёт за ней
+    });
+    // «Таблица» у кнопки настройки таблицы звучала так же, как режим просмотра, — теперь «Столбцы»
+    document.querySelectorAll("main .st-hc-lbl").forEach(s => { if (s.textContent === "Таблица") s.textContent = "Столбцы"; });
+    document.querySelectorAll("main .hc-bar .hc-btn").forEach(b => b.childNodes.forEach(n => { if (n.nodeType === 3 && n.nodeValue.trim() === "Таблица") n.nodeValue = "Столбцы"; }));
+  }
+  const later = () => { if (!queued) { queued = true; requestAnimationFrame(scan); } };
+  const main = document.querySelector("main");
+  if (main) new MutationObserver(later).observe(main, {childList: true, subtree: true});
+  later(); setTimeout(later, 600); setTimeout(later, 2000);
+
+  // «Параметры»: галочки показываются сразу, меню раскрывать не нужно — держим его открытым
+  const openOpts = () => document.querySelectorAll("#filter-drawer details.opt-pop").forEach(d => { if (!d.open) d.open = true; });
+  const dr = document.getElementById("filter-drawer");
+  if (dr) new MutationObserver(openOpts).observe(dr, {childList: true, subtree: true});
+  openOpts();
 })();
 </script>
 </body>
