@@ -14296,6 +14296,7 @@ function multiplesChart(){
     const entry = moved.find(([n]) => n === node); if (entry) keepOut(node, entry[1]);
   }
   function restore(){
+    try { window.__statsChatHome && window.__statsChatHome(); } catch (e) {}
     body.querySelectorAll(":scope > .fd-look").forEach(n => n.remove());
     while (moved.length) { const [node, mark] = moved.pop(); if (mark.parentNode) mark.replaceWith(node); }
     holders.forEach(h => h.remove()); holders.clear();
@@ -14319,6 +14320,7 @@ function multiplesChart(){
     if (!active() || onSettings) return;
     candidates().forEach(n => { seen.add(n); park(n, body); keepOut(n, moved[moved.length - 1][1]); });
     body.dataset.tab = typeof activeDataTab === "function" ? activeDataTab() : "";
+    try { window.__statsChatMount && window.__statsChatMount(); } catch (e) {}
     ["ult-toggle", "vk-toggle"].forEach(id => { const b = document.getElementById(id); if (b && b.parentNode !== top) park(b, top); });
     // «Вид таблицы» в шторку больше не добавляется: те же настройки есть в меню «Столбцы» у каждой таблицы.
   }
@@ -15205,6 +15207,7 @@ window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
   {v:"2026.11.06-2", date:"2026-11-07", title:"Фон страницы, «Места: месяцы × годы», чистка настроек графиков", items:[{tag:"imp", area:"Оформление", text:"Переключатели — как «Участники / Чаты»: период, «Таблица / Карточки», режимы и сортировки стали вкладками с линией под активным пунктом, без рамок и заливок. Кнопки «Копировать» и «Столбцы» — тихий текст без рамки, дата — строка с пунктиром. Панель «Фильтры» стала плоской: без рамок в рамках, а «Параметры» убраны — переключатели выведены сразу. Чипы — один тихий вид."},
+    {tag:"imp", area:"Статистика", text:"«Вчера», «7 дней», «Прошлый месяц» и «Всё время» переехали в календарь: слева быстрые периоды, справа календарь. Выбор чата — в верхней строке рядом с датой, «Копировать» стоит ближе к остальным кнопкам, а подпись таблицы привязана к самой таблице и отстоит от неё дальше."},
     {tag:"new", area:"Оформление", text:"«Фон страницы» в «Настройки → Оформление»: цветные пятна, один цвет или лёгкий градиент. Скопированные и скачанные таблицы получают такой же фон, стеклянные картинки — тоже без пятен."},
     {tag:"new", area:"Графики", text:"«Места: месяцы × годы» — разновидность «Графика мест»: по горизонтали месяцы, по вертикали годы. В клетке — место месяца среди таких же месяцев других лет по общей сумме (самый активный октябрь — 1-е место), справа — места годов целиком."},
     {tag:"del", area:"Графики", text:"Убраны настройки, которые ничего не меняли: «Участники | Чаты» на «Сезонности» и «Кто активен вместе», «Убрать вышедших» для чатов, «Доля, %» на графиках мест, «День» на «Динамике», «Гонке», «Графике мест» и «Маленьких графиках», лишние режимы на «Сезонности» (важен только год)."},
@@ -16416,6 +16419,7 @@ body.holo-text-on tr > td.medal-3:first-child{background-image:linear-gradient(1
     const act = m === "day" && day === today ? "today" : m === "day" && day === yday ? "yday" : m === "week" && day === today ? "7"
       : m === "month" && month === thisM ? "month" : m === "month" && month === prevM ? "pmonth" : m === "year" && year === String(t.getFullYear()) ? "year" : m === "all" ? "all" : "";
     q.querySelectorAll("[data-sq]").forEach(b => b.classList.toggle("active", b.dataset.sq === act));
+    { const MV = {yday:"Вчера", "7":"7 дней", pmonth:"Прошлый месяц", all:"Всё время"}, lb0 = q.querySelector(".sq-date"); if (lb0) { if (MV[act]) lb0.dataset.preset = MV[act]; else delete lb0.dataset.preset; } }
     $("sq-day").hidden = m === "month" || m === "year"; $("sq-month").hidden = m !== "month"; $("sq-year").hidden = m !== "year";
     q.querySelector(".sq-date")?.classList.toggle("is-range", m === "range");
     if (document.activeElement !== $("sq-day")) $("sq-day").value = day;
@@ -21994,6 +21998,8 @@ svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
   const isoOf = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
   const todayIso = () => { const t = new Date(); return isoOf(t.getFullYear(), t.getMonth(), t.getDate()); };
   const SKIP = "[data-native-date], .chart-settings-panel";
+  const PRESETS = [["yday", "Вчера"], ["7", "7 дней"], ["pmonth", "Прошлый месяц"], ["all", "Всё время"]];
+  const presetsHtml = () => { const on = document.querySelector("#stats-quick [data-sq].active")?.dataset.sq || ""; return `<div class="dp-pre" role="group" aria-label="Быстрый выбор периода">${PRESETS.map(([k, n]) => `<button type="button" class="dp-q${k === on ? " on" : ""}" data-dpq="${k}">${n}</button>`).join("")}</div>`; };
   let el = null, inp = null, kind = "date", view = "days", vy = 0, vm = 0, focusIso = "", scrim = null;
   // Выбор периода: первый клик — начало, второй — конец; второй клик по тому же дню — только этот день.
   // rng — куда записать период: {get() → [с, по] | null, set(с, по)}; start — выбранное начало; hover — день под курсором.
@@ -22048,6 +22054,7 @@ svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
       for (let m = 0; m < 12; m++) { const v = `${vy}-${pad(m + 1)}`, ok = inRange(v); h += `<button type="button" class="dp-mon${v === selM ? " sel" : ""}${v === curM ? " today" : ""}" data-m="${m}" tabindex="${m === vm ? 0 : -1}" aria-label="${MONTHS[m]} ${vy}"${ok ? "" : " disabled"}>${MSH[m]}</button>`; }
       h += `</div><div class="dp-foot">${kind === "month" ? `<button type="button" class="dp-link" data-dp="thism">Этот месяц</button>` : `<button type="button" class="dp-link" data-dp="back">К дням</button>`}<button type="button" class="dp-link" data-dp="close">Закрыть</button></div>`;
     }
+    { const withPre = !mobile.matches && inp && /^sq-(day|month)$/.test(inp.id); el.classList.toggle("dp-has-pre", withPre); if (withPre) h = presetsHtml() + `<div class="dp-cal">${h}</div>`; }
     el.innerHTML = h;
   }
   // Перекраска подсветки без перерисовки (чтобы не терять наведение)
@@ -22093,6 +22100,7 @@ svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
   function shiftMonth(n){ vm += n; while (vm < 0) { vm += 12; vy--; } while (vm > 11) { vm -= 12; vy++; } }
   function onClick(e){
     const b = e.target.closest("button"); if (!b || b.disabled) return;
+    if (b.dataset.dpq) { const k = b.dataset.dpq; close(); document.querySelector(`#stats-quick [data-sq="${k}"]`)?.click(); return; }
     const a = b.dataset.dp;
     if (b.dataset.v) {
       if (!rng) { commit(b.dataset.v); return; }
@@ -23467,6 +23475,22 @@ body.cs-yearonly:has(#tab-charts.active) #f-mode:has(button[data-m="year"].activ
   html body:not(#tu1):not(#tu2):not(#tu3) main :is(.st-desk-tools .hc-btn,.hc-bar .hc-btn,.table-export-actions .copy-btn,.table-export-actions button.mini):is(:hover,[aria-expanded="true"]){color:var(--text)!important;background:none!important}
   html body:not(#tu1):not(#tu2):not(#tu3) .st-desk-tools .hc-btn .st-hc-lbl{display:inline!important}
 
+
+  /* ---------- «Статистика»: быстрые даты — в календарь, чат — в верхнюю строку, «Копировать» ближе ---------- */
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-seg > :is([data-sq="yday"],[data-sq="7"],[data-sq="pmonth"],[data-sq="all"]){display:none!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date{position:relative}
+  /* когда выбран один из перенесённых периодов, поле даты называет его вместо цифр */
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date[data-preset]::before{content:attr(data-preset);position:absolute;left:2px;top:50%;transform:translateY(-50%);color:var(--text);font-size:15px;font-weight:500;white-space:nowrap;pointer-events:none}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date[data-preset] input{color:transparent!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick > .field#f-chat{display:flex!important;flex-direction:row;align-items:center;flex:0 0 auto;margin:0!important;padding:0!important;min-width:0}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick > .field#f-chat > label{display:none!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick #f-chat .msel{width:170px;height:40px!important;min-height:0!important;padding:0 24px 0 0!important;text-align:left;
+    border:0!important;border-bottom:1px dashed var(--ds-line-2,var(--line-2))!important;border-radius:0!important;background:none!important;box-shadow:none!important;font-size:15px!important;font-weight:600!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .st-copy-slot{margin-left:0!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .st-copy-slot .copy-btn::before{margin-right:7px!important}
+  /* подпись таблицы — над самой таблицей и чуть дальше от неё */
+  html body:not(#tu1):not(#tu2):not(#tu3) main .table-export-row[data-tw]{width:var(--tw)!important;max-width:100%!important;flex:0 0 auto!important;margin-left:auto!important;margin-right:auto!important;margin-bottom:18px!important}
+
   /* ---------- Панель «Фильтры»: плоская, без рамок в рамках ---------- */
   html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body :is(.filters,.field,.checkline,.table-export-actions,.opt-pop,.opt-list){
     background:none!important;background-image:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
@@ -23523,6 +23547,14 @@ body.cs-yearonly:has(#tab-charts.active) #f-mode:has(button[data-m="year"].activ
   html body:not(#d1):not(#d2):not(#d3) :is(main,#filter-drawer) .ychip-btn.active{color:var(--text)!important;border-color:var(--yc,var(--accent))!important;background:color-mix(in srgb,var(--yc,var(--accent)) 16%,transparent)!important}
   html body:not(#d1):not(#d2):not(#d3) :is(main,#filter-drawer) .series-chips .chip.off{color:var(--faint,var(--muted))!important;text-decoration:line-through;border-style:dashed!important}
 }
+
+/* Календарь «Статистики» на ПК: слева быстрые периоды, справа календарь */
+.dp.dp-has-pre{width:auto;display:flex;align-items:flex-start;gap:12px}
+.dp-pre{flex:0 0 150px;display:flex;flex-direction:column;gap:2px;padding:0 12px 0 0;border-right:1px solid var(--line)}
+.dp .dp-q{white-space:nowrap;height:36px;padding:0 10px;border-radius:10px;text-align:left;font-weight:600;color:var(--muted)}
+.dp .dp-q:hover{background:color-mix(in srgb,var(--text) 7%,transparent);color:var(--text)}
+.dp .dp-q.on{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.dp-cal{flex:0 0 276px;min-width:0}
 </style>
 <script id="tabs-unify-js">
 /* Переключатель «Таблица | Карточки» поверх прежней кнопки «.tv-btn»: прежняя кнопка скрыта и продолжает работать как раньше
@@ -23577,6 +23609,37 @@ body.cs-yearonly:has(#tab-charts.active) #f-mode:has(button[data-m="year"].activ
   const dr = document.getElementById("filter-drawer");
   if (dr) new MutationObserver(openOpts).observe(dr, {childList: true, subtree: true});
   openOpts();
+
+  // «Статистика»: выбор чата живёт в верхней строке, а не в шторке
+  let chatHome = null;
+  window.__statsChatHome = () => { const f = document.getElementById("f-chat"); if (chatHome && chatHome.parentNode) { if (f) chatHome.replaceWith(f); else chatHome.remove(); } chatHome = null; };
+  window.__statsChatMount = () => {
+    const f = document.getElementById("f-chat"), q = document.getElementById("stats-quick"), fb = document.getElementById("fd-body");
+    if (!f || !q || !fb || chatHome || !fb.contains(f)) return;
+    if (!document.getElementById("tab-stats")?.classList.contains("active")) return;
+    chatHome = document.createComment("stats-chat"); f.before(chatHome);
+    (q.querySelector(".sq-range") || q.querySelector(".sq-date")).after(f);
+  };
+  window.__statsChatMount();
+
+  // Подпись таблицы встаёт над самой таблицей: ширина и положение — как у таблицы
+  const tRO = new ResizeObserver(() => tLater()), tSeen = new WeakSet();
+  let tq = 0;
+  function tBind(){
+    tq = 0;
+    document.querySelectorAll("main .table-export-row").forEach(row => {
+      let n = row.nextElementSibling;
+      while (n && !n.classList.contains("wrap") && (n.matches(".status, .excluded-rows-host, #quiet-box, .hc-bar, [hidden]") || !n.offsetParent)) n = n.nextElementSibling;
+      if (!n || !n.classList.contains("wrap") || !n.offsetParent) { if (row.dataset.tw) { row.removeAttribute("data-tw"); row.style.removeProperty("--tw"); } return; }
+      if (!tSeen.has(n)) { tSeen.add(n); tRO.observe(n); }
+      const px = Math.round(n.getBoundingClientRect().width);
+      if (px > 0) { row.style.setProperty("--tw", px + "px"); row.dataset.tw = "1"; }
+    });
+  }
+  function tLater(){ if (!tq) tq = requestAnimationFrame(tBind); }
+  if (main) new MutationObserver(tLater).observe(main, {childList: true, subtree: true, attributes: true, attributeFilter: ["class", "hidden"]});
+  addEventListener("resize", tLater);
+  tLater(); setTimeout(tLater, 600); setTimeout(tLater, 2000);
 })();
 </script>
 </body>
