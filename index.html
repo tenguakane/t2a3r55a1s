@@ -2756,10 +2756,10 @@ function comparisonCell(current, previous, hasPrevious = true){
   // Это скрывает и (0) при равных ненулевых значениях, и (0) при нулевых.
   const showDiff = hasPrevious && delta !== 0;
   const diff = showDiff ? ` <span class="compare-diff ${cls}">(${signed(delta)})</span>` : "";
-  return `<td class="${current ? "" : "zero"}">${current ? fmtN(current) : "—"}${diff}</td>`;
+  return `<td class="${current ? "" : "zero"}">${current ? fmtN(current) : "-"}${diff}</td>`;
 }
 function displayedCell(current, previous, compareOn, hasPrevious = true){
-  return compareOn ? comparisonCell(current, previous, hasPrevious) : `<td class="${current ? "" : "zero"}">${current ? fmtN(current) : "—"}</td>`;
+  return compareOn ? comparisonCell(current, previous, hasPrevious) : `<td class="${current ? "" : "zero"}">${current ? fmtN(current) : "-"}</td>`;
 }
 function setStatus(t, err){ const s = $("status"); s.textContent = t; s.className = "status" + (err ? " err" : ""); }
 
@@ -3120,7 +3120,7 @@ function renderProfile(){
   const media = [["stick","Стикеры"], ["voice","Голосовые"], ["video","Видеосообщения"]];
   const mediaTbl = `<div class="wrap"><table><thead><tr><th>Период</th>${media.map(([,t]) => `<th>${t}</th>`).join("")}</tr></thead><tbody>` +
     P.map(([l], i) => `<tr><td>${l}</td>${media.map(([k]) => { const c = cell(i, k);
-      return `<td class="${c.v ? "" : "zero"}">${c.v ? fmt(c.v) : "—"}<small>${c.place}</small></td>`; }).join("")}</tr>`).join("") + `</tbody></table></div>`;
+      return `<td class="${c.v ? "" : "zero"}">${c.v ? fmt(c.v) : "-"}<small>${c.place}</small></td>`; }).join("")}</tr>`).join("") + `</tbody></table></div>`;
 
   const byChat = new Map();
   allRows.filter(x => String(x[F.userId]) === pk && (!hasTot || Number(x[F.chatPk]) !== 0)).forEach(x => {
@@ -3292,7 +3292,7 @@ function yearRowCells(y, place, label, nums, pct, extraRowClass = ""){
   const yc = yearHue(y);
   return `<tr class="${extraRowClass.trim()}"><td style="text-align:center;border-left:4px solid ${yc}">${place}</td>`
     + `<td style="text-align:left"><span class="yname">${label}<span class="ychip" style="color:${yc};border-color:${hexA(yc, .55)};background-color:${hexA(yc, .12)}">${y}</span></span></td>`
-    + nums.map(v => `<td class="${v ? "" : "zero"}">${v ? fmt(v) : "—"}</td>`).join("") + `</tr>`;
+    + nums.map(v => `<td class="${v ? "" : "zero"}">${v ? fmt(v) : "-"}</td>`).join("") + `</tr>`;
 }
 function renderYearLegend(hostId, yearTotals, active, onPick){
   const host = $(hostId); if (!host) return;
@@ -7821,9 +7821,9 @@ function renderSelfiePeople(m, days){
     const attPct = Math.round(r.att * 100), ac = r.att >= .8 ? "#9ece6a" : r.att >= .5 ? "#e0af68" : "#f7768e";
     const color = getStyle("u", p.pk).c[0];
     return `<tr><td class="${i < 3 ? "medal-" + (i + 1) : ""}" style="text-align:center">${i + 1}</td><td style="text-align:left"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${color};margin-right:8px"></span><span class="pname" data-open-profile="${escH(p.pk)}">${escH(selfieNameOf(p.pk))}</span></td>`
-      + years.map(y => { const v = p.years.get(y) || 0; return `<td class="${v ? "" : "zero"}">${v ? fmt(v) : "—"}</td>`; }).join("")
+      + years.map(y => { const v = p.years.get(y) || 0; return `<td class="${v ? "" : "zero"}">${v ? fmt(v) : "-"}</td>`; }).join("")
       + `<td>${fmt(p.total)}</td><td>${fmt(r.count)}</td><td data-bar-pct="${attPct}" data-bar-color="${hexA(ac, .3)}" style="background-image:linear-gradient(90deg,${hexA(ac, .3)} ${attPct}%,transparent ${attPct}%)">${attPct}%<span class="wd-mute">${r.did}/${r.elig}</span></td>`
-      + `<td style="color:${p.current ? "#ffb27a" : "var(--muted)"}">${fmt(p.current)}</td><td>${fmt(p.maxStreak)}</td><td class="${r.missed ? "s-miss" : "zero"}">${r.missed ? fmt(r.missed) : "—"}</td><td>${r.lastMissed ? sFmtDate(r.lastMissed) : "—"}</td><td>${sFmtDate(p.last)}</td><td>${sStrip(m, p, strip)}</td></tr>`;
+      + `<td style="color:${p.current ? "#ffb27a" : "var(--muted)"}">${fmt(p.current)}</td><td>${fmt(p.maxStreak)}</td><td class="${r.missed ? "s-miss" : "zero"}">${r.missed ? fmt(r.missed) : "-"}</td><td>${r.lastMissed ? sFmtDate(r.lastMissed) : "—"}</td><td>${sFmtDate(p.last)}</td><td>${sStrip(m, p, strip)}</td></tr>`;
   }).join("") : `<tr><td colspan="${12 + years.length}" style="text-align:center;color:var(--muted)">Нет данных</td></tr>`;
 }
 function renderSelfieYears(m){
