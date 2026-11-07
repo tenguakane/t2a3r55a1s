@@ -23503,6 +23503,11 @@ body.cs-yearonly:has(#tab-charts.active) #f-mode:has(button[data-m="year"].activ
   html body .wrap.sx > #dm-table > tbody > tr:hover > td:is(.dm-no,.dm-name){background-color:color-mix(in srgb,var(--text) 6%,var(--dm-solid))!important}
   /* имя в таблицах не «загорается» цветом и подчёркиванием при наведении */
   html body main table .pname:hover{color:inherit!important;border-bottom-color:transparent!important}
+  /* топ-3: перелив имени рисуется на самом имени, а не на всей ячейке — иначе background-clip:text съедает подсветку строки при наведении */
+  html body.holo-text-on :is(tr:has(> td.medal-1),tr:has(> td.medal-2),tr:has(> td.medal-3)) > td:nth-child(2):not(.dm-name){background-image:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;-webkit-text-fill-color:currentColor!important;animation:none!important;filter:none!important}
+  html body.holo-text-on tr:has(> td.medal-1) > td:nth-child(2):not(.dm-name) .pname{background-image:linear-gradient(100deg,#ffd166 0%,#ff9ecf 18%,#67e8f9 36%,#a78bfa 54%,#76f0b6 72%,#ffd166 90%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:holoText 7s linear infinite;filter:drop-shadow(0 0 6px rgba(167,139,250,.25))}
+  html body.holo-text-on tr:has(> td.medal-2) > td:nth-child(2):not(.dm-name) .pname{background-image:linear-gradient(100deg,#9aa6bd 0%,#ffffff 16%,#7f8aa1 36%,#dfe6f2 56%,#8e99b0 78%,#9aa6bd 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:holoText 10s linear infinite}
+  html body.holo-text-on tr:has(> td.medal-3) > td:nth-child(2):not(.dm-name) .pname{background-image:linear-gradient(100deg,#e3a36b 0%,#f3c79a 30%,#b8784a 55%,#e3a36b 80%,#e3a36b 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:holoText 14s linear infinite}
   /* нули в таблицах — тёмные прочерки */
   html body main td.zero{color:color-mix(in srgb,var(--text) 19%,transparent)!important}
 
