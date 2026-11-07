@@ -2756,10 +2756,10 @@ function comparisonCell(current, previous, hasPrevious = true){
   // Это скрывает и (0) при равных ненулевых значениях, и (0) при нулевых.
   const showDiff = hasPrevious && delta !== 0;
   const diff = showDiff ? ` <span class="compare-diff ${cls}">(${signed(delta)})</span>` : "";
-  return `<td class="${current ? "" : "zero"}">${fmtN(current)}${diff}</td>`;
+  return `<td class="${current ? "" : "zero"}">${current ? fmtN(current) : "—"}${diff}</td>`;
 }
 function displayedCell(current, previous, compareOn, hasPrevious = true){
-  return compareOn ? comparisonCell(current, previous, hasPrevious) : `<td class="${current ? "" : "zero"}">${fmtN(current)}</td>`;
+  return compareOn ? comparisonCell(current, previous, hasPrevious) : `<td class="${current ? "" : "zero"}">${current ? fmtN(current) : "—"}</td>`;
 }
 function setStatus(t, err){ const s = $("status"); s.textContent = t; s.className = "status" + (err ? " err" : ""); }
 
@@ -3120,7 +3120,7 @@ function renderProfile(){
   const media = [["stick","Стикеры"], ["voice","Голосовые"], ["video","Видеосообщения"]];
   const mediaTbl = `<div class="wrap"><table><thead><tr><th>Период</th>${media.map(([,t]) => `<th>${t}</th>`).join("")}</tr></thead><tbody>` +
     P.map(([l], i) => `<tr><td>${l}</td>${media.map(([k]) => { const c = cell(i, k);
-      return `<td class="${c.v ? "" : "zero"}">${fmt(c.v)}<small>${c.place}</small></td>`; }).join("")}</tr>`).join("") + `</tbody></table></div>`;
+      return `<td class="${c.v ? "" : "zero"}">${c.v ? fmt(c.v) : "—"}<small>${c.place}</small></td>`; }).join("")}</tr>`).join("") + `</tbody></table></div>`;
 
   const byChat = new Map();
   allRows.filter(x => String(x[F.userId]) === pk && (!hasTot || Number(x[F.chatPk]) !== 0)).forEach(x => {
@@ -3292,7 +3292,7 @@ function yearRowCells(y, place, label, nums, pct, extraRowClass = ""){
   const yc = yearHue(y);
   return `<tr class="${extraRowClass.trim()}"><td style="text-align:center;border-left:4px solid ${yc}">${place}</td>`
     + `<td style="text-align:left"><span class="yname">${label}<span class="ychip" style="color:${yc};border-color:${hexA(yc, .55)};background-color:${hexA(yc, .12)}">${y}</span></span></td>`
-    + nums.map(v => `<td class="${v ? "" : "zero"}">${fmt(v)}</td>`).join("") + `</tr>`;
+    + nums.map(v => `<td class="${v ? "" : "zero"}">${v ? fmt(v) : "—"}</td>`).join("") + `</tr>`;
 }
 function renderYearLegend(hostId, yearTotals, active, onPick){
   const host = $(hostId); if (!host) return;
@@ -7821,9 +7821,9 @@ function renderSelfiePeople(m, days){
     const attPct = Math.round(r.att * 100), ac = r.att >= .8 ? "#9ece6a" : r.att >= .5 ? "#e0af68" : "#f7768e";
     const color = getStyle("u", p.pk).c[0];
     return `<tr><td class="${i < 3 ? "medal-" + (i + 1) : ""}" style="text-align:center">${i + 1}</td><td style="text-align:left"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${color};margin-right:8px"></span><span class="pname" data-open-profile="${escH(p.pk)}">${escH(selfieNameOf(p.pk))}</span></td>`
-      + years.map(y => { const v = p.years.get(y) || 0; return `<td class="${v ? "" : "zero"}">${fmt(v)}</td>`; }).join("")
+      + years.map(y => { const v = p.years.get(y) || 0; return `<td class="${v ? "" : "zero"}">${v ? fmt(v) : "—"}</td>`; }).join("")
       + `<td>${fmt(p.total)}</td><td>${fmt(r.count)}</td><td data-bar-pct="${attPct}" data-bar-color="${hexA(ac, .3)}" style="background-image:linear-gradient(90deg,${hexA(ac, .3)} ${attPct}%,transparent ${attPct}%)">${attPct}%<span class="wd-mute">${r.did}/${r.elig}</span></td>`
-      + `<td style="color:${p.current ? "#ffb27a" : "var(--muted)"}">${fmt(p.current)}</td><td>${fmt(p.maxStreak)}</td><td class="${r.missed ? "s-miss" : "zero"}">${fmt(r.missed)}</td><td>${r.lastMissed ? sFmtDate(r.lastMissed) : "—"}</td><td>${sFmtDate(p.last)}</td><td>${sStrip(m, p, strip)}</td></tr>`;
+      + `<td style="color:${p.current ? "#ffb27a" : "var(--muted)"}">${fmt(p.current)}</td><td>${fmt(p.maxStreak)}</td><td class="${r.missed ? "s-miss" : "zero"}">${r.missed ? fmt(r.missed) : "—"}</td><td>${r.lastMissed ? sFmtDate(r.lastMissed) : "—"}</td><td>${sFmtDate(p.last)}</td><td>${sStrip(m, p, strip)}</td></tr>`;
   }).join("") : `<tr><td colspan="${12 + years.length}" style="text-align:center;color:var(--muted)">Нет данных</td></tr>`;
 }
 function renderSelfieYears(m){
@@ -15207,7 +15207,7 @@ window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
   {v:"2026.11.06-2", date:"2026-11-07", title:"Фон страницы, «Места: месяцы × годы», чистка настроек графиков", items:[{tag:"imp", area:"Оформление", text:"Переключатели — как «Участники / Чаты»: период, «Таблица / Карточки», режимы и сортировки стали вкладками с линией под активным пунктом, без рамок и заливок. Кнопки «Копировать» и «Столбцы» — тихий текст без рамки, дата — строка с пунктиром. Панель «Фильтры» стала плоской: без рамок в рамках, а «Параметры» убраны — переключатели выведены сразу. Чипы — один тихий вид."},
-    {tag:"imp", area:"Статистика", text:"«Вчера», «7 дней», «Прошлый месяц» и «Всё время» переехали в календарь: слева быстрые периоды, справа календарь. Выбор чата — в верхней строке рядом с датой, «Копировать» стоит ближе к остальным кнопкам, а подпись таблицы привязана к самой таблице и отстоит от неё дальше."},
+    {tag:"imp", area:"Статистика", text:"«Вчера», «7 дней», «Прошлый месяц» и «Всё время» переехали в календарь: слева быстрые периоды, справа календарь. Выбор чата — в верхней строке рядом с датой, «Копировать» стоит ближе к остальным кнопкам, а подпись таблицы привязана к самой таблице и отстоит от неё дальше. Строка управления — по центру; месяц и год выбираются отдельным полем, календарь не пропадает. Нули в таблицах — тёмные прочерки."},
     {tag:"new", area:"Оформление", text:"«Фон страницы» в «Настройки → Оформление»: цветные пятна, один цвет или лёгкий градиент. Скопированные и скачанные таблицы получают такой же фон, стеклянные картинки — тоже без пятен."},
     {tag:"new", area:"Графики", text:"«Места: месяцы × годы» — разновидность «Графика мест»: по горизонтали месяцы, по вертикали годы. В клетке — место месяца среди таких же месяцев других лет по общей сумме (самый активный октябрь — 1-е место), справа — места годов целиком."},
     {tag:"del", area:"Графики", text:"Убраны настройки, которые ничего не меняли: «Участники | Чаты» на «Сезонности» и «Кто активен вместе», «Убрать вышедших» для чатов, «Доля, %» на графиках мест, «День» на «Динамике», «Гонке», «Графике мест» и «Маленьких графиках», лишние режимы на «Сезонности» (важен только год)."},
@@ -16384,7 +16384,7 @@ body.holo-text-on tr > td.medal-3:first-child{background-image:linear-gradient(1
   q.innerHTML = `<div class="sq-seg">
       <button type="button" data-sq="today">Сегодня</button><button type="button" data-sq="yday">Вчера</button><button type="button" data-sq="7">7 дней</button><button type="button" data-sq="month">Этот месяц</button><button type="button" data-sq="pmonth">Прошлый месяц</button><button type="button" data-sq="year">Этот год</button><button type="button" data-sq="all">Всё время</button>
     </div>
-    <label class="sq-date" title="Точная дата, месяц или год"><span aria-hidden="true">📅</span><input type="date" id="sq-day" aria-label="Дата"><input type="month" id="sq-month" aria-label="Месяц" hidden><input type="number" id="sq-year" min="2000" max="2100" aria-label="Год" hidden></label>
+    <label class="sq-date" title="Точная дата, месяц или год"><span aria-hidden="true">📅</span><input type="date" id="sq-day" aria-label="Дата"></label><label class="sq-date sq-sub" id="sq-month-l" title="Месяц" hidden><input type="month" id="sq-month" aria-label="Месяц"></label><label class="sq-date sq-sub" id="sq-year-l" title="Год" hidden><input type="number" id="sq-year" min="2000" max="2100" aria-label="Год"></label>
     <span class="sq-range" id="sq-range"></span>`;
   bar.appendChild(q);
   const pad = n => String(n).padStart(2, "0");
@@ -16420,7 +16420,7 @@ body.holo-text-on tr > td.medal-3:first-child{background-image:linear-gradient(1
       : m === "month" && month === thisM ? "month" : m === "month" && month === prevM ? "pmonth" : m === "year" && year === String(t.getFullYear()) ? "year" : m === "all" ? "all" : "";
     q.querySelectorAll("[data-sq]").forEach(b => b.classList.toggle("active", b.dataset.sq === act));
     { const MV = {yday:"Вчера", "7":"7 дней", pmonth:"Прошлый месяц", all:"Всё время"}, lb0 = q.querySelector(".sq-date"); if (lb0) { if (MV[act]) lb0.dataset.preset = MV[act]; else delete lb0.dataset.preset; } }
-    $("sq-day").hidden = m === "month" || m === "year"; $("sq-month").hidden = m !== "month"; $("sq-year").hidden = m !== "year";
+    $("sq-month-l").hidden = m !== "month"; $("sq-year-l").hidden = m !== "year";
     q.querySelector(".sq-date")?.classList.toggle("is-range", m === "range");
     if (document.activeElement !== $("sq-day")) $("sq-day").value = day;
     if (document.activeElement !== $("sq-month")) $("sq-month").value = month;
@@ -23490,6 +23490,17 @@ body.cs-yearonly:has(#tab-charts.active) #f-mode:has(button[data-m="year"].activ
   html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .st-copy-slot .copy-btn::before{margin-right:7px!important}
   /* подпись таблицы — над самой таблицей и чуть дальше от неё */
   html body:not(#tu1):not(#tu2):not(#tu3) main .table-export-row[data-tw]{width:var(--tw)!important;max-width:100%!important;flex:0 0 auto!important;margin-left:auto!important;margin-right:auto!important;margin-bottom:18px!important}
+
+
+  /* ---------- Строка «Статистики» — по центру; год и месяц — отдельные поля, календарь не пропадает ---------- */
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-topbar{justify-content:center!important;flex-wrap:wrap!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-topbar > .stats-quick{flex:0 1 auto!important;justify-content:center!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date.sq-sub[hidden]{display:none!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date.sq-sub input{min-width:0!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date.sq-sub input[type="month"]{width:150px}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date.sq-sub input[type="number"]{width:76px}
+  /* нули в таблицах — тёмные прочерки */
+  html body main td.zero{color:color-mix(in srgb,var(--text) 19%,transparent)!important}
 
   /* ---------- Панель «Фильтры»: плоская, без рамок в рамках ---------- */
   html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body :is(.filters,.field,.checkline,.table-export-actions,.opt-pop,.opt-list){
