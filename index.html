@@ -23499,6 +23499,10 @@ body.cs-yearonly:has(#tab-charts.active) #f-mode:has(button[data-m="year"].activ
   html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date.sq-sub input{min-width:0!important}
   html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date.sq-sub input[type="month"]{width:150px}
   html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date.sq-sub input[type="number"]{width:76px}
+  /* hover строки: закреплённые «Место»/«Участник» подсвечиваются так же, как остальные ячейки */
+  html body .wrap.sx > #dm-table > tbody > tr:hover > td:is(.dm-no,.dm-name){background-color:color-mix(in srgb,var(--text) 6%,var(--dm-solid))!important}
+  /* имя в таблицах не «загорается» цветом и подчёркиванием при наведении */
+  html body main table .pname:hover{color:inherit!important;border-bottom-color:transparent!important}
   /* нули в таблицах — тёмные прочерки */
   html body main td.zero{color:color-mix(in srgb,var(--text) 19%,transparent)!important}
 
