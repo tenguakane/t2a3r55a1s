@@ -7885,7 +7885,7 @@ let S_NAMES_ALL = false;
 function sChips(list, cls = ""){
   if (!list.length) return "";
   const lim = 4, over = !S_NAMES_ALL && list.length > lim + 1, shown = over ? list.slice(0, lim) : list;
-  return `<span class="s-chips">${shown.map(n => `<span class="s-chip ${cls}">${escH(n)}</span>`).join("")}${over ? `<button type="button" class="s-chip s-chip-more" data-s-names-all title="Показать всех: ${escH(list.slice(lim).join(", "))}">+${list.length - lim}</button>` : (S_NAMES_ALL && list.length > lim + 1 ? `<button type="button" class="s-chip s-chip-more" data-s-names-all data-no-export="true" title="Свернуть длинные списки">свернуть</button>` : "")}</span>`;
+  return `<span class="s-nchips">${shown.map(n => `<span class="s-nchip ${cls}">${escH(n)}</span>`).join("")}${over ? `<button type="button" class="s-nchip s-nchip-more" data-s-names-all title="Показать всех: ${escH(list.slice(lim).join(", "))}">+${list.length - lim}</button>` : (S_NAMES_ALL && list.length > lim + 1 ? `<button type="button" class="s-nchip s-nchip-more" data-s-names-all data-no-export="true" title="Свернуть длинные списки">свернуть</button>` : "")}</span>`;
 }
 document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-s-names-all]"); if (!b) return; S_NAMES_ALL = !S_NAMES_ALL; if (typeof renderSelfie === "function") renderSelfie(); });
 function renderSelfieDays(m, days){
@@ -7897,7 +7897,7 @@ function renderSelfieDays(m, days){
     const who = sDayPeople(m, d).map(selfieNameOf).sort((a, b) => a.localeCompare(b, "ru"));
     const missed = sMissedRegulars(m, i).map(selfieNameOf).sort((a, b) => a.localeCompare(b, "ru"));
     const pct = (c / max * 100).toFixed(1), bar = hexA(yc, .38), diff = prev == null ? "—" : c - prev === 0 ? "0" : `<span class="compare-diff ${c > prev ? "positive" : "negative"}">${c > prev ? "+" : "−"}${Math.abs(c - prev)}</span>`;
-    return `<tr><td style="border-left:4px solid ${yc};white-space:nowrap">${sFmtDate(d)}${d === m.openF ? '<span class="now-chip">окно открыто</span>' : ""}</td><td data-bar-pct="${pct}" data-bar-color="${bar}" style="background-image:linear-gradient(90deg,${bar} ${pct}%,transparent ${pct}%)">${fmt(c)}</td><td>${diff}</td><td class="s-names">${sChips(who) || "—"}</td><td class="s-names s-miss">${d === m.openF ? '<span style="color:var(--muted)">окно ещё открыто</span>' : sChips(missed, "s-chip-miss") || '<span style="color:#9ece6a">никто</span>'}</td></tr>`;
+    return `<tr><td style="border-left:4px solid ${yc};white-space:nowrap">${sFmtDate(d)}${d === m.openF ? '<span class="now-chip">окно открыто</span>' : ""}</td><td data-bar-pct="${pct}" data-bar-color="${bar}" style="background-image:linear-gradient(90deg,${bar} ${pct}%,transparent ${pct}%)">${fmt(c)}</td><td>${diff}</td><td class="s-names">${sChips(who) || "—"}</td><td class="s-names s-miss">${d === m.openF ? '<span style="color:var(--muted)">окно ещё открыто</span>' : sChips(missed, "s-nchip-miss") || '<span style="color:#9ece6a">никто</span>'}</td></tr>`;
   }).join("");
 }
 function sPersonRange(m, p, days){
@@ -7952,7 +7952,7 @@ const sChartType = () => "selfie-" + sChartKind();
 const selfieAccent = () => { try { return getComputedStyle(document.body).getPropertyValue("--accent").trim() || "#9ece6a"; } catch (e) { return "#9ece6a"; } };
 const sOpts = p => { const o = {...SELFIE_OPT_DEFAULTS, ...(p.selfie || {})}; if (!o.did || String(o.did).toLowerCase() === "#9ece6a") o.did = selfieAccent(); return o; };
 const sSeriesColor = (p, kind, key, fallback) => p.seriesColors?.[`${kind}:${key}`] || fallback;
-try { const k = localStorage.getItem("chatstats.selfieChart.v1"); if (k && SELFIE_CHARTS[k]) $("s-chart-type").value = k; } catch (e) {}
+$("s-chart-type").value = "fridays"; // при каждом открытии — «Селфи по пятницам»
 
 function sChartFridays(m, days, p){
   if (!days.length) return note("Нет селфи-пятниц в выбранном периоде");
@@ -8027,7 +8027,7 @@ function sChartYears(m, p){
   const years = [...new Set(m.days.map(d => d.slice(0, 4)))].sort();
   if (!years.length) return note("Нет данных");
   const stats = years.map(y => { const ds = m.days.filter(d => d.startsWith(y)), t = ds.reduce((a, d) => a + sDayCount(m, d), 0); return {y, t, n:ds.length}; });
-  const showSub = p.showSubtitle !== false, W = 900, L = 40, R = 880, T = showSub ? 130 : 108, B = T + 280, H = B + 74;
+  const showSub = p.showSubtitle !== false, W = 900, L = 40, R = 880, T = showSub ? 130 : 108, B = T + 210, H = B + 74;
   const {max} = niceMax(Math.max(...stats.map(x => x.t), 1)), slot = (R - L) / years.length, bw = Math.min(110, slot * .62);
   let s = head(SELFIE_CHARTS.years, `всего ${fmt(stats.reduce((a, x) => a + x.t, 0))} селфи за ${years.length} ${wordForm(years.length, ["год","года","лет"])}`, W, showSub);
   stats.forEach((x, i) => {
@@ -8037,7 +8037,7 @@ function sChartYears(m, p){
     s += `<text class="chart-axis" x="${cx.toFixed(1)}" y="${B + 28}" text-anchor="middle" font-size="18">${x.y}</text><text class="chart-legend" x="${cx.toFixed(1)}" y="${B + 52}" text-anchor="middle" font-size="14">${x.n} ${sFriW(x.n)} · ≈${fmtR(x.n ? x.t / x.n : 0)}</text>`;
   });
   s += `<line x1="${L}" y1="${B}" x2="${R}" y2="${B}" stroke="#dcdcdc" stroke-width="2"/>`;
-  return `<svg viewBox="0 0 ${W} ${H}" role="img">${s}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" style="max-width:640px;display:block;margin:0 auto">${s}</svg>`;
 }
 function applySelfieText(out, type){
   const ts = chartPrefs(type).textStyle;
@@ -14647,6 +14647,7 @@ function multiplesChart(){
     {sel:".yr-pod", kind:"metal", max:10},
     {sel:".hub-kpi", kind:"foil", max:8},
     {sel:"#p-out .tile", kind:"foil", max:8},
+    {sel:"#s-tiles .tile", kind:"foil", max:8},
     {sel:".theme-card", kind:"metal", max:12},
   ];
   const ALL = TARGETS.map(t => t.sel).join(",");
@@ -24035,12 +24036,16 @@ html body .fc-places > .fc-over{flex:1 1 300px;min-width:min(280px,100%)}
   html body .tiles:has(> :nth-child(5):last-child) > *{grid-column:span 1!important}
   html body .tiles:has(> :nth-child(5):last-child) > :last-child{grid-column:span 2!important}
 }
-.s-chips{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-start}
-.s-chip{display:inline-block;padding:1px 8px;border-radius:999px;border:1px solid var(--line);background:var(--ctrl);font:inherit;font-size:12.5px;line-height:1.5;color:var(--text);white-space:nowrap}
-.s-chip-miss{color:var(--muted)}
-button.s-chip-more{cursor:pointer;color:var(--accent);border-color:color-mix(in srgb,var(--accent) 50%,transparent)}
-button.s-chip-more:hover{background:var(--accent-bg)}
-td.s-names .s-chips{min-width:160px}
+.s-nchips{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-start}
+.s-nchip{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:24px;padding:0 9px;border-radius:999px;border:1px solid var(--line);background:var(--ctrl);font:inherit;font-size:12.5px;line-height:1;color:var(--text);white-space:nowrap}
+.s-nchip-miss{color:var(--muted)}
+button.s-nchip-more{cursor:pointer;color:var(--accent);border-color:color-mix(in srgb,var(--accent) 50%,transparent)}
+button.s-nchip-more:hover{background:var(--accent-bg)}
+td.s-names .s-nchips{min-width:160px}
+/* «Отметить селфи»: без галочки, только обводка; отступ между именем и числом */
+#s-people .s-chip[aria-pressed="true"]::before{content:none!important;display:none}
+#s-people .s-chip{gap:8px}
+#s-people .s-chip small{margin-left:2px}
 tr.vk-yh{cursor:pointer}tr.vk-yh td{background:var(--ctrl);padding-top:9px;padding-bottom:9px}
 tr.vk-yh:hover td{background:var(--accent-bg)}tr.vk-yh:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 tr.vk-yh i{font-style:normal;color:var(--muted);display:inline-block;width:1em}
