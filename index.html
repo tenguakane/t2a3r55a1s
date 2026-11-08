@@ -5479,9 +5479,10 @@ async function cardsImageBlob(source, title, rowLimit){
   const bg = cssv("--bg") || "#14161c", panel = cssv("--panel") || "#1c1f27", line = cssv("--line") || "#2c303b", text = cssv("--text") || "#e6e8ee", muted = cssv("--muted") || "#9aa0b2";
   const FONT = '"Samsung Sans","SamsungOne","Segoe UI",system-ui,sans-serif';
   const txt = el => { const c = el.cloneNode(true); c.querySelectorAll("button,[data-no-export],style,script").forEach(x => x.remove()); const p = c.querySelector(".pname"); if (p) return p.textContent.replace(/\s+/g, " ").trim(); return [...c.childNodes].map(n => n.textContent.replace(/\s+/g, " ").trim()).filter(Boolean).join(" "); };
-  let rows = [...source.tBodies].flatMap(b => [...b.rows]);
+  const shown = el => el.getClientRects().length > 0;   // скрытые строки и столбцы в картинку не попадают
+  let rows = [...source.tBodies].flatMap(b => [...b.rows]).filter(shown);
   if (Number.isInteger(rowLimit) && rowLimit > 0) rows = rows.slice(0, rowLimit);
-  rows = rows.concat(source.tFoot ? [...source.tFoot.rows] : []);
+  rows = rows.concat(source.tFoot ? [...source.tFoot.rows].filter(shown) : []);
   if (!rows.length) throw new Error("Нет карточек для копирования");
   const head = source.tHead && source.tHead.rows[0] ? [...source.tHead.rows[0].cells].map(c => c.textContent.replace(/\s+/g, " ").trim()) : [];
   const cards = rows.map(tr => {
@@ -5490,8 +5491,8 @@ async function cardsImageBlob(source, title, rowLimit){
     const medal = (/medal-(\d)/.exec(cells[0].className) || [])[1];
     const nameCell = cells.length > 1 ? cells[1] : cells[0];
     const pkEl = tr.querySelector(".pname[data-open-profile]"), pk0 = pkEl ? pkEl.dataset.openProfile : (tr.dataset.rowKey || ""), pk = typeof NAMES !== "undefined" && NAMES[pk0] ? String(pk0) : "";
-    return {pk, place:cells.length > 1 ? txt(cells[0]) : "", name:txt(nameCell), medal, foot:!!tr.closest("tfoot"),
-      metrics:cells.slice(2).map((c, k) => ({l:c.dataset.label || head[k + 2] || "", v:txt(c) || "—"}))};
+    return {pk, place:cells.length > 1 && shown(cells[0]) ? txt(cells[0]) : "", name:shown(nameCell) ? txt(nameCell) : "", medal, foot:!!tr.closest("tfoot"),
+      metrics:cells.slice(2).map((c, k) => ({c, k})).filter(x => shown(x.c)).map(x => ({l:x.c.dataset.label || head[x.k + 2] || "", v:txt(x.c) || "—"}))};
   });
   const real = cards.filter(c => !c.note);
   if (!real.length) throw new Error("Нет карточек для копирования");
@@ -24108,6 +24109,11 @@ html body .fc-places > .fc-over{flex:1 1 300px;min-width:min(280px,100%)}
 })();
 </script>
 <style id="r5-css">
+@media(min-width:721px){
+  body table.tv-cards:not([data-cols]) > :is(tbody,tfoot) > tr:not(:has(> [colspan]:only-child)){flex:0 1 var(--cw,380px)}
+  body table.tv-cards[data-cols="1"] > :is(tbody,tfoot) > tr:not(:has(> [colspan]:only-child)){flex:0 0 min(var(--cw,560px),100%)}
+  body table.tv-cards[data-cols="2"] > :is(tbody,tfoot) > tr:not(:has(> [colspan]:only-child)){flex:0 0 min(var(--cw,560px),calc((100% - 10px)/2))}
+}
 .card-av{display:none}
 body.cards-avatars table.tv-cards .card-av{display:inline-grid;place-items:center;position:relative;overflow:hidden;flex:0 0 36px;width:36px;height:36px;margin-right:10px;border-radius:50%;background:var(--p-color,#7aa2f7);color:#0f1117;font-size:16px;font-weight:700;vertical-align:middle}
 .hc-av{display:none;height:30px;min-height:0;border-radius:10px}
@@ -24226,6 +24232,36 @@ tr.vk-yh i{font-style:normal;color:var(--muted);display:inline-block;width:1em}
     new MutationObserver(later).observe(document.querySelector("main") || document.body, {childList:true, subtree:true});
     setInterval(() => { bars(); decorate(); }, 1500);
     apply(); bars(); decorate();
+  })();
+
+  /* Карточки: ширина по содержимому — без пустого места, когда показателей мало */
+  (function(){
+    const cvs = document.createElement("canvas").getContext("2d");
+    const w = (t, font) => { cvs.font = font; return cvs.measureText(t).width; };
+    function fit(){
+      document.querySelectorAll("table.tv-cards").forEach(t => {
+        if (!t.getClientRects().length) return;
+        const rows = [...t.tBodies].flatMap(b => [...b.rows]).concat(t.tFoot ? [...t.tFoot.rows] : []).filter(r => r.getClientRects().length && !(r.cells.length === 1 && r.cells[0].colSpan > 1));
+        if (!rows.length) return;
+        const ff = getComputedStyle(t).fontFamily || "sans-serif", av = document.body.classList.contains("cards-avatars");
+        let nMax = 0, cellMax = 64, nameMax = 0;
+        rows.forEach(r => {
+          const cs = [...r.cells], ms = cs.slice(2).filter(c => c.getClientRects().length);
+          nMax = Math.max(nMax, ms.length);
+          ms.forEach(c => { const v = [...c.childNodes].map(n => n.textContent.trim()).filter(Boolean).join(" "); cellMax = Math.max(cellMax, Math.ceil(Math.max(w(c.dataset.label || "", `500 11px ${ff}`), w(v, `600 14px ${ff}`))) + 4); });
+          const nm = (cs[1] || cs[0]); const pe = nm && nm.querySelector(".pname"); const nt = nm ? (pe ? pe.textContent : nm.textContent).trim() : "";
+          nameMax = Math.max(nameMax, Math.ceil(w(nt, `600 15.5px ${ff}`)));
+        });
+        const byMetrics = nMax ? 28 + nMax * cellMax + (nMax - 1) * 10 : 0, byName = 28 + 38 + nameMax + (av ? 46 : 0) + 8;
+        const cw = Math.round(Math.min(520, Math.max(240, byMetrics, byName)));
+        if (t.style.getPropertyValue("--cw") !== cw + "px") t.style.setProperty("--cw", cw + "px");
+      });
+    }
+    let tt = 0; const later = () => { clearTimeout(tt); tt = setTimeout(fit, 160); };
+    new MutationObserver(later).observe(document.querySelector("main") || document.body, {childList:true, subtree:true});
+    document.addEventListener("change", later); document.addEventListener("click", later);
+    window.addEventListener("resize", later); setInterval(fit, 2000); fit();
+    window.__cardsFit = fit;
   })();
 
   /* переводы новых надписей */
