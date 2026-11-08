@@ -21134,6 +21134,15 @@ td .ev-tier + small{display:inline!important;margin-left:4px;font-size:12.5px;fo
   const events = {
     list:() => EVENTS.map(ev => ({...ev, status:statusOf(ev)})),
     levelOf:(id, pk) => evLevels().get(String(id))?.get(String(pk))?.level || 0,
+    // уровень с запасным поиском: если аккаунт Telegram не сопоставлен с участником сайта, но его имя однозначно совпадает с именем участника
+    levelOfLoose:(id, pk) => {
+      const m = evLevels().get(String(id)); if (!m) return 0;
+      const d = m.get(String(pk))?.level || 0; if (d) return d;
+      const want = norm(NAMES[pk] || ""); if (!want) return 0;
+      let hit = 0, cnt = 0;
+      m.forEach((v, k) => { if (!isTg(k)) return; const n = norm(tgName(k.slice(2))); if (n && (n === want || n.split(" ")[0] === want)) { hit = v.level; cnt++; } });
+      return cnt === 1 ? hit : 0;
+    },
     people:() => { const s = new Set(people().map(p => p.pk)); evLevels().forEach(m => m.forEach((v, k) => { if (typeof isVisibleUser !== "function" || isVisibleUser(k)) s.add(k); })); return [...s]; },
     inRange(from, to){
       return EVENTS.filter(ev => ev.start <= to && ev.end >= from && ev.start <= today()).map(ev => {
@@ -24131,6 +24140,9 @@ html body .fc-places > .fc-over{flex:1 1 300px;min-width:min(280px,100%)}
 <style id="r5-css">
 @media(min-width:721px){
   body table.tv-cards:not([data-cols]) > :is(tbody,tfoot) > tr:not(:has(> [colspan]:only-child)){flex:0 1 var(--cw,380px)}
+  body table.tv-cards.cw-nowrap > tbody > tr > td:nth-child(2){font-size:var(--nfs,inherit)}
+  body table.tv-cards.cw-nowrap .row-name-with-action{flex-wrap:nowrap!important}
+  body table.tv-cards.cw-nowrap .row-name-with-action > span{overflow:visible!important;text-overflow:clip!important;flex:0 0 auto!important;max-width:none!important}
   body table.tv-cards.cw-nowrap > tbody > tr > td:nth-child(2), body table.tv-cards.cw-nowrap > tbody > tr > td:nth-child(2) .pname{white-space:nowrap!important}
   body table.tv-cards[data-cols="1"] > :is(tbody,tfoot){max-width:var(--cw,560px)!important;margin-left:auto!important;margin-right:auto!important}
   body table.tv-cards[data-cols="2"] > :is(tbody,tfoot){max-width:calc(2 * var(--cw,560px) + 10px)!important;margin-left:auto!important;margin-right:auto!important}
@@ -24288,7 +24300,7 @@ tr.vk-yh i{font-style:normal;color:var(--muted);display:inline-block;width:1em}
         t.querySelectorAll(".pname[data-open-profile]").forEach(pe => {
           const nx = pe.nextElementSibling; if (nx && nx.classList.contains("lvl-chip")) return;
           const pk = pe.dataset.openProfile, parts = [];
-          list.forEach(ev => { const l = E.levelOf(ev.id, pk); if (l > 0) parts.push({ev, l}); });
+          list.forEach(ev => { const l = (E.levelOfLoose || E.levelOf)(ev.id, pk); if (l > 0) parts.push({ev, l}); });
           if (!parts.length) return;
           const sp = document.createElement("span"); sp.className = "lvl-chip";
           sp.style.setProperty("--ec", parts[0].ev.c2 || "#c4b5fd");
@@ -24331,13 +24343,18 @@ tr.vk-yh i{font-style:normal;color:var(--muted);display:inline-block;width:1em}
         const byMetrics = nMax ? 28 + nMax * cellMax + (nMax - 1) * 10 : 0, byName = 28 + 38 + nameMax + (av ? 46 : 0) + 16;
         const cw = Math.round(Math.max(240, Math.min(520, byMetrics), Math.min(900, byName)));
         t.classList.add("cw-nowrap");
-        let cw2 = cw;
+        let cw2 = cw; t.style.removeProperty("--nfs");
+        const overflow = () => { let over = 0, room = 1e9; rows.forEach(r => { const nm = r.cells[1] || r.cells[0]; if (!nm || !nm.getClientRects().length) return; const pe = nm.querySelector(".pname") || nm; const nr = nm.getBoundingClientRect(); let ex = Math.max(nm.scrollWidth - nm.clientWidth, pe.scrollWidth - pe.clientWidth); const lastR = [...nm.querySelectorAll("*")].reduce((m2, e) => Math.max(m2, e.getBoundingClientRect().right), 0); if (lastR) ex = Math.max(ex, Math.ceil(lastR - nr.right + parseFloat(getComputedStyle(nm).paddingRight || 0))); if (ex > over) { over = ex; room = nm.clientWidth; } }); return {over, room}; };
         for (let i = 0; i < 4; i++) {
           if (t.style.getPropertyValue("--cw") !== cw2 + "px") t.style.setProperty("--cw", cw2 + "px");
-          let over = 0;
-          rows.forEach(r => { const nm = r.cells[1] || r.cells[0]; if (!nm || !nm.getClientRects().length) return; const pe = nm.querySelector(".pname") || nm; const ex = Math.max(nm.scrollWidth - nm.clientWidth, pe.scrollWidth - pe.clientWidth); if (ex > over) over = ex; });
-          if (over <= 1 || cw2 >= 900) break;
-          cw2 = Math.min(900, cw2 + Math.ceil(over) + 6);
+          const o = overflow(); if (o.over <= 1 || cw2 >= 900) break;
+          cw2 = Math.min(900, cw2 + Math.ceil(o.over) + 6);
+        }
+        // карточки фиксированной ширины («В ряд» 3+ или узкий экран): имя целиком — уменьшаем шрифт имени, но не мельче 11px
+        let fs = 15.5;
+        for (let i = 0; i < 5; i++) {
+          const o = overflow(); if (o.over <= 1 || fs <= 11) break;
+          fs = Math.max(11, Math.floor(fs * o.room / (o.room + o.over) * 10) / 10 - .1); t.style.setProperty("--nfs", fs + "px");
         }
       });
     }
