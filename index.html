@@ -5509,7 +5509,7 @@ async function cardsImageBlob(source, title, rowLimit){
   const fit = (ctx, t, w) => { if (ctx.measureText(t).width <= w) return t; while (t.length > 1 && ctx.measureText(t + "…").width > w) t = t.slice(0, -1); return t + "…"; };
   // раскладка
   const items = []; let y = 0, cur = [];
-  const hOf = c => 46 + Math.ceil(c.metrics.length / mPer) * 44 - (c.metrics.length ? 0 : 44) + 4;
+  const HD = avOn ? 58 : 46, hOf = c => HD + Math.ceil(c.metrics.length / mPer) * 44 - (c.metrics.length ? 0 : 44) + 4;
   const flush = () => { if (!cur.length) return; const h = Math.max(...cur.map(hOf)); const off = (perRow - cur.length) * (W0 + GAP) / 2; cur.forEach((c, i) => items.push({c, x:off + i * (W0 + GAP), y, h})); y += h + GAP; cur = []; };
   cards.forEach(c => { if (c.note) { flush(); items.push({c, x:0, y, h:34, full:true}); y += 34 + GAP; } else { cur.push(c); if (cur.length === perRow) flush(); } });
   flush();
@@ -5533,18 +5533,18 @@ async function cardsImageBlob(source, title, rowLimit){
     ctx.lineWidth = c.medal ? 1.6 : 1; ctx.strokeStyle = c.medal ? MEDAL[c.medal] : (glass ? "rgba(255,255,255,.14)" : line); rr(X + .5, Y + .5, w - 1, h - 1, 14); ctx.stroke();
     if (c.note) { ctx.font = `600 14.5px ${FONT}`; ctx.fillStyle = text; ctx.textAlign = "left"; ctx.fillText(fit(ctx, c.note, w - 28), X + 14, Y + h / 2); return; }
     let nx = X + 14;
-    if (c.place) { ctx.font = `700 15px ${FONT}`; ctx.fillStyle = c.medal ? MEDAL[c.medal] : muted; ctx.textAlign = "left"; ctx.fillText(c.place, nx, Y + 26); nx += Math.max(26, ctx.measureText(c.place).width + 10); }
+    if (c.place) { ctx.font = `700 15px ${FONT}`; ctx.fillStyle = c.medal ? MEDAL[c.medal] : muted; ctx.textAlign = "left"; ctx.fillText(c.place, nx, Y + HD / 2 + 3); nx += Math.max(26, ctx.measureText(c.place).width + 10); }
     if (avOn && c.pk) {
-      const R = 13, acx = nx + R, acy = Y + 26; let col = "#7aa2f7"; try { col = getStyle("u", c.pk).c[0] || col; } catch (e) {}
+      const R = 19, acx = nx + R, acy = Y + HD / 2 + 3; let col = "#7aa2f7"; try { col = getStyle("u", c.pk).c[0] || col; } catch (e) {}
       ctx.save(); ctx.beginPath(); ctx.arc(acx, acy, R, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
       ctx.fillStyle = col; ctx.fillRect(acx - R, acy - R, R * 2, R * 2);
       if (c.img) { const k = Math.max(R * 2 / c.img.naturalWidth, R * 2 / c.img.naturalHeight), iw = c.img.naturalWidth * k, ih = c.img.naturalHeight * k; ctx.drawImage(c.img, acx - iw / 2, acy - ih / 2, iw, ih); }
-      else { ctx.fillStyle = "#0f1117"; ctx.font = `700 13px ${FONT}`; ctx.textAlign = "center"; ctx.fillText((c.name[0] || "?").toUpperCase(), acx, acy + 1); ctx.textAlign = "left"; }
+      else { ctx.fillStyle = "#0f1117"; ctx.font = `700 17px ${FONT}`; ctx.textAlign = "center"; ctx.fillText((c.name[0] || "?").toUpperCase(), acx, acy + 1); ctx.textAlign = "left"; }
       ctx.restore(); nx += R * 2 + 8;
     }
-    ctx.font = `600 16px ${FONT}`; ctx.fillStyle = c.medal ? MEDAL[c.medal] : text; ctx.textAlign = "left"; ctx.fillText(fit(ctx, c.name, X + w - 14 - nx), nx, Y + 26);
+    ctx.font = `600 16px ${FONT}`; ctx.fillStyle = c.medal ? MEDAL[c.medal] : text; ctx.textAlign = "left"; ctx.fillText(fit(ctx, c.name, X + w - 14 - nx), nx, Y + HD / 2 + 3);
     c.metrics.forEach((m, k) => {
-      const col = k % mPer, rowI = Math.floor(k / mPer), cx = X + 14 + col * mW + mW / 2, ty = Y + 54 + rowI * 44;
+      const col = k % mPer, rowI = Math.floor(k / mPer), cx = X + 14 + col * mW + mW / 2, ty = Y + HD + 8 + rowI * 44;
       ctx.textAlign = "center"; ctx.font = `500 11px ${FONT}`; ctx.fillStyle = muted; ctx.fillText(fit(ctx, m.l, mW - 6), cx, ty);
       ctx.font = `600 15px ${FONT}`; ctx.fillStyle = text; ctx.fillText(fit(ctx, m.v, mW - 6), cx, ty + 20);
     });
@@ -24109,10 +24109,10 @@ html body .fc-places > .fc-over{flex:1 1 300px;min-width:min(280px,100%)}
 </script>
 <style id="r5-css">
 .card-av{display:none}
-body.cards-avatars table.tv-cards .card-av{display:inline-grid;place-items:center;position:relative;overflow:hidden;flex:0 0 24px;width:24px;height:24px;margin-right:8px;border-radius:50%;background:var(--p-color,#7aa2f7);color:#0f1117;font-size:12px;font-weight:700;vertical-align:middle}
-.hc-av{display:none;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid color-mix(in srgb,var(--text) 11%,transparent);border-radius:10px;background:color-mix(in srgb,var(--text) 4%,var(--ctrl));color:var(--muted);font-size:13px;cursor:pointer;white-space:nowrap}
-.hc-av input{margin:0;accent-color:var(--accent)}
+body.cards-avatars table.tv-cards .card-av{display:inline-grid;place-items:center;position:relative;overflow:hidden;flex:0 0 36px;width:36px;height:36px;margin-right:10px;border-radius:50%;background:var(--p-color,#7aa2f7);color:#0f1117;font-size:16px;font-weight:700;vertical-align:middle}
+.hc-av{display:none;height:30px;min-height:0;border-radius:10px}
 .hc-bar:has(.tv-btn[data-tv-mode="cards"]) .hc-av,.st-desk-tools:has(#st-tv[data-tv-mode="cards"]) .hc-av{display:inline-flex}
+body.cards-avatars table.tv-cards > tbody > tr > td:nth-child(2) .row-name-with-action{align-items:center}
 /* карточки таблиц: по центру, неполный последний ряд тоже центрируется */
 @media(min-width:721px){
   body table.tv-cards > :is(tbody,tfoot){display:flex!important;flex-wrap:wrap;justify-content:center;align-items:stretch;gap:10px;grid-template-columns:none!important}
@@ -24200,7 +24200,7 @@ tr.vk-yh i{font-style:normal;color:var(--muted);display:inline-block;width:1em}
     function bars(){
       document.querySelectorAll(".hc-bar, .st-desk-tools").forEach(b => {
         if (b.querySelector(".hc-av") || !b.querySelector(".tv-btn, #st-tv")) return;
-        const l = document.createElement("label"); l.className = "hc-av"; l.innerHTML = '<input type="checkbox"><span>Аватарки</span>';
+        const l = document.createElement("label"); l.className = "checkline hc-av"; l.innerHTML = '<input type="checkbox"><span>Аватарки</span>';
         l.querySelector("input").checked = on; b.appendChild(l);
       });
     }
