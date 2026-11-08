@@ -5472,10 +5472,93 @@ function dropEmptyColumns(table){
   }
   drop.forEach(p => grid.forEach(g => { const e = g.find(x => p >= x.pos && p < x.pos + x.span && !x.gone); if (!e) return; if ((e.c.colSpan || 1) > 1) e.c.colSpan = e.c.colSpan - 1; else { e.c.remove(); e.gone = true; } }));
 }
+// Копирование в режиме «Карточки»: на картинке те же карточки, что на экране (а не таблица).
+async function cardsImageBlob(source, title, rowLimit){
+  if (document.fonts?.ready) { try { await document.fonts.ready; } catch (e) {} }
+  const cssv = n => getComputedStyle(document.body).getPropertyValue(n).trim();
+  const bg = cssv("--bg") || "#14161c", panel = cssv("--panel") || "#1c1f27", line = cssv("--line") || "#2c303b", text = cssv("--text") || "#e6e8ee", muted = cssv("--muted") || "#9aa0b2";
+  const FONT = '"Samsung Sans","SamsungOne","Segoe UI",system-ui,sans-serif';
+  const txt = el => { const c = el.cloneNode(true); c.querySelectorAll("button,[data-no-export],style,script").forEach(x => x.remove()); const p = c.querySelector(".pname"); if (p) return p.textContent.replace(/\s+/g, " ").trim(); return [...c.childNodes].map(n => n.textContent.replace(/\s+/g, " ").trim()).filter(Boolean).join(" "); };
+  let rows = [...source.tBodies].flatMap(b => [...b.rows]);
+  if (Number.isInteger(rowLimit) && rowLimit > 0) rows = rows.slice(0, rowLimit);
+  rows = rows.concat(source.tFoot ? [...source.tFoot.rows] : []);
+  if (!rows.length) throw new Error("Нет карточек для копирования");
+  const head = source.tHead && source.tHead.rows[0] ? [...source.tHead.rows[0].cells].map(c => c.textContent.replace(/\s+/g, " ").trim()) : [];
+  const cards = rows.map(tr => {
+    const cells = [...tr.cells];
+    if (cells.length === 1 && cells[0].colSpan > 1) return {note:txt(cells[0])};
+    const medal = (/medal-(\d)/.exec(cells[0].className) || [])[1];
+    const nameCell = cells.length > 1 ? cells[1] : cells[0];
+    const pkEl = tr.querySelector(".pname[data-open-profile]"), pk0 = pkEl ? pkEl.dataset.openProfile : (tr.dataset.rowKey || ""), pk = typeof NAMES !== "undefined" && NAMES[pk0] ? String(pk0) : "";
+    return {pk, place:cells.length > 1 ? txt(cells[0]) : "", name:txt(nameCell), medal, foot:!!tr.closest("tfoot"),
+      metrics:cells.slice(2).map((c, k) => ({l:c.dataset.label || head[k + 2] || "", v:txt(c) || "—"}))};
+  });
+  const real = cards.filter(c => !c.note);
+  if (!real.length) throw new Error("Нет карточек для копирования");
+  const avOn = document.body.classList.contains("cards-avatars");
+  if (avOn) await Promise.all(real.map(async c => {
+    if (!c.pk) return;
+    try { const u = window.AVATAR && await window.AVATAR.dataUri(c.pk); if (u) c.img = await new Promise(r => { const im = new Image(); im.onload = () => r(im); im.onerror = () => r(null); im.src = u; }); } catch (e) {}
+  }));
+  // сколько карточек в ряд — как на экране
+  const vis = rows.filter(r => r.getClientRects().length);
+  let perRow = 1; if (vis.length > 1) { const t0 = Math.round(vis[0].getBoundingClientRect().top); perRow = Math.max(1, vis.filter(r => Math.abs(Math.round(r.getBoundingClientRect().top) - t0) < 4).length); }
+  perRow = Math.min(perRow, 5, Math.max(1, real.length));
+  const W0 = 340, GAP = 12, PAD = 28, scale = 2, mPer = 3, mW = (W0 - 28) / mPer;
+  const mctx = document.createElement("canvas").getContext("2d");
+  const fit = (ctx, t, w) => { if (ctx.measureText(t).width <= w) return t; while (t.length > 1 && ctx.measureText(t + "…").width > w) t = t.slice(0, -1); return t + "…"; };
+  // раскладка
+  const items = []; let y = 0, cur = [];
+  const hOf = c => 46 + Math.ceil(c.metrics.length / mPer) * 44 - (c.metrics.length ? 0 : 44) + 4;
+  const flush = () => { if (!cur.length) return; const h = Math.max(...cur.map(hOf)); const off = (perRow - cur.length) * (W0 + GAP) / 2; cur.forEach((c, i) => items.push({c, x:off + i * (W0 + GAP), y, h})); y += h + GAP; cur = []; };
+  cards.forEach(c => { if (c.note) { flush(); items.push({c, x:0, y, h:34, full:true}); y += 34 + GAP; } else { cur.push(c); if (cur.length === perRow) flush(); } });
+  flush();
+  const gridW = perRow * W0 + (perRow - 1) * GAP, gridH = Math.max(0, y - GAP);
+  const titleText = String(title || "Статистика"), titleFont = `22px ${FONT}`; mctx.font = titleFont;
+  const titleW = Math.ceil(mctx.measureText(titleText).width), contentW = Math.max(gridW, titleW);
+  const W = Math.max(160, contentW + PAD * 2), H = PAD * 2 + 32 + 10 + gridH;
+  const canvas = document.createElement("canvas"); canvas.width = W * scale; canvas.height = H * scale;
+  const ctx = canvas.getContext("2d"); ctx.scale(scale, scale);
+  const glass = typeof window.__glassWanted === "function" && window.__glassWanted() && typeof window.__glassBackdrop === "function";
+  if (glass) window.__glassBackdrop(ctx, W, H);
+  else if (!(typeof window.__pageBgPaint === "function" && window.__pageBgPaint(ctx, W, H))) { ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H); }
+  const gx = PAD + Math.round((contentW - gridW) / 2), gy = PAD + 32 + 10;
+  ctx.textBaseline = "middle"; ctx.font = titleFont; ctx.fillStyle = text; ctx.textAlign = "left";
+  ctx.fillText(titleText, titleW > gridW ? PAD : gx, PAD + 16);
+  const MEDAL = {1:"#ffd166", 2:"#d3d9e6", 3:"#e3a36b"};
+  const rr = (x, y2, w, h, r) => { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y2, w, h, r); else ctx.rect(x, y2, w, h); };
+  items.forEach(({c, x, y: yy, h, full}) => {
+    const X = gx + x, Y = gy + yy, w = full ? gridW : W0;
+    rr(X, Y, w, h, 14); ctx.fillStyle = glass ? "rgba(255,255,255,.05)" : (c.foot ? "color-mix(in srgb, " + panel + " 94%, #7aa2f7)" : panel); if (c.foot && !CSS.supports("color", ctx.fillStyle)) ctx.fillStyle = panel; ctx.fill();
+    ctx.lineWidth = c.medal ? 1.6 : 1; ctx.strokeStyle = c.medal ? MEDAL[c.medal] : (glass ? "rgba(255,255,255,.14)" : line); rr(X + .5, Y + .5, w - 1, h - 1, 14); ctx.stroke();
+    if (c.note) { ctx.font = `600 14.5px ${FONT}`; ctx.fillStyle = text; ctx.textAlign = "left"; ctx.fillText(fit(ctx, c.note, w - 28), X + 14, Y + h / 2); return; }
+    let nx = X + 14;
+    if (c.place) { ctx.font = `700 15px ${FONT}`; ctx.fillStyle = c.medal ? MEDAL[c.medal] : muted; ctx.textAlign = "left"; ctx.fillText(c.place, nx, Y + 26); nx += Math.max(26, ctx.measureText(c.place).width + 10); }
+    if (avOn && c.pk) {
+      const R = 13, acx = nx + R, acy = Y + 26; let col = "#7aa2f7"; try { col = getStyle("u", c.pk).c[0] || col; } catch (e) {}
+      ctx.save(); ctx.beginPath(); ctx.arc(acx, acy, R, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
+      ctx.fillStyle = col; ctx.fillRect(acx - R, acy - R, R * 2, R * 2);
+      if (c.img) { const k = Math.max(R * 2 / c.img.naturalWidth, R * 2 / c.img.naturalHeight), iw = c.img.naturalWidth * k, ih = c.img.naturalHeight * k; ctx.drawImage(c.img, acx - iw / 2, acy - ih / 2, iw, ih); }
+      else { ctx.fillStyle = "#0f1117"; ctx.font = `700 13px ${FONT}`; ctx.textAlign = "center"; ctx.fillText((c.name[0] || "?").toUpperCase(), acx, acy + 1); ctx.textAlign = "left"; }
+      ctx.restore(); nx += R * 2 + 8;
+    }
+    ctx.font = `600 16px ${FONT}`; ctx.fillStyle = c.medal ? MEDAL[c.medal] : text; ctx.textAlign = "left"; ctx.fillText(fit(ctx, c.name, X + w - 14 - nx), nx, Y + 26);
+    c.metrics.forEach((m, k) => {
+      const col = k % mPer, rowI = Math.floor(k / mPer), cx = X + 14 + col * mW + mW / 2, ty = Y + 54 + rowI * 44;
+      ctx.textAlign = "center"; ctx.font = `500 11px ${FONT}`; ctx.fillStyle = muted; ctx.fillText(fit(ctx, m.l, mW - 6), cx, ty);
+      ctx.font = `600 15px ${FONT}`; ctx.fillStyle = text; ctx.fillText(fit(ctx, m.v, mW - 6), cx, ty + 20);
+    });
+  });
+  const out = await new Promise((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error("Не удалось создать PNG")), "image/png"));
+  if (glass) window.__glassRendered = {size:out.size, t:Date.now()};
+  window.__padRendered = {size:out.size, t:Date.now()};
+  return out;
+}
 async function tableImageBlob(tableId, title, rowLimit = null){
   const source = typeof tableId === "string" ? $(tableId) : tableId;
   if (!source) throw new Error("Таблица не найдена");
   if (!source.querySelector("tr")) throw new Error("В таблице пока нет строк для копирования");
+  if (source.classList.contains("tv-cards") && source.getClientRects().length) return cardsImageBlob(source, title, rowLimit);
   if (document.fonts?.ready) { try { await document.fonts.ready; } catch (e) {} }
 
   // The on-page table can fill the entire viewport. Measure and render a temporary,
@@ -15390,7 +15473,9 @@ window.CHANGELOG = [
     {tag:"imp", area:"Селфи", text:"В «Последних селфи-пятницах» имена показаны значками, длинные списки сворачиваются в «+N»."},
     {tag:"imp", area:"Время", text:"«Ближайшие юбилеи» показывают ближайшие 30 дней, остальные — по кнопке «Показать все»."},
     {tag:"imp", area:"Хроника", text:"Одинаковые события одного дня у нескольких людей объединены в одну строку."},
-    {tag:"imp", area:"VK", text:"Таблица «По месяцам» сгруппирована по годам, годы раскрываются по клику."}
+,
+    {tag:"fix", area:"Таблицы", text:"Режим «Карточки»: карточки стоят по центру, а кнопка «Копировать» копирует именно карточки, а не таблицу."},
+    {tag:"new", area:"Таблицы", text:"В режиме «Карточки» появился переключатель «Аватарки»: аватарки участников видны на карточках и на скопированной картинке."}
   ]},
   {v:"2026.11.08-1", date:"2026-11-08", title:"Профиль: участник в шапке, кнопки «Копировать», аккуратные таблицы", items:[{tag:"new", area:"Профиль", text:"Когда карточка с именем уезжает вверх, участник появляется в шапке сайта: можно выбрать другого из списка с поиском или листать стрелками ‹ ›. Страница остаётся на том же разделе."},
     {tag:"new", area:"Копирование", text:"Кнопки «Копировать» у всех таблиц и блоков профиля (сообщения, стикеры и голосовые, реакции, по чатам, о участнике, селфи), у «Кто чаще в хронике» и у «Прогноза мест». В названии картинки — имя участника."},
@@ -24023,6 +24108,11 @@ html body .fc-places > .fc-over{flex:1 1 300px;min-width:min(280px,100%)}
 })();
 </script>
 <style id="r5-css">
+.card-av{display:none}
+body.cards-avatars table.tv-cards .card-av{display:inline-grid;place-items:center;position:relative;overflow:hidden;flex:0 0 24px;width:24px;height:24px;margin-right:8px;border-radius:50%;background:var(--p-color,#7aa2f7);color:#0f1117;font-size:12px;font-weight:700;vertical-align:middle}
+.hc-av{display:none;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid color-mix(in srgb,var(--text) 11%,transparent);border-radius:10px;background:color-mix(in srgb,var(--text) 4%,var(--ctrl));color:var(--muted);font-size:13px;cursor:pointer;white-space:nowrap}
+.hc-av input{margin:0;accent-color:var(--accent)}
+.hc-bar:has(.tv-btn[data-tv-mode="cards"]) .hc-av,.st-desk-tools:has(#st-tv[data-tv-mode="cards"]) .hc-av{display:inline-flex}
 /* карточки таблиц: по центру, неполный последний ряд тоже центрируется */
 @media(min-width:721px){
   body table.tv-cards > :is(tbody,tfoot){display:flex!important;flex-wrap:wrap;justify-content:center;align-items:stretch;gap:10px;grid-template-columns:none!important}
@@ -24101,6 +24191,42 @@ tr.vk-yh i{font-style:normal;color:var(--muted);display:inline-block;width:1em}
     if (t.dataset.rxShow) delete t.dataset.rxShow; else t.dataset.rxShow = "1";
     prune(b.dataset.rxToggle);
   });
+
+  /* Карточки: аватарки участников (переключатель рядом с «В ряд»; попадают и на картинку при копировании) */
+  (function(){
+    const KEY = "chatstats.cardsAvatars.v1";
+    let on = false; try { on = localStorage.getItem(KEY) === "1"; } catch (e) {}
+    const apply = () => { document.body.classList.toggle("cards-avatars", on); document.querySelectorAll(".hc-av input").forEach(i => { i.checked = on; }); };
+    function bars(){
+      document.querySelectorAll(".hc-bar, .st-desk-tools").forEach(b => {
+        if (b.querySelector(".hc-av") || !b.querySelector(".tv-btn, #st-tv")) return;
+        const l = document.createElement("label"); l.className = "hc-av"; l.innerHTML = '<input type="checkbox"><span>Аватарки</span>';
+        l.querySelector("input").checked = on; b.appendChild(l);
+      });
+    }
+    function decorate(){
+      if (!on || !window.AVATAR) return;
+      document.querySelectorAll("table.tv-cards > tbody > tr:not([data-av-done])").forEach(tr => {
+        tr.dataset.avDone = "1";
+        const pe = tr.querySelector(".pname[data-open-profile]"), pk = pe ? pe.dataset.openProfile : (tr.dataset.rowKey || "");
+        if (!pk || !(pk in NAMES)) return;
+        const host = pe ? (pe.closest(".row-name-with-action") || pe.parentNode) : (tr.cells[1] || tr.cells[0]);
+        const sp = document.createElement("span"); sp.className = "card-av"; sp.dataset.noExport = "1"; sp.setAttribute("aria-hidden", "true");
+        let c = ""; try { c = getStyle("u", pk).c[0]; } catch (e) {} if (c) sp.style.setProperty("--p-color", c);
+        sp.innerHTML = window.AVATAR.inner(pk, (NAMES[pk][0] || "?").toUpperCase());
+        host.insertBefore(sp, host.firstChild);
+      });
+    }
+    document.addEventListener("change", e => {
+      if (!e.target.matches || !e.target.matches(".hc-av input")) return;
+      on = e.target.checked; try { localStorage.setItem(KEY, on ? "1" : "0"); } catch (err) {}
+      apply(); if (on) { document.querySelectorAll("table.tv-cards > tbody > tr[data-av-done]").forEach(r => { if (!r.querySelector(".card-av")) delete r.dataset.avDone; }); decorate(); }
+    });
+    let t = 0; const later = () => { clearTimeout(t); t = setTimeout(() => { bars(); decorate(); }, 120); };
+    new MutationObserver(later).observe(document.querySelector("main") || document.body, {childList:true, subtree:true});
+    setInterval(() => { bars(); decorate(); }, 1500);
+    apply(); bars(); decorate();
+  })();
 
   /* переводы новых надписей */
   const D = window.__I18N_DICT; if (!D) return;
