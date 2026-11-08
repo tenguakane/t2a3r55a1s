@@ -18880,7 +18880,8 @@ body.glass-ui :is(.wrap,.chart,.yr-chart-card) svg{background:transparent}
     const cs = getComputedStyle(b), ms = getComputedStyle(main), r = main.getBoundingClientRect();
     const innerL = r.left + parseFloat(ms.paddingLeft || 0), innerR = r.right - parseFloat(ms.paddingRight || 0);
     const minL = parseFloat(cs.paddingLeft || 0) + 24, maxR = document.documentElement.clientWidth - parseFloat(cs.paddingRight || 0) - 24;
-    const bl = Math.max(0, Math.round(innerL - minL)), br = Math.max(0, Math.round(maxR - innerR));
+    // выход за колонку одинаков слева и справа — тогда карточки стоят ровно по центру содержимого
+    const bl0 = Math.max(0, Math.round(innerL - minL)), br0 = Math.max(0, Math.round(maxR - innerR)), bl = Math.min(bl0, br0), br = bl;
     if (b.style.getPropertyValue("--cards-bl") !== bl + "px") b.style.setProperty("--cards-bl", bl + "px");
     if (b.style.getPropertyValue("--cards-br") !== br + "px") b.style.setProperty("--cards-br", br + "px");
   }
@@ -24022,6 +24023,22 @@ html body .fc-places > .fc-over{flex:1 1 300px;min-width:min(280px,100%)}
 })();
 </script>
 <style id="r5-css">
+/* карточки таблиц: по центру, неполный последний ряд тоже центрируется */
+@media(min-width:721px){
+  body table.tv-cards > :is(tbody,tfoot){display:flex!important;flex-wrap:wrap;justify-content:center;align-items:stretch;gap:10px;grid-template-columns:none!important}
+  body table.tv-cards > :is(tbody,tfoot) > tr{flex:0 1 380px;min-width:0;box-sizing:border-box}
+  body table.tv-cards > :is(tbody,tfoot) > tr:has(> :is([colspan],[data-hc-cs]):only-child){flex:1 1 100%}
+  body table.tv-cards[data-cols="1"] > :is(tbody,tfoot) > tr{flex:0 0 min(560px,100%)}
+  body table.tv-cards[data-cols="2"] > :is(tbody,tfoot) > tr{flex:0 0 min(560px,calc((100% - 10px)/2))}
+  body table.tv-cards[data-cols="3"] > :is(tbody,tfoot) > tr{flex:0 0 calc((100% - 20px)/3)}
+  body table.tv-cards[data-cols="4"] > :is(tbody,tfoot) > tr{flex:0 0 calc((100% - 30px)/4)}
+  body table.tv-cards[data-cols="5"] > :is(tbody,tfoot) > tr{flex:0 0 calc((100% - 40px)/5)}
+  body table.tv-cards[data-cols="6"] > :is(tbody,tfoot) > tr{flex:0 0 calc((100% - 50px)/6)}
+  body table.tv-cards[data-cols="7"] > :is(tbody,tfoot) > tr{flex:0 0 calc((100% - 60px)/7)}
+  body table.tv-cards[data-cols="8"] > :is(tbody,tfoot) > tr{flex:0 0 calc((100% - 70px)/8)}
+}
+html body .fc-places > .wrap{flex:1 1 660px}
+html body .fc-places > .wrap > table{width:100%}
 /* пять плиток подряд: без одиноких в последнем ряду */
 .tiles:has(> :nth-child(5):last-child){grid-template-columns:repeat(6,minmax(0,1fr))}
 .tiles:has(> :nth-child(5):last-child) > *{grid-column:span 2}
