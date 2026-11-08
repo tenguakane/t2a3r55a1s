@@ -5491,7 +5491,8 @@ async function cardsImageBlob(source, title, rowLimit){
     const medal = (/medal-(\d)/.exec(cells[0].className) || [])[1];
     const nameCell = cells.length > 1 ? cells[1] : cells[0];
     const pkEl = tr.querySelector(".pname[data-open-profile]"), pk0 = pkEl ? pkEl.dataset.openProfile : (tr.dataset.rowKey || ""), pk = typeof NAMES !== "undefined" && NAMES[pk0] ? String(pk0) : "";
-    return {pk, place:cells.length > 1 && shown(cells[0]) ? txt(cells[0]) : "", name:shown(nameCell) ? txt(nameCell) : "", medal, foot:!!tr.closest("tfoot"),
+    const lvlEl = shown(nameCell) ? nameCell.querySelector(".lvl-chip") : null;
+    return {pk, lvl:lvlEl ? lvlEl.textContent.trim() : "", lvlCol:lvlEl ? getComputedStyle(lvlEl).color : "", place:cells.length > 1 && shown(cells[0]) ? txt(cells[0]) : "", name:shown(nameCell) ? txt(nameCell) : "", medal, foot:!!tr.closest("tfoot"),
       metrics:cells.slice(2).map((c, k) => ({c, k})).filter(x => shown(x.c)).map(x => ({l:x.c.dataset.label || head[x.k + 2] || "", v:txt(x.c) || "—"}))};
   });
   const real = cards.filter(c => !c.note);
@@ -5505,8 +5506,19 @@ async function cardsImageBlob(source, title, rowLimit){
   const vis = rows.filter(r => r.getClientRects().length);
   let perRow = 1; if (vis.length > 1) { const t0 = Math.round(vis[0].getBoundingClientRect().top); perRow = Math.max(1, vis.filter(r => Math.abs(Math.round(r.getBoundingClientRect().top) - t0) < 4).length); }
   perRow = Math.min(perRow, 5, Math.max(1, real.length));
-  const W0 = 340, GAP = 12, PAD = 28, scale = 2, mPer = 3, mW = (W0 - 28) / mPer;
+  const GAP = 12, PAD = 28, scale = 2, nMet = Math.max(1, ...real.map(c => c.metrics.length)), mPer = Math.min(3, nMet);
   const mctx = document.createElement("canvas").getContext("2d");
+  // ширина карточки — по содержимому: имя целиком + показатели без пустого места
+  let needName = 0, needMet = 84;
+  real.forEach(c => {
+    mctx.font = `600 16px ${FONT}`; const nw = mctx.measureText(c.name).width;
+    let pre = 14; if (c.place) { mctx.font = `700 15px ${FONT}`; pre += Math.max(26, mctx.measureText(c.place).width + 10); }
+    if (avOn && c.pk) pre += 46;
+    if (c.lvl) { mctx.font = `700 11.5px ${FONT}`; pre += mctx.measureText(c.lvl).width + 24; }
+    needName = Math.max(needName, pre + nw + 16);
+    c.metrics.forEach(m => { mctx.font = `500 11px ${FONT}`; const a1 = mctx.measureText(m.l).width; mctx.font = `600 15px ${FONT}`; needMet = Math.max(needMet, a1, mctx.measureText(m.v).width + 0); });
+  });
+  const W0 = Math.ceil(Math.max(200, needName, 28 + mPer * (needMet + 14))), mW = (W0 - 28) / mPer;
   const fit = (ctx, t, w) => { if (ctx.measureText(t).width <= w) return t; while (t.length > 1 && ctx.measureText(t + "…").width > w) t = t.slice(0, -1); return t + "…"; };
   // раскладка
   const items = []; let y = 0, cur = [];
@@ -5543,7 +5555,13 @@ async function cardsImageBlob(source, title, rowLimit){
       else { ctx.fillStyle = "#0f1117"; ctx.font = `700 17px ${FONT}`; ctx.textAlign = "center"; ctx.fillText((c.name[0] || "?").toUpperCase(), acx, acy + 1); ctx.textAlign = "left"; }
       ctx.restore(); nx += R * 2 + 8;
     }
-    ctx.font = `600 16px ${FONT}`; ctx.fillStyle = c.medal ? MEDAL[c.medal] : text; ctx.textAlign = "left"; ctx.fillText(fit(ctx, c.name, X + w - 14 - nx), nx, Y + HD / 2 + 3);
+    ctx.font = `600 16px ${FONT}`; ctx.fillStyle = c.medal ? MEDAL[c.medal] : text; ctx.textAlign = "left"; const lvW = c.lvl ? (ctx.font = `700 11.5px ${FONT}`, ctx.measureText(c.lvl).width + 16) : 0;
+    ctx.font = `600 16px ${FONT}`; const shownName = fit(ctx, c.name, X + w - 14 - nx - (lvW ? lvW + 8 : 0)); ctx.fillText(shownName, nx, Y + HD / 2 + 3);
+    if (c.lvl) {
+      const bx = nx + ctx.measureText(shownName).width + 8, by = Y + HD / 2 + 3 - 10, col = c.lvlCol || "#c4b5fd";
+      ctx.save(); ctx.globalAlpha = .16; ctx.fillStyle = col; rr(bx, by, lvW, 20, 10); ctx.fill(); ctx.globalAlpha = .5; ctx.strokeStyle = col; ctx.lineWidth = 1; rr(bx + .5, by + .5, lvW - 1, 19, 10); ctx.stroke(); ctx.restore();
+      ctx.font = `700 11.5px ${FONT}`; ctx.fillStyle = col; ctx.textAlign = "center"; ctx.fillText(c.lvl, bx + lvW / 2, by + 10.5); ctx.textAlign = "left";
+    }
     c.metrics.forEach((m, k) => {
       const col = k % mPer, rowI = Math.floor(k / mPer), cx = X + 14 + col * mW + mW / 2, ty = Y + HD + 8 + rowI * 44;
       ctx.textAlign = "center"; ctx.font = `500 11px ${FONT}`; ctx.fillStyle = muted; ctx.fillText(fit(ctx, m.l, mW - 6), cx, ty);
@@ -15476,7 +15494,9 @@ window.CHANGELOG = [
     {tag:"imp", area:"Хроника", text:"Одинаковые события одного дня у нескольких людей объединены в одну строку."},
 ,
     {tag:"fix", area:"Таблицы", text:"Режим «Карточки»: карточки стоят по центру, а кнопка «Копировать» копирует именно карточки, а не таблицу."},
-    {tag:"new", area:"Таблицы", text:"В режиме «Карточки» появился переключатель «Аватарки»: аватарки участников видны на карточках и на скопированной картинке."}
+    {tag:"new", area:"Таблицы", text:"В режиме «Карточки» появился переключатель «Аватарки»: аватарки участников видны на карточках и на скопированной картинке."},
+    {tag:"new", area:"Таблицы", text:"Переключатель «Уровень»: рядом с именем участника показан его текущий уровень в идущем событии (если событий нет — в последнем). Работает в таблицах и карточках и попадает на скопированную картинку."},
+    {tag:"fix", area:"Таблицы", text:"Карточки: имена не переносятся на несколько строк, «В ряд» 1 и 2 работает точно, а на скопированной картинке карточки не шире содержимого."}
   ]},
   {v:"2026.11.08-1", date:"2026-11-08", title:"Профиль: участник в шапке, кнопки «Копировать», аккуратные таблицы", items:[{tag:"new", area:"Профиль", text:"Когда карточка с именем уезжает вверх, участник появляется в шапке сайта: можно выбрать другого из списка с поиском или листать стрелками ‹ ›. Страница остаётся на том же разделе."},
     {tag:"new", area:"Копирование", text:"Кнопки «Копировать» у всех таблиц и блоков профиля (сообщения, стикеры и голосовые, реакции, по чатам, о участнике, селфи), у «Кто чаще в хронике» и у «Прогноза мест». В названии картинки — имя участника."},
@@ -24111,6 +24131,7 @@ html body .fc-places > .fc-over{flex:1 1 300px;min-width:min(280px,100%)}
 <style id="r5-css">
 @media(min-width:721px){
   body table.tv-cards:not([data-cols]) > :is(tbody,tfoot) > tr:not(:has(> [colspan]:only-child)){flex:0 1 var(--cw,380px)}
+  body table.tv-cards.cw-nowrap > tbody > tr > td:nth-child(2), body table.tv-cards.cw-nowrap > tbody > tr > td:nth-child(2) .pname{white-space:nowrap!important}
   body table.tv-cards[data-cols="1"] > :is(tbody,tfoot){max-width:var(--cw,560px)!important;margin-left:auto!important;margin-right:auto!important}
   body table.tv-cards[data-cols="2"] > :is(tbody,tfoot){max-width:calc(2 * var(--cw,560px) + 10px)!important;margin-left:auto!important;margin-right:auto!important}
   body table.tv-cards[data-cols="1"] > :is(tbody,tfoot) > tr{flex:0 0 100%!important}
@@ -24120,6 +24141,8 @@ html body .fc-places > .fc-over{flex:1 1 300px;min-width:min(280px,100%)}
 }
 .card-av{display:none}
 body.cards-avatars table.tv-cards .card-av{display:inline-grid;place-items:center;position:relative;overflow:hidden;flex:0 0 36px;width:36px;height:36px;margin-right:10px;border-radius:50%;background:var(--p-color,#7aa2f7);color:#0f1117;font-size:16px;font-weight:700;vertical-align:middle}
+.hc-lvl{display:inline-flex;height:30px;min-height:0;border-radius:10px}
+.lvl-chip{display:inline-flex;align-items:center;vertical-align:middle;margin-left:8px;padding:1px 8px;height:20px;border-radius:999px;font-size:11.5px;font-weight:700;letter-spacing:.02em;white-space:nowrap;color:var(--ec,#c4b5fd);background:color-mix(in srgb,var(--ec,#c4b5fd) 14%,transparent);border:1px solid color-mix(in srgb,var(--ec,#c4b5fd) 45%,transparent)}
 .hc-av{display:none;height:30px;min-height:0;border-radius:10px}
 .hc-bar:has(.tv-btn[data-tv-mode="cards"]) .hc-av,.st-desk-tools:has(#st-tv[data-tv-mode="cards"]) .hc-av{display:inline-flex}
 body.cards-avatars table.tv-cards > tbody > tr > td:nth-child(2) .row-name-with-action{align-items:center}
@@ -24238,6 +24261,55 @@ tr.vk-yh i{font-style:normal;color:var(--muted);display:inline-block;width:1em}
     apply(); bars(); decorate();
   })();
 
+  /* Уровень участника в событии — рядом с именем (в таблицах и карточках; попадает и на картинку при копировании) */
+  (function(){
+    const KEY = "chatstats.showLvl.v1";
+    let on = false; try { on = localStorage.getItem(KEY) === "1"; } catch (e) {}
+    const apply = () => { document.body.classList.toggle("show-lvl", on); document.querySelectorAll(".hc-lvl input").forEach(i => { i.checked = on; }); };
+    function evs(){
+      const E = window.__beta && window.__beta.events; if (!E) return [];
+      const all = E.list().filter(e => e.status !== "soon"), live = all.filter(e => e.status === "live");
+      if (live.length) return live.slice(0, 2);
+      return all.sort((a, b) => String(b.end).localeCompare(String(a.end))).slice(0, 1);
+    }
+    function bars(){
+      document.querySelectorAll(".hc-bar, .st-desk-tools").forEach(b => {
+        if (b.querySelector(".hc-lvl") || !b.querySelector(".tv-btn, #st-tv")) return;
+        const l = document.createElement("label"); l.className = "checkline hc-lvl"; l.title = "Показать уровень участника в текущем событии рядом с именем"; l.innerHTML = '<input type="checkbox"><span>Уровень</span>';
+        l.querySelector("input").checked = on; b.appendChild(l);
+      });
+    }
+    function clear(){ document.querySelectorAll(".lvl-chip").forEach(c => c.remove()); }
+    function decorate(){
+      if (!on) return;
+      const E = window.__beta && window.__beta.events, list = evs(); if (!E || !list.length) return;
+      document.querySelectorAll("main table").forEach(t => {
+        if (t.querySelector(".ev-lv")) return;
+        t.querySelectorAll(".pname[data-open-profile]").forEach(pe => {
+          const nx = pe.nextElementSibling; if (nx && nx.classList.contains("lvl-chip")) return;
+          const pk = pe.dataset.openProfile, parts = [];
+          list.forEach(ev => { const l = E.levelOf(ev.id, pk); if (l > 0) parts.push({ev, l}); });
+          if (!parts.length) return;
+          const sp = document.createElement("span"); sp.className = "lvl-chip";
+          sp.style.setProperty("--ec", parts[0].ev.c2 || "#c4b5fd");
+          sp.title = parts.map(x => `«${x.ev.title}» — ${x.ev.rankOf ? "" : ""}уровень ${x.l}`).join("\n");
+          sp.textContent = "ур. " + parts.map(x => x.l).join(" · ");
+          pe.after(sp);
+        });
+      });
+    }
+    document.addEventListener("change", e => {
+      if (!e.target.matches || !e.target.matches(".hc-lvl input")) return;
+      on = e.target.checked; try { localStorage.setItem(KEY, on ? "1" : "0"); } catch (err) {}
+      apply(); if (on) decorate(); else clear();
+      if (window.__cardsFit) setTimeout(window.__cardsFit, 50);
+    });
+    let t = 0; const later = () => { clearTimeout(t); t = setTimeout(() => { bars(); decorate(); }, 150); };
+    new MutationObserver(later).observe(document.querySelector("main") || document.body, {childList:true, subtree:true});
+    setInterval(() => { bars(); decorate(); }, 1800);
+    apply(); bars(); decorate();
+  })();
+
   /* Карточки: ширина по содержимому — без пустого места, когда показателей мало */
   (function(){
     const cvs = document.createElement("canvas").getContext("2d");
@@ -24258,7 +24330,15 @@ tr.vk-yh i{font-style:normal;color:var(--muted);display:inline-block;width:1em}
         });
         const byMetrics = nMax ? 28 + nMax * cellMax + (nMax - 1) * 10 : 0, byName = 28 + 38 + nameMax + (av ? 46 : 0) + 16;
         const cw = Math.round(Math.max(240, Math.min(520, byMetrics), Math.min(900, byName)));
-        if (t.style.getPropertyValue("--cw") !== cw + "px") t.style.setProperty("--cw", cw + "px");
+        t.classList.add("cw-nowrap");
+        let cw2 = cw;
+        for (let i = 0; i < 4; i++) {
+          if (t.style.getPropertyValue("--cw") !== cw2 + "px") t.style.setProperty("--cw", cw2 + "px");
+          let over = 0;
+          rows.forEach(r => { const nm = r.cells[1] || r.cells[0]; if (!nm || !nm.getClientRects().length) return; const pe = nm.querySelector(".pname") || nm; const ex = Math.max(nm.scrollWidth - nm.clientWidth, pe.scrollWidth - pe.clientWidth); if (ex > over) over = ex; });
+          if (over <= 1 || cw2 >= 900) break;
+          cw2 = Math.min(900, cw2 + Math.ceil(over) + 6);
+        }
       });
     }
     let tt = 0; const later = () => { clearTimeout(tt); tt = setTimeout(fit, 160); };
@@ -24281,6 +24361,7 @@ tr.vk-yh i{font-style:normal;color:var(--muted);display:inline-block;width:1em}
     "Показать колонки":["Show columns","Показати колонки","Паказаць калонкі","Бағандарды көрсету","Afficher les colonnes","Pokaż kolumny"],
     "Скрыть колонки":["Hide columns","Сховати колонки","Схаваць калонкі","Бағандарды жасыру","Masquer les colonnes","Ukryj kolumny"],
     "Только ближайшие":["Nearest only","Лише найближчі","Толькі бліжэйшыя","Тек жақындары","Seulement les prochains","Tylko najbliższe"],
+    "Уровень":["Level","Рівень","Узровень","Деңгей","Niveau","Poziom"],
     "Гонка по дням":["Race by day","Перегони по днях","Гонка па днях","Күн бойынша жарыс","Course jour par jour","Wyścig dzień po dniu"],
     "Место по сообщениям · последние 12 месяцев":["Rank by messages · last 12 months","Місце за повідомленнями · останні 12 місяців","Месца па паведамленнях · апошнія 12 месяцаў","Хабарламалар бойынша орын · соңғы 12 ай","Rang par messages · 12 derniers mois","Miejsce wg wiadomości · ostatnie 12 miesięcy"]
   });
