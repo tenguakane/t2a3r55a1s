@@ -24111,6 +24111,10 @@ html body .fc-places > .fc-over{flex:1 1 300px;min-width:min(280px,100%)}
 <style id="r5-css">
 @media(min-width:721px){
   body table.tv-cards:not([data-cols]) > :is(tbody,tfoot) > tr:not(:has(> [colspan]:only-child)){flex:0 1 var(--cw,380px)}
+  body table.tv-cards[data-cols="1"] > :is(tbody,tfoot){max-width:var(--cw,560px)!important;margin-left:auto!important;margin-right:auto!important}
+  body table.tv-cards[data-cols="2"] > :is(tbody,tfoot){max-width:calc(2 * var(--cw,560px) + 10px)!important;margin-left:auto!important;margin-right:auto!important}
+  body table.tv-cards[data-cols="1"] > :is(tbody,tfoot) > tr{flex:0 0 100%!important}
+  body table.tv-cards[data-cols="2"] > :is(tbody,tfoot) > tr{flex:0 0 calc((100% - 10px)/2)!important}
   body table.tv-cards[data-cols="1"] > :is(tbody,tfoot) > tr:not(:has(> [colspan]:only-child)){flex:0 0 min(var(--cw,560px),100%)}
   body table.tv-cards[data-cols="2"] > :is(tbody,tfoot) > tr:not(:has(> [colspan]:only-child)){flex:0 0 min(var(--cw,560px),calc((100% - 10px)/2))}
 }
@@ -24250,10 +24254,10 @@ tr.vk-yh i{font-style:normal;color:var(--muted);display:inline-block;width:1em}
           nMax = Math.max(nMax, ms.length);
           ms.forEach(c => { const v = [...c.childNodes].map(n => n.textContent.trim()).filter(Boolean).join(" "); cellMax = Math.max(cellMax, Math.ceil(Math.max(w(c.dataset.label || "", `500 11px ${ff}`), w(v, `600 14px ${ff}`))) + 4); });
           const nm = (cs[1] || cs[0]); const pe = nm && nm.querySelector(".pname"); const nt = nm ? (pe ? pe.textContent : nm.textContent).trim() : "";
-          nameMax = Math.max(nameMax, Math.ceil(w(nt, `600 15.5px ${ff}`)));
+          nameMax = Math.max(nameMax, Math.ceil(w(nt, `600 15.5px ${ff}`)) + (nm && nm.querySelector(".row-name-with-action") ? 40 : 0));
         });
-        const byMetrics = nMax ? 28 + nMax * cellMax + (nMax - 1) * 10 : 0, byName = 28 + 38 + nameMax + (av ? 46 : 0) + 8;
-        const cw = Math.round(Math.min(520, Math.max(240, byMetrics, byName)));
+        const byMetrics = nMax ? 28 + nMax * cellMax + (nMax - 1) * 10 : 0, byName = 28 + 38 + nameMax + (av ? 46 : 0) + 16;
+        const cw = Math.round(Math.max(240, Math.min(520, byMetrics), Math.min(900, byName)));
         if (t.style.getPropertyValue("--cw") !== cw + "px") t.style.setProperty("--cw", cw + "px");
       });
     }
