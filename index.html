@@ -1459,7 +1459,7 @@ body.glass-ui .chart-settings-content .chart-bg-group,body.glass-ui .chart-setti
 <header>
   <div class="top">
     <h1>Colony Stats</h1>
-    <div class="top-actions"><button class="ult-btn" id="ult-toggle" type="button" title="Объединить отмеченные чаты в Colony Ultimate"><i></i>Ultimate</button><button class="ult-btn" id="vk-toggle" type="button" title="Добавить данные VK в общую статистику"><i></i>VK</button><button class="mini" id="filters-visibility-toggle" type="button" aria-pressed="false" title="Скрыть фильтры текущей вкладки">◫ Скрыть фильтры</button><div id="upd-wrap"><span id="live-dot" hidden>● LIVE</span><span id="upd"></span><button class="mini" id="refresh">Обновить</button></div></div>
+    <div class="top-actions"><button class="ult-btn" id="ult-toggle" type="button" title="Объединить отмеченные чаты в Colony Ultimate"><i></i>Ultimate</button><button class="ult-btn" id="vk-toggle" type="button" title="Добавить данные VK в общую статистику"><i></i>VK</button><button class="ult-btn" id="lvl-toggle" type="button" title="Показать уровень участника в текущем событии рядом с именем в таблицах и карточках"><i></i>Уровни</button><button class="mini" id="filters-visibility-toggle" type="button" aria-pressed="false" title="Скрыть фильтры текущей вкладки">◫ Скрыть фильтры</button><div id="upd-wrap"><span id="live-dot" hidden>● LIVE</span><span id="upd"></span><button class="mini" id="refresh">Обновить</button></div></div>
   </div>
   <nav role="tablist">
     <button data-tab="hub">Хаб</button>
@@ -14596,7 +14596,7 @@ function multiplesChart(){
     candidates().forEach(n => { seen.add(n); park(n, body); keepOut(n, moved[moved.length - 1][1]); });
     body.dataset.tab = typeof activeDataTab === "function" ? activeDataTab() : "";
     try { window.__statsChatMount && window.__statsChatMount(); } catch (e) {}
-    ["ult-toggle", "vk-toggle"].forEach(id => { const b = document.getElementById(id); if (b && b.parentNode !== top) park(b, top); });
+    ["ult-toggle", "vk-toggle", "lvl-toggle"].forEach(id => { const b = document.getElementById(id); if (b && b.parentNode !== top) park(b, top); });
     // «Вид таблицы» в шторку больше не добавляется: те же настройки есть в меню «Столбцы» у каждой таблицы.
   }
   function apply(){
@@ -24286,26 +24286,14 @@ tr.vk-yh i{font-style:normal;color:var(--muted);display:inline-block;width:1em}
   (function(){
     const KEY = "chatstats.showLvl.v1";
     let on = false; try { on = localStorage.getItem(KEY) === "1"; } catch (e) {}
-    const apply = () => { document.body.classList.toggle("show-lvl", on); document.querySelectorAll(".hc-lvl input").forEach(i => { i.checked = on; }); };
+    const apply = () => { document.body.classList.toggle("show-lvl", on); const b = document.getElementById("lvl-toggle"); if (b) { b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); } };
     function evs(){
       const E = window.__beta && window.__beta.events; if (!E) return [];
       const all = E.list().filter(e => e.status !== "soon"), live = all.filter(e => e.status === "live");
       if (live.length) return live.slice(0, 2);
       return all.sort((a, b) => String(b.end).localeCompare(String(a.end))).slice(0, 1);
     }
-    // переключатель нужен только там, где в таблице есть участники с профилем
-    const hasPeople = b => { const id = b.dataset.for || (b.querySelector("#st-tv") ? "participants-table" : ""); const t = id ? (document.querySelector(`table[data-hc="${id}"]`) || document.getElementById(id)) : null; return !!(t && t.querySelector(".pname[data-open-profile]")); };
-    function bars(){
-      document.querySelectorAll(".hc-bar, .st-desk-tools").forEach(b => {
-        const has = hasPeople(b);
-        if (!has) { const o = b.querySelector(".hc-lvl"); if (o) o.remove(); return; }
-        if (b.querySelector(".hc-lvl") || !b.querySelector(".tv-btn, #st-tv")) return;
-        const l = document.createElement("label"); l.className = "checkline hc-lvl"; l.title = "Показать уровень участника в текущем событии рядом с именем"; l.innerHTML = '<input type="checkbox"><span>Уровень</span>';
-        l.querySelector("input").checked = on; b.appendChild(l);
-      });
-    }
     // цвета — как у достижений события: уровни 1–3 бронза, 4–6 серебро, 7–9 золото, 10 — алмаз (по порогам достижения)
-    const TIER_C = ["#8b93a7", "#e3a36b", "#e3a36b", "#e3a36b", "#c0c6d4", "#c0c6d4", "#c0c6d4"];
     const lvlColor = (ev, l) => { const th = (ev.ach && ev.ach.th) || [10, 15, 20, 25, 30, 35, 40], n = th.filter(t => l >= t).length; return n <= 0 ? "#8b93a7" : n <= 3 ? "#e3a36b" : n <= 6 ? "#c0c6d4" : n <= 9 ? "#ffd166" : "#67e8f9"; };
     function clear(){ document.querySelectorAll(".lvl-chip").forEach(c => c.remove()); }
     function decorate(){
@@ -24329,16 +24317,16 @@ tr.vk-yh i{font-style:normal;color:var(--muted);display:inline-block;width:1em}
         });
       });
     }
-    document.addEventListener("change", e => {
-      if (!e.target.matches || !e.target.matches(".hc-lvl input")) return;
-      on = e.target.checked; try { localStorage.setItem(KEY, on ? "1" : "0"); } catch (err) {}
+    document.addEventListener("click", e => {
+      const b = e.target.closest && e.target.closest("#lvl-toggle"); if (!b) return;
+      on = !on; try { localStorage.setItem(KEY, on ? "1" : "0"); } catch (err) {}
       apply(); if (on) decorate(); else clear();
       if (window.__cardsFit) setTimeout(window.__cardsFit, 50);
     });
-    let t = 0; const later = () => { clearTimeout(t); t = setTimeout(() => { bars(); decorate(); }, 150); };
+    let t = 0; const later = () => { clearTimeout(t); t = setTimeout(() => { apply(); decorate(); }, 150); };
     new MutationObserver(later).observe(document.querySelector("main") || document.body, {childList:true, subtree:true});
-    setInterval(() => { bars(); decorate(); }, 1800);
-    apply(); bars(); decorate();
+    setInterval(() => { apply(); decorate(); }, 1800);
+    apply(); apply(); decorate();
   })();
 
   /* Карточки: ширина по содержимому — без пустого места, когда показателей мало */
