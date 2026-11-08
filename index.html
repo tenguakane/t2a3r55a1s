@@ -24159,6 +24159,9 @@ body.cards-avatars table.tv-cards .card-av{display:inline-grid;place-items:cente
 #ach-ev-table td,#ach-ev-table th{white-space:nowrap}
 .hc-lvl{display:inline-flex;height:30px;min-height:0;border-radius:10px}
 .row-name-with-action > .lvl-chip{margin-left:-3px}
+.row-name-with-action:has(> .lvl-chip){justify-content:center}
+body table.tv-cards .row-name-with-action:has(> .lvl-chip){justify-content:flex-start!important}
+body table.tv-cards .row-name-with-action:has(> .lvl-chip) > .row-exclude-btn{margin-left:auto}
 .lvl-chip{display:inline-flex;align-items:center;vertical-align:middle;margin-left:8px;padding:1px 8px;height:20px;border-radius:999px;font-size:11.5px;font-weight:700;letter-spacing:.02em;white-space:nowrap;color:var(--ec,#c4b5fd);background:color-mix(in srgb,var(--ec,#c4b5fd) 14%,transparent);border:1px solid color-mix(in srgb,var(--ec,#c4b5fd) 45%,transparent)}
 .hc-av{display:none;height:30px;min-height:0;border-radius:10px}
 .hc-bar:has(.tv-btn[data-tv-mode="cards"]) .hc-av,.st-desk-tools:has(#st-tv[data-tv-mode="cards"]) .hc-av{display:inline-flex}
