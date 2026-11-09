@@ -24391,5 +24391,95 @@ tr.vk-yh i{font-style:normal;color:var(--muted);display:inline-block;width:1em}
   });
 })();
 </script>
+<style id="r6-css">
+/* Крит. 5: контраст мелкого текста */
+.tile .lbl,.hub-kpi .l,.hint,.p-sub{font-size:13.5px}
+.tile .lbl,.hint{color:color-mix(in srgb,var(--muted) 78%,var(--text))}
+.tile .place,.tile .sub{font-size:13px}
+/* Крит. 2: «Уровни» — переключатель вида, отделён от переключателей данных (Ultimate, VK) */
+#fd-top #lvl-toggle,.top-actions #lvl-toggle{position:relative;margin-left:12px}
+#fd-top #lvl-toggle::before,.top-actions #lvl-toggle::before{content:"";position:absolute;left:-9px;top:7px;bottom:7px;width:1px;background:var(--line)}
+/* Крит. 3: второстепенные плитки спокойнее */
+.tab .tiles ~ .tiles .tile::before{opacity:.45}
+.tab .tiles ~ .tiles .tile:hover{border-color:var(--line)}
+/* Крит. 4: пустое состояние вместо рядов нулей */
+.pf-empty-note{padding:14px 16px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);font-size:14px;margin:0 0 8px}
+/* Крит. 1: подписи у групп меню */
+nav .side-grp:has(> [data-tab="reactions"])::before{content:"Разделы";order:-1;display:block;padding:8px 12px 4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);opacity:.8}
+body.side-collapsed nav .side-grp:has(> [data-tab="reactions"])::before{display:none}
+/* затухание у обрезанных рядов «К разделу» */
+.ov-fade{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent)}
+/* единые отступы между блоками */
+.tab > h2{margin-top:28px;margin-bottom:12px}
+.tab > h2:first-child,.tab > .tbar + h2{margin-top:8px}
+@media(max-width:720px){.tab > h2 .sub-title,.tab > h2 small{display:none}}
+</style>
+<script id="r6-js">
+(function(){
+  const body = document.body;
+  /* 1. Правая панель сама сворачивается, когда в ней нет фильтров */
+  function frSync(){
+    const b = document.getElementById("fd-body"); if (!b || !body.classList.contains("filters-right")) return;
+    let user = false; try { user = localStorage.getItem("chatstats.filtersRightCollapsed.v1") === "1"; } catch (e) {}
+    const want = user || b.childElementCount === 0;
+    if (body.classList.contains("fr-collapsed") !== want) body.classList.toggle("fr-collapsed", want);
+  }
+  new MutationObserver(frSync).observe(body, {attributes:true, attributeFilter:["class"]});
+  const dr = document.getElementById("filter-drawer"); if (dr) new MutationObserver(frSync).observe(dr, {childList:true, subtree:true});
+  setInterval(frSync, 700);
+  /* 4. Пустой профиль: одна заметка вместо ряда нулей */
+  const ZERO = /^[\s0—–\-]*(дн\S*|сообщ\S*|д\.)?\s*$/i;
+  function pfEmpty(){
+    const tab = document.getElementById("tab-profile"); if (!tab || !tab.classList.contains("active")) return;
+    tab.querySelectorAll(".pf-empty-note").forEach(n => { const pv = n.previousElementSibling; if (!pv || !pv.classList.contains("tiles") || pv.style.display !== "none") n.remove(); });
+    tab.querySelectorAll(".tiles").forEach(t => {
+      if (t.closest(".p-hero,[data-no-export]")) return;
+      const nums = [...t.querySelectorAll(".num")]; if (nums.length < 2) return;
+      const allZero = nums.every(n => ZERO.test(n.textContent.replace(/\s+/g, " ").trim()));
+      if (allZero && t.style.display !== "none") { t.style.display = "none"; const n = document.createElement("div"); n.className = "pf-empty-note"; n.textContent = "Пока нет данных — появятся после первых сообщений."; t.after(n); }
+    });
+  }
+  /* затухание у рядов, которые обрезаются */
+  function fades(){
+    document.querySelectorAll(".sec-nav,#bd-nav,.series-chips").forEach(e => {
+      const ov = e.scrollWidth > e.clientWidth + 2 && e.scrollLeft + e.clientWidth < e.scrollWidth - 2;
+      e.classList.toggle("ov-fade", ov);
+    });
+  }
+  document.addEventListener("scroll", e => { if (e.target.classList && e.target.matches && e.target.matches(".sec-nav,#bd-nav,.series-chips")) fades(); }, true);
+  let t = 0; const later = () => { clearTimeout(t); t = setTimeout(() => { pfEmpty(); fades(); }, 200); };
+  new MutationObserver(later).observe(document.querySelector("main") || body, {childList:true, subtree:true});
+  setInterval(() => { pfEmpty(); fades(); }, 2000);
+})();
+</script>
+<style id="r7-css">
+/* ===== Единая система управления =====
+   1 вкладки — подчёркивание · 2 переключатель вида — сегмент · 3 действие — кнопка с рамкой · 4 опция — повзунок · 5 переход — пилюля */
+:root{--ctl-h:32px;--ctl-r:10px}
+/* 2. Сегмент: Таблица/Карточки, периоды */
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) main .tab :is(.tv-seg,.quick-ranges):not(.stats-topbar *){display:inline-flex!important;align-items:center;gap:2px;padding:2px!important;height:var(--ctl-h)!important;box-sizing:border-box;border:1px solid var(--line)!important;border-radius:var(--ctl-r)!important;background:var(--ctrl,var(--panel))!important;box-shadow:none!important;overflow:hidden}
+html body main .tab :is(.tv-seg,.quick-ranges)::after{display:none!important}
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) main .tab :is(.tv-seg > button,.quick-ranges > .quick-chip):not(.stats-topbar *){height:26px!important;min-height:0!important;padding:0 12px!important;border:0!important;border-radius:8px!important;background:transparent!important;box-shadow:none!important;color:var(--muted)!important;font-size:13.5px!important;font-weight:500!important;line-height:1}
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) main .tab :is(.tv-seg > button,.quick-ranges > .quick-chip):not(.stats-topbar *):hover{color:var(--text)!important}
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) main .tab :is(.tv-seg > button,.quick-ranges > .quick-chip).active:not(.stats-topbar *){background:var(--accent-bg)!important;color:var(--accent)!important}
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) main .tab .quick-ranges:not(.stats-topbar *) .qr-label{margin:0 6px 0 10px;font-size:12px;color:var(--muted)}
+/* 3. Кнопка действия: Копировать, Столбцы, Сравнить */
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) main .tab :is(.copy-btn,.hc-btn,.p-cmp-btn):not(.st-copy-slot *):not(.stats-topbar *){display:inline-flex!important;align-items:center;gap:6px;height:var(--ctl-h)!important;min-height:0!important;padding:0 12px!important;border:1px solid var(--line)!important;border-radius:var(--ctl-r)!important;background:var(--ctrl,var(--panel))!important;box-shadow:none;color:var(--text)!important;font-size:13.5px!important;font-weight:500;line-height:1;white-space:nowrap}
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) main .tab :is(.copy-btn,.hc-btn,.p-cmp-btn):not(.st-copy-slot *):not(.stats-topbar *):hover{border-color:var(--accent)!important;color:var(--accent)!important}
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) main .tab .p-cmp-btn.pc-open{height:26px!important;font-size:12.5px!important}
+/* опции-повзунки и списки той же высоты */
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) main .tab .hc-bar .checkline{height:var(--ctl-h);min-height:0}
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) main .tab select:not(.msel-native){height:var(--ctl-h);border-radius:var(--ctl-r)}
+/* 5. Пилюли-переходы */
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) main .tab .chip{border-radius:999px}
+/* единые состояния: фокус с клавиатуры */
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) main :is(.tv-seg > button,.quick-chip,.copy-btn,.hc-btn,.chip):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media(max-width:720px){:root{--ctl-h:36px}html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) main .tab :is(.tv-seg > button,.quick-ranges > .quick-chip){height:30px!important}}
+/* то же для остальных переключателей вида (шторка фильтров, «Таблицы/Визуализация», цели) */
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) :is(main .tab,#filter-drawer) .seg:not(.group-tabs):not(.tv-seg){display:inline-flex!important;align-items:center;gap:2px;padding:2px!important;height:var(--ctl-h)!important;box-sizing:border-box;border:1px solid var(--line)!important;border-radius:var(--ctl-r)!important;background:var(--ctrl,var(--panel))!important;box-shadow:none!important;overflow:hidden;width:fit-content!important;max-width:100%;align-self:flex-start}
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) :is(main .tab,#filter-drawer) .seg:not(.group-tabs):not(.tv-seg) > button{height:26px!important;min-height:0!important;padding:0 12px!important;border:0!important;border-radius:8px!important;background:transparent!important;box-shadow:none!important;color:var(--muted)!important;font-size:13.5px!important;font-weight:500!important;line-height:1}
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) :is(main .tab,#filter-drawer) .seg:not(.group-tabs):not(.tv-seg) > button:hover{color:var(--text)!important}
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) :is(main .tab,#filter-drawer) .seg:not(.group-tabs):not(.tv-seg) > button.active{background:var(--accent-bg)!important;color:var(--accent)!important}
+</style>
 </body>
 </html>
