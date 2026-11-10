@@ -21132,6 +21132,13 @@ td .ev-tier + small{display:inline!important;margin-left:4px;font-size:12.5px;fo
   }
   const statusOf = ev => { const t = today(); return t < ev.start ? "soon" : t > ev.end ? "done" : "live"; };
   const rankName = (ev, level) => { let n = ev.ranks?.[0]?.[1] || ""; (ev.ranks || []).forEach(([l, name]) => { if (level >= l) n = name; }); return n; };
+  // Прогресс до следующего уровня: доля пройденного внутри текущего уровня и сколько опыта осталось
+  const levelProg = (ev, level, xp) => {
+    const L = ev.levels || [], cur = L.find(l => l[0] === level), nxt = L.find(l => l[0] === level + 1);
+    if (!cur || !nxt) return {pct:100, left:0, next:0};
+    const span = (nxt[2] - cur[2]) || 1;
+    return {pct:Math.max(0, Math.min(100, (xp - cur[2]) / span * 100)), left:Math.max(0, nxt[2] - xp), next:nxt[0]};
+  };
   const levelByXp = (ev, xp) => { let l = 1; (ev.levels || []).forEach(([o, , min]) => { if (xp >= min) l = o; }); return l; };
   const events = {
     list:() => EVENTS.map(ev => ({...ev, status:statusOf(ev)})),
@@ -21666,7 +21673,7 @@ td .ev-tier + small{display:inline!important;margin-left:4px;font-size:12.5px;fo
         <h2>Уровни участников — ${esc(ev.title)}</h2>
         <div class="wrap"><table id="ev-table"><thead><tr><th>Место</th><th>Участник</th><th>Уровень</th><th>Звание</th><th>Опыт</th><th>«${esc(ev.ach.name)}»</th></tr></thead><tbody>${rows.map(([k, v], i) => {
           const tl = th.filter(x => v.level >= x).length;
-          return `<tr style="--ec1:${ev.c1};--ec2:${ev.c2}"><td>${i + 1}</td><td>${pn(k)}</td><td><span class="ev-lv"><b>${v.level}</b><i><em style="width:${Math.min(100, v.level / Math.max(40, mx) * 100).toFixed(1)}%"></em></i></span></td><td class="ev-rank">${esc(rankName(ev, v.level))}</td><td>${fmtN(v.xp)}</td><td><span class="ev-tier" style="--tc:${TC(tl)}">${ROM[tl]}</span></td></tr>`;
+          return `<tr style="--ec1:${ev.c1};--ec2:${ev.c2}"><td>${i + 1}</td><td>${pn(k)}</td><td><span class="ev-lv"${(pg => pg.next ? ` title="До ур. ${pg.next}: ${fmtN(pg.left)} опыта (${pg.pct.toFixed(0)}% уровня пройдено)"` : ` title="Максимальный уровень"`)(levelProg(ev, v.level, v.xp))}><b>${v.level}</b><i><em style="width:${levelProg(ev, v.level, v.xp).pct.toFixed(1)}%"></em></i></span></td><td class="ev-rank">${esc(rankName(ev, v.level))}</td><td>${fmtN(v.xp)}</td><td><span class="ev-tier" style="--tc:${TC(tl)}">${ROM[tl]}</span></td></tr>`;
         }).join("")}</tbody></table></div>
         <div class="bx-grid">
           <div class="bx-card"><h3>Сколько людей на каждом звании</h3><p class="hint">Звания события по уровням</p>${bars(dist)}</div>
