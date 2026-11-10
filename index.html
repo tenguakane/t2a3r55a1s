@@ -20927,6 +20927,8 @@ td .ev-tier + small{display:inline!important;margin-left:4px;font-size:12.5px;fo
 html body .sticky-table-head{background-color:var(--bg,#14161c)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 /* Вкладка «События»: воздух между таблицей уровней, панелями под ней и плитками прогноза */
 #ev-out > .wrap + .bx-grid{margin-top:22px}
+.ev-title-empty{opacity:.55}
+#ev-titles-table td:nth-child(2){text-align:left}
 #ev-out > .tiles + .hc-bar{margin-top:16px}
 .ach-view-seg{margin:0 0 16px!important}
 #tab-achievements.active > #ach-out > .ach-view-seg{flex:0 0 auto!important;max-width:max-content}
@@ -21686,7 +21688,12 @@ html body .sticky-table-head{background-color:var(--bg,#14161c)!important;-webki
         <div class="bx-grid">
           <div class="bx-card"><h3>Сколько людей на каждом звании</h3><p class="hint">Звания события по уровням</p>${bars(dist)}</div>
           <div class="bx-card"><h3>Уровни достижения «${esc(ev.ach.name)}»</h3><p class="hint">Сколько участников дошли до каждого уровня</p>${bars(tiers)}</div>
-        </div>`;
+        </div>${ev.status !== "done" || !(ev.levels || []).length ? "" : `
+        <h2>Все титулы события</h2><p class="hint">Полный перечень титулов события «${esc(ev.title)}»: с какого опыта выдаётся, сколько участников дошли до него и на ком событие остановилось.</p>
+        <div class="wrap"><table id="ev-titles-table"><thead><tr><th>Ур.</th><th>Титул</th><th>Опыт от</th><th>Дошли</th><th>Закончили на нём</th></tr></thead><tbody>${ev.levels.map(([o, name, minXp]) => {
+          const reached = rows.filter(([, v]) => v.level >= o).length, holders = rows.filter(([, v]) => v.level === o).map(([k]) => pn(k)).join(", ");
+          return `<tr style="--ec1:${ev.c1};--ec2:${ev.c2}"${reached ? "" : ' class="ev-title-empty"'}><td>${o}</td><td class="ev-rank" style="color:var(--text)">${esc(name)}</td><td>${fmtN(minXp)}</td><td>${reached ? fmtN(reached) : '<span class="hint">—</span>'}</td><td style="text-align:left">${holders || '<span class="hint">—</span>'}</td></tr>`;
+        }).join("")}</tbody></table></div>`}`;
       const FC = forecastEvent(ev);
       if (FC) {
         const thE = ev.ach.th, tierOf = l => thE.filter(x => l >= x).length, mxE = Math.max(40, ...FC.list.map(x => x.hi));
