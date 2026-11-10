@@ -7053,12 +7053,15 @@ document.addEventListener("pointercancel", finishColumnResize, true);
     head.querySelectorAll("[id]").forEach(el => el.removeAttribute("id"));
     const row = head.rows[0];
     const originals = [...labelRow(table).cells];
+    // Столбцы, скрытые через «Столбцы», в настоящей таблице спрятаны CSS-правилом, а у копии такого правила нет — убираем их из копии.
+    [...row.cells].forEach((cell, i) => { if (originals[i] && getComputedStyle(originals[i]).display === "none") cell.remove(); });
+    const shown = originals.filter(o => getComputedStyle(o).display !== "none");
     [...row.cells].forEach((cell, i) => {
       cell.removeAttribute("id");
-      cell.style.width = `${originals[i]?.getBoundingClientRect().width || cell.getBoundingClientRect().width}px`;
+      cell.style.width = `${shown[i]?.getBoundingClientRect().width || cell.getBoundingClientRect().width}px`;
       cell.style.minWidth = cell.style.width;
       cell.style.boxSizing = "border-box";
-      cell.tabIndex = originals[i]?.dataset?.k ? 0 : -1;
+      cell.tabIndex = shown[i]?.dataset?.k ? 0 : -1;
     });
     clone.appendChild(head);
     clone.style.width = `${Math.max(table.getBoundingClientRect().width, table.scrollWidth)}px`;
@@ -20920,6 +20923,11 @@ td .ev-tier + small{display:inline!important;margin-left:4px;font-size:12.5px;fo
 .ev-lv{display:inline-flex;align-items:center;gap:8px}
 .ev-lv i{display:inline-block;width:80px;height:6px;border-radius:3px;background:color-mix(in srgb,var(--text) 8%,transparent);overflow:hidden}
 .ev-lv i > em{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+/* Закреплённая шапка таблицы: подложка всегда непрозрачная, иначе при «стекле» сквозь неё видны строки */
+html body .sticky-table-head{background-color:var(--bg,#14161c)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+/* Вкладка «События»: воздух между таблицей уровней, панелями под ней и плитками прогноза */
+#ev-out > .wrap + .bx-grid{margin-top:22px}
+#ev-out > .tiles + .hc-bar{margin-top:16px}
 .ach-view-seg{margin:0 0 16px!important}
 #tab-achievements.active > #ach-out > .ach-view-seg{flex:0 0 auto!important;max-width:max-content}
 @media (max-width:720px){
