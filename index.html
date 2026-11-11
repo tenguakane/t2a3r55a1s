@@ -1487,6 +1487,7 @@ body.glass-ui .chart-settings-content .chart-bg-group,body.glass-ui .chart-setti
     <button data-tab="birthdays" class="nav-hidden">Дни рождения</button>
     <button data-tab="usermap" class="nav-hidden">Карта</button>
     <button data-tab="vk" class="nav-hidden">VK</button>
+    <button data-tab="lab" class="nav-hidden">Лаборатория</button>
   </nav>
 </header>
 <script id="beta-re-flag">
@@ -1899,6 +1900,11 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
     <div id="um-out"></div>
   </section>
 
+  <section class="tab" id="tab-lab">
+    <h2>Лаборатория</h2>
+    <p class="status" id="lab-status"></p>
+    <div id="lab-body"></div>
+  </section>
   <section class="tab" id="tab-vk">
     <div class="seg group-tabs" data-group-seg="other"><button type="button" data-gtab="records" class="">Рекорды</button><button type="button" data-gtab="months" class="">Топ месяцев</button><button type="button" data-gtab="days" class="">Топ дней</button><button type="button" data-gtab="forecast" class="">Прогноз</button><button type="button" data-gtab="marathons" class="">Марафоны</button><button type="button" data-gtab="time" class="">Время</button><button type="button" data-gtab="yearreview" class="">Итоги года</button><button type="button" data-gtab="chronicle" class="">Хроника</button><button type="button" data-gtab="birthdays" class="">Дни рождения</button><button type="button" data-gtab="selfie" class="">Селфи</button><button type="button" data-gtab="usermap" class="">Карта</button><button type="button" data-gtab="vk" class="active">VK</button></div>
     <div class="filters">
@@ -2157,6 +2163,9 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
       <div class="field"><label for="tb-speed">Скорость</label><select id="tb-speed"><option value="slow">Медленно</option><option value="mid">Средне</option><option value="fast">Быстро</option></select></div>
     </div>
     <div class="pbtn" style="margin:-6px 0 14px"><button class="mini" type="button" id="fx-all-on">Включить все эффекты</button><button class="mini" type="button" id="fx-all-off">Выключить все</button><button class="mini" type="button" id="fx-bg-toggle" title="Листопад и другие сезонные частицы, параллакс-фон, салют и конфетти">Выключить фоновые эффекты</button><span class="hint" style="margin-left:8px">При системной настройке «уменьшить движение» анимации не запускаются. В скопированные и скачанные картинки попадают стекло и рамка таблиц.</span></div>
+    <h2>Эксперименты: интерактивные графики</h2>
+    <div class="filters" id="exp-list"></div>
+    <div class="pbtn" style="margin:-6px 0 14px"><button class="mini" type="button" id="exp-all-on">Включить все</button><button class="mini" type="button" id="exp-all-off">Выключить все</button><span class="hint" style="margin-left:8px">Пробные функции: всё выключено по умолчанию. Включай по одной и смотри, что нужно оставить.</span></div>
     <h2>Шрифт</h2>
     <div class="filters site-font-box"><div class="set-frow"><div class="field"><label for="site-font">Шрифт сайта</label><select id="site-font"><option value="samsung">Samsung Sans — по умолчанию</option><option value="system">Системный (Segoe UI / SF)</option><option value="inter">Inter</option><option value="manrope">Manrope</option><option value="golos">Golos Text</option><option value="onest">Onest</option><option value="rubik">Rubik</option><option value="montserrat">Montserrat</option><option value="nunito">Nunito</option><option value="roboto">Roboto</option><option value="opensans">Open Sans</option><option value="ptsans">PT Sans</option><option value="jost">Jost</option><option value="comfortaa">Comfortaa</option><option value="unbounded">Unbounded</option><option value="jetbrains">JetBrains Mono</option></select></div><div class="set-fdesc">Каким шрифтом написан весь сайт: текст, таблицы, кнопки и графики. Samsung Sans встроен в страницу, остальные подгружаются из Google Fonts при выборе.</div></div><div class="site-font-preview" id="site-font-preview" aria-hidden="true"><b>Статистика чата 2026</b><span>Съешь же ещё этих мягких французских булок · 0123456789 · +68 −36</span></div></div>
     <div class="filters"><label class="checkline"><input type="checkbox" id="no-bold">Убрать жирный шрифт</label></div>
@@ -2659,7 +2668,7 @@ document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
   if (t === "yearreview") loadYearReview();
   if (t === "compare") loadCompare();
   if (t === "hub" && window.loadHub) window.loadHub();
-  $("upd-wrap").hidden = !["hub","stats","daymatrix","marathons","yearreview","compare","charts","records","profile","months","days","time","forecast","achievements","chronicle","birthdays","usermap","vk"].includes(t);
+  $("upd-wrap").hidden = !["hub","stats","daymatrix","marathons","yearreview","compare","charts","records","profile","months","days","time","forecast","achievements","chronicle","birthdays","usermap","vk","lab"].includes(t);
   applyFiltersVisibility();
 });
 
@@ -5991,6 +6000,7 @@ async function refreshAll(soft){
     else if (t === "birthdays") await loadBirthdays();
     else if (t === "usermap") await loadUserMap();
     else if (t === "vk") await loadVk();
+    else if (t === "lab") await (window.loadLab ? window.loadLab() : null);
     else if (t === "compare") await loadCompare();
     else if (t === "hub") await (window.loadHub ? window.loadHub() : load());
     else await load();
@@ -10958,7 +10968,7 @@ renderCacheInfo();
 
 
 /* ===================== Сгруппированные вкладки: «Профиль» (+ Достижения) и «Другое» ===================== */
-const TAB_GROUPS = {profile:["profile", "achievements"], other:["records", "months", "days", "forecast", "marathons", "time", "yearreview", "chronicle", "birthdays", "usermap", "vk"]};
+const TAB_GROUPS = {profile:["profile", "achievements"], other:["records", "months", "days", "forecast", "marathons", "time", "yearreview", "chronicle", "birthdays", "usermap", "vk", "lab"]};
 const GROUP_KEY = "chatstats.tabGroups.v1";
 (function(){
   const nav = document.querySelector("nav");
@@ -14782,9 +14792,9 @@ function multiplesChart(){
   const KEY = "chatstats.sideNav.v1", KEY_C = "chatstats.sideNavCollapsed.v1";
   const nav = document.querySelector("nav"); if (!nav) return;
   const ICONS = {hub:"🧭", profile:"👤", stats:"📊", compare:"⚖️", daymatrix:"🗓️", charts:"📈", settings:"⚙️", records:"🏆", months:"🥇", days:"📆", forecast:"🔮",
-    marathons:"🏁", time:"⏳", yearreview:"🎬", achievements:"🏅", chronicle:"📜", birthdays:"🎂", selfie:"📸", usermap:"🗺️", vk:"🅥"};
+    marathons:"🏁", time:"⏳", yearreview:"🎬", achievements:"🏅", chronicle:"📜", birthdays:"🎂", selfie:"📸", usermap:"🗺️", vk:"🅥", lab:"🧪"};
   const MAIN = ["hub", "profile", "stats", "compare", "daymatrix", "charts"];
-  const OTHER = ["records", "months", "days", "forecast", "marathons", "time", "yearreview", "chronicle", "birthdays", "selfie", "usermap", "vk"];
+  const OTHER = ["records", "months", "days", "forecast", "marathons", "time", "yearreview", "chronicle", "birthdays", "selfie", "usermap", "vk", "lab"];
   const btns = [...nav.querySelectorAll("button[data-tab]")];
   btns.forEach(b => {
     const tab = b.dataset.tab, grp = b.dataset.group;
@@ -15619,7 +15629,7 @@ function multiplesChart(){
   const hex2rgb = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
   function drawLava(){
     const cfg = lavaCfg(), cols = cfg.colors.map(hex2rgb), mult = DENSITY[PK.density] || 1;
-    const lw = Math.max(48, Math.round(innerWidth / 9)), lh = Math.max(32, Math.round(innerHeight / 9));
+    const lq = innerWidth * innerHeight > 1.6e6 ? 5 : 4, lw = Math.max(96, Math.round(innerWidth / lq)), lh = Math.max(64, Math.round(innerHeight / lq));
     if (!lavaCv) lavaCv = document.createElement("canvas");
     if (lavaCv.width !== lw || lavaCv.height !== lh) { lavaCv.width = lw; lavaCv.height = lh; }
     const n = Math.max(4, Math.min(18, Math.round(8 * mult)));
@@ -15635,7 +15645,7 @@ function multiplesChart(){
       let F = 0, r = 0, g = 0, b = 0;
       for (let i = 0; i < m; i++) { const o = bl[i], dx = x - o.x, dy = y - o.y, w = o.R2 / (dx * dx + dy * dy + 1); F += w; r += w * o.col[0]; g += w * o.col[1]; b += w * o.col[2]; }
       if (F < .2) continue;
-      const t1 = Math.min(1, Math.max(0, (F - .85) / .2)), t2 = Math.min(1, Math.max(0, (F - .2) / .65));
+      const t1 = Math.min(1, Math.max(0, (F - .8) / .45)), t2 = Math.min(1, Math.max(0, (F - .2) / .65));
       const a = (t1 * t1 * (3 - 2 * t1)) * .9 + (t2 * t2 * (3 - 2 * t2)) * .22;
       const br = .88 + .3 * Math.min(1, Math.max(0, (F - 1) / 2)), q = (y * lw + x) * 4;
       d[q] = Math.min(255, r / F * br); d[q + 1] = Math.min(255, g / F * br); d[q + 2] = Math.min(255, b / F * br); d[q + 3] = Math.min(255, a * 255);
@@ -16172,7 +16182,7 @@ window.CHANGELOG = [
       {tab:"settings", ic:"⚙️", t:"Настройки", d:"Тема, участники, аватарки, города и дни рождения, Ultimate, кэш, перенос настроек"},
     ]},
   ];
-  const NAV_HIDDEN = ["records", "forecast", "selfie", "marathons", "time", "yearreview", "achievements", "chronicle", "birthdays", "usermap", "vk", "months", "days"];
+  const NAV_HIDDEN = ["lab", "records", "forecast", "selfie", "marathons", "time", "yearreview", "achievements", "chronicle", "birthdays", "usermap", "vk", "months", "days"];
   function go(tab){
     const b = (NAV_HIDDEN.includes(tab) && document.querySelector(`nav button.nav-hidden[data-tab="${tab}"]`)) || document.querySelector(`nav button[data-tab="${tab}"]`);
     if (b) { b.click(); window.scrollTo({top:0}); }
@@ -17519,9 +17529,9 @@ body.holo-text-on tr > td.medal-3:first-child{background-image:linear-gradient(1
   const META = {
     hub:["🧭", "#5e8bff"], profile:["👤", "#4cb3ff"], stats:["📊", "#34c759"], compare:["⚖️", "#ff9f0a"], daymatrix:["🗓️", "#5ac8fa"], charts:["📈", "#af52de"],
     records:["🏆", "#ffb340"], months:["📅", "#ff6482"], days:["📆", "#ff453a"], forecast:["🔮", "#bf5af2"], marathons:["🏁", "#30b0c7"], time:["⏳", "#a2845e"],
-    yearreview:["🎬", "#ff375f"], achievements:["🏅", "#ffcc00"], chronicle:["📜", "#8e8e93"], birthdays:["🎂", "#ff2d55"], selfie:["📸", "#64d2ff"], usermap:["🗺️", "#32d74b"], vk:["🅥", "#0a84ff"], settings:["⚙️", "#8e8e93"]
+    yearreview:["🎬", "#ff375f"], achievements:["🏅", "#ffcc00"], chronicle:["📜", "#8e8e93"], birthdays:["🎂", "#ff2d55"], selfie:["📸", "#64d2ff"], usermap:["🗺️", "#32d74b"], vk:["🅥", "#0a84ff"], lab:["🧪", "#ff6b9d"], settings:["⚙️", "#8e8e93"]
   };
-  const GROUPS = [["Основное", ["hub", "profile", "stats", "compare", "daymatrix", "charts"]], ["Разделы", ["records", "months", "days", "forecast", "marathons", "time", "yearreview", "achievements", "chronicle", "birthdays", "selfie", "usermap", "vk"]]];
+  const GROUPS = [["Основное", ["hub", "profile", "stats", "compare", "daymatrix", "charts"]], ["Разделы", ["records", "months", "days", "forecast", "marathons", "time", "yearreview", "achievements", "chronicle", "birthdays", "selfie", "usermap", "vk", "lab"]]];
 
   // ---------- разметка ----------
   const bar = document.createElement("div"); bar.id = "ma-bar";
@@ -17857,6 +17867,7 @@ body.tb-on .chart:has(svg.heatrows-svg){border:1.5px solid transparent;backgroun
     {k:"look", ic:"🎨", c:"#5e8bff", t:"Оформление", d:"Тема, цвет фона, шрифт и язык", h:["Тема оформления", "Шрифт"]},
     {k:"mobile", ic:"📱", c:"#ff375f", t:"Телефон", d:"Мобильная версия в стиле приложения, вибрация", h:["Мобильная версия"]},
     {k:"fx", ic:"✨", c:"#bf5af2", t:"Эффекты", d:"Анимации, частицы на фоне, рамка таблиц и графиков", h:["Эффекты"]},
+    {k:"exp", ic:"🧪", c:"#ff6b9d", t:"Эксперименты", d:"Пробные функции интерактивных графиков — включай по одной и оставляй нужные", h:["Эксперименты"]},
     {k:"filters", ic:"🎛️", c:"#34c759", t:"Фильтры и таблицы", d:"Вид фильтров и дополнения к таблицам", h:["Фильтры", "Экспериментально"]},
     {k:"people", ic:"👥", c:"#ff9f0a", t:"Участники", d:"Имена, цвета, дни рождения, города и аватарки", h:["Участники", "Дни рождения", "Аватарки"]},
     {k:"data", ic:"🗄️", c:"#30b0c7", t:"Данные", d:"Ultimate, кэш, автообновление и сервер", h:["Colony Ultimate", "Кэш истории", "Автообновление", "Адрес сервера", "Поля API"]},
@@ -21528,6 +21539,7 @@ html body .sticky-table-head{background-color:var(--bg,#14161c)!important;-webki
     });
   }
   buildEvents();
+  window.__getEvents = () => EVENTS;
   const EV_ICON = {
     wand:'<path d="M4 20 15 9"/><path d="M14 5l1-2 1 2 2 1-2 1-1 2-1-2-2-1z"/><path d="M19 11l.6 1.4L21 13l-1.4.6L19 15l-.6-1.4L17 13l1.4-.6z"/>',
     shuriken:'<path d="M12 2l2 7 7-2-5 5 5 5-7-2-2 7-2-7-7 2 5-5-5-5 7 2z"/><circle cx="12" cy="12" r="1.6"/>',
@@ -25020,5 +25032,731 @@ html body .wrap:has(> :is(#days-table,#months-table,#fc-places-table,#forecast-t
 html body .wrap > :is(#days-table,#months-table,#fc-places-table,#forecast-table):not(#zq){max-width:100%}
 html body .fc-places:not(#zq){display:block}
 </style>
+<script id="exp-js">
+/* ===================== Эксперименты: интерактивные графики ===================== */
+(function(){
+  const KEY = "chatstats.exp.v1";
+  const LIST = [
+    {id:"range", t:"Выделение периода на графике", d:"Shift + перетаскивание по линейному графику — сводка за выбранный отрезок: сумма, среднее, пик, сравнение с предыдущим отрезком."},
+    {id:"pins", t:"Закреплённые точки", d:"Клик по линейному графику закрепляет дату. Вторая точка показывает разницу между ними по каждой линии."},
+    {id:"drill", t:"Разбор дня по клику", d:"Клик по ячейке календаря открывает панель: итоги дня и кто сколько написал."},
+    {id:"lab-brush", t:"Лаборатория: таймлайн с мини-картой", d:"Вкладка «Лаборатория». Выбирай период рамкой на мини-карте, колесом приближай; сводка считается по выбранному."},
+    {id:"lab-heat", t:"Лаборатория: дни недели × месяцы", d:"Теплокарта активности: когда чаще пишут. Переключай метрику и год, клик по ячейке показывает, кто писал."},
+    {id:"lab-stream", t:"Лаборатория: поток участников", d:"Стримграф: как менялся вклад топ-участников по месяцам. Слои можно выделять."},
+    {id:"lab-bubble", t:"Лаборатория: бульбашки с выбором осей", d:"Участники кружками: сам выбираешь, что по X, по Y и что задаёт размер."},
+    {id:"lab-spiral", t:"Лаборатория: спираль лет", d:"Все годы чата одной спиралью: кольцо — год, угол — день года, яркость — активность."},
+    {id:"lab-ghost", t:"Лаборатория: сейчас против прошлого", d:"Последние 30/90/365 дней поверх предыдущего периода и того же периода год назад."},
+    {id:"lab-hist", t:"Лаборатория: какие бывают дни", d:"Гистограмма активности по дням с медианой, средним и 90-м процентилем."},
+    {id:"lab-events", t:"Лаборатория: события на таймлайне", d:"Периоды событий поверх активности чата; клик сравнивает событие с 30 днями до него."},
+    {id:"lab-whatif", t:"Лаборатория: прогноз «что, если»", d:"Прогноз до конца месяца/года с коридором и ползунком темпа."},
+    {id:"lab-net", t:"Лаборатория: сеть активности", d:"Граф участников: связаны те, кто активен в одни и те же дни. Узлы можно двигать."},
+    {id:"export", t:"Экспорт выбранного периода в CSV", d:"В карточке выделения периода (Shift + перетаскивание) появляется кнопка «CSV»."},
+    {id:"kbd", t:"Клавиатура на таймлайне лаборатории", d:"Стрелки сдвигают окно мини-карты, +/− меняют масштаб, Home/End — к началу и концу."},
+    {id:"notes", t:"Заметки к закреплённым точкам", d:"В карточке закреплённых дат появляется поле для заметки. Заметки хранятся в браузере и подставляются при повторном закреплении той же даты."},
+    {id:"touch", t:"Касания на таймлайне лаборатории", d:"Один палец двигает окно графика, два пальца (щипок) меняют масштаб."},
+  ];
+  let st = {}; try { st = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
+  const on = id => !!st[id];
+  window.EXP = {on, list:LIST};
+  const syncBody = () => { document.body.classList.toggle("exp-drill", on("drill")); document.body.classList.toggle("exp-lab", LIST.some(f => f.id.indexOf("lab-") === 0 && on(f.id))); document.dispatchEvent(new Event("exp-change")); }; syncBody();
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  function buildUI(){
+    const box = document.getElementById("exp-list"); if (!box) return;
+    box.innerHTML = LIST.map(f => `<label class="checkline exp-line" title="${esc(f.d)}"><input type="checkbox" data-exp="${f.id}"${on(f.id) ? " checked" : ""}><span><b>${esc(f.t)}</b><small>${esc(f.d)}</small></span></label>`).join("");
+  }
+  document.addEventListener("change", e => {
+    const i = e.target.closest && e.target.closest("input[data-exp]"); if (!i) return;
+    st[i.dataset.exp] = i.checked; save(); closeAll(); syncBody();
+  });
+  document.addEventListener("click", e => {
+    const b = e.target.closest && e.target.closest("#exp-all-on, #exp-all-off"); if (!b) return;
+    LIST.forEach(f => { st[f.id] = b.id === "exp-all-on"; }); save(); buildUI(); closeAll(); syncBody();
+  });
+  buildUI();
+
+  /* ---------- общее: карточка ---------- */
+  let card = null;
+  function closeAll(){ clearSel(); clearPins(); if (card) { card.remove(); card = null; } }
+  function showCard(html, x, y, cls){
+    if (card) card.remove();
+    card = document.createElement("div"); card.className = "exp-card " + (cls || ""); card.setAttribute("data-no-export", "1");
+    card.innerHTML = `<button type="button" class="exp-x" aria-label="Закрыть">×</button>` + html;
+    document.body.appendChild(card);
+    if (x != null) {
+      const w = card.offsetWidth, h = card.offsetHeight;
+      card.style.left = Math.max(8, Math.min(innerWidth - w - 8, x)) + "px"; card.style.top = Math.max(8, Math.min(innerHeight - h - 8, y)) + "px";
+    }
+    return card;
+  }
+  document.addEventListener("click", e => { if (e.target.closest && e.target.closest(".exp-x")) closeAll(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeAll(); });
+  const svgPt = (svg, e) => { const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); };
+  const xAt = (M, p) => {
+    const span = (M.xMax - M.xMin) || 1;
+    let x = Math.max(M.xMin, Math.min(M.xMax, Math.round(M.xMin + (p.x - M.L) / M.span * span)));
+    if (M.xs && M.xs.length && x <= M.xs[M.xs.length - 1] && !M.series.some(s => s.v.has(x))) x = M.xs.reduce((b, c) => Math.abs(c - x) < Math.abs(b - x) ? c : b, M.xs[0]);
+    return x;
+  };
+  const pxOf = (M, x) => M.L + (x - M.xMin) / ((M.xMax - M.xMin) || 1) * M.span;
+  const svgNS = "http://www.w3.org/2000/svg";
+  const overlay = (svg, id) => { let g = svg.querySelector("#" + id); if (!g) { g = document.createElementNS(svgNS, "g"); g.id = id; g.setAttribute("data-no-export", "1"); g.setAttribute("pointer-events", "none"); svg.appendChild(g); } return g; };
+  const vf = M => M.valFmt || (v => fmt(Math.round(v)));
+
+  /* ---------- 1. Выделение периода ---------- */
+  let sel = null;
+  function clearSel(){ sel = null; document.querySelectorAll("#exp-sel").forEach(n => n.remove()); }
+  function drawSel(){
+    if (!sel) return; const M = lineMeta, svg = sel.svg; if (!M || !svg.isConnected) return;
+    const g = overlay(svg, "exp-sel"), a = pxOf(M, Math.min(sel.a, sel.b)), b = pxOf(M, Math.max(sel.a, sel.b));
+    g.innerHTML = `<rect x="${a}" y="${M.T}" width="${Math.max(2, b - a)}" height="${M.B - M.T}" fill="#7aa2f7" fill-opacity=".16" stroke="#7aa2f7" stroke-opacity=".8" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+  }
+  document.addEventListener("pointerdown", e => {
+    if (!on("range") || !e.shiftKey || e.button !== 0) return;
+    const t = e.target; if (!t || t.id !== "hov" || !lineMeta) return;
+    e.stopPropagation(); e.preventDefault();
+    if (card) { card.remove(); card = null; }
+    const svg = t.ownerSVGElement; clearSel();
+    const x = xAt(lineMeta, svgPt(svg, e)); sel = {svg, a:x, b:x, e0:e}; drawSel();
+    try { t.setPointerCapture(e.pointerId); } catch (err) {}
+  }, true);
+  document.addEventListener("pointermove", e => {
+    if (!sel || !lineMeta) return;
+    sel.b = xAt(lineMeta, svgPt(sel.svg, e)); drawSel(); e.stopPropagation();
+  }, true);
+  document.addEventListener("pointerup", e => {
+    if (!sel) return;
+    const M = lineMeta; if (!M) { clearSel(); return; }
+    const a = Math.min(sel.a, sel.b), b = Math.max(sel.a, sel.b); sel.moved = true;
+    if (a === b) { clearSel(); return; }
+    const f = vf(M), len = b - a + 1, items = M.series.map(s => {
+      let sum = 0, n = 0, mx = -Infinity, mxx = a, psum = 0, pn = 0;
+      for (let x = a; x <= b; x++) { const v = s.v.get(x); if (v === undefined) continue; sum += v; n++; if (v > mx) { mx = v; mxx = x; } }
+      for (let x = a - len; x < a; x++) { const v = s.v.get(x); if (v !== undefined) { psum += v; pn++; } }
+      return {s, sum, n, avg:n ? sum / n : 0, mx, mxx, psum, pn};
+    }).filter(q => q.n).sort((x, y) => (M.valFmt ? y.avg - x.avg : y.sum - x.sum));
+    if (!items.length) { clearSel(); return; }
+    const additive = !M.valFmt;
+    const rowsH = items.slice(0, 12).map(q => {
+      const d = additive && q.pn ? (q.sum - q.psum) / (q.psum || 1) : null;
+      return `<div class="exp-r"><span><i style="background:${q.s.c}"></i>${esc(q.s.name)}</span>${additive ? `<span>${fmt(Math.round(q.sum))}</span>` : ""}<span>${f(q.avg)}</span><span title="${esc(M.xLabel(q.mxx))}">${f(q.mx)}</span>${additive ? `<span>${d === null ? "—" : `<span class="${d >= 0 ? "up" : "down"}">${d >= 0 ? "▲" : "▼"} ${Math.abs(Math.round(d * 100))}%</span>`}</span>` : ""}</div>`;
+    }).join("");
+    const total = additive ? items.reduce((s2, q) => s2 + q.sum, 0) : null;
+    const html = `<h4>${esc(M.xLabel(a))} — ${esc(M.xLabel(b))}</h4><div class="exp-sub">${len} ${len === 1 ? "точка" : "точек"}${additive ? ` · всего ${fmt(Math.round(total))}` : ""}${items.length > 12 ? ` · показаны 12 из ${items.length}` : ""}</div>
+      <div class="exp-grid" style="--expc:${additive ? "72px 64px 56px 62px" : "64px 56px"}"><div class="exp-r exp-h"><span></span>${additive ? "<span>Сумма</span>" : ""}<span>Среднее</span><span title="Максимум за период (дата — в подсказке)">Пик</span>${additive ? "<span>К пред.</span>" : ""}</div>${rowsH}</div>
+      <div class="exp-actions"><button type="button" class="mini" id="exp-copy">Копировать</button>${on("export") ? '<button type="button" class="mini" id="exp-csv">CSV</button>' : ""}<button type="button" class="mini exp-x2">Закрыть</button></div>`;
+    const r = sel.svg.getBoundingClientRect();
+    const c = showCard(html, e.clientX + 14, Math.max(8, e.clientY - 40), "exp-wide");
+    c.querySelector(".exp-x2").onclick = closeAll;
+    c.querySelector("#exp-copy").onclick = ev => {
+      const txt = `${M.xLabel(a)} — ${M.xLabel(b)}\n` + items.map(q => `${q.s.name}: ${additive ? "сумма " + fmt(Math.round(q.sum)) + ", " : ""}среднее ${f(q.avg)}, пик ${f(q.mx)} (${M.xLabel(q.mxx)})`).join("\n");
+      try { navigator.clipboard.writeText(txt); ev.target.textContent = "Скопировано"; } catch (err) {}
+    };
+    const cb = c.querySelector("#exp-csv");
+    if (cb) cb.onclick = () => {
+      const q = v => '"' + String(v).replace(/"/g, '""') + '"', names = M.series.map(s => s.name);
+      let csv = "\ufeff" + [q("Дата"), ...names.map(q)].join(";") + "\n";
+      for (let x = a; x <= b; x++) csv += [q(M.xLabel(x)), ...M.series.map(s => { const v = s.v.get(x); return v === undefined ? "" : String(v).replace(".", ","); })].join(";") + "\n";
+      const url = URL.createObjectURL(new Blob([csv], {type:"text/csv;charset=utf-8"})), l = document.createElement("a");
+      l.href = url; l.download = `period_${a}_${b}.csv`; document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(url), 1500);
+    };
+    sel = null;
+  }, true);
+
+  /* ---------- 2. Закреплённые точки ---------- */
+  let pins = [];
+  function clearPins(){ pins = []; document.querySelectorAll("#exp-pins").forEach(n => n.remove()); }
+  function drawPins(svg){
+    const M = lineMeta; if (!M) return; const g = overlay(svg, "exp-pins");
+    g.innerHTML = pins.map((x, i) => { const px = pxOf(M, x); return `<line x1="${px}" y1="${M.T}" x2="${px}" y2="${M.B}" stroke="#ffd166" stroke-width="2" stroke-dasharray="6 4"/><circle cx="${px}" cy="${M.T}" r="9" fill="#ffd166"/><text x="${px}" y="${M.T + 4.5}" text-anchor="middle" font-size="13" font-weight="800" fill="#1a1a1a">${i + 1}</text>`; }).join("");
+  }
+  function pinCard(svg, e){
+    const M = lineMeta, f = vf(M), [a, b] = pins;
+    const val = (s, x) => s.v.get(x);
+    const items = M.series.map(s => ({s, v1:val(s, a), v2:b === undefined ? undefined : val(s, b)})).filter(q => q.v1 !== undefined || q.v2 !== undefined).sort((x, y) => (y.v2 ?? y.v1 ?? 0) - (x.v2 ?? x.v1 ?? 0)).slice(0, 12);
+    const rowsH = items.map(q => {
+      const diff = q.v1 !== undefined && q.v2 !== undefined ? q.v2 - q.v1 : null, pct = diff !== null && q.v1 ? diff / q.v1 : null;
+      return `<div class="exp-r"><span><i style="background:${q.s.c}"></i>${esc(q.s.name)}</span><span>${q.v1 === undefined ? "—" : f(q.v1)}</span>${b === undefined ? "" : `<span>${q.v2 === undefined ? "—" : f(q.v2)}</span><span>${diff === null ? "—" : `<span class="${diff >= 0 ? "up" : "down"}">${diff >= 0 ? "+" : "−"}${f(Math.abs(diff))}${pct === null ? "" : ` (${Math.abs(Math.round(pct * 100))}%)`}</span>`}</span>`}</div>`;
+    }).join("");
+    const r = svg.getBoundingClientRect();
+    const c = showCard(`<h4>${esc(M.xLabel(a))}${b === undefined ? "" : ` → ${esc(M.xLabel(b))}`}</h4><div class="exp-sub">${b === undefined ? "Кликни по второй дате — покажу разницу" : `Между точками: ${Math.abs(b - a)} ${Math.abs(b - a) === 1 ? "шаг" : "шагов"}`}</div><div class="exp-grid" style="--expc:${b === undefined ? "70px" : "62px 62px 120px"}"><div class="exp-r exp-h"><span></span><span>1</span>${b === undefined ? "" : "<span>2</span><span>Разница</span>"}</div>${rowsH}</div><div class="exp-actions"><button type="button" class="mini exp-x2">Сбросить</button></div>`, null, null, "exp-side");
+        if (on("notes")) {
+      const NK = "chatstats.exp.notes.v1"; let NT = {}; try { NT = JSON.parse(localStorage.getItem(NK) || "{}") || {}; } catch (err) {}
+      const pts = b === undefined ? [a] : [a, b], nb = document.createElement("div"); nb.className = "exp-notes";
+      nb.innerHTML = pts.map(x => `<label class="exp-note"><small>📝 ${esc(M.xLabel(x))}</small><input type="text" maxlength="140" placeholder="Заметка к этой дате" data-k="${esc(($("c-type") ? $("c-type").value : "") + "|" + M.xLabel(x))}"></label>`).join("");
+      nb.querySelectorAll("input").forEach(inp => { inp.value = NT[inp.dataset.k] || ""; inp.oninput = () => { if (inp.value) NT[inp.dataset.k] = inp.value; else delete NT[inp.dataset.k]; try { localStorage.setItem(NK, JSON.stringify(NT)); } catch (err) {} }; });
+      const ac = c.querySelector(".exp-actions"); if (ac) ac.before(nb);
+    }
+    c.querySelector(".exp-x2").onclick = closeAll;
+  }
+  let down = null;
+  document.addEventListener("pointerdown", e => { down = {x:e.clientX, y:e.clientY}; }, true);
+  document.addEventListener("click", e => {
+    if (!on("pins") || e.shiftKey || !lineMeta) return;
+    const t = e.target; if (!t || t.id !== "hov") return;
+    if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return;
+    const svg = t.ownerSVGElement, x = xAt(lineMeta, svgPt(svg, e));
+    if (pins.length >= 2) pins = [];
+    pins.push(x); drawPins(svg); pinCard(svg, e);
+  });
+
+  /* ---------- 3. Разбор дня ---------- */
+  document.addEventListener("click", e => {
+    if (!on("drill")) return;
+    const el = e.target.closest && e.target.closest("#c-out [data-day]"); if (!el) return;
+    const date = el.dataset.day, d = parseDate(date), wd = ["воскресенье","понедельник","вторник","среда","четверг","пятница","суббота"][d.getUTCDay()];
+    const hist = allRows || rows, chat = $("chat") ? $("chat").value : "";
+    const per = new Map(), tot = {msgs:0, stick:0, voice:0, video:0};
+    pick(hist, chat).forEach(x => {
+      if (String(x[F.date] ?? "").slice(0, 10) !== date) return;
+      const k = String(x[F.userId] ?? x[F.name]); if (!isVisibleUser(k)) return;
+      let u = per.get(k); if (!u) per.set(k, u = {k, n:who(x), msgs:0, stick:0, voice:0, video:0});
+      Object.keys(tot).forEach(m => { const v = Number(g(x, m)) || 0; u[m] += v; tot[m] += v; });
+    });
+    const metric = $("metric") && tot[$("metric").value] !== undefined ? $("metric").value : "msgs";
+    const list = [...per.values()].filter(u => u[metric] > 0).sort((a, b) => b[metric] - a[metric]);
+    const max = list.length ? list[0][metric] : 1;
+    const html = `<h4>${formatDateRu(d)}, ${wd}</h4><div class="exp-sub">${Object.keys(tot).map(m => `${MLBL[m].toLowerCase()}: <b>${fmt(tot[m])}</b>`).join(" · ")}</div>
+      <div class="exp-sub" style="margin-top:10px">Кто писал · ${esc(MLBL[metric].toLowerCase())} (${list.length})</div>
+      <div class="exp-bars">${list.slice(0, 15).map(u => { let c = "#7aa2f7"; try { c = getStyle("u", u.k).c[0] || c; } catch (err) {} return `<div class="exp-bar"><span>${esc(u.n)}</span><i style="width:${Math.max(3, u[metric] / max * 100).toFixed(0)}%;background:${c}"></i><b>${fmt(u[metric])}</b></div>`; }).join("") || '<div class="exp-sub">В этот день данных нет</div>'}</div>
+      <div class="exp-actions"><button type="button" class="mini exp-x2">Закрыть</button></div>`;
+    const c = showCard(html, null, null, "exp-side exp-drill"); c.querySelector(".exp-x2").onclick = closeAll;
+  });
+
+  /* пересборка графика сбрасывает наложения */
+  const co = document.getElementById("c-out");
+  if (co) new MutationObserver(() => { if (pins.length || sel) { clearPins(); clearSel(); if (card && !card.classList.contains("exp-drill")) { card.remove(); card = null; } } }).observe(co, {childList:true});
+})();
+</script>
+<style id="exp-css">
+.exp-line{align-items:flex-start;gap:10px;min-height:0;padding-top:10px;padding-bottom:10px}
+.exp-line > span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.exp-line small{font-size:12.5px;color:var(--muted);font-weight:400;line-height:1.35;white-space:normal}
+.exp-card{position:fixed;z-index:9990;min-width:240px;max-width:min(520px,calc(100vw - 16px));padding:14px 16px 12px;border-radius:16px;background:color-mix(in srgb,var(--panel,#14161d) 94%,transparent);border:1px solid color-mix(in srgb,var(--text,#fff) 14%,transparent);box-shadow:0 18px 50px rgba(0,0,0,.45);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:var(--text,#eee);font-size:13.5px}
+.exp-card.exp-wide{box-sizing:border-box;width:min(500px,calc(100vw - 16px))}
+.exp-card h4{margin:0 26px 2px 0;font-size:15px}
+.exp-card.exp-side{right:16px;top:90px;left:auto;width:380px;max-height:calc(100vh - 110px);overflow:auto}
+.exp-x{position:absolute;right:8px;top:6px;width:28px;height:28px;border:0;border-radius:8px;background:transparent;color:var(--muted);font-size:20px;line-height:1;cursor:pointer}
+.exp-x:hover{background:color-mix(in srgb,var(--text) 10%,transparent);color:var(--text)}
+.exp-sub{font-size:12.5px;color:var(--muted)}
+.exp-grid{display:flex;flex-direction:column;margin:10px 0 4px;font-size:12.5px}
+html body .exp-card .exp-grid > .exp-r:not(#zq){width:100%!important;max-width:none!important;min-width:0!important;margin:0!important;align-self:stretch!important;flex:none!important;box-sizing:border-box}
+.exp-r{display:grid;grid-template-columns:minmax(48px,1fr) var(--expc,repeat(3,64px));gap:0 10px;padding:5px 0;border-top:1px solid color-mix(in srgb,var(--text) 8%,transparent);align-items:center}
+.exp-r > span{text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.exp-r > span:first-child{text-align:left}
+.exp-h{border-top:0;color:var(--muted);font-weight:500}
+.exp-grid i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px}
+.exp-grid small{color:var(--muted)}
+.exp-actions{display:flex;gap:8px;margin-top:10px}
+.exp-bars{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.exp-bar{position:relative;display:flex;justify-content:space-between;gap:8px;height:24px;align-items:center;padding:0 8px;border-radius:6px;overflow:hidden}
+.exp-bar i{position:absolute;left:0;top:0;bottom:0;opacity:.28;z-index:0}
+.exp-bar span,.exp-bar b{position:relative;z-index:1;font-size:12.5px;white-space:nowrap}
+.exp-bar span{overflow:hidden;text-overflow:ellipsis}
+body.exp-drill #c-out [data-day]{cursor:pointer}
+</style>
+<style id="lab-css">
+body:not(.exp-lab) [data-tab="lab"]{display:none!important}
+#tab-lab h2{margin:6px 0 4px}
+#lab-body{display:flex;flex-direction:column;gap:16px;margin-top:12px}
+.lab-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px 18px;min-width:0}
+.lab-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.lab-head h3{margin:0 auto 0 0;font-size:16px}
+.lab-hint{color:var(--muted);font-size:12.5px;margin:6px 0 10px}
+.lab-svg{display:block;width:100%;height:auto;touch-action:none;user-select:none}
+.lab-mini{margin-top:6px;cursor:ew-resize}
+.lab-t{fill:var(--muted);font-size:11px}
+.lab-grid{stroke:var(--line);stroke-width:1}
+.lab-area{fill:#5e8bff;fill-opacity:.22}.lab-area2{fill-opacity:.35}
+.lab-line{fill:none;stroke:#5e8bff;stroke-width:2;stroke-linejoin:round}
+.lab-cross{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
+.lab-dot{fill:#5e8bff;stroke:#fff;stroke-width:1.5}
+.lab-dim{fill:#000;fill-opacity:.38}
+.lab-win{fill:#5e8bff;fill-opacity:.12;stroke:#5e8bff;stroke-width:1;cursor:grab}
+.lab-hd{fill:#5e8bff;fill-opacity:.9;cursor:ew-resize}
+.lab-stats{display:flex;gap:18px;flex-wrap:wrap;margin:4px 0 8px}
+.lab-stats div{display:flex;flex-direction:column;gap:2px}.lab-stats small{color:var(--muted);font-size:11.5px}.lab-stats b{font-size:15px}
+.lab-heat{display:grid;grid-template-columns:34px repeat(12,minmax(0,1fr));gap:4px;align-items:center}
+.lab-hc,.lab-hr{color:var(--muted);font-size:11.5px;text-align:center}
+.lab-hr{text-align:left}
+html body .lab-card .lab-cell:not(#zq){appearance:none;border:0;border-radius:8px;padding:0;height:36px;min-width:0;font:inherit;font-size:11px;color:var(--fg,inherit);background:color-mix(in srgb,#5e8bff calc(var(--a)*100%),transparent);cursor:pointer;outline-offset:2px;overflow:hidden}
+html body .lab-card .lab-cell.on:not(#zq){outline:2px solid #ffd60a}
+.lab-drill{margin-top:12px;display:flex;flex-direction:column;gap:4px}
+.lab-drill small{color:var(--muted);margin-left:8px}
+.lab-bar{position:relative;display:grid;grid-template-columns:120px 1fr 64px;align-items:center;gap:8px;font-size:12.5px}
+.lab-bar i{display:block;height:8px;border-radius:4px;background:#5e8bff}.lab-bar em{font-style:normal;text-align:right}
+.lab-layer{fill-opacity:.88;stroke:var(--panel);stroke-width:.6;cursor:pointer;transition:fill-opacity .15s}
+.lab-layer.rest{fill-opacity:.4}.lab-layer.off{fill-opacity:.12}.lab-layer:hover{fill-opacity:1}
+.lab-legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+html body .lab-card .lab-lg:not(#zq){display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:transparent;color:inherit;font-size:12px;cursor:pointer}
+.lab-lg i{width:9px;height:9px;border-radius:50%;display:block}.lab-lg.on{border-color:#ffd60a}
+.lab-axes{display:flex;gap:12px;flex-wrap:wrap;margin:6px 0}.lab-axes label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
+.lab-bub circle{fill-opacity:.78;stroke:rgba(255,255,255,.55);stroke-width:1;cursor:pointer;transition:fill-opacity .15s}.lab-bub.off{opacity:.18}.lab-bub.on circle{stroke:#ffd60a;stroke-width:2.5}.lab-bub:hover circle{fill-opacity:1}
+.lab-bl{fill:#fff;font-size:10px;pointer-events:none;paint-order:stroke;stroke:rgba(0,0,0,.55);stroke-width:2px}
+.lab-spk{stroke:var(--line);stroke-width:.6}.lab-sq{max-width:640px;margin:0 auto}.lab-yl{font-size:7px}
+.lab-hb{fill:#5e8bff;fill-opacity:.8}.lab-hb:hover{fill-opacity:1}
+.lab-slider{display:flex;align-items:center;gap:12px;margin:4px 0 8px}.lab-slider input{flex:1;max-width:420px}.lab-slider b{min-width:48px}
+.lab-ev{cursor:pointer}.lab-evt{fill:#fff;font-size:10.5px;pointer-events:none}
+.lab-ed{stroke:#8aa4ff;stroke-opacity:.35}.lab-ed.on{stroke-opacity:.95}.lab-ed.off{stroke-opacity:.07}
+.lab-nd{cursor:grab}.lab-nd circle{stroke:rgba(255,255,255,.6);stroke-width:1.2}.lab-nd.off{opacity:.25}
+.exp-notes{display:flex;flex-direction:column;gap:6px;margin-top:10px}.exp-note{display:flex;flex-direction:column;gap:2px}.exp-note input{width:100%;box-sizing:border-box;padding:6px 9px;border-radius:8px;border:1px solid var(--line);background:var(--ctrl,transparent);color:inherit;font:inherit;font-size:12.5px}
+.lab-tip{position:fixed;z-index:9995;display:none;pointer-events:none;background:rgba(18,18,24,.94);color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:7px 10px;font-size:12.5px;line-height:1.45}
+@media(max-width:640px){.lab-card{padding:12px}.lab-bar{grid-template-columns:90px 1fr 54px}.lab-heat{grid-template-columns:28px repeat(12,minmax(0,1fr));gap:2px}.lab-cell{font-size:9px!important}}
+</style>
+<script id="lab-js">
+/* ===================== Лаборатория: новые типы графиков (экспериментальные) ===================== */
+(function(){
+  const sec = document.getElementById("tab-lab"); if (!sec) return;
+  const on = id => !!(window.EXP && window.EXP.on(id));
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const nf = v => Math.round(v).toLocaleString("ru-RU");
+  const MON = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
+  const WD = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
+  const ML = {msgs:"Сообщения", stick:"Стикеры", voice:"Голосовые", video:"Видеосообщения"};
+  const fd = d => `${d.slice(8, 10)}.${d.slice(5, 7)}.${d.slice(0, 4)}`;
+  let D = null, busy = null;
+
+  async function prep(){
+    const arr = pick(await getHistory(), "");
+    const rec = [], dayM = new Map();
+    for (const x of arr) {
+      const uid = x[F.userId]; if (typeof isExcludedUser === "function" && isExcludedUser(uid)) continue;
+      const d = String(x[F.date] ?? "").slice(0, 10); if (d.length !== 10) continue;
+      const m = {msgs:Number(g(x, "msgs")) || 0, stick:Number(g(x, "stick")) || 0, voice:Number(g(x, "voice")) || 0, video:Number(g(x, "video")) || 0};
+      rec.push({d, u:String(uid ?? x[F.name]), n:who(x), m});
+      let a = dayM.get(d); if (!a) dayM.set(d, a = {msgs:0, stick:0, voice:0, video:0});
+      for (const k in m) a[k] += m[k];
+    }
+    if (!rec.length) return null;
+    const keys = [...dayM.keys()].sort(), DS = [], t0 = Date.parse(keys[0] + "T00:00:00Z"), t1 = Date.parse(keys[keys.length - 1] + "T00:00:00Z");
+    for (let t = t0; t <= t1; t += 864e5) DS.push(new Date(t).toISOString().slice(0, 10));
+    const ser = {}, pre = {};
+    for (const k in ML) {
+      ser[k] = DS.map(d => (dayM.get(d) || {})[k] || 0);
+      const p = new Float64Array(DS.length + 1); ser[k].forEach((v, i) => p[i + 1] = p[i] + v); pre[k] = p;
+    }
+    const wd = DS.map(d => (new Date(d + "T00:00:00Z").getUTCDay() + 6) % 7);
+    return {rec, DS, ser, pre, wd};
+  }
+
+  /* ---------- 1. Таймлайн с мини-картой ---------- */
+  function brushCard(box){
+    const S = {k:"msgs", a:Math.max(0, D.DS.length - 365), b:D.DS.length - 1};
+    box.innerHTML = `<div class="lab-head"><h3>Таймлайн с мини-картой</h3><select data-r="k">${Object.entries(ML).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></div>
+      <p class="lab-hint">Потяни рамку на мини-карте или её края. Колесо мыши над большим графиком — масштаб.</p>
+      <div class="lab-stats" data-r="st"></div>
+      <svg data-r="main" data-no-zoom viewBox="0 0 900 230" class="lab-svg"></svg>
+      <svg data-r="mini" data-no-zoom viewBox="0 0 900 56" class="lab-svg lab-mini"></svg>`;
+    const main = box.querySelector('[data-r="main"]'), mini = box.querySelector('[data-r="mini"]'), st = box.querySelector('[data-r="st"]');
+    const N = D.DS.length, MIN = 14, X0 = 46, X1 = 890;
+    function bucketize(a, b, k){
+      const n = b - a + 1, bs = n <= 150 ? 1 : n <= 900 ? 7 : 30, out = [];
+      for (let i = a; i <= b; i += bs) { const j = Math.min(b, i + bs - 1); out.push({i, j, v:(D.pre[k][j + 1] - D.pre[k][i]) / (j - i + 1)}); }
+      return {out, bs};
+    }
+    function drawMain(){
+      const {out, bs} = bucketize(S.a, S.b, S.k), mx = Math.max(1, ...out.map(o => o.v)) * 1.08;
+      const px = i => X0 + (out.length < 2 ? 0 : (i / (out.length - 1)) * (X1 - X0)), py = v => 200 - (v / mx) * 178;
+      let h = "";
+      for (let t = 0; t <= 4; t++) { const v = mx * t / 4, y = py(v); h += `<line x1="${X0}" x2="${X1}" y1="${y}" y2="${y}" class="lab-grid"/><text x="${X0 - 6}" y="${y + 4}" text-anchor="end" class="lab-t">${nf(v)}</text>`; }
+      const pts = out.map((o, i) => `${px(i).toFixed(1)},${py(o.v).toFixed(1)}`);
+      h += `<path d="M${px(0)},200 L${pts.join(" L")} L${px(out.length - 1)},200Z" class="lab-area"/><polyline points="${pts.join(" ")}" class="lab-line"/>`;
+      const lab = 6; for (let t = 0; t < lab; t++) { const i = Math.round(t * (out.length - 1) / (lab - 1)), d = D.DS[out[i].i]; h += `<text x="${px(i)}" y="222" text-anchor="${t === 0 ? "start" : t === lab - 1 ? "end" : "middle"}" class="lab-t">${bs >= 7 || S.b - S.a > 200 ? MON[+d.slice(5, 7) - 1] + " " + d.slice(2, 4) : d.slice(8, 10) + "." + d.slice(5, 7)}</text>`; }
+      h += `<line id="lb-x" y1="22" y2="200" class="lab-cross" style="display:none"/><circle id="lb-c" r="4" class="lab-dot" style="display:none"/><rect id="lb-h" x="${X0}" y="0" width="${X1 - X0}" height="200" fill="transparent"/>`;
+      main.innerHTML = h;
+      const hv = main.querySelector("#lb-h"), cx = main.querySelector("#lb-x"), cc = main.querySelector("#lb-c");
+      hv.onmousemove = e => {
+        const r = main.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 900, i = Math.max(0, Math.min(out.length - 1, Math.round((x - X0) / (X1 - X0) * (out.length - 1)))), o = out[i];
+        cx.setAttribute("x1", px(i)); cx.setAttribute("x2", px(i)); cx.style.display = ""; cc.setAttribute("cx", px(i)); cc.setAttribute("cy", py(o.v)); cc.style.display = "";
+        const d1 = D.DS[o.i], d2 = D.DS[o.j];
+        tip(e, `<b>${o.i === o.j ? fd(d1) : fd(d1) + " – " + fd(d2)}</b><br>${nf(o.v)} ${bs > 1 ? "в день в среднем" : ML[S.k].toLowerCase()}`);
+      };
+      hv.onmouseleave = () => { cx.style.display = "none"; cc.style.display = "none"; tip(); };
+      if (!main._tc) { main._tc = 1;
+        const ptr = new Map(); let pz = null;
+        main.addEventListener("pointerdown", e => { if (!on("touch") || e.pointerType === "mouse") return; ptr.set(e.pointerId, e.clientX); try { main.setPointerCapture(e.pointerId); } catch (err) {} pz = {a:S.a, b:S.b, x:e.clientX, d:null}; });
+        main.addEventListener("pointermove", e => {
+          if (!pz || !ptr.has(e.pointerId)) return; ptr.set(e.pointerId, e.clientX);
+          const n0 = pz.b - pz.a + 1;
+          if (ptr.size >= 2) { const xs = [...ptr.values()], d = Math.abs(xs[0] - xs[1]); if (pz.d === null) { pz.d = Math.max(8, d); pz.a0 = S.a; pz.b0 = S.b; return; }
+            const nn = Math.max(MIN, Math.min(N, Math.round((pz.b0 - pz.a0 + 1) * pz.d / Math.max(8, d)))), c = (pz.a0 + pz.b0) / 2; let a = Math.round(c - nn / 2); a = Math.max(0, Math.min(N - nn, a)); S.a = a; S.b = a + nn - 1; }
+          else { const r = main.getBoundingClientRect(), dd = Math.round(-(e.clientX - pz.x) / r.width * 900 / (X1 - X0) * n0); let a = Math.max(0, Math.min(N - n0, pz.a + dd)); S.a = a; S.b = a + n0 - 1; }
+          draw();
+        });
+        const up = e => { ptr.delete(e.pointerId); if (!ptr.size) pz = null; else if (pz) { pz.a = S.a; pz.b = S.b; pz.x = [...ptr.values()][0]; pz.d = null; } };
+        main.addEventListener("pointerup", up); main.addEventListener("pointercancel", up);
+      }
+      hv.onwheel = e => {
+        e.preventDefault(); const r = main.getBoundingClientRect(), f = Math.max(0, Math.min(1, ((e.clientX - r.left) / r.width * 900 - X0) / (X1 - X0)));
+        const n = S.b - S.a + 1, nn = Math.max(MIN, Math.min(N, Math.round(n * (e.deltaY > 0 ? 1.25 : .8)))), c = S.a + f * n;
+        let a = Math.round(c - f * nn); a = Math.max(0, Math.min(N - nn, a)); S.a = a; S.b = a + nn - 1; draw();
+      };
+    }
+    function drawMini(){
+      const bs = Math.ceil(N / 180), pts = []; let mx = 1;
+      for (let i = 0; i < N; i += bs) { const j = Math.min(N - 1, i + bs - 1), v = (D.pre[S.k][j + 1] - D.pre[S.k][i]) / (j - i + 1); pts.push(v); if (v > mx) mx = v; }
+      const px = i => X0 + (i / Math.max(1, pts.length - 1)) * (X1 - X0), py = v => 50 - (v / mx) * 42;
+      const xa = X0 + S.a / (N - 1) * (X1 - X0), xb = X0 + S.b / (N - 1) * (X1 - X0);
+      mini.innerHTML = `<path d="M${px(0)},50 L${pts.map((v, i) => `${px(i).toFixed(1)},${py(v).toFixed(1)}`).join(" L")} L${px(pts.length - 1)},50Z" class="lab-area lab-area2"/>
+        <rect x="${X0}" y="2" width="${Math.max(0, xa - X0)}" height="50" class="lab-dim"/><rect x="${xb}" y="2" width="${Math.max(0, X1 - xb)}" height="50" class="lab-dim"/>
+        <rect data-m="m" x="${xa}" y="2" width="${Math.max(6, xb - xa)}" height="50" class="lab-win"/>
+        <rect data-m="l" x="${xa - 4}" y="2" width="8" height="50" class="lab-hd"/><rect data-m="r" x="${xb - 4}" y="2" width="8" height="50" class="lab-hd"/>`;
+    }
+    function stats(){
+      const n = S.b - S.a + 1, sum = D.pre[S.k][S.b + 1] - D.pre[S.k][S.a]; let pk = S.a;
+      for (let i = S.a; i <= S.b; i++) if (D.ser[S.k][i] > D.ser[S.k][pk]) pk = i;
+      st.innerHTML = `<div><small>Период</small><b>${fd(D.DS[S.a])} – ${fd(D.DS[S.b])}</b></div><div><small>Всего</small><b>${nf(sum)}</b></div><div><small>В день</small><b>${nf(sum / n)}</b></div><div><small>Пик</small><b title="${fd(D.DS[pk])}">${nf(D.ser[S.k][pk])} · ${fd(D.DS[pk]).slice(0, 5)}</b></div>`;
+    }
+    function draw(){ drawMain(); drawMini(); stats(); }
+    box.querySelector('[data-r="k"]').onchange = e => { S.k = e.target.value; draw(); };
+    let drag = null;
+    mini.addEventListener("pointerdown", e => {
+      const r = mini.getBoundingClientRect(), f = Math.max(0, Math.min(1, ((e.clientX - r.left) / r.width * 900 - X0) / (X1 - X0))), i = Math.round(f * (N - 1)), m = e.target.dataset.m;
+      if (m) drag = {m, i, a:S.a, b:S.b};
+      else { const n = S.b - S.a + 1; let a = Math.max(0, Math.min(N - n, i - Math.round(n / 2))); S.a = a; S.b = a + n - 1; draw(); drag = {m:"m", i, a:S.a, b:S.b}; }
+      mini.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    mini.addEventListener("pointermove", e => {
+      if (!drag) return; const r = mini.getBoundingClientRect(), f = Math.max(0, Math.min(1, ((e.clientX - r.left) / r.width * 900 - X0) / (X1 - X0))), i = Math.round(f * (N - 1)), dd = i - drag.i;
+      if (drag.m === "l") S.a = Math.max(0, Math.min(drag.b - MIN + 1, drag.a + dd));
+      else if (drag.m === "r") S.b = Math.min(N - 1, Math.max(drag.a + MIN - 1, drag.b + dd));
+      else { const n = drag.b - drag.a; let a = Math.max(0, Math.min(N - 1 - n, drag.a + dd)); S.a = a; S.b = a + n; }
+      draw();
+    });
+    mini.tabIndex = 0; mini.setAttribute("aria-label", "Окно таймлайна: стрелки — сдвиг, плюс и минус — масштаб");
+    mini.addEventListener("keydown", e => {
+      if (!on("kbd")) return; const n = S.b - S.a + 1, st2 = Math.max(1, Math.round(n * .1)); let a = S.a, b = S.b, ok = true;
+      if (e.key === "ArrowLeft") { a -= st2; b -= st2; } else if (e.key === "ArrowRight") { a += st2; b += st2; }
+      else if (e.key === "+" || e.key === "=") { const c = Math.max(MIN, Math.round(n * .8)), m = (a + b) / 2; a = Math.round(m - c / 2); b = a + c - 1; }
+      else if (e.key === "-") { const c = Math.min(N, Math.round(n * 1.25)), m = (a + b) / 2; a = Math.round(m - c / 2); b = a + c - 1; }
+      else if (e.key === "Home") { b -= a; a = 0; } else if (e.key === "End") { a += N - 1 - b; b = N - 1; } else ok = false;
+      if (!ok) return; e.preventDefault(); const len = b - a; if (a < 0) { a = 0; b = len; } if (b > N - 1) { b = N - 1; a = Math.max(0, b - len); } S.a = a; S.b = b; draw(); mini.focus();
+    });
+    const end = () => { drag = null; }; mini.addEventListener("pointerup", end); mini.addEventListener("pointercancel", end);
+    draw();
+  }
+
+  /* ---------- 2. Теплокарта: день недели × месяц ---------- */
+  function heatCard(box){
+    const years = [...new Set(D.DS.map(d => d.slice(0, 4)))];
+    const S = {k:"msgs", y:years[years.length - 1], avg:true};
+    box.innerHTML = `<div class="lab-head"><h3>Дни недели × месяцы</h3><select data-r="y"><option value="all">Все годы</option>${years.slice().reverse().map(y => `<option value="${y}"${y === S.y ? " selected" : ""}>${y}</option>`).join("")}</select>
+      <select data-r="k">${Object.entries(ML).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select>
+      <select data-r="v"><option value="avg">В среднем за день</option><option value="sum">Сумма</option></select></div>
+      <p class="lab-hint">Клик по ячейке — кто писал в эти дни.</p><div class="lab-heat" data-r="g"></div><div class="lab-drill" data-r="dr"></div>`;
+    const gr = box.querySelector('[data-r="g"]'), dr = box.querySelector('[data-r="dr"]');
+    let sel = null;
+    function draw(){
+      const sum = Array.from({length:7}, () => new Float64Array(12)), cnt = Array.from({length:7}, () => new Float64Array(12));
+      D.DS.forEach((d, i) => { if (S.y !== "all" && d.slice(0, 4) !== S.y) return; const m = +d.slice(5, 7) - 1; sum[D.wd[i]][m] += D.ser[S.k][i]; cnt[D.wd[i]][m]++; });
+      const val = (w, m) => S.avg ? (cnt[w][m] ? sum[w][m] / cnt[w][m] : 0) : sum[w][m];
+      let mx = 1; for (let w = 0; w < 7; w++) for (let m = 0; m < 12; m++) mx = Math.max(mx, val(w, m));
+      let h = `<i></i>` + MON.map(m => `<span class="lab-hc">${m}</span>`).join("");
+      for (let w = 0; w < 7; w++) { h += `<span class="lab-hr">${WD[w]}</span>`; for (let m = 0; m < 12; m++) { const v = val(w, m), a = cnt[w][m] ? v / mx : 0; h += `<button type="button" class="lab-cell${sel && sel[0] === w && sel[1] === m ? " on" : ""}" data-w="${w}" data-m="${m}" style="--a:${(.08 + .92 * a).toFixed(3)};${a > .55 ? "--fg:#0b0b10" : ""}" title="${WD[w]}, ${MON[m]}: ${cnt[w][m] ? nf(v) : "нет данных"}"${cnt[w][m] ? "" : " disabled"}>${cnt[w][m] ? nf(v) : "–"}</button>`; } }
+      gr.innerHTML = h; drill();
+    }
+    function drill(){
+      if (!sel) { dr.innerHTML = ""; return; }
+      const [w, m] = sel, u = new Map(); let tot = 0;
+      for (const r of D.rec) { const i = idx(r.d); if (i < 0 || D.wd[i] !== w || +r.d.slice(5, 7) - 1 !== m || (S.y !== "all" && r.d.slice(0, 4) !== S.y)) continue; const v = r.m[S.k]; tot += v; u.set(r.n, (u.get(r.n) || 0) + v); }
+      const top = [...u].sort((a, b) => b[1] - a[1]).slice(0, 10), mx = top.length ? top[0][1] : 1;
+      dr.innerHTML = `<b>${WD[w]} · ${MON[m]}${S.y === "all" ? "" : " " + S.y}</b> <small>всего ${nf(tot)}</small>` + top.map(([n, v]) => `<div class="lab-bar"><span>${esc(n)}</span><i style="width:${(v / mx * 100).toFixed(1)}%"></i><em>${nf(v)}</em></div>`).join("");
+    }
+    box.querySelector('[data-r="y"]').onchange = e => { S.y = e.target.value; draw(); };
+    box.querySelector('[data-r="k"]').onchange = e => { S.k = e.target.value; draw(); };
+    box.querySelector('[data-r="v"]').onchange = e => { S.avg = e.target.value === "avg"; draw(); };
+    gr.addEventListener("click", e => { const c = e.target.closest(".lab-cell"); if (!c) return; const w = +c.dataset.w, m = +c.dataset.m; sel = sel && sel[0] === w && sel[1] === m ? null : [w, m]; draw(); });
+    draw();
+  }
+  let idxMap = null; const idx = d => { if (!idxMap) { idxMap = new Map(D.DS.map((x, i) => [x, i])); } const i = idxMap.get(d); return i === undefined ? -1 : i; };
+
+  /* ---------- 3. Streamgraph ---------- */
+  function streamCard(box){
+    const S = {n:8, from:"all"};
+    box.innerHTML = `<div class="lab-head"><h3>Поток участников</h3><select data-r="f"><option value="all">Всё время</option><option value="3">Последние 3 года</option><option value="1">Последний год</option></select>
+      <select data-r="n"><option value="6">Топ-6</option><option value="8" selected>Топ-8</option><option value="12">Топ-12</option></select></div>
+      <p class="lab-hint">Толщина слоя — вклад участника в сообщения за месяц. Наведи на слой или кликни по имени в легенде, чтобы выделить.</p>
+      <svg data-r="s" data-no-zoom viewBox="0 0 900 300" class="lab-svg"></svg><div class="lab-legend" data-r="lg"></div>`;
+    const svg = box.querySelector('[data-r="s"]'), lg = box.querySelector('[data-r="lg"]');
+    let focus = null;
+    function draw(){
+      const e = D.DS[D.DS.length - 1].slice(0, 7), first = D.DS[0].slice(0, 7), months = [];
+      { let [y, m] = [+e.slice(0, 4), +e.slice(5, 7)]; const lim = S.from === "all" ? 1e4 : +S.from * 12;
+        while (months.length < lim) { const k = `${y}-${String(m).padStart(2, "0")}`; if (k < first) break; months.unshift(k); if (--m < 1) { m = 12; y--; } } }
+      const mi = new Map(months.map((k, i) => [k, i])), U = new Map();
+      for (const r of D.rec) { const i = mi.get(r.d.slice(0, 7)); if (i === undefined) continue; let u = U.get(r.u); if (!u) U.set(r.u, u = {n:r.n, v:new Float64Array(months.length), t:0}); u.v[i] += r.m.msgs; u.t += r.m.msgs; }
+      const top = [...U.values()].sort((a, b) => b.t - a.t), L = top.slice(0, +S.n), rest = new Float64Array(months.length);
+      top.slice(+S.n).forEach(u => u.v.forEach((v, i) => rest[i] += v));
+      L.push({n:"Остальные", v:rest, t:0, rest:true});
+      const T = months.map((_, i) => L.reduce((s, l) => s + l.v[i], 0)), mx = Math.max(1, ...T), X0 = 10, X1 = 890, cy = 150, sc = 130 / (mx / 2);
+      const px = i => X0 + (months.length < 2 ? 0 : i / (months.length - 1) * (X1 - X0));
+      const base = T.map(t => -t / 2), layers = [];
+      let cur = base.slice();
+      L.forEach((l, li) => { const lo2 = cur.slice(), hi = cur.map((c, i) => c + l.v[i]); layers.push({l, li, lo:lo2, hi}); cur = hi; });
+      const sm = (ys) => { let d = `M${px(0).toFixed(1)},${(cy + ys[0] * sc).toFixed(1)}`; for (let i = 1; i < ys.length; i++) { const x0 = px(i - 1), x1 = px(i), xm = (x0 + x1) / 2; d += ` C${xm.toFixed(1)},${(cy + ys[i - 1] * sc).toFixed(1)} ${xm.toFixed(1)},${(cy + ys[i] * sc).toFixed(1)} ${x1.toFixed(1)},${(cy + ys[i] * sc).toFixed(1)}`; } return d; };
+      const smr = (ys) => { let d = ""; for (let i = ys.length - 1; i > 0; i--) { const x0 = px(i), x1 = px(i - 1), xm = (x0 + x1) / 2; d += ` C${xm.toFixed(1)},${(cy + ys[i] * sc).toFixed(1)} ${xm.toFixed(1)},${(cy + ys[i - 1] * sc).toFixed(1)} ${x1.toFixed(1)},${(cy + ys[i - 1] * sc).toFixed(1)}`; } return d; };
+      const col = (li, rest) => rest ? "hsl(220 8% 48%)" : `hsl(${(li * 137.5 + 20) % 360} 62% 58%)`;
+      let h = "";
+      layers.forEach(({l, li, lo, hi}) => { h += `<path data-li="${li}" d="${sm(hi)} L${px(lo.length - 1).toFixed(1)},${(cy + lo[lo.length - 1] * sc).toFixed(1)}${smr(lo)}Z" fill="${col(li, l.rest)}" class="lab-layer${l.rest ? " rest" : ""}${focus === null ? "" : focus === li ? " on" : " off"}"/>`; });
+      const yrs = []; months.forEach((k, i) => { if (k.endsWith("-01") || i === 0) yrs.push([i, k.slice(0, 4)]); });
+      const step = Math.ceil(yrs.length / 10); yrs.forEach(([i, y], j) => { if (j % step === 0) h += `<text x="${px(i)}" y="294" text-anchor="${i === 0 ? "start" : "middle"}" class="lab-t">${y}</text>`; });
+      h += `<line id="st-x" y1="6" y2="280" class="lab-cross" style="display:none"/>`;
+      svg.innerHTML = h;
+      const cx = svg.querySelector("#st-x");
+      svg.onmousemove = e => {
+        const r = svg.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 900, i = Math.max(0, Math.min(months.length - 1, Math.round((x - X0) / (X1 - X0) * (months.length - 1))));
+        cx.setAttribute("x1", px(i)); cx.setAttribute("x2", px(i)); cx.style.display = "";
+        const p = e.target.closest && e.target.closest("[data-li]"), li = p ? +p.dataset.li : -1, [yy, mm] = months[i].split("-");
+        tip(e, `<b>${MON[+mm - 1]} ${yy}</b>` + (li >= 0 ? `<br>${esc(L[li].n)}: <b>${nf(L[li].v[i])}</b>` : "") + `<br>Всего: ${nf(T[i])}`);
+      };
+      svg.onmouseleave = () => { cx.style.display = "none"; tip(); };
+      svg.onclick = e => { const p = e.target.closest && e.target.closest("[data-li]"); setFocus(p ? +p.dataset.li : null); };
+      lg.innerHTML = L.map((l, li) => `<button type="button" data-li="${li}" class="lab-lg${focus === li ? " on" : ""}"><i style="background:${col(li, l.rest)}"></i>${esc(l.n)}</button>`).join("");
+    }
+    function setFocus(li){ focus = focus === li ? null : li; draw(); }
+    lg.addEventListener("click", e => { const b = e.target.closest("[data-li]"); if (b) setFocus(+b.dataset.li); });
+    box.querySelector('[data-r="f"]').onchange = e => { S.from = e.target.value; draw(); };
+    box.querySelector('[data-r="n"]').onchange = e => { S.n = e.target.value; focus = null; draw(); };
+    draw();
+  }
+
+  /* ---------- 4. Бульбашки: оси на выбор ---------- */
+  function bubbleCard(box){
+    const AX = {msgs:"Сообщения", stick:"Стикеры", voice:"Голосовые", video:"Видео", days:"Активных дней", perday:"Сообщений в активный день", tenure:"Дней от первого до последнего сообщения", share:"Доля сообщений, %"};
+    const S = {x:"days", y:"perday", s:"msgs", p:"all"}, last = D.DS.length - 1;
+    const opts = (sel, ex) => Object.entries(AX).filter(([k]) => k !== ex).map(([k, v]) => `<option value="${k}"${k === sel ? " selected" : ""}>${v}</option>`).join("");
+    box.innerHTML = `<div class="lab-head"><h3>Бульбашки: оси на выбор</h3><select data-r="p"><option value="all">Всё время</option><option value="365">Последний год</option><option value="90">90 дней</option></select></div>
+      <div class="lab-axes"><label>X <select data-r="x">${opts(S.x)}</select></label><label>Y <select data-r="y">${opts(S.y)}</select></label><label>Размер <select data-r="s">${opts(S.s)}</select></label></div>
+      <p class="lab-hint">Каждый кружок — участник. Клик по кружку выделяет его.</p><svg data-r="b" data-no-zoom viewBox="0 0 900 440" class="lab-svg"></svg>`;
+    const svg = box.querySelector('[data-r="b"]'); let focus = null;
+    function calc(){
+      const from = S.p === "all" ? 0 : Math.max(0, last - +S.p + 1), fromD = D.DS[from], U = new Map(); let tot = 0;
+      for (const r of D.rec) { if (r.d < fromD) continue; let u = U.get(r.u); if (!u) U.set(r.u, u = {n:r.n, msgs:0, stick:0, voice:0, video:0, ds:new Set(), a:r.d, b:r.d}); for (const k in ML) u[k] += r.m[k]; if (r.m.msgs + r.m.stick + r.m.voice + r.m.video > 0) u.ds.add(r.d); if (r.d < u.a) u.a = r.d; if (r.d > u.b) u.b = r.d; tot += r.m.msgs; }
+      return [...U.entries()].map(([id, u]) => ({id, n:u.n, msgs:u.msgs, stick:u.stick, voice:u.voice, video:u.video, days:u.ds.size, perday:u.ds.size ? u.msgs / u.ds.size : 0, tenure:(Date.parse(u.b) - Date.parse(u.a)) / 864e5, share:tot ? u.msgs / tot * 100 : 0})).filter(u => u.days > 0);
+    }
+    function draw(){
+      const L = calc(), X0 = 64, X1 = 880, Y0 = 20, Y1 = 390, rng = k => { const v = L.map(u => u[k]), mn = Math.min(...v), mx = Math.max(...v); return [mn, mx === mn ? mn + 1 : mx]; };
+      const [xa, xb] = rng(S.x), [ya, yb] = rng(S.y), [sa, sb] = rng(S.s), px = v => X0 + (v - xa) / (xb - xa) * (X1 - X0) * .96 + 12, py = v => Y1 - (v - ya) / (yb - ya) * (Y1 - Y0) * .94 - 10, rr = v => 5 + Math.sqrt((v - sa) / (sb - sa)) * 24;
+      let h = "";
+      for (let t = 0; t <= 4; t++) { const y = Y1 - t / 4 * (Y1 - Y0), x = X0 + t / 4 * (X1 - X0); h += `<line x1="${X0}" x2="${X1}" y1="${y}" y2="${y}" class="lab-grid"/><text x="${X0 - 6}" y="${y + 4}" text-anchor="end" class="lab-t">${nf(ya + (yb - ya) * t / 4)}</text><text x="${x}" y="412" text-anchor="middle" class="lab-t">${nf(xa + (xb - xa) * t / 4)}</text>`; }
+      h += `<text x="${(X0 + X1) / 2}" y="434" text-anchor="middle" class="lab-t">${AX[S.x]}</text><text x="12" y="${(Y0 + Y1) / 2}" transform="rotate(-90 12 ${(Y0 + Y1) / 2})" text-anchor="middle" class="lab-t">${AX[S.y]}</text>`;
+      const hue = id => { let n = 0; for (const c of String(id)) n = (n * 31 + c.charCodeAt(0)) >>> 0; return n % 360; };
+      L.sort((a, b) => b[S.s] - a[S.s]);
+      L.forEach((u, i) => { const cx = px(u[S.x]), cy = py(u[S.y]), r = rr(u[S.s]);
+        h += `<g class="lab-bub${focus === null ? "" : focus === u.id ? " on" : " off"}" data-id="${esc(u.id)}"><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="hsl(${hue(u.id)} 65% 58%)"/>${(i < 8 || focus === u.id) ? `<text x="${cx.toFixed(1)}" y="${(cy + 4).toFixed(1)}" text-anchor="middle" class="lab-bl">${esc(u.n.length > 9 ? u.n.slice(0, 8) + "…" : u.n)}</text>` : ""}</g>`; });
+      svg.innerHTML = h;
+      svg.onmousemove = e => { const g = e.target.closest && e.target.closest(".lab-bub"); if (!g) { tip(); return; } const u = L.find(x => String(x.id) === g.dataset.id); tip(e, `<b>${esc(u.n)}</b><br>${AX[S.x]}: ${nf(u[S.x])}<br>${AX[S.y]}: ${nf(u[S.y])}<br>${AX[S.s]}: ${nf(u[S.s])}`); };
+      svg.onmouseleave = () => tip();
+      svg.onclick = e => { const g = e.target.closest && e.target.closest(".lab-bub"); const id = g ? g.dataset.id : null; focus = focus === id ? null : id; draw(); };
+    }
+    ["x", "y", "s", "p"].forEach(k => box.querySelector(`[data-r="${k}"]`).onchange = e => { S[k] = e.target.value; draw(); });
+    draw();
+  }
+
+  /* ---------- 5. Спираль лет ---------- */
+  function spiralCard(box){
+    const S = {k:"msgs"}, years = [...new Set(D.DS.map(d => d.slice(0, 4)))];
+    box.innerHTML = `<div class="lab-head"><h3>Спираль лет</h3><select data-r="k">${Object.entries(ML).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></div>
+      <p class="lab-hint">Каждое кольцо — год (внутри самый старый), угол — день года, яркость — активность. Январь сверху, по часовой стрелке.</p>
+      <svg data-r="sp" data-no-zoom viewBox="-250 -250 500 500" class="lab-svg lab-sq"></svg>`;
+    const svg = box.querySelector('[data-r="sp"]');
+    function draw(){
+      const ring = 190 / (years.length + 1.5), r0 = 34, vals = D.ser[S.k].filter(v => v > 0).sort((a, b) => a - b), q = vals.length ? vals[Math.floor(vals.length * .95)] : 1;
+      let h = ""; const pt = (r, a) => `${(r * Math.sin(a)).toFixed(2)},${(-r * Math.cos(a)).toFixed(2)}`;
+      MON.forEach((m, i) => { const a = i / 12 * 6.2832; h += `<line x1="0" y1="0" x2="${(232 * Math.sin(a)).toFixed(2)}" y2="${(-232 * Math.cos(a)).toFixed(2)}" class="lab-spk"/><text x="${(240 * Math.sin(a + .26)).toFixed(1)}" y="${(-240 * Math.cos(a + .26) + 4).toFixed(1)}" text-anchor="middle" class="lab-t">${m}</text>`; });
+      D.DS.forEach((d, i) => { const yi = years.indexOf(d.slice(0, 4)), y0 = Date.UTC(+d.slice(0, 4), 0, 1), doy = (Date.parse(d + "T00:00:00Z") - y0) / 864e5, ylen = (Date.UTC(+d.slice(0, 4) + 1, 0, 1) - y0) / 864e5, a0 = doy / ylen * 6.2832, a1 = (doy + 1) / ylen * 6.2832 + .004, ri = r0 + yi * ring, ro = ri + ring * .86, v = D.ser[S.k][i];
+        const al = v ? .12 + .88 * Math.min(1, v / q) : .04;
+        h += `<path data-i="${i}" d="M${pt(ri, a0)}L${pt(ro, a0)}L${pt(ro, a1)}L${pt(ri, a1)}Z" fill="#5e8bff" fill-opacity="${al.toFixed(2)}"/>`; });
+      years.forEach((y, yi) => { h += `<text x="3" y="${-(r0 + yi * ring + ring * .5) + 3}" class="lab-t lab-yl">${y.slice(2)}</text>`; });
+      svg.innerHTML = h;
+      svg.onmousemove = e => { const p = e.target.closest && e.target.closest("[data-i]"); if (!p) { tip(); return; } const i = +p.dataset.i; tip(e, `<b>${fd(D.DS[i])}</b> · ${WD[D.wd[i]]}<br>${ML[S.k]}: ${nf(D.ser[S.k][i])}`); };
+      svg.onmouseleave = () => tip();
+    }
+    box.querySelector('[data-r="k"]').onchange = e => { S.k = e.target.value; draw(); };
+    draw();
+  }
+
+  /* ---------- 6. Сейчас против прошлого ---------- */
+  function ghostCard(box){
+    const S = {k:"msgs", n:30, cum:true}, N = D.DS.length;
+    box.innerHTML = `<div class="lab-head"><h3>Сейчас против прошлого</h3><select data-r="n"><option value="30">30 дней</option><option value="90">90 дней</option><option value="365">Год</option></select>
+      <select data-r="k">${Object.entries(ML).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select><select data-r="c"><option value="1">Накопительно</option><option value="0">По дням (среднее за неделю)</option></select></div>
+      <p class="lab-hint">Сплошная линия — последние дни, пунктир — предыдущий такой же период, точки — тот же период год назад.</p>
+      <div class="lab-stats" data-r="st"></div><svg data-r="g" data-no-zoom viewBox="0 0 900 260" class="lab-svg"></svg>`;
+    const svg = box.querySelector('[data-r="g"]'), st = box.querySelector('[data-r="st"]');
+    function draw(){
+      const n = S.n, offs = [0, n, 365].filter(o => N - o - n >= 0), ser = D.ser[S.k];
+      const line = o => { const a = N - o - n, out = []; let c = 0; for (let i = 0; i < n; i++) { if (S.cum) { c += ser[a + i]; out.push(c); } else { let s = 0, m = 0; for (let j = Math.max(0, i - 6); j <= i; j++) { s += ser[a + j]; m++; } out.push(s / m); } } return out; };
+      const L = offs.map(line), mx = Math.max(1, ...L.map(l => Math.max(...l))) * 1.08, X0 = 56, X1 = 890, px = i => X0 + i / (n - 1) * (X1 - X0), py = v => 220 - v / mx * 196;
+      let h = ""; for (let t = 0; t <= 4; t++) { const y = py(mx * t / 4); h += `<line x1="${X0}" x2="${X1}" y1="${y}" y2="${y}" class="lab-grid"/><text x="${X0 - 6}" y="${y + 4}" text-anchor="end" class="lab-t">${nf(mx * t / 4)}</text>`; }
+      const sty = [["#5e8bff", "", 2.4], ["#ff9f0a", "7 5", 1.8], ["#8e8e93", "2 4", 1.8]], nm = {0:"Сейчас", [n]:"Предыдущий период", 365:"Год назад"};
+      offs.forEach((o, i) => { const k = offs.length === 3 ? i : (o === 0 ? 0 : (o === n ? 1 : 2)); h += `<polyline fill="none" stroke="${sty[k][0]}" stroke-dasharray="${sty[k][1]}" stroke-width="${sty[k][2]}" stroke-linejoin="round" points="${L[i].map((v, j) => px(j).toFixed(1) + "," + py(v).toFixed(1)).join(" ")}"/>`; });
+      for (let t = 0; t < 6; t++) { const i = Math.round(t * (n - 1) / 5); h += `<text x="${px(i)}" y="246" text-anchor="${t === 0 ? "start" : t === 5 ? "end" : "middle"}" class="lab-t">${D.DS[N - n + i].slice(8, 10)}.${D.DS[N - n + i].slice(5, 7)}</text>`; }
+      h += `<line id="gh-x" y1="20" y2="220" class="lab-cross" style="display:none"/><rect id="gh-h" x="${X0}" y="0" width="${X1 - X0}" height="225" fill="transparent"/>`;
+      svg.innerHTML = h; const cx = svg.querySelector("#gh-x"), hv = svg.querySelector("#gh-h");
+      hv.onmousemove = e => { const r = svg.getBoundingClientRect(), i = Math.max(0, Math.min(n - 1, Math.round(((e.clientX - r.left) / r.width * 900 - X0) / (X1 - X0) * (n - 1)))); cx.setAttribute("x1", px(i)); cx.setAttribute("x2", px(i)); cx.style.display = "";
+        tip(e, offs.map((o, j) => `<span style="color:${sty[offs.length === 3 ? j : (o === 0 ? 0 : o === n ? 1 : 2)][0]}">●</span> ${nm[o]} (${fd(D.DS[N - o - n + i]).slice(0, 5)}): <b>${nf(L[j][i])}</b>`).join("<br>")); };
+      hv.onmouseleave = () => { cx.style.display = "none"; tip(); };
+      const tot = o => D.pre[S.k][N - o] - D.pre[S.k][N - o - n], now = tot(0), pr = N - n - n >= 0 ? tot(n) : null, ya = N - 365 - n >= 0 ? tot(365) : null, dl = (a, b) => b ? `${a >= b ? "+" : "−"}${Math.abs((a / b - 1) * 100).toFixed(0)}%` : "—";
+      st.innerHTML = `<div><small>Сейчас (${n} дн.)</small><b>${nf(now)}</b></div><div><small>К предыдущему</small><b>${pr === null ? "—" : dl(now, pr)}</b></div><div><small>К году назад</small><b>${ya === null ? "—" : dl(now, ya)}</b></div>`;
+    }
+    box.querySelector('[data-r="n"]').onchange = e => { S.n = +e.target.value; draw(); };
+    box.querySelector('[data-r="k"]').onchange = e => { S.k = e.target.value; draw(); };
+    box.querySelector('[data-r="c"]').onchange = e => { S.cum = e.target.value === "1"; draw(); };
+    draw();
+  }
+
+  /* ---------- 7. Гистограмма дней ---------- */
+  function histCard(box){
+    const S = {k:"msgs", p:"all", w:"all"}, N = D.DS.length;
+    box.innerHTML = `<div class="lab-head"><h3>Какие бывают дни</h3><select data-r="p"><option value="all">Всё время</option><option value="730">2 года</option><option value="365">Год</option></select>
+      <select data-r="k">${Object.entries(ML).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select><select data-r="w"><option value="all">Все дни</option><option value="wk">Будни</option><option value="we">Выходные</option></select></div>
+      <p class="lab-hint">Сколько дней приходится на каждый уровень активности. Линии — медиана, среднее и 90-й процентиль.</p>
+      <div class="lab-stats" data-r="st"></div><svg data-r="h" data-no-zoom viewBox="0 0 900 250" class="lab-svg"></svg>`;
+    const svg = box.querySelector('[data-r="h"]'), st = box.querySelector('[data-r="st"]');
+    function draw(){
+      const a = S.p === "all" ? 0 : Math.max(0, N - +S.p), v = []; for (let i = a; i < N; i++) { const we = D.wd[i] >= 5; if (S.w === "wk" && we || S.w === "we" && !we) continue; v.push(D.ser[S.k][i]); }
+      if (!v.length) { svg.innerHTML = ""; return; }
+      const s = v.slice().sort((x, y) => x - y), q = p => s[Math.min(s.length - 1, Math.floor(s.length * p))], mean = v.reduce((x, y) => x + y, 0) / v.length, top = Math.max(1, q(.99)), B = 30, bw = top / B / 1, bins = new Array(B).fill(0);
+      v.forEach(x => { bins[Math.min(B - 1, Math.floor(x / (top / B)))]++; });
+      const mx = Math.max(...bins), X0 = 50, X1 = 890, W = (X1 - X0) / B, px = x => X0 + Math.min(1, x / top) * (X1 - X0), py = c => 210 - c / mx * 188;
+      let h = ""; for (let t = 0; t <= 4; t++) { const y = py(mx * t / 4); h += `<line x1="${X0}" x2="${X1}" y1="${y}" y2="${y}" class="lab-grid"/><text x="${X0 - 6}" y="${y + 4}" text-anchor="end" class="lab-t">${nf(mx * t / 4)}</text>`; }
+      bins.forEach((c, i) => { h += `<rect data-i="${i}" x="${X0 + i * W + 1}" y="${py(c)}" width="${W - 2}" height="${210 - py(c)}" rx="3" class="lab-hb"/>`; });
+      [[q(.5), "медиана", "#ffd60a"], [mean, "среднее", "#30d158"], [q(.9), "90%", "#ff453a"]].forEach(([x, l, c], i) => { h += `<line x1="${px(x)}" x2="${px(x)}" y1="14" y2="210" stroke="${c}" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${px(x) + 4}" y="${24 + i * 13}" class="lab-t" fill="${c}">${l}</text>`; });
+      for (let t = 0; t <= 5; t++) h += `<text x="${X0 + t / 5 * (X1 - X0)}" y="232" text-anchor="middle" class="lab-t">${nf(top * t / 5)}</text>`;
+      svg.innerHTML = h;
+      svg.onmousemove = e => { const r = e.target.closest && e.target.closest("[data-i]"); if (!r) { tip(); return; } const i = +r.dataset.i; tip(e, `<b>${nf(i * top / B)} – ${nf((i + 1) * top / B)}</b><br>Дней: ${nf(bins[i])} (${(bins[i] / v.length * 100).toFixed(1)}%)`); };
+      svg.onmouseleave = () => tip();
+      st.innerHTML = `<div><small>Дней в выборке</small><b>${nf(v.length)}</b></div><div><small>Медиана</small><b>${nf(q(.5))}</b></div><div><small>Среднее</small><b>${nf(mean)}</b></div><div><small>90-й процентиль</small><b>${nf(q(.9))}</b></div><div><small>Максимум</small><b>${nf(s[s.length - 1])}</b></div>`;
+    }
+    ["p", "k", "w"].forEach(k => box.querySelector(`[data-r="${k}"]`).onchange = e => { S[k] = e.target.value; draw(); });
+    draw();
+  }
+
+  /* ---------- 8. События на таймлайне ---------- */
+  function eventsCard(box){
+    const evs = (typeof window.__getEvents === "function" ? window.__getEvents() : []).filter(e => e.start), N = D.DS.length;
+    box.innerHTML = `<div class="lab-head"><h3>События на таймлайне</h3></div><p class="lab-hint">Активность чата по неделям и периоды событий поверх. Клик по событию сравнивает его с 30 днями до начала.</p><div class="lab-stats" data-r="st"></div><svg data-r="e" data-no-zoom viewBox="0 0 900 250" class="lab-svg"></svg>`;
+    const svg = box.querySelector('[data-r="e"]'), st = box.querySelector('[data-r="st"]');
+    if (!evs.length) { svg.remove(); st.innerHTML = "<small>Событий в данных нет — график появится, когда API отдаст события.</small>"; return; }
+    const W = 7, pts = []; for (let i = 0; i < N; i += W) pts.push((D.pre.msgs[Math.min(N, i + W)] - D.pre.msgs[i]) / (Math.min(N, i + W) - i));
+    const mx = Math.max(...pts, 1) * 1.1, X0 = 50, X1 = 890, px = i => X0 + i / (N - 1) * (X1 - X0), py = v => 200 - v / mx * 170, di = d => Math.max(0, Math.min(N - 1, Math.round((Date.parse(d) - Date.parse(D.DS[0])) / 864e5)));
+    let h = ""; for (let t = 0; t <= 3; t++) { const y = py(mx * t / 3); h += `<line x1="${X0}" x2="${X1}" y1="${y}" y2="${y}" class="lab-grid"/><text x="${X0 - 6}" y="${y + 4}" text-anchor="end" class="lab-t">${nf(mx * t / 3)}</text>`; }
+    h += `<path d="M${px(0)},200 L${pts.map((v, i) => px(i * W).toFixed(1) + "," + py(v).toFixed(1)).join(" L")} L${px(N - 1)},200Z" class="lab-area"/>`;
+    evs.forEach((e, k) => { const a = di(e.start), b = di(e.end || D.DS[N - 1]), y = 8 + (k % 3) * 22; h += `<g class="lab-ev" data-k="${k}"><rect x="${px(a)}" y="${y}" width="${Math.max(4, px(b) - px(a))}" height="18" rx="5" fill="${e.c1 || "#6366f1"}" fill-opacity=".85"/><rect x="${px(a)}" y="${y + 18}" width="${Math.max(4, px(b) - px(a))}" height="${200 - y - 18}" fill="${e.c1 || "#6366f1"}" fill-opacity=".1"/><clipPath id="lab-cp${k}"><rect x="${px(a)}" y="${y}" width="${Math.max(4, px(b) - px(a))}" height="18"/></clipPath><text x="${px(a) + 5}" y="${y + 13}" class="lab-evt" clip-path="url(#lab-cp${k})">${esc(e.title)}</text></g>`; });
+    for (let t = 0; t <= 6; t++) { const i = Math.round(t / 6 * (N - 1)); h += `<text x="${px(i)}" y="222" text-anchor="${t === 0 ? "start" : t === 6 ? "end" : "middle"}" class="lab-t">${D.DS[i].slice(0, 4)}</text>`; }
+    svg.innerHTML = h;
+    svg.onmousemove = e => { const g = e.target.closest && e.target.closest(".lab-ev"); if (!g) { tip(); return; } const ev = evs[+g.dataset.k]; tip(e, `<b>${esc(ev.title)}</b><br>${fd(ev.start)} – ${ev.end ? fd(ev.end) : "идёт"}`); };
+    svg.onmouseleave = () => tip();
+    svg.onclick = e => { const g = e.target.closest && e.target.closest(".lab-ev"); if (!g) return; const ev = evs[+g.dataset.k], a = di(ev.start), b = di(ev.end || D.DS[N - 1]), p0 = Math.max(0, a - 30);
+      const inn = (D.pre.msgs[b + 1] - D.pre.msgs[a]) / (b - a + 1), bef = a > p0 ? (D.pre.msgs[a] - D.pre.msgs[p0]) / (a - p0) : 0;
+      st.innerHTML = `<div><small>Событие</small><b>${esc(ev.title)}</b></div><div><small>В день во время</small><b>${nf(inn)}</b></div><div><small>В день за 30 дней до</small><b>${bef ? nf(bef) : "—"}</b></div><div><small>Эффект</small><b>${bef ? (inn >= bef ? "+" : "−") + Math.abs((inn / bef - 1) * 100).toFixed(0) + "%" : "—"}</b></div>`; };
+  }
+
+  /* ---------- 9. Прогноз «что, если» ---------- */
+  function whatifCard(box){
+    const S = {h:"month", w:30, m:0}, N = D.DS.length;
+    box.innerHTML = `<div class="lab-head"><h3>Прогноз «что, если»</h3><select data-r="h"><option value="month">До конца месяца</option><option value="year">До конца года</option><option value="90">Ближайшие 90 дней</option></select>
+      <select data-r="w"><option value="14">База: 14 дней</option><option value="30" selected>База: 30 дней</option><option value="90">База: 90 дней</option></select></div>
+      <p class="lab-hint">Прогноз строится от среднего за базовый период. Повзунок меняет темп: что будет, если писать больше или меньше.</p>
+      <div class="lab-slider"><span>Темп</span><input type="range" min="-60" max="100" step="5" value="0" data-r="m"><b data-r="mv">0%</b></div>
+      <div class="lab-stats" data-r="st"></div><svg data-r="f" data-no-zoom viewBox="0 0 900 260" class="lab-svg"></svg>`;
+    const svg = box.querySelector('[data-r="f"]'), st = box.querySelector('[data-r="st"]');
+    function draw(){
+      const lastD = D.DS[N - 1], y = +lastD.slice(0, 4), mo = +lastD.slice(5, 7);
+      let startD, endD; if (S.h === "month") { startD = `${lastD.slice(0, 7)}-01`; endD = new Date(Date.UTC(y, mo, 0)).toISOString().slice(0, 10); } else if (S.h === "year") { startD = `${y}-01-01`; endD = `${y}-12-31`; } else { startD = D.DS[Math.max(0, N - 90)]; endD = new Date(Date.parse(lastD) + 90 * 864e5).toISOString().slice(0, 10); }
+      const a = Math.max(0, Math.round((Date.parse(startD) - Date.parse(D.DS[0])) / 864e5)), tot = Math.round((Date.parse(endD) - Date.parse(startD)) / 864e5) + 1, done = N - a, left = Math.max(0, tot - done);
+      const base = D.ser.msgs.slice(Math.max(0, N - S.w)), mean = base.reduce((x, y2) => x + y2, 0) / base.length, sd = Math.sqrt(base.reduce((x, v) => x + (v - mean) ** 2, 0) / base.length), k = 1 + S.m / 100;
+      const act = []; let c = 0; for (let i = 0; i < done; i++) { c += D.ser.msgs[a + i]; act.push(c); }
+      const fc = [], lo = [], hi = []; for (let i = 1; i <= left; i++) { fc.push(c + mean * k * i); const dv = 1.28 * sd * Math.sqrt(i); lo.push(Math.max(c, c + mean * k * i - dv)); hi.push(c + mean * k * i + dv); }
+      const end = left ? fc[left - 1] : c, endHi = left ? hi[left - 1] : c, endLo = left ? lo[left - 1] : c;
+      const mx = Math.max(endHi, c, 1) * 1.05, X0 = 60, X1 = 890, px = i => X0 + i / Math.max(1, tot - 1) * (X1 - X0), py = v => 220 - v / mx * 196;
+      let h = ""; for (let t = 0; t <= 4; t++) { const yy = py(mx * t / 4); h += `<line x1="${X0}" x2="${X1}" y1="${yy}" y2="${yy}" class="lab-grid"/><text x="${X0 - 6}" y="${yy + 4}" text-anchor="end" class="lab-t">${nf(mx * t / 4)}</text>`; }
+      if (left) h += `<path d="M${px(done - 1)},${py(c)} ${hi.map((v, i) => `L${px(done + i).toFixed(1)},${py(v).toFixed(1)}`).join(" ")} ${lo.map((v, i) => `L${px(done + left - 1 - i).toFixed(1)},${py(lo[left - 1 - i]).toFixed(1)}`).join(" ")}Z" fill="#ff9f0a" fill-opacity=".18"/><polyline fill="none" stroke="#ff9f0a" stroke-width="2" stroke-dasharray="6 4" points="${px(done - 1)},${py(c)} ${fc.map((v, i) => px(done + i).toFixed(1) + "," + py(v).toFixed(1)).join(" ")}"/>`;
+      h += `<polyline fill="none" stroke="#5e8bff" stroke-width="2.4" stroke-linejoin="round" points="${act.map((v, i) => px(i).toFixed(1) + "," + py(v).toFixed(1)).join(" ")}"/>`;
+      for (let t = 0; t <= 5; t++) { const i = Math.round(t / 5 * (tot - 1)), d = new Date(Date.parse(startD) + i * 864e5).toISOString().slice(0, 10); h += `<text x="${px(i)}" y="246" text-anchor="${t === 0 ? "start" : t === 5 ? "end" : "middle"}" class="lab-t">${d.slice(8, 10)}.${d.slice(5, 7)}</text>`; }
+      svg.innerHTML = h;
+      st.innerHTML = `<div><small>Уже набрано</small><b>${nf(c)}</b></div><div><small>Ожидаем к ${endD.slice(8, 10)}.${endD.slice(5, 7)}</small><b>${nf(end)}</b></div><div><small>Диапазон 80%</small><b>${nf(endLo)} – ${nf(endHi)}</b></div><div><small>Темп в день</small><b>${nf(mean * k)}</b></div>`;
+    }
+    box.querySelector('[data-r="h"]').onchange = e => { S.h = e.target.value; draw(); };
+    box.querySelector('[data-r="w"]').onchange = e => { S.w = +e.target.value; draw(); };
+    box.querySelector('[data-r="m"]').oninput = e => { S.m = +e.target.value; box.querySelector('[data-r="mv"]').textContent = (S.m > 0 ? "+" : "") + S.m + "%"; draw(); };
+    draw();
+  }
+
+  /* ---------- 10. Сеть совместной активности ---------- */
+  function netCard(box){
+    const S = {top:18, thr:55}, N = D.DS.length;
+    box.innerHTML = `<div class="lab-head"><h3>Сеть: кто активен в одни дни</h3><select data-r="n"><option value="12">12 участников</option><option value="18" selected>18 участников</option><option value="26">26 участников</option></select></div>
+      <p class="lab-hint">Связь — похожий ритм активности (корреляция по дням за последний год). Повзунок оставляет только сильнейшие связи. Узлы можно перетаскивать.</p>
+      <div class="lab-slider"><span>Связей</span><input type="range" min="10" max="100" step="5" value="55" data-r="t"><b data-r="tv">55%</b></div><svg data-r="n2" data-no-zoom viewBox="0 0 900 480" class="lab-svg"></svg>`;
+    const svg = box.querySelector('[data-r="n2"]'); let nodes = [], edges = [];
+    function build(){
+      const a = Math.max(0, N - 365), U = new Map(), ix = new Map(D.DS.slice(a).map((d, i) => [d, i]));
+      for (const r of D.rec) { const i = ix.get(r.d); if (i === undefined) continue; let u = U.get(r.u); if (!u) U.set(r.u, u = {id:r.u, n:r.n, v:new Float64Array(N - a), t:0}); u.v[i] += r.m.msgs; u.t += r.m.msgs; }
+      nodes = [...U.values()].sort((x, y) => y.t - x.t).slice(0, S.top);
+      const z = nodes.map(u => { const m = u.v.reduce((x, y) => x + y, 0) / u.v.length, s = Math.sqrt(u.v.reduce((x, y) => x + (y - m) ** 2, 0)) || 1; return Array.from(u.v, y => (y - m) / s); });
+      edges = []; for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) { let c = 0; for (let k = 0; k < z[i].length; k++) c += z[i][k] * z[j][k]; edges.push({i, j, w:c}); }
+      edges.sort((x, y) => y.w - x.w);
+      nodes.forEach((u, i) => { const ang = i / nodes.length * 6.2832; u.x = 450 + 160 * Math.cos(ang); u.y = 240 + 160 * Math.sin(ang); u.r = 7 + Math.sqrt(u.t / nodes[0].t) * 16; });
+    }
+    function layout(){
+      const keep = edges.slice(0, Math.max(1, Math.round(edges.length * S.thr / 100 * .5)));
+      for (let it = 0; it < 220; it++) {
+        for (const a of nodes) { a.fx = (450 - a.x) * .004; a.fy = (240 - a.y) * .004; }
+        for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) { const A = nodes[i], B = nodes[j]; let dx = A.x - B.x, dy = A.y - B.y, d2 = dx * dx + dy * dy + .01, f = 2600 / d2, d = Math.sqrt(d2); A.fx += dx / d * f; A.fy += dy / d * f; B.fx -= dx / d * f; B.fy -= dy / d * f; }
+        for (const e of keep) { const A = nodes[e.i], B = nodes[e.j], dx = B.x - A.x, dy = B.y - A.y, d = Math.sqrt(dx * dx + dy * dy) + .01, f = (d - 90) * .02 * Math.max(.2, e.w / (keep[0].w || 1)); A.fx += dx / d * f; A.fy += dy / d * f; B.fx -= dx / d * f; B.fy -= dy / d * f; }
+        for (const a of nodes) { a.x = Math.max(40, Math.min(860, a.x + Math.max(-8, Math.min(8, a.fx)))); a.y = Math.max(30, Math.min(450, a.y + Math.max(-8, Math.min(8, a.fy)))); }
+      }
+      return keep;
+    }
+    let keep = [], hl = null;
+    const hue = id => { let n = 0; for (const c of String(id)) n = (n * 31 + c.charCodeAt(0)) >>> 0; return n % 360; };
+    function draw(){
+      const wm = keep.length ? keep[0].w : 1;
+      let h = keep.map(e => `<line data-e="${e.i}-${e.j}" x1="${nodes[e.i].x.toFixed(1)}" y1="${nodes[e.i].y.toFixed(1)}" x2="${nodes[e.j].x.toFixed(1)}" y2="${nodes[e.j].y.toFixed(1)}" class="lab-ed${hl !== null && (e.i === hl || e.j === hl) ? " on" : hl !== null ? " off" : ""}" stroke-width="${(.6 + 3 * Math.max(0, e.w) / (wm || 1)).toFixed(2)}"/>`).join("");
+      h += nodes.map((u, i) => `<g class="lab-nd${hl !== null && hl !== i && !keep.some(e => (e.i === hl && e.j === i) || (e.j === hl && e.i === i)) ? " off" : ""}" data-i="${i}"><circle cx="${u.x.toFixed(1)}" cy="${u.y.toFixed(1)}" r="${u.r.toFixed(1)}" fill="hsl(${hue(u.id)} 65% 58%)"/><text x="${u.x.toFixed(1)}" y="${(u.y + u.r + 12).toFixed(1)}" text-anchor="middle" class="lab-t">${esc(u.n)}</text></g>`).join("");
+      svg.innerHTML = h;
+    }
+    function relayout(){ keep = layout(); draw(); }
+    let drag = null;
+    svg.addEventListener("pointerdown", e => { const g = e.target.closest && e.target.closest(".lab-nd"); if (!g) return; drag = +g.dataset.i; svg.setPointerCapture(e.pointerId); e.preventDefault(); });
+    svg.addEventListener("pointermove", e => { const r = svg.getBoundingClientRect(); if (drag !== null) { nodes[drag].x = (e.clientX - r.left) / r.width * 900; nodes[drag].y = (e.clientY - r.top) / r.height * 480; draw(); return; } const g = e.target.closest && e.target.closest(".lab-nd"), i = g ? +g.dataset.i : null; if (i !== hl) { hl = i; draw(); } if (g) tip(e, `<b>${esc(nodes[i].n)}</b><br>Сообщений за год: ${nf(nodes[i].t)}`); else tip(); });
+    svg.addEventListener("pointerup", () => { drag = null; }); svg.addEventListener("pointerleave", () => { hl = null; tip(); draw(); });
+    box.querySelector('[data-r="n"]').onchange = e => { S.top = +e.target.value; build(); relayout(); };
+    box.querySelector('[data-r="t"]').oninput = e => { S.thr = +e.target.value; box.querySelector('[data-r="tv"]').textContent = S.thr + "%"; relayout(); };
+    build(); relayout();
+  }
+
+  /* ---------- тултип ---------- */
+  let tp = null;
+  function tip(e, html){
+    if (!e) { if (tp) tp.style.display = "none"; return; }
+    if (!tp) { tp = document.createElement("div"); tp.className = "lab-tip"; tp.setAttribute("data-no-export", "1"); document.body.appendChild(tp); }
+    tp.innerHTML = html; tp.style.display = "block";
+    const w = tp.offsetWidth, x = e.clientX + 14 + w > innerWidth ? e.clientX - w - 14 : e.clientX + 14;
+    tp.style.left = x + "px"; tp.style.top = Math.max(8, e.clientY - 12) + "px";
+  }
+
+  /* ---------- сборка вкладки ---------- */
+  const CARDS = [["lab-brush", brushCard], ["lab-heat", heatCard], ["lab-stream", streamCard], ["lab-bubble", bubbleCard], ["lab-spiral", spiralCard], ["lab-ghost", ghostCard], ["lab-hist", histCard], ["lab-events", eventsCard], ["lab-whatif", whatifCard], ["lab-net", netCard]];
+  async function render(){
+    const body = sec.querySelector("#lab-body"), st = sec.querySelector("#lab-status"); if (!body) return;
+    const act = CARDS.filter(([id]) => on(id));
+    if (!act.length) { body.innerHTML = ""; st.textContent = "Графики лаборатории выключены. Включи их в Настройки → Эксперименты."; return; }
+    st.textContent = "Загружаю данные…";
+    try {
+      if (!D) D = await (busy || (busy = prep()));
+      if (!D) { st.textContent = "Нет данных для графиков."; return; }
+      idxMap = null; st.textContent = `Данные: ${fd(D.DS[0])} – ${fd(D.DS[D.DS.length - 1])}, все чаты. Это пробные графики — оставим те, что понравятся.`;
+      body.innerHTML = ""; act.forEach(([id, fn]) => { const b = document.createElement("section"); b.className = "lab-card"; b.dataset.lab = id; body.appendChild(b); fn(b); });
+    } catch (err) { busy = null; st.textContent = "Не удалось загрузить данные: " + (err && err.message || err); }
+  }
+  window.loadLab = () => { D = null; busy = null; return render(); };
+  document.addEventListener("exp-change", () => { if (sec.classList.contains("active")) render(); });
+  new MutationObserver(() => { if (sec.classList.contains("active") && !sec.dataset.done) { sec.dataset.done = "1"; render(); } else if (!sec.classList.contains("active")) delete sec.dataset.done; }).observe(sec, {attributes:true, attributeFilter:["class"]});
+})();
+</script>
+
 </body>
 </html>
