@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+<script>/* Фоновые таймеры с коротким периодом пропускают тики, пока вкладка не видна: меньше работы процессору и памяти */(function(){const si=window.setInterval;window.setInterval=function(fn,ms){const a=Array.prototype.slice.call(arguments,2);if(typeof fn==="function"&&ms<=5000){return si.call(window,function(){if(document.hidden)return;return fn.apply(this,arguments)},ms)}return si.apply(window,arguments)}})();</script>
 <script>window.__TABLO=(function(){try{if(location.hash==="#notablo")return false;return localStorage.getItem("chatstats.tablo.v1")!=="0"}catch(e){return true}})();</script>
 <meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
@@ -1699,6 +1700,9 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
   <section class="tab" id="tab-daymatrix">
     <div class="filters">
       <div class="field dm-entity-field" data-fr-keep><div class="seg" id="dm-entity" aria-label="Участники или чаты"><button type="button" data-dm-entity="users">Участники</button><button type="button" data-dm-entity="chats">Чаты</button></div></div>
+      <div class="field dm-new dm-cols-field"><label>Колонки</label><div class="seg" id="dm-cols" role="group" aria-label="Что в колонках"><button type="button" data-c="days" title="Колонки — дни">Дни</button><button type="button" data-c="weeks" title="Колонки — недели (с понедельника)">Недели</button><button type="button" data-c="years" title="Колонки — годы, за всё время">Годы</button></div></div>
+      <div class="field dm-new dm-opt-field"><label>Показывать</label><div class="dm-chips" id="dm-opts"><button type="button" class="dm-chip" data-for="dm-compare" title="Сравнить с прошлым периодом">Сравнение</button><button type="button" class="dm-chip" data-for="dm-heat" title="Тепловая заливка ячеек">Заливка</button><button type="button" class="dm-chip" data-for="dm-show-share" title="Доля участника от суммы за период">Доля %</button><button type="button" class="dm-chip" data-for="dm-show-delta" title="Изменение места по сравнению с прошлым периодом">Δ места</button></div></div>
+      <div class="field dm-new dm-opt-field"><label>Скрывать</label><div class="dm-chips" id="dm-hides"><button type="button" class="dm-chip" data-for="dm-hide-noname" title="Тех, кого нет в списке участников">Без имени</button><button type="button" class="dm-chip" data-for="hide-left-daymatrix" title="Вышедших из чата">Вышедших</button></div></div>
       <label class="checkline" hidden><input type="checkbox" id="dm-year">Год</label>
       <label class="checkline" title="Колонки — недели (с понедельника). Можно выбрать период до двух лет"><input type="checkbox" id="dm-week">По неделям</label>
       <label class="checkline" title="Колонки — годы, за всё время. Если включены данные VK, они тоже попадают в таблицу"><input type="checkbox" id="dm-years">По годам</label>
@@ -2035,6 +2039,12 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
       <thead><tr><th>Участник</th><th>Юбилей</th><th>Дата</th><th>Осталось</th></tr></thead>
       <tbody id="milestone-body"><tr><td colspan="4" style="text-align:center;color:var(--muted)">Ожидание данных…</td></tr></tbody>
     </table></div>
+    <div class="section-head"><h2>Прошедшие юбилеи участия</h2><button class="mini copy-btn" id="copy-milestones-past-image" type="button">Копировать</button><span class="hint" id="copy-milestones-past-status"></span></div>
+    <p class="hint">Последние 20 уже наступивших юбилеев: годовщины и круглые значения дней участия.</p>
+    <div class="wrap"><table id="milestone-past-table">
+      <thead><tr><th>Участник</th><th>Юбилей</th><th>Дата</th><th>Прошло</th></tr></thead>
+      <tbody id="milestone-past-body"><tr><td colspan="4" style="text-align:center;color:var(--muted)">Ожидание данных…</td></tr></tbody>
+    </table></div>
     </div>
   </section>
   <section class="tab" id="tab-forecast">
@@ -2136,6 +2146,11 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
       <div class="field"><label for="fx-season-kind">Частицы на фоне</label><select id="fx-season-kind"></select></div>
       <div class="field"><label for="fx-season-density">Сколько</label><select id="fx-season-density"><option value="min">Ещё меньше</option><option value="low">Мало</option><option value="mid">Средне</option><option value="high">Много</option><option value="max">Ещё больше</option></select></div>
       <div class="field"><label for="fx-season-size">Размер частиц</label><select id="fx-season-size"><option value="xs">Очень мелкие</option><option value="s">Мелкие</option><option value="m">Обычные</option><option value="l">Крупные</option><option value="xl">Очень крупные</option></select></div>
+    </div>
+    <div class="filters" id="fx-lava-box" hidden>
+      <div class="field"><label for="fx-lava-preset">Лавовая лампа: палитра</label><select id="fx-lava-preset"></select></div>
+      <div class="field"><label>Цвета капель</label><div class="fx-lava-cols"><input type="color" data-lc="0" title="Цвет 1" aria-label="Цвет капель 1"><input type="color" data-lc="1" title="Цвет 2" aria-label="Цвет капель 2"><input type="color" data-lc="2" title="Цвет 3" aria-label="Цвет капель 3"><input type="color" data-lc="3" title="Цвет 4" aria-label="Цвет капель 4"></div></div>
+      <div class="field"><label for="fx-lava-bg">Цвет фона лампы</label><div class="fx-lava-cols"><input type="color" id="fx-lava-bg" aria-label="Цвет фона лампы"><button class="mini" type="button" id="fx-lava-reset">Сбросить</button></div></div>
     </div>
     <div class="filters">
       <div class="field"><label for="tb-style">Рамка таблиц и графиков</label><select id="tb-style"><option value="off">Выключено</option><option value="rainbow">🌈 Радуга</option><option value="aurora">🌌 Северное сияние</option><option value="sunset">🌅 Закат</option><option value="ocean">🌊 Океан</option><option value="neon">💜 Неон</option><option value="fire">🔥 Огонь</option><option value="gold">🥇 Золото</option><option value="silver">🥈 Серебро</option><option value="accent">🎨 Цвет темы</option><option value="comet">☄️ Бегущий блик</option></select></div>
@@ -2788,6 +2803,21 @@ function payloadCursor(json){
   return json?.next_cursor || json?.nextCursor || json?.pagination?.next_cursor ||
     json?.data?.next_cursor || json?.data?.nextCursor || null;
 }
+// Повторяющиеся строки (дата, чат, имя) храним в одном экземпляре: у каждой строки API они иначе свои, это десятки мегабайт.
+const INTERN_POOL = new Map();
+function internRows(list){
+  const ks = [F.date, F.chat, F.name];
+  for (let i = 0; i < list.length; i++) {
+    const r = list[i]; if (!r) continue;
+    for (let j = 0; j < 3; j++) {
+      const k = ks[j], v = r[k];
+      if (typeof v !== "string") continue;
+      const c = INTERN_POOL.get(v);
+      if (c === undefined) { if (INTERN_POOL.size < 100000) INTERN_POOL.set(v, v); } else if (c !== v) r[k] = c;
+    }
+  }
+  return list;
+}
 async function fetchEndpointAll(endpoint, from = null, to = null){
   let all = [], cursor = null, guard = 0;
   do {
@@ -2801,7 +2831,7 @@ async function fetchEndpointAll(endpoint, from = null, to = null){
     if (res.status === 502) throw new Error("прокси не смог связаться с сервером статистики (502). Проверь интернет");
     if (!res.ok) throw new Error(`Сервер ответил ${res.status}`);
     const json = await res.json();
-    all.push(...payloadRows(json));
+    { const part = internRows(payloadRows(json)); for (let i = 0; i < part.length; i++) all.push(part[i]); }
     cursor = payloadCursor(json);
   } while (cursor && ++guard < 200);
   if (guard >= 200) throw new Error("Остановлена загрузка: слишком много страниц API.");
@@ -3819,6 +3849,33 @@ function memberMilestones(m){
   events.push({name:m.name, label:`${fmt(roundDays)} дней участия`, date:roundDate, left:roundDays - m.days});
   return events;
 }
+// Все круглые значения дней участия до maxDays (тот же набор, что и у ближайших юбилеев).
+function roundDayList(maxDays){
+  const list = new Set([100, 500, 777, 1000, 1111, 1234, 1500, 2000, 2222, 2500, 3000, 3333, 3500, 4000, 4444, 4500, 5000, 5555, 6000, 6666, 7000, 7777, 8000, 8888, 9000, 9999, 10000]);
+  for (let d = 500; d <= maxDays + 5000; d += 500) list.add(d);
+  return [...list].sort((a, b) => a - b);
+}
+// Уже наступившие юбилеи участника: годовщины и круглые значения дней.
+function memberPastMilestones(m){
+  const today = todayUtc(), out = [];
+  for (let y = 1; y <= m.parts.years; y++) {
+    const date = addMonthsClamped(m.start, y * 12); if (date > today) break;
+    out.push({name:m.name, label:`${y} ${wordForm(y, ["год участия", "года участия", "лет участия"])}`, date, ago:dateDiffDays(date, today)});
+  }
+  roundDayList(m.days).forEach(n => {
+    if (n > m.days) return;
+    out.push({name:m.name, label:`${fmt(n)} дней участия`, date:addDaysUtc(m.start, n), ago:m.days - n});
+  });
+  return out;
+}
+const PAST_MS_LIMIT = 20;
+function renderPastMilestones(){
+  const body = $("milestone-past-body"); if (!body || !membershipRows) return;
+  const past = membershipRows.flatMap(memberPastMilestones).sort((a, b) => b.date - a.date || a.name.localeCompare(b.name, "ru")).slice(0, PAST_MS_LIMIT);
+  body.innerHTML = past.length ? past.map(e =>
+    `<tr><td>${escH(e.name)}</td><td>${escH(e.label)}</td><td>${formatDateRu(e.date)}</td><td class="time-upcoming">${e.ago === 0 ? "Сегодня" : e.ago === 1 ? "Вчера" : `${fmt(e.ago)} ${wordForm(e.ago, ["день", "дня", "дней"])} назад`}</td></tr>`).join("")
+    : `<tr><td colspan="4" style="text-align:center;color:var(--muted)">Пока нет прошедших юбилеев</td></tr>`;
+}
 function formatDateRu(date){ return `${pad(date.getUTCDate())}.${pad(date.getUTCMonth()+1)}.${date.getUTCFullYear()}`; }
 let TIME_ALL_MS = false;
 document.addEventListener("click", e => { if (e.target.closest && e.target.closest("#milestone-toggle")) { TIME_ALL_MS = !TIME_ALL_MS; renderTime(); } });
@@ -3837,6 +3894,7 @@ function renderTime(){
   $("milestone-body").innerHTML = events.length ? events.map(e =>
     `<tr><td>${escName(e.name)}</td><td>${escH(e.label)}</td><td>${formatDateRu(e.date)}</td><td class="time-upcoming">${e.left === 0 ? "Сегодня" : `через ${fmt(e.left)} ${wordForm(e.left,["день","дня","дней"])}`}</td></tr>`).join("")
     : `<tr><td colspan="4" style="text-align:center;color:var(--muted)">Нет предстоящих юбилеев</td></tr>`;
+  renderPastMilestones();
   if (typeof renderTimeCharts === "function") renderTimeCharts();
 }
 async function loadTime(){
@@ -3902,6 +3960,22 @@ function recPeriodEnd(period, key){
   if (period === "month") { const y = +key.slice(0, 4), m = +key.slice(5, 7); return `${key}-${pad(new Date(Date.UTC(y, m, 0)).getUTCDate())}`; }
   return key;
 }
+// Дата рекорда с чипом года — те же цвета лет, что и в «Топах»
+function recYearOf(key){ const m = /^(\d{4})-\d{2}(-\d{2})?$/.exec(String(key || "")); return m ? (recYearOfPeriod(key, m[1])) : null; }
+function recYearOfPeriod(key, y){ return y; }
+function recYearBorder(key){ const y = recYearOf(key); return y ? ` style="border-left:4px solid ${yearHue(y)}"` : ""; }
+function recDateHtml(period, key){
+  const k = String(key || ""), m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(k);
+  if (!m) return escH(recLabel(period, key));
+  const short = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
+  let y = m[1], text;
+  if (period === "week" && m[3]) { const e = addDaysIso(k, 6), f = x => `${x.slice(8)}.${x.slice(5, 7)}`; text = `${f(k)} — ${f(e)}`; y = e.slice(0, 4); }
+  else if (period === "month") text = MONTHS[+m[2] - 1];
+  else if (m[3]) text = `${m[3]} ${short[+m[2] - 1] || m[2]}`;
+  else return escH(recLabel(period, key));
+  const yc = yearHue(y);
+  return `<span class="yname">${escH(text)}<span class="ychip" style="color:${yc};border-color:${hexA(yc, .55)};background-color:${hexA(yc, .12)}">${y}</span></span>`;
+}
 function recLabel(period, key){
   if (!/^\d{4}-\d{2}(-\d{2})?$/.test(String(key))) return formatMetricDate(key);
   if (period === "week") { const e = addDaysIso(key, 6), f = x => `${x.slice(8)}.${x.slice(5, 7)}`; return `${f(key)} — ${f(e)}.${e.slice(0, 4)}`; }
@@ -3936,7 +4010,7 @@ function renderRecords(){
   const chartBox = $("rec-chart"); if (chartBox) { chartBox.innerHTML = shown.length ? recChartSvg(shown, isUsers, RP) : ""; chartBox.closest(".rec-card").hidden = !shown.length; }
   if (!shown.length){ body.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted)">${rowsData.length ? "Все строки исключены" : "Нет данных о рекордах за доступную историю"}</td></tr>`; return; }
   const nameCell = r => `<div class="row-name-with-action">${isUsers ? `<span class="pname" data-open-profile="${escH(r.id)}">${escH(r.name)}</span>` : `<span>${escH(r.name)}</span>`}<button type="button" class="row-exclude-btn" data-no-export="true" data-exclude-row="${ek}" data-row-key="${escH(r.id)}" data-row-name="${escH(r.name)}" title="Исключить из таблицы" aria-label="Исключить ${escH(r.name)}">×</button></div>`;
-  body.innerHTML = shown.map((r,i) => `<tr><td>${i+1}</td><td style="text-align:left">${nameCell(r)}</td><td>${fmt(r.value)}</td><td>${escH(recLabel(RP, r.date))}</td><td class="rec-held">${escH(recHeld(RP, r.date))}</td></tr>`).join("");
+  body.innerHTML = shown.map((r,i) => `<tr><td${recYearBorder(r.date)}>${i+1}</td><td style="text-align:left">${nameCell(r)}</td><td>${fmt(r.value)}</td><td>${recDateHtml(RP, r.date)}</td><td class="rec-held">${escH(recHeld(RP, r.date))}</td></tr>`).join("");
 }
 function recChartSvg(list, isUsers, RP = "day"){
   const th = tmTheme(), L0 = list.slice(0, 15);
@@ -8017,16 +8091,15 @@ function renderSelfiePeople(m, days){
   $("s-people-head").innerHTML = `<tr><th>Место</th><th style="text-align:left">Участник</th>${years.map(y => `<th style="color:${yearHue(y)}">${y}</th>`).join("")}<th>Всего</th><th>За период</th><th>Посещаемость</th><th>Серия</th><th>Рекорд серии</th><th>Пропуски</th><th>Последний пропуск</th><th>Последнее селфи</th><th>Последние 12</th></tr>`;
   const sortKey = $("s-sort").value;
   const since = m.days[Math.max(0, (days.length ? m.index.get(days[0]) : m.days.length) - 8)] || "0000";
-  const list = [...m.persons.values()].filter(p => sVisible(p.pk)).map(p => ({p, r:sPersonRange(m, p, days)})).filter(x => x.r.count > 0 || (x.r.elig > 0 && x.p.last >= since));
-  const key = {total:x => x.r.count, att:x => x.r.att, streak:x => x.p.current, missed:x => x.r.missed}[sortKey] || (x => x.r.count);
+  const list = [...m.persons.values()].filter(p => sVisible(p.pk)).map(p => ({p, r:sPersonRange(m, p, days), a:sPersonRange(m, p, m.days)})).filter(x => x.r.count > 0 || (x.r.elig > 0 && x.p.last >= since));
+  const key = {total:x => x.r.count, att:x => x.a.att, streak:x => x.p.current, missed:x => x.r.missed}[sortKey] || (x => x.r.count);
   list.sort((a, b) => key(b) - key(a) || b.r.count - a.r.count || selfieNameOf(a.p.pk).localeCompare(selfieNameOf(b.p.pk), "ru"));
   const strip = days.slice(-12);
-  $("s-people-body").innerHTML = list.length ? list.map(({p, r}, i) => {
-    const attPct = Math.round(r.att * 100), ac = r.att >= .8 ? "#9ece6a" : r.att >= .5 ? "#e0af68" : "#f7768e";
-    const color = getStyle("u", p.pk).c[0];
-    return `<tr><td class="${i < 3 ? "medal-" + (i + 1) : ""}" style="text-align:center">${i + 1}</td><td style="text-align:left"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${color};margin-right:8px"></span><span class="pname" data-open-profile="${escH(p.pk)}">${escH(selfieNameOf(p.pk))}</span></td>`
+  $("s-people-body").innerHTML = list.length ? list.map(({p, r, a}, i) => {
+    const attPct = Math.round(a.att * 100);
+    return `<tr><td class="${i < 3 ? "medal-" + (i + 1) : ""}" style="text-align:center">${i + 1}</td><td style="text-align:left"><span class="pname" data-open-profile="${escH(p.pk)}">${escH(selfieNameOf(p.pk))}</span></td>`
       + years.map(y => { const v = p.years.get(y) || 0; return `<td class="${v ? "" : "zero"}">${v ? fmt(v) : "-"}</td>`; }).join("")
-      + `<td>${fmt(p.total)}</td><td>${fmt(r.count)}</td><td data-bar-pct="${attPct}" data-bar-color="${hexA(ac, .3)}" style="background-image:linear-gradient(90deg,${hexA(ac, .3)} ${attPct}%,transparent ${attPct}%)">${attPct}%<span class="wd-mute">${r.did}/${r.elig}</span></td>`
+      + `<td>${fmt(p.total)}</td><td>${fmt(r.count)}</td><td>${attPct}%<span class="wd-mute">${a.did}/${a.elig}</span></td>`
       + `<td style="color:${p.current ? "#ffb27a" : "var(--muted)"}">${fmt(p.current)}</td><td>${fmt(p.maxStreak)}</td><td class="${r.missed ? "s-miss" : "zero"}">${r.missed ? fmt(r.missed) : "-"}</td><td>${r.lastMissed ? sFmtDate(r.lastMissed) : "—"}</td><td>${sFmtDate(p.last)}</td><td>${sStrip(m, p, strip)}</td></tr>`;
   }).join("") : `<tr><td colspan="${12 + years.length}" style="text-align:center;color:var(--muted)">Нет данных</td></tr>`;
 }
@@ -9215,6 +9288,86 @@ function mrRaceSvg(m, rows, metric, chat){
   });
   return `<svg viewBox="0 0 ${W} ${H}" role="img" font-family="Samsung Sans, SamsungOne, Segoe UI, system-ui, sans-serif">${o}</svg>`;
 }
+/* Гонка марафона: те же столбцы-«скачки», что и в «Графиках → Гонка» — места меняются на лету, цифры растут, есть пауза, ползунок и скорость */
+var MRRACE = null, mrRaceRaf = 0, mrRaceSpeedV = raceSpeed || 1;
+function mrRaceBuild(m, rows, metric, chat){
+  const sponsors = new Set(m.sponsors.map(String)), today = iso(new Date());
+  const last = today < m.from ? null : (today < m.to ? today : m.to); if (!last) return "";
+  const N = dayIdx(last) - dayIdx(m.from) + 1; if (N < 2) return "";
+  const step = N <= 120 ? 1 : N <= 900 ? 7 : 30, FR = Math.ceil(N / step), per = new Map();
+  pick(rows, chat).forEach(x => {
+    const d = String(x[F.date] ?? "").slice(0, 10); if (d < m.from || d > last) return;
+    const k = String(x[F.userId] ?? x[F.name]); if (sponsors.has(k)) return;
+    const v = Number(g(x, metric)) || 0; if (!v) return;
+    let e = per.get(k); if (!e) per.set(k, e = {k, n:who(x), a:new Float64Array(FR)});
+    e.a[Math.floor((dayIdx(d) - dayIdx(m.from)) / step)] += v;
+  });
+  const list = [...per.values()]; if (!list.length) return "";
+  list.forEach(e => { let acc = 0; for (let i = 0; i < FR; i++) { acc += e.a[i]; e.a[i] = acc; } });
+  const topN = Math.min(10, list.length), cand = new Set();
+  for (let i = 0; i < FR && cand.size < 30; i++) list.filter(e => e.a[i] > 0).sort((a, b) => b.a[i] - a.a[i]).slice(0, topN).forEach(e => cand.add(e));
+  const ents = [...cand], labels = Array.from({length:FR}, (_, i) => addDaysIso(m.from, Math.min(N - 1, (i + 1) * step - 1)));
+  const W = 900, T = 92, rh = Math.max(28, Math.min(40, Math.floor(420 / topN))), H = T + topN * rh + 24;
+  const L = Math.min(230, Math.max(110, Math.max(...ents.map(e => Math.min(e.n.length, 20))) * 9.6 + 22)), R = W - 110;
+  const reduced = typeof REDUCED_MOTION !== "undefined" && REDUCED_MOTION;
+  MRRACE = {ents, FR, labels, topN, step, t:reduced ? FR - 1 : 0, playing:!reduced, y:new Map(), maxV:0, geo:{W, T, rh, H, L, R}};
+  let o = `<text x="24" y="34" font-size="22" font-weight="700" fill="#e8eaf1">Гонка · ${escH(MLBL[metric].toLowerCase())} нарастающим итогом</text><text x="24" y="58" font-size="15" fill="#8a90a2">${escH(m.name)} · топ-${topN} без спонсоров</text>`;
+  o += `<text id="mr-race-date" x="${W - 24}" y="${T - 20}" text-anchor="end" font-size="30" font-weight="700" fill="#ffffff" fill-opacity=".55"></text>`;
+  o += ents.map(e => { let c = "#7aa2f7"; try { c = getStyle("u", e.k).c[0] || c; } catch (err) {} const sv = softSvg(c), nm = e.n.length > 20 ? e.n.slice(0, 19) + "…" : e.n;
+    return `<g class="race-row" data-k="${escH(e.k)}" transform="translate(0,${H})" opacity="0">${sv.d}<rect x="${L}" y="0" height="${rh - 8}" rx="6" width="0" fill="${sv.f}"/><text class="chart-label" x="${L - 10}" y="${((rh - 8) / 2 + 6).toFixed(1)}" text-anchor="end" font-size="18" fill="#e6e8ee">${escH(nm)}</text><text class="chart-value" x="${L + 8}" y="${((rh - 8) / 2 + 6).toFixed(1)}" font-size="18" fill="#eceef3"></text></g>`; }).join("");
+  const sp = [0.5, 1, 2, 4].map(v => `<option value="${v}"${v === mrRaceSpeedV ? " selected" : ""}>${v}×</option>`).join("");
+  return `<svg id="mr-race-svg" viewBox="0 0 ${W} ${H}" role="img" font-family="Samsung Sans, SamsungOne, Segoe UI, system-ui, sans-serif">${o}</svg>
+    <div class="race-ctl" data-no-export><button class="mini" type="button" id="mr-race-play" title="Пуск / пауза">${MRRACE.playing ? "❚❚ Пауза" : "▶ Пуск"}</button><button class="mini" type="button" id="mr-race-restart" title="С начала">⟲</button><input type="range" id="mr-race-pos" min="0" max="${FR - 1}" step="0.01" value="${MRRACE.t}" aria-label="Позиция"><select id="mr-race-speed" aria-label="Скорость">${sp}</select></div>`;
+}
+function mrRaceMount(){
+  cancelAnimationFrame(mrRaceRaf);
+  const svg = $("mr-race-svg"); if (!svg || !MRRACE) return;
+  const R0 = MRRACE, {T, rh, H, L, R} = R0.geo;
+  const els = new Map([...svg.querySelectorAll(".race-row")].map(gr => [gr.dataset.k, {gr, rect:gr.querySelector("rect"), val:gr.querySelector(".chart-value"), lab:gr.querySelector(".chart-label")}]));
+  const dateEl = $("mr-race-date"), pos = $("mr-race-pos"), play = $("mr-race-play");
+  const fps = Math.max(2, R0.FR / 22);
+  const updBtn = () => { play.textContent = R0.playing ? "❚❚ Пауза" : "▶ Пуск"; };
+  play.onclick = () => { if (!R0.playing && R0.t >= R0.FR - 1) R0.t = 0; R0.playing = !R0.playing; updBtn(); };
+  $("mr-race-restart").onclick = () => { R0.t = 0; R0.playing = true; updBtn(); };
+  pos.oninput = () => { R0.t = Number(pos.value); R0.playing = false; updBtn(); };
+  $("mr-race-speed").onchange = e => { mrRaceSpeedV = Number(e.target.value) || 1; };
+  let last = performance.now(), first = true;
+  const draw = () => {
+    R0.t = Math.max(0, Math.min(R0.FR - 1, Number(R0.t) || 0));
+    const i0 = Math.floor(R0.t), i1 = Math.min(R0.FR - 1, i0 + 1), fr = R0.t - i0;
+    const vals = R0.ents.map(e => ({e, v:e.a[i0] + (e.a[i1] - e.a[i0]) * fr})).sort((a, b) => b.v - a.v);
+    const mx = Math.max(1, vals[0]?.v || 1);
+    R0.maxV = first ? mx : R0.maxV + (mx - R0.maxV) * 0.2;
+    vals.forEach((o, rank) => {
+      const el = els.get(o.e.k); if (!el) return;
+      const show = rank < R0.topN && o.v > 0, target = show ? T + rank * rh : H + 4;
+      const cur = R0.y.has(o.e.k) && !first ? R0.y.get(o.e.k) : target, ny = cur + (target - cur) * 0.2;
+      R0.y.set(o.e.k, ny);
+      const w = Math.max(2, o.v / R0.maxV * (R - L));
+      el.gr.setAttribute("transform", `translate(0,${ny.toFixed(1)})`);
+      el.gr.setAttribute("opacity", show ? "1" : "0");
+      const moving = Math.min(1, Math.abs(target - ny) / (rh * .5));
+      el.lab.setAttribute("fill-opacity", (1 - moving * .85).toFixed(2));
+      el.val.setAttribute("fill-opacity", (1 - moving * .85).toFixed(2));
+      el.rect.setAttribute("width", w.toFixed(1));
+      el.val.setAttribute("x", (L + w + 8).toFixed(1));
+      el.val.textContent = fmt(Math.round(o.v));
+    });
+    dateEl.textContent = raceLabel(R0.labels[fr > 0.5 ? i1 : i0], R0.step);
+    if (document.activeElement !== pos) pos.value = R0.t;
+    first = false;
+  };
+  const loop = now => {
+    if (!svg.isConnected || MRRACE !== R0) return;
+    const dt = Math.max(0, Math.min(0.1, (now - last) / 1000)); last = now;
+    if (svg.getBoundingClientRect().width > 0) {
+      if (R0.playing) { R0.t = Math.min(R0.FR - 1, R0.t + dt * fps * mrRaceSpeedV); if (R0.t >= R0.FR - 1) { R0.playing = false; updBtn(); } }
+      draw();
+    }
+    mrRaceRaf = requestAnimationFrame(loop);
+  };
+  draw(); mrRaceRaf = requestAnimationFrame(loop);
+}
 async function renderMarathon(){
   const m = MARATHONS.find(x => x.id === mrSelected), out = $("mr-out");
   if (!m) { out.innerHTML = `<div class="s-empty">Создай первый марафон кнопкой «Новый марафон».</div>`; mrStatus(""); return; }
@@ -9241,10 +9394,11 @@ async function renderMarathon(){
     <div class="wrap"><table id="mr-table"><thead><tr><th>Место</th><th style="text-align:left">Участник</th><th>${escH(MLBL[metric])}</th><th>Доля</th><th>В среднем в день</th><th>Активных дней</th><th>До места выше</th></tr></thead><tbody>${body}</tbody></table></div>`;
   $("mr-copy").onclick = () => copyTableImage("mr-table", `${m.name} · ${mrPeriod(m)}${chat ? " · " + chat : ""}`, "mr-copy-status");
   try {
-    const race = mrRaceSvg(m, rows, metric, chat);
+    const race = mrRaceBuild(m, rows, metric, chat);
     if (race) {
-      out.insertAdjacentHTML("beforeend", `<div class="section-head"><h2>Гонка по дням</h2><span class="hint">Топ-6 без спонсоров</span><button class="mini copy-btn" id="mr-race-copy" type="button">Копировать</button><span class="hint" id="mr-race-msg"></span></div><div class="yr-chart-card"><div class="yr-chart" id="mr-race">${race}</div></div>`);
+      out.insertAdjacentHTML("beforeend", `<div class="section-head"><h2>Гонка по дням</h2><span class="hint">Топ-10 без спонсоров</span><button class="mini copy-btn" id="mr-race-copy" type="button">Копировать</button><span class="hint" id="mr-race-msg"></span></div><div class="yr-chart-card"><div class="yr-chart" id="mr-race">${race}</div></div>`);
       $("mr-race-copy").onclick = () => copyPngToStatus(() => svgToPngBlob($("mr-race").querySelector("svg"), YR_EXPORT), $("mr-race-msg"), "График скопирован");
+      mrRaceMount();
     }
   } catch (e) { console.error(e); }
 }
@@ -9900,33 +10054,85 @@ const idbSet = (k, v) => idbDo("readwrite", s => s.put(v, k));
 const idbDel = k => idbDo("readwrite", s => s.delete(k));
 // Сохранение большого кэша откладываем до момента, когда браузер свободен (но не дольше 4 с), чтобы не тормозить первую отрисовку.
 const whenIdle = fn => (window.requestIdleCallback ? requestIdleCallback(fn, {timeout:4000}) : setTimeout(fn, 1500));
+// Кэш истории лежит по годам: ключи history:<год> и history:meta. Старые годы не меняются, поэтому при каждом открытии сайта
+// пишется на диск только то, что действительно изменилось (обычно — ничего или текущий год), а не вся история целиком.
+const HIST_META_KEY = "history:meta", histYearKey = y => "history:" + y;
+let histSigs = {}, histLegacy = false, histMetaStr = "", histSaving = Promise.resolve();
+const histYearOf = x => String(x[F.date] ?? "").slice(0, 4);
+function histSig(list){
+  let a = 0, b = 0, c = 0;
+  for (let i = 0; i < list.length; i++) { const x = list[i]; a += Number(g(x, "msgs")) || 0; b += Number(g(x, "voice")) || 0; c += Number(g(x, "stick")) || 0; }
+  return list.length + ":" + a + ":" + b + ":" + c;
+}
+async function histLoad(){
+  let meta = null; try { meta = await idbGet(HIST_META_KEY); } catch (e) {}
+  if (meta && Array.isArray(meta.years) && meta.years.length && /^\d{4}-\d{2}-\d{2}$/.test(meta.lastDate || "")) {
+    const parts = await Promise.all(meta.years.map(y => idbGet(histYearKey(y)).catch(() => null)));
+    if (parts.every(Array.isArray)) {
+      const rows = []; parts.forEach((pt, i) => { for (let k = 0; k < pt.length; k++) rows.push(pt[k]); parts[i] = null; });
+      return {rows, lastDate:meta.lastDate, sigs:meta.sigs || {}, legacy:false, metaStr:meta.years.join(",") + "|" + meta.lastDate};
+    }
+  }
+  let old = null; try { old = await idbGet("history"); } catch (e) {}
+  if (old && Array.isArray(old.rows) && old.rows.length && /^\d{4}-\d{2}-\d{2}$/.test(old.lastDate || "")) return {rows:old.rows, lastDate:old.lastDate, sigs:{}, legacy:true};
+  return null;
+}
+function histSave(data, lastDate){
+  histSaving = histSaving.then(async () => {
+    if (!Array.isArray(data) || !data.length) return;
+    const by = new Map();
+    for (let i = 0; i < data.length; i++) { const x = data[i], y = histYearOf(x); if (!/^\d{4}$/.test(y)) continue; let a = by.get(y); if (!a) by.set(y, a = []); a.push(x); }
+    const years = [...by.keys()].sort(), winYear = String(addDaysIso(lastDate, -4)).slice(0, 4);
+    let wrote = 0;
+    for (const y of years) {
+      if (y < winYear && histSigs[y]) continue; // старый год уже сохранён и не менялся
+      const sig = histSig(by.get(y));
+      if (histSigs[y] === sig) continue;
+      await idbSet(histYearKey(y), by.get(y)); histSigs[y] = sig; wrote++;
+    }
+    Object.keys(histSigs).forEach(y => { if (!by.has(y)) delete histSigs[y]; });
+    const metaStr = years.join(",") + "|" + lastDate;
+    if (wrote || histLegacy || histMetaStr !== metaStr) {
+      await idbSet(HIST_META_KEY, {v:2, savedAt:Date.now(), lastDate, years, count:data.length, sigs:histSigs});
+      histMetaStr = metaStr;
+    }
+    if (histLegacy) { histLegacy = false; try { await idbDel("history"); } catch (e) {} }
+  }).then(() => renderCacheInfo()).catch(() => {});
+  return histSaving;
+}
 getHistory = function(){
   if (allRows) return Promise.resolve(allRows);
   return histP || (histP = (async () => {
     const today = iso(new Date());
-    let cached = null; try { cached = await idbGet("history"); } catch (e) {}
+    let cached = null; try { cached = await histLoad(); } catch (e) {}
     let data;
-    if (cached && Array.isArray(cached.rows) && cached.rows.length && /^\d{4}-\d{2}-\d{2}$/.test(cached.lastDate || "")) {
+    if (cached && cached.rows.length) {
+      histSigs = cached.sigs || {}; histLegacy = !!cached.legacy; histMetaStr = cached.metaStr || "";
+      internRows(cached.rows);
       // Догружаем только последние дни: три дня назад и позже — данные за них могли обновиться.
       const from = addDaysIso(cached.lastDate, -3);
       const fresh = await fetchAll(from, today);
-      data = cached.rows.filter(x => String(x[F.date] ?? "").slice(0, 10) < from).concat(fresh);
-    } else data = await fetchAll("2000-01-01", today);
+      data = cached.rows.filter(x => String(x[F.date] ?? "").slice(0, 10) < from);
+      cached.rows = null;
+      for (let i = 0; i < fresh.length; i++) data.push(fresh[i]);
+    } else { histSigs = {}; histLegacy = false; data = await fetchAll("2000-01-01", today); }
     rawHist = data; allRows = ultView(data); stamp();
-    const lastDate = data.reduce((m, x) => { const d = String(x[F.date] ?? "").slice(0, 10); return d > m ? d : m; }, "") || today;
-    whenIdle(() => idbSet("history", {v:1, savedAt:Date.now(), lastDate, rows:data}).then(renderCacheInfo).catch(() => {}));
+    let lastDate = ""; for (let i = 0; i < data.length; i++) { const d = String(data[i][F.date] ?? "").slice(0, 10); if (d > lastDate) lastDate = d; }
+    lastDate = lastDate || today;
+    whenIdle(() => histSave(data, lastDate));
     return allRows;
   })().catch(e => { histP = null; throw e; }));
 };
 async function renderCacheInfo(){
   const el = $("cache-info"); if (!el) return;
   try {
-    const c = await idbGet("history");
-    el.textContent = c ? `В кэше ${fmt(c.rows.length)} строк по ${sFmtDate(c.lastDate)}, обновлён ${new Date(c.savedAt).toLocaleString("ru-RU")}.` : "Кэш пуст — история загрузится целиком при первом открытии.";
+    const c = await idbGet(HIST_META_KEY);
+    el.textContent = c ? `В кэше ${fmt(c.count)} строк по ${sFmtDate(c.lastDate)}, обновлён ${new Date(c.savedAt).toLocaleString("ru-RU")}.` : "Кэш пуст — история загрузится целиком при первом открытии.";
   } catch (e) { el.textContent = "Кэш недоступен в этом браузере."; }
 }
 $("cache-reset").onclick = async () => {
-  try { await idbDel("history"); } catch (e) {}
+  try { await idbDo("readwrite", st => st.clear()); } catch (e) {}
+  histSigs = {}; histLegacy = false; histMetaStr = "";
   allRows = null; histP = null; rawHist = null;
   $("cache-info").textContent = "Кэш очищен. При следующем открытии вкладки история загрузится заново целиком.";
 };
@@ -10378,10 +10584,10 @@ function cmpLineSvg(s, nA, nB, cA, cB){
   let lx = R - legW[0] - legW[1];
   [[cA, nA], [cB, nB]].forEach(([c, nm], i) => { o += `<circle cx="${lx}" cy="27" r="6" fill="${c}"/><text x="${lx + 12}" y="32" font-size="17" fill="#c0c6d4">${escH(nm)}</text>`; lx += legW[i]; });
   for (let v = 0; v <= max + 1e-9; v += step) o += `<line x1="${L}" y1="${sy(v).toFixed(1)}" x2="${R}" y2="${sy(v).toFixed(1)}" stroke="#ffffff" stroke-opacity="0.07"/><text x="${L - 10}" y="${(sy(v) + 5).toFixed(1)}" font-size="16" fill="#8a90a2" text-anchor="end">${yrShortNum(v)}</text>`;
-  const every = Math.max(1, Math.ceil(n / 14));
-  // Подписи оси: каждая every-я и последняя. Если последняя слишком близко к предыдущей — предыдущую не пишем, иначе текст наезжает.
+  // Подписи оси идут через равный шаг от первого значения: шаг подбирается по ширине самой длинной подписи, чтобы текст не наезжал.
+  const maxLen = s.x.reduce((m, t) => Math.max(m, String(t).length), 1), minGap = Math.max(38, maxLen * 9 + 16);
+  const every = Math.max(1, Math.ceil(minGap / ((R - L) / (n - 1))));
   const ticks = []; for (let i = 0; i < n; i += every) ticks.push(i);
-  if (ticks[ticks.length - 1] !== n - 1) { if (ticks.length > 1 && sx(n - 1) - sx(ticks[ticks.length - 1]) < 66) ticks.pop(); ticks.push(n - 1); }
   ticks.forEach(i => { o += `<text x="${sx(i).toFixed(1)}" y="${Bt + 22}" font-size="15" fill="#c0c6d4" text-anchor="middle">${escH(s.x[i])}</text>`; });
   o += `<line x1="${L}" y1="${Bt}" x2="${R}" y2="${Bt}" stroke="#dcdcdc" stroke-opacity="0.6" stroke-width="2"/>`;
   const line = (arr, c, nm) => {
@@ -11861,7 +12067,7 @@ async function liveTick(){
       const fresh = await fetchAll(from, today);
       rawHist = rawHist.filter(x => String(x[F.date] ?? "").slice(0, 10) < from).concat(fresh);
       allRows = ultView(rawHist); histP = Promise.resolve(allRows);
-      idbSet("history", {v:1, savedAt:Date.now(), lastDate:today, rows:rawHist}).catch(() => {});
+      histSave(rawHist, today);
     }
     LIVE = true;
     if (["participants", "chats", "charts"].includes(tab)) await load();
@@ -13353,9 +13559,8 @@ function multiplesChart(){
       actHtml = `<h2>Пишут ли больше в день рождения?</h2><p class="hint">Среднее число сообщений в день рождения против обычного дня того же человека (со дня первого сообщения). Коэффициент ×1 — как обычно. В среднем по чату: <b>×${r1(avgRatio)}</b>. Рекорд: ${escH(rec.x.name)} — ${fmt(rec.a.best.v)} ${wordForm(rec.a.best.v, ["сообщение", "сообщения", "сообщений"])} в день рождения ${rec.a.best.y} года.</p>
         <div class="wrap"><table id="bd-act-table"><thead><tr><th>№</th><th style="text-align:left">Участник</th><th>Дата</th><th>Дней рождения в данных</th><th>В среднем за ДР</th><th>Обычный день</th><th>Во сколько раз</th></tr></thead><tbody>${act.map((r, i) => `<tr><td>${i + 1}</td><td style="text-align:left">${escH(r.x.name)}</td><td>${fmtBd(r.x.bd)}</td><td>${r.a.n}</td><td>${fmt(Math.round(r.a.avg))}</td><td>${r1(r.a.normal)}</td><td><b style="color:${r.a.ratio >= 1 ? "#76F0B6" : "#f7768e"}">×${r1(r.a.ratio)}</b></td></tr>`).join("")}</tbody></table></div>`;
     }
-    // годовщины в чате
-    const ann = MEMBERSHIP_STARTS.map(([d, id]) => ({pk:String(id), d})).filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x.d) && NAMES[x.pk] && isVisibleUser(x.pk)).map(x => { const o = nextOcc(+x.d.slice(5, 7), +x.d.slice(8), now); return {...x, ...o, years:o.date.getFullYear() - +x.d.slice(0, 4)}; }).filter(x => x.years > 0).sort((a, b) => a.days - b.days).slice(0, 8);
-    const annHtml = ann.length ? `<h2>Ближайшие годовщины в чате</h2><div class="wrap"><table><thead><tr><th style="text-align:left">Участник</th><th>Вступил</th><th>Годовщина</th><th>Дней до</th><th>Исполнится</th></tr></thead><tbody>${ann.map(x => `<tr><td style="text-align:left"><span class="pname" data-open-profile="${escH(x.pk)}">${escH(nameOf(x.pk))}</span></td><td>${formatMetricDate(x.d)}</td><td>${fmtBd(x.d.slice(5))}</td><td>${x.days === 0 ? "🎉 сегодня" : x.days}</td><td>${x.years} ${wordForm(x.years, ["год", "года", "лет"])}</td></tr>`).join("")}</tbody></table></div>` : "";
+    // «Ближайшие годовщины» живут на вкладке «Время»
+    const annHtml = "";
     const navL = [[upTable ? "bd-up-h" : "", "Ближайшие"], [monthsBlock ? "bd-mon-h" : "", "Месяцы и знаки"], [actHtml ? "bd-act-h" : "", "Активность в ДР"], ["bd-now-h", "Сейчас у участников"], [annHtml ? "bd-ann-h" : "", "Годовщины"]].filter(x => x[0]);
     const navH = `<div class="series-chips" id="bd-nav" style="margin:0 0 18px"><span class="hint">К разделу:</span>${navL.map(x => `<button class="chip" type="button" data-bd-go="${x[0]}">${x[1]}</button>`).join("")}</div>`;
     const idh = (h, id) => h.replace("<h2>", `<h2 id="${id}">`);
@@ -13583,6 +13788,20 @@ function multiplesChart(){
   // ----- рисование -----
   const mercY = lat => Math.log(Math.tan(Math.PI / 4 + rad(Math.max(-85, Math.min(85, lat))) / 2));
   const unMercY = y => (2 * Math.atan(Math.exp(y)) - Math.PI / 2) * 180 / Math.PI;
+  // положение карты: масштаб и сдвиг (в единицах viewBox), колесо — масштаб, перетаскивание — сдвиг
+  const VIEW = {k:1, tx:0, ty:0};
+  const K_MAX = 60;
+  function clampView(v){
+    v.k = Math.max(1, Math.min(K_MAX, v.k));
+    const lx = (v.k - 1) * W / 2 + W * .2, ly = (v.k - 1) * H / 2 + H * .2;
+    v.tx = Math.max(-lx, Math.min(lx, v.tx)); v.ty = Math.max(-ly, Math.min(ly, v.ty));
+    return v;
+  }
+  // масштаб с неподвижной точкой (sx, sy) в координатах viewBox
+  function zoomAt(v, f, sx, sy){
+    const k2 = Math.max(1, Math.min(K_MAX, v.k * f)), r = k2 / v.k;
+    return clampView({k:k2, tx:sx - W / 2 - (sx - W / 2 - v.tx) * r, ty:sy - H / 2 - (sy - H / 2 - v.ty) * r});
+  }
   function mapSvg(M){
     const tx = cmpThemeVar("--text", "#e8eaf1"), mu = cmpThemeVar("--muted", "#9aa0b0"), ln = cmpThemeVar("--line", "#2c303b"), bg = cmpThemeVar("--panel", "#171a22");
     const pts = M.groups.map(g2 => g2).concat(M.center ? [M.center] : []);
@@ -13590,13 +13809,16 @@ function multiplesChart(){
     pts.forEach(p => { const x = rad(p.lon), y = mercY(p.lat); x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); });
     const minSpan = rad(8); if (x1 - x0 < minSpan) { const c = (x0 + x1) / 2; x0 = c - minSpan / 2; x1 = c + minSpan / 2; } if (y1 - y0 < minSpan * .6) { const c = (y0 + y1) / 2; y0 = c - minSpan * .3; y1 = c + minSpan * .3; }
     const mX = 150, mT = 90, mB = 80, sc = Math.min((W - mX * 2) / (x1 - x0), (H - mT - mB) / (y1 - y0)), cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, oy = (mT - mB) / 2;
-    const px = lon => (rad(lon) - cx) * sc + W / 2, py = lat => H / 2 + oy - (mercY(lat) - cy) * sc;
-    const lonMin = (cx - W / 2 / sc) * 180 / Math.PI, lonMax = (cx + W / 2 / sc) * 180 / Math.PI, latMax = unMercY(cy + (H / 2 + oy) / sc), latMin = unMercY(cy - (H / 2 - oy) / sc);
-    const span = lonMax - lonMin, step = [1, 2, 5, 10, 15, 20, 30, 45].find(s2 => span / s2 <= 9) || 45;
+    const pxB = lon => (rad(lon) - cx) * sc + W / 2, pyB = lat => H / 2 + oy - (mercY(lat) - cy) * sc;
+    const VW = VIEW, kz = VW.k;
+    const px = lon => (pxB(lon) - W / 2) * kz + W / 2 + VW.tx, py = lat => (pyB(lat) - H / 2) * kz + H / 2 + VW.ty;
+    const xb0 = (0 - W / 2 - VW.tx) / kz + W / 2, xb1 = (W - W / 2 - VW.tx) / kz + W / 2, yb0 = (0 - H / 2 - VW.ty) / kz + H / 2, yb1 = (H - H / 2 - VW.ty) / kz + H / 2;
+    const lonMin = (cx + (xb0 - W / 2) / sc) * 180 / Math.PI, lonMax = (cx + (xb1 - W / 2) / sc) * 180 / Math.PI, latMax = unMercY(cy + (H / 2 + oy - yb0) / sc), latMin = unMercY(cy + (H / 2 + oy - yb1) / sc);
+    const span = lonMax - lonMin, step = [0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 20, 30, 45].find(s2 => span / s2 <= 9) || 45;
     let o = `<defs><clipPath id="um-clip"><rect x="0" y="0" width="${W}" height="${H}" rx="14"/></clipPath></defs><g clip-path="url(#um-clip)">`;
     // сетка
-    for (let lo = Math.ceil(lonMin / step) * step; lo <= lonMax; lo += step) { const x = px(lo); o += `<line x1="${x.toFixed(1)}" y1="0" x2="${x.toFixed(1)}" y2="${H}" stroke="${tx}" stroke-opacity=".07"/><text x="${(x + 4).toFixed(1)}" y="${H - 8}" font-size="11" fill="${mu}" fill-opacity=".8">${Math.abs(lo)}°${lo < 0 ? "з" : "в"}</text>`; }
-    for (let la = Math.ceil(latMin / step) * step; la <= latMax; la += step) { const y = py(la); if (y < 14 || y > H - 14) continue; o += `<line x1="0" y1="${y.toFixed(1)}" x2="${W}" y2="${y.toFixed(1)}" stroke="${tx}" stroke-opacity=".07"/><text x="8" y="${(y - 4).toFixed(1)}" font-size="11" fill="${mu}" fill-opacity=".8">${Math.abs(la)}°${la < 0 ? "ю" : "с"}</text>`; }
+    for (let lo = Math.ceil(lonMin / step) * step; lo <= lonMax; lo += step) { const x = px(lo); o += `<line x1="${x.toFixed(1)}" y1="0" x2="${x.toFixed(1)}" y2="${H}" stroke="${tx}" stroke-opacity=".07"/><text x="${(x + 4).toFixed(1)}" y="${H - 8}" font-size="11" fill="${mu}" fill-opacity=".8">${+Math.abs(lo).toFixed(2)}°${lo < 0 ? "з" : "в"}</text>`; }
+    for (let la = Math.ceil(latMin / step) * step; la <= latMax; la += step) { const y = py(la); if (y < 14 || y > H - 14) continue; o += `<line x1="0" y1="${y.toFixed(1)}" x2="${W}" y2="${y.toFixed(1)}" stroke="${tx}" stroke-opacity=".07"/><text x="8" y="${(y - 4).toFixed(1)}" font-size="11" fill="${mu}" fill-opacity=".8">${+Math.abs(la).toFixed(2)}°${la < 0 ? "ю" : "с"}</text>`; }
     // контуры стран
     if ($o("um-land") && Array.isArray(TOPO)) {
       const mine = new Map(M.cOrder.map(c => [c, M.colorOf(c)])), enMap = new Map(); M.P.forEach(p => { const e = EN[norm(p.country)]; if (e) enMap.set(e, norm(p.country)); });
@@ -13624,22 +13846,29 @@ function multiplesChart(){
     // маркеры и подписи
     const boxes = [];
     const hit = (b2) => boxes.some(q => b2.x < q.x + q.w && b2.x + b2.w > q.x && b2.y < q.y + q.h && b2.y + b2.h > q.y) || b2.x < 4 || b2.x + b2.w > W - 4 || b2.y < 4 || b2.y + b2.h > H - 4;
-    const gs = M.groups.map(g2 => ({g:g2, X:px(g2.lon), Y:py(g2.lat), r:6 + 3 * Math.sqrt(g2.members.length)})).sort((a, b) => b.g.members.length - a.g.members.length);
+    const gs = M.groups.map((g2, gi) => ({g:g2, gi, X:px(g2.lon), Y:py(g2.lat), r:6 + 3 * Math.sqrt(g2.members.length)})).filter(m => m.X > -30 && m.X < W + 30 && m.Y > -30 && m.Y < H + 30).sort((a, b) => b.g.members.length - a.g.members.length);
     gs.forEach(m => boxes.push({x:m.X - m.r, y:m.Y - m.r, w:m.r * 2, h:m.r * 2}));
     gs.forEach(m => {
       const col = M.colorOf(m.g.country), n = m.g.members.length, who = m.g.members.map(p => p.name).join(", ");
-      o += m.g.approx ? `<circle cx="${m.X.toFixed(1)}" cy="${m.Y.toFixed(1)}" r="${m.r}" fill="${col}" fill-opacity=".12" stroke="${col}" stroke-width="2" stroke-dasharray="3 3"><title>${escH(m.g.name)} (приблизительно): ${escH(who)}</title></circle>`
-        : `<circle cx="${m.X.toFixed(1)}" cy="${m.Y.toFixed(1)}" r="${m.r}" fill="${col}" stroke="${bg}" stroke-width="2.5"><title>${escH(m.g.name)}, ${escH(m.g.country)}: ${escH(who)}</title></circle>`;
+      o += m.g.approx ? `<circle data-gi="${m.gi}" style="cursor:pointer" cx="${m.X.toFixed(1)}" cy="${m.Y.toFixed(1)}" r="${m.r}" fill="${col}" fill-opacity=".12" stroke="${col}" stroke-width="2" stroke-dasharray="3 3"><title>${escH(m.g.name)} (приблизительно): ${escH(who)}</title></circle>`
+        : `<circle data-gi="${m.gi}" style="cursor:pointer" cx="${m.X.toFixed(1)}" cy="${m.Y.toFixed(1)}" r="${m.r}" fill="${col}" stroke="${bg}" stroke-width="2.5"><title>${escH(m.g.name)}, ${escH(m.g.country)}: ${escH(who)}</title></circle>`;
       if (n > 1) o += `<text x="${m.X.toFixed(1)}" y="${(m.Y + 4.5).toFixed(1)}" text-anchor="middle" font-size="12.5" font-weight="700" fill="#10131a">${n}</text>`;
     });
+    let hiddenLabels = 0;
     if ($o("um-labels")) gs.forEach(m => {
-      const label = m.g.approx ? m.g.country : m.g.name, who = names(m.g.members.map(p => p.name), 2), t1 = label, t2 = who, w = Math.max(t1.length * 7.8, t2.length * 6.4) + 4, h = 32;
+      const members = m.g.members.map(p => p.name), t1 = m.g.approx ? m.g.country : m.g.name, lines = [];
+      // чем ближе карта, тем больше имён: при приближении подписываются все участники города
+      if (kz >= 2.5 || members.length <= 2) { let cur = ""; members.forEach(nm => { const t = cur ? cur + ", " + nm : nm; if (cur && t.length > 26) { lines.push(cur); cur = nm; } else cur = t; }); if (cur) lines.push(cur); }
+      else lines.push(names(members, 2));
+      if (lines.length > 10) { lines.length = 9; lines.push("…"); }
+      const w = Math.max(t1.length * 9, ...lines.map(t => t.length * 7.4)) + 6, h = 22 + lines.length * 16;
       const cand = [[m.r + 5, -h / 2, "start"], [-m.r - 5 - w, -h / 2, "end"], [-w / 2, -m.r - h - 2, "middle"], [-w / 2, m.r + 3, "middle"], [m.r + 5, -h - 2, "start"], [m.r + 5, 2, "start"], [-m.r - 5 - w, -h - 2, "end"], [-m.r - 5 - w, 2, "end"]];
       let pick = null; for (const c of cand) { const b2 = {x:m.X + c[0], y:m.Y + c[1], w, h}; if (!hit(b2)) { pick = {c, b2}; break; } }
-      if (!pick) { const c = cand[0]; pick = {c, b2:{x:m.X + c[0], y:m.Y + c[1], w, h}}; }
+      if (!pick) { hiddenLabels++; return; }
       boxes.push(pick.b2);
-      const ax = pick.c[2] === "start" ? pick.b2.x : pick.c[2] === "end" ? pick.b2.x + w : pick.b2.x + w / 2;
-      o += `<text x="${ax.toFixed(1)}" y="${(pick.b2.y + 13).toFixed(1)}" text-anchor="${pick.c[2]}" font-size="14" font-weight="700" fill="${tx}" paint-order="stroke" stroke="${bg}" stroke-width="3.5">${escH(t1)}</text><text x="${ax.toFixed(1)}" y="${(pick.b2.y + 28).toFixed(1)}" text-anchor="${pick.c[2]}" font-size="11.5" fill="${mu}" paint-order="stroke" stroke="${bg}" stroke-width="3">${escH(t2)}</text>`;
+      const ax = pick.c[2] === "start" ? pick.b2.x : pick.c[2] === "end" ? pick.b2.x + w : pick.b2.x + w / 2, tc = pick.c[2];
+      o += `<text x="${ax.toFixed(1)}" y="${(pick.b2.y + 16).toFixed(1)}" text-anchor="${tc}" font-size="16" font-weight="700" fill="${tx}" paint-order="stroke" stroke="${bg}" stroke-width="4">${escH(t1)}</text>`
+        + lines.map((t, i) => `<text x="${ax.toFixed(1)}" y="${(pick.b2.y + 34 + i * 16).toFixed(1)}" text-anchor="${tc}" font-size="13.5" fill="${mu}" paint-order="stroke" stroke="${bg}" stroke-width="3.5">${escH(t)}</text>`).join("");
     });
     // центр
     if (M.center) {
@@ -13647,6 +13876,7 @@ function multiplesChart(){
       o += `<polygon points="${star}" fill="#ffd166" stroke="${bg}" stroke-width="2"><title>Центр колонии (среднее положение участников): ${M.center.lat.toFixed(2)}, ${M.center.lon.toFixed(2)}</title></polygon>`;
     }
     o += `</g>`;
+    if (hiddenLabels) o += `<text x="26" y="84" font-size="13" fill="${mu}">Скрыто подписей: ${hiddenLabels} — приблизьте карту, чтобы увидеть имена</text>`;
     // заголовок и легенда
     o += `<text x="26" y="40" font-size="24" font-weight="700" fill="${tx}">Карта участников</text><text x="26" y="62" font-size="14" fill="${mu}">${M.P.length} ${wordForm(M.P.length, ["участник", "участника", "участников"])} · ${M.groups.length} ${wordForm(M.groups.length, ["город", "города", "городов"])} · ${M.countries.length} ${wordForm(M.countries.length, ["страна", "страны", "стран"])}</text>`;
     let lx = 26; const ly = H - 26;
@@ -13656,6 +13886,75 @@ function multiplesChart(){
     return `<svg id="um-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" font-family="Samsung Sans, SamsungOne, Segoe UI, system-ui, sans-serif">${o}</svg>`;
   }
 
+  // ----- интерактив карты -----
+  let umAnim = 0;
+  function mapRedraw(){ const box = $("um-map"); if (box && window.__umModel) box.innerHTML = mapSvg(window.__umModel); }
+  function mapGo(target, ms){
+    cancelAnimationFrame(umAnim);
+    if (!ms || (typeof REDUCED_MOTION !== "undefined" && REDUCED_MOTION)) { Object.assign(VIEW, clampView(target)); mapRedraw(); return; }
+    const from = {...VIEW}, t0 = performance.now(), tg = clampView({...target});
+    const ease = t => 1 - Math.pow(1 - t, 3);
+    const step = now => {
+      const t = Math.min(1, (now - t0) / ms), e = ease(t);
+      // масштаб интерполируем по логарифму — приближение выглядит ровным
+      VIEW.k = Math.exp(Math.log(from.k) + (Math.log(tg.k) - Math.log(from.k)) * e);
+      VIEW.tx = from.tx + (tg.tx - from.tx) * e; VIEW.ty = from.ty + (tg.ty - from.ty) * e;
+      mapRedraw();
+      if (t < 1 && $("um-map")) umAnim = requestAnimationFrame(step);
+    };
+    umAnim = requestAnimationFrame(step);
+  }
+  function bindMap(){
+    const card = document.querySelector("#tab-usermap .um-card"), box = $("um-map"); if (!card || !box) return;
+    const toView = e => { const svg = box.querySelector("svg"), r = svg.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H]; };
+    let raf = 0; const later = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; mapRedraw(); }); };
+    box.addEventListener("wheel", e => {
+      e.preventDefault(); cancelAnimationFrame(umAnim);
+      const [sx, sy] = toView(e); Object.assign(VIEW, zoomAt(VIEW, Math.exp(-e.deltaY * (e.deltaMode === 1 ? .05 : .0016)), sx, sy)); later();
+    }, {passive:false});
+    const ptrs = new Map(); let drag = null, pinch = null;
+    box.addEventListener("pointerdown", e => {
+      cancelAnimationFrame(umAnim); ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+      try { box.setPointerCapture(e.pointerId); } catch (err) {}
+      if (ptrs.size === 1) drag = {x:e.clientX, y:e.clientY, tx:VIEW.tx, ty:VIEW.ty, moved:false, target:e.target};
+      else if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = {d:Math.hypot(a[0] - b[0], a[1] - b[1]), k:VIEW.k}; drag = null; }
+    });
+    box.addEventListener("pointermove", e => {
+      if (!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+      const svg = box.querySelector("svg"), r = svg.getBoundingClientRect(), ux = W / r.width, uy = H / r.height;
+      if (pinch && ptrs.size >= 2) {
+        const [a, b] = [...ptrs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]), mx = ((a[0] + b[0]) / 2 - r.left) * ux, my = ((a[1] + b[1]) / 2 - r.top) * uy;
+        Object.assign(VIEW, zoomAt(VIEW, pinch.k * d / Math.max(1, pinch.d) / VIEW.k, mx, my)); later(); return;
+      }
+      if (!drag) return;
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+      drag.moved = true; box.classList.add("dragging");
+      Object.assign(VIEW, clampView({k:VIEW.k, tx:drag.tx + dx * ux, ty:drag.ty + dy * uy})); later();
+    });
+    const end = e => {
+      ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null;
+      if (drag && !drag.moved && e.type === "pointerup") {
+        // клик по городу — приблизить к нему
+        const c = drag.target.closest && drag.target.closest("circle[data-gi]"), M = window.__umModel;
+        if (c && M) { const g2 = M.groups[+c.dataset.gi]; if (g2) focusGroup(g2); }
+      }
+      if (ptrs.size === 0) { drag = null; box.classList.remove("dragging"); }
+    };
+    box.addEventListener("pointerup", end); box.addEventListener("pointercancel", end);
+    box.addEventListener("dblclick", e => { const [sx, sy] = toView(e); mapGo(zoomAt(VIEW, e.shiftKey ? .5 : 2, sx, sy), 260); });
+    card.querySelector(".um-zoom").addEventListener("click", e => {
+      const b = e.target.closest("button[data-umz]"); if (!b) return; const act = b.dataset.umz;
+      if (act === "reset") mapGo({k:1, tx:0, ty:0}, 350); else mapGo(zoomAt(VIEW, act === "in" ? 2 : .5, W / 2, H / 2), 260);
+    });
+  }
+  // центр карты на городе с приближением; координаты берём у отрисованного маркера
+  function focusGroup(g2){
+    const svg = $("um-svg"), c = svg && svg.querySelector(`circle[data-gi="${window.__umModel.groups.indexOf(g2)}"]`); if (!c) return;
+    const X = +c.getAttribute("cx"), Y = +c.getAttribute("cy"), k2 = Math.max(VIEW.k * 2.2, 5), r = k2 / VIEW.k;
+    // точка (X, Y) должна оказаться в центре
+    mapGo({k:k2, tx:-(X - W / 2 - VIEW.tx) * r, ty:-(Y - H / 2 - VIEW.ty) * r}, 380);
+  }
   // ----- вкладка -----
   const active = () => document.querySelector("#tab-usermap.active");
   function matrixHtml(M){
@@ -13695,12 +13994,13 @@ function multiplesChart(){
     const personRows = M.per.map(x => `<tr><td style="text-align:left"><span class="pname" data-open-profile="${escH(x.p.pk)}">${escH(x.p.name)}</span></td><td style="text-align:left">${escH(x.p.approx ? x.p.country + " ≈" : x.p.city)}</td><td style="text-align:left">${x.nb ? `${escH(x.nb.q.name)} <span style="color:var(--muted)">· ${escH(x.nb.q.city)}</span>` : "—"}</td><td>${x.nb ? fmt(Math.round(x.nb.d)) : "—"}</td><td style="text-align:left">${x.fb ? `${escH(x.fb.q.name)} <span style="color:var(--muted)">· ${escH(x.fb.q.city)}</span>` : "—"}</td><td>${x.fb ? fmt(Math.round(x.fb.d)) : "—"}</td><td>${fmt(Math.round(x.avg))}</td><td>${fmt(Math.round(x.toC))}</td></tr>`).join("");
     const geoBlock = window.__bdGeoHtml ? window.__bdGeoHtml() : "";
     out.innerHTML = `<div class="tiles" style="margin-bottom:14px">${tiles}</div>
-      <div class="um-card">${mapSvg(M)}</div><p class="um-note">${note.join("<br>")}</p>
+      <div class="um-card"><div class="um-map" id="um-map" data-no-zoom>${mapSvg(M)}</div><div class="um-zoom" data-no-export><button type="button" class="mini" data-umz="in" title="Приблизить">+</button><button type="button" class="mini" data-umz="out" title="Отдалить">−</button><button type="button" class="mini" data-umz="reset" title="Весь мир участников">⟲</button></div><div class="um-hint" data-no-export>Колесо — масштаб · перетаскивание — сдвиг · клик по городу — приблизить</div></div><p class="um-note">${note.join("<br>")}</p>
       ${geoBlock}
       <h2>Самые далёкие и самые близкие</h2><div class="um-two">${pairTable("Дальше всего друг от друга", M.farCities, "#f7768e")}${pairTable("Ближе всего (разные города)", M.nearCities, "#76F0B6")}</div>
       <h2>Кто от кого дальше и ближе</h2><p class="hint">Сначала — самые далёкие от остальных. Расстояния в километрах; «ближайший» — из другого города.</p>
       <div class="wrap"><table id="um-people"><thead><tr><th style="text-align:left">Участник</th><th style="text-align:left">Город</th><th style="text-align:left">Ближайший</th><th>км</th><th style="text-align:left">Самый далёкий</th><th>км</th><th>В среднем до остальных</th><th>До центра</th></tr></thead><tbody>${personRows}</tbody></table></div>
       ${matrixHtml(M)}`;
+    bindMap();
     const st = $("um-status");
     if ($o("um-land") && TOPO === null) { st.textContent = "Контуры стран не загрузились (нет доступа к интернету) — карта показана без них. Они подгрузятся при следующем открытии."; st.className = "status"; }
     else { st.textContent = ""; st.className = "status"; }
@@ -15100,6 +15400,13 @@ function multiplesChart(){
     halloween:{name:"🎃 Хэллоуин", col:["#ffffff"], r:[20, 32], vy:[.5, 1.3], vx:.4, emoji:["🎃", "👻", "🦇", "🕸️", "🍬"], tumble:true, alpha:.85, base:22},
     ghosts:{name:"👻 Призраки", col:["#ffffff"], r:[18, 30], vy:[-.5, -.15], vx:.3, emoji:["👻"], ghost:true, base:10},
     money:{name:"💵 Денежный дождь", col:["#ffffff"], r:[20, 32], vy:[.7, 1.6], vx:.5, emoji:["💵", "💸", "💶", "💰"], tumble:true, flutter:true, alpha:.9, base:20},
+    foxes:{name:"🦊 Лисички", col:["#ffffff"], r:[20, 32], vy:[.7, 1.6], vx:.4, emoji:["🦊"], tumble:true, alpha:.92, base:20},
+    cats:{name:"🐱 Кошки", col:["#ffffff"], r:[20, 32], vy:[.7, 1.6], vx:.4, emoji:["🐱", "🐈", "😺", "😸", "🐈‍⬛", "😻"], tumble:true, alpha:.92, base:20},
+    dogs:{name:"🐶 Собаки", col:["#ffffff"], r:[20, 32], vy:[.7, 1.6], vx:.4, emoji:["🐶", "🐕", "🐩", "🦮", "🐕‍🦺", "🐾"], tumble:true, alpha:.92, base:20},
+    pets:{name:"🐾 Лисы, кошки и собаки", col:["#ffffff"], r:[20, 32], vy:[.7, 1.6], vx:.4, emoji:["🦊", "🐱", "🐶", "🐈", "🐕", "🐩", "😺", "🦮"], tumble:true, alpha:.92, base:22},
+    avocado:{name:"🥑 Авокадо", col:["#ffffff"], r:[20, 32], vy:[.7, 1.6], vx:.4, emoji:["🥑"], tumble:true, alpha:.92, base:18},
+    khinkali:{name:"🥟 Хинкали", col:["#ffffff"], r:[15, 24], vy:[.7, 1.6], vx:.4, khinkali:true, tumble:true, alpha:.95, base:18},
+    lava:{name:"🫠 Лавовая лампа", col:["#ff3d6e"], r:[0, 0], vy:[0, 0], vx:0, lava:true, base:1},
     food:{name:"🍕 Вкусный дождь", col:["#ffffff"], r:[20, 32], vy:[.7, 1.7], vx:.4, emoji:["🍕", "🍔", "🍩", "🍟", "🌮", "🍦"], tumble:true, alpha:.9, base:20},
   };
   const DENSITY = {min:.22, low:.5, mid:1, high:1.9, max:3.2};
@@ -15265,6 +15572,98 @@ function multiplesChart(){
     }
     sctx.globalAlpha = 1;
   }
+  // ---------- Лавовая лампа: «капли» сливаются и разделяются, цвета настраиваются ----------
+  const LAVA_PRESETS = {
+    classic:{name:"Классика", c:["#ff3d6e", "#ff8a3d", "#ffd166", "#ff5fa2"], bg:"#2a0a1a"},
+    ocean:{name:"Океан", c:["#00c2ff", "#3d7bff", "#00e5c0", "#8a5cff"], bg:"#04162b"},
+    sunset:{name:"Закат", c:["#ff6b6b", "#ffa94d", "#f06595", "#9775fa"], bg:"#2b0f24"},
+    neon:{name:"Неон", c:["#39ff14", "#00f0ff", "#ff00e5", "#fff200"], bg:"#0a0a1a"},
+    mint:{name:"Мята", c:["#76f0b6", "#67e8f9", "#a78bfa", "#2dd4bf"], bg:"#071a1a"},
+    violet:{name:"Фиолет", c:["#b517ff", "#7a5cff", "#ff5fd2", "#4dd2ff"], bg:"#12062b"},
+  };
+  function lavaCfg(){
+    const L = PK.lava || {}, base = LAVA_PRESETS[L.preset] || LAVA_PRESETS.classic;
+    const ok = v => typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v);
+    const colors = Array.isArray(L.colors) && L.colors.length === 4 && L.colors.every(ok) ? L.colors : base.c;
+    return {colors, bg:ok(L.bg) ? L.bg : base.bg, preset:L.preset in LAVA_PRESETS ? L.preset : (L.preset === "custom" ? "custom" : "classic")};
+  }
+  function lavaSyncUI(){
+    const box = document.getElementById("fx-lava-box"); if (!box) return;
+    const cfg = lavaCfg(), ps = document.getElementById("fx-lava-preset");
+    if (ps && !ps.options.length) ps.innerHTML = Object.entries(LAVA_PRESETS).map(([k, v]) => `<option value="${k}">${v.name}</option>`).join("") + `<option value="custom">Свои цвета</option>`;
+    if (ps) ps.value = cfg.preset;
+    box.querySelectorAll("input[data-lc]").forEach(i => { i.value = cfg.colors[+i.dataset.lc]; });
+    const bg = document.getElementById("fx-lava-bg"); if (bg) bg.value = cfg.bg;
+  }
+  function lavaSave(){ try { localStorage.setItem(PK_KEY, JSON.stringify(PK)); } catch (err) {} }
+  document.addEventListener("input", e => {
+    const t = e.target; if (!t.closest || !t.closest("#fx-lava-box")) return;
+    const cfg = lavaCfg();
+    if (t.dataset.lc !== undefined) { const c = cfg.colors.slice(); c[+t.dataset.lc] = t.value; PK.lava = {preset:"custom", colors:c, bg:cfg.bg}; }
+    else if (t.id === "fx-lava-bg") PK.lava = {preset:"custom", colors:cfg.colors, bg:t.value};
+    else return;
+    const ps = document.getElementById("fx-lava-preset"); if (ps) ps.value = "custom";
+    lavaSave();
+  });
+  document.addEventListener("change", e => {
+    if (e.target.id !== "fx-lava-preset") return;
+    const v = e.target.value, pr = LAVA_PRESETS[v];
+    if (pr) PK.lava = {preset:v, colors:pr.c.slice(), bg:pr.bg}; else PK.lava = {...lavaCfg(), preset:"custom"};
+    lavaSave(); lavaSyncUI();
+  });
+  document.addEventListener("click", e => {
+    if (!e.target.closest || !e.target.closest("#fx-lava-reset")) return;
+    PK.lava = {preset:"classic", colors:LAVA_PRESETS.classic.c.slice(), bg:LAVA_PRESETS.classic.bg}; lavaSave(); lavaSyncUI();
+  });
+  let lavaBlobs = null, lavaCv = null, lavaT = 0;
+  const hex2rgb = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  function drawLava(){
+    const cfg = lavaCfg(), cols = cfg.colors.map(hex2rgb), mult = DENSITY[PK.density] || 1;
+    const lw = Math.max(48, Math.round(innerWidth / 9)), lh = Math.max(32, Math.round(innerHeight / 9));
+    if (!lavaCv) lavaCv = document.createElement("canvas");
+    if (lavaCv.width !== lw || lavaCv.height !== lh) { lavaCv.width = lw; lavaCv.height = lh; }
+    const n = Math.max(4, Math.min(18, Math.round(8 * mult)));
+    if (!lavaBlobs || lavaBlobs.length !== n) lavaBlobs = Array.from({length:n}, (_, i) => ({ph:Math.random() * 6.28, sp:.0014 + Math.random() * .0022, x:.06 + Math.random() * .88, amp:.04 + Math.random() * .1, xs:.0006 + Math.random() * .0011, xp:Math.random() * 6.28, r:.075 + Math.random() * .08, c:i % 4, pu:Math.random() * 6.28}));
+    lavaT++;
+    const k = sizeK(), bl = lavaBlobs.map(b => {
+      const y = .5 + .47 * Math.sin(b.ph + lavaT * b.sp), x = b.x + b.amp * Math.sin(b.xp + lavaT * b.xs);
+      const R = b.r * lh * k * (1 + .14 * Math.sin(b.pu + lavaT * .01)) * (1 + .18 * Math.cos(b.ph + lavaT * b.sp));
+      return {x:x * lw, y:y * lh, R2:R * R, col:cols[b.c]};
+    });
+    const img = lavaCv.getContext("2d").createImageData(lw, lh), d = img.data, m = bl.length;
+    for (let y = 0; y < lh; y++) for (let x = 0; x < lw; x++) {
+      let F = 0, r = 0, g = 0, b = 0;
+      for (let i = 0; i < m; i++) { const o = bl[i], dx = x - o.x, dy = y - o.y, w = o.R2 / (dx * dx + dy * dy + 1); F += w; r += w * o.col[0]; g += w * o.col[1]; b += w * o.col[2]; }
+      if (F < .2) continue;
+      const t1 = Math.min(1, Math.max(0, (F - .85) / .2)), t2 = Math.min(1, Math.max(0, (F - .2) / .65));
+      const a = (t1 * t1 * (3 - 2 * t1)) * .9 + (t2 * t2 * (3 - 2 * t2)) * .22;
+      const br = .88 + .3 * Math.min(1, Math.max(0, (F - 1) / 2)), q = (y * lw + x) * 4;
+      d[q] = Math.min(255, r / F * br); d[q + 1] = Math.min(255, g / F * br); d[q + 2] = Math.min(255, b / F * br); d[q + 3] = Math.min(255, a * 255);
+    }
+    lavaCv.getContext("2d").putImageData(img, 0, 0);
+    const [br, bg, bb] = hex2rgb(cfg.bg), gr = sctx.createLinearGradient(0, 0, 0, innerHeight);
+    gr.addColorStop(0, `rgba(${br},${bg},${bb},.15)`); gr.addColorStop(1, `rgba(${br},${bg},${bb},.7)`);
+    sctx.fillStyle = gr; sctx.fillRect(0, 0, innerWidth, innerHeight);
+    sctx.imageSmoothingEnabled = true; sctx.imageSmoothingQuality = "high";
+    sctx.drawImage(lavaCv, 0, 0, innerWidth, innerHeight);
+  }
+  // Хинкали: тесто с «пучком» складок наверху
+  function drawKhinkali(f){
+    const r = f.r;
+    sctx.rotate(-f.rot); sctx.rotate(Math.sin(f.ph) * .2 + f.rot);
+    sctx.lineCap = "round"; sctx.lineJoin = "round";
+    const body = () => { sctx.beginPath(); sctx.moveTo(-r * .3, -r * .5); sctx.bezierCurveTo(-r * .95, -r * .4, -r * 1.12, r * .3, -r * .7, r * .78); sctx.bezierCurveTo(-r * .4, r * 1.06, r * .4, r * 1.06, r * .7, r * .78); sctx.bezierCurveTo(r * 1.12, r * .3, r * .95, -r * .4, r * .3, -r * .5); sctx.closePath(); };
+    const g = sctx.createRadialGradient(-r * .35, r * .05, r * .1, 0, r * .3, r * 1.2);
+    g.addColorStop(0, "#fffaf0"); g.addColorStop(.55, "#f8ecd0"); g.addColorStop(1, "#e2c995");
+    body(); sctx.fillStyle = g; sctx.fill(); sctx.lineWidth = Math.max(.8, r * .05); sctx.strokeStyle = "rgba(130,90,45,.6)"; sctx.stroke();
+    // складки «кошелька» расходятся от центра верха
+    sctx.strokeStyle = "rgba(140,98,50,.6)"; sctx.lineWidth = Math.max(.7, r * .05);
+    for (let i = -4; i <= 4; i++) { sctx.beginPath(); sctx.moveTo(i * r * .06, -r * .5); sctx.quadraticCurveTo(i * r * .17, -r * .3, i * r * .2, r * .02 + Math.abs(i) * r * .05); sctx.stroke(); }
+    // верхний «узел»
+    sctx.fillStyle = "#f2dcae"; sctx.beginPath(); sctx.ellipse(0, -r * .52, r * .3, r * .13, 0, 0, 7); sctx.fill(); sctx.stroke();
+    sctx.fillStyle = "#ead09a"; sctx.beginPath(); sctx.arc(0, -r * .66, r * .12, 0, 7); sctx.fill(); sctx.stroke();
+    sctx.beginPath(); sctx.moveTo(-r * .06, -r * .7); sctx.quadraticCurveTo(0, -r * .62, r * .06, -r * .68); sctx.stroke();
+  }
   function drawHeart(f, K){
     f.pulse += .06;
     const s = f.r * (1 + .07 * Math.sin(f.pulse * 2)) / 16;
@@ -15341,6 +15740,7 @@ function multiplesChart(){
     if (sel) sel.value = KINDS[PK.kind] ? PK.kind : "auto";
     if (den) den.value = DENSITY[PK.density] ? PK.density : "mid";
     const szSel = document.getElementById("fx-season-size"); if (szSel) szSel.value = PSIZE[PK.size] ? PK.size : "m";
+    { const lb = document.getElementById("fx-lava-box"); if (lb) lb.hidden = curKind() !== "lava"; lavaSyncUI(); }
     if (!want) { cancelAnimationFrame(sraf); sraf = 0; sctx.clearRect(0, 0, sc.width, sc.height); sc.hidden = true; return; }
     sc.hidden = false;
     const k = misha ? "clowns" : curKind();
@@ -15351,7 +15751,7 @@ function multiplesChart(){
     const base = K.base || (K.stars || K.twinkle ? 70 : K.shoot ? 6 : K.digits || K.emoji || K.glyph ? 22 : 46);
     const n = Math.round(Math.min(base * 3.6, base * mult * Math.min(1.4, innerWidth / 1300)));
     flakes = Array.from({length:Math.max(3, n)}, () => makeFlake(k, true));
-    splashes = []; flash = 0; bolt = null; nextBolt = 0; salRk = []; salSp = []; salNext = 0;
+    splashes = []; flash = 0; bolt = null; nextBolt = 0; salRk = []; salSp = []; salNext = 0; lavaBlobs = null;
     const tick = () => {
       if (document.hidden) { return; }
       // Каждый кадр — с чистого листа: сбрасываем матрицу и режимы и стираем весь холст целиком.
@@ -15364,6 +15764,7 @@ function multiplesChart(){
       sctx.setTransform(1, 0, 0, 1, 0, 0); sctx.globalAlpha = 1; sctx.globalCompositeOperation = "source-over"; sctx.shadowBlur = 0;
       sctx.clearRect(0, 0, sc.width, sc.height);
       sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (K.lava) { drawLava(); return; }
       if (K.rain) { drawRain(K); return; }
       if (K.aurora) { drawAurora(); return; }
       if (K.salute) { drawSalute(K); return; }
@@ -15420,6 +15821,7 @@ function multiplesChart(){
         else if (K.diamond) { sctx.beginPath(); sctx.moveTo(0, -f.r * 1.6); sctx.lineTo(f.r, 0); sctx.lineTo(0, f.r * 1.6); sctx.lineTo(-f.r, 0); sctx.closePath(); sctx.fill(); }
         else if (k === "flakes") { sctx.lineWidth = 1; for (let a = 0; a < 6; a++) { sctx.rotate(Math.PI / 3); sctx.beginPath(); sctx.moveTo(0, 0); sctx.lineTo(0, f.r); sctx.moveTo(0, f.r * .6); sctx.lineTo(f.r * .25, f.r * .8); sctx.moveTo(0, f.r * .6); sctx.lineTo(-f.r * .25, f.r * .8); sctx.stroke(); } }
         else if (K.fluff) { sctx.lineWidth = .8; for (let a = 0; a < 8; a++) { sctx.rotate(Math.PI / 4); sctx.beginPath(); sctx.moveTo(0, 0); sctx.lineTo(0, f.r * 1.8); sctx.stroke(); } }
+        else if (K.khinkali) { drawKhinkali(f); }
         else if (K.emoji || K.glyph) { if (!K.tumble) sctx.rotate(-f.rot); const sp = glyphSprite(f.ch || K.glyph, f.r * 1.4, f.c); sctx.drawImage(sp, -sp.__s / 2, -sp.__s / 2, sp.__s, sp.__s); }
         else if (K.digits) { sctx.rotate(-f.rot); sctx.textBaseline = "middle"; sctx.font = `${Math.round(f.r * 1.4)}px "Segoe UI Emoji","Apple Color Emoji",system-ui,sans-serif`; sctx.textAlign = "center"; sctx.fillText(f.ch || K.glyph, 0, 0); if (K.digits && Math.random() < .01) f.ch = String(Math.floor(Math.random() * 10)); }
         else if (k === "snow" || k === "stars" || K.glow) { sctx.beginPath(); sctx.arc(0, 0, f.r, 0, 7); sctx.fill(); }
@@ -17161,7 +17563,7 @@ body.holo-text-on tr > td.medal-3:first-child{background-image:linear-gradient(1
       html += `<div class="ma-app"><div class="ma-logo">${I.logo}</div><div><b>Colony Stats</b><span>${esc(ver || "")}</span></div></div>`;
       const ult = $("ult-toggle"), vk = $("vk-toggle");
       const sw = (el, t, c, icon) => el ? row(`<i class="ma-ico" style="--c:${c}" aria-hidden="true">${icon}</i><span class="ma-txt"><span>${t}</span><i class="ma-sw" aria-hidden="true"></i></span>`, `data-ma-sw="${el.id}" role="switch" aria-checked="${el.classList.contains("on")}"`, el.classList.contains("on") ? "on" : "") : "";
-      html += `<div class="ma-gt">Данные</div><div class="ma-grp">${sw(ult, "Colony Ultimate", "#5856d6", "🔗")}${sw(vk, "Данные VK", "#0a84ff", "🅥")}${row(`<i class="ma-ico" style="--c:#34c759" aria-hidden="true">⟳</i><span class="ma-txt"><span>Обновить данные</span><span class="ma-chev">›</span></span>`, `data-ma-refresh="1"`)}</div>`;
+      html += `<div class="ma-gt">Данные</div><div class="ma-grp">${document.body.classList.contains("no-ult") ? "" : sw(ult, "Colony Ultimate", "#5856d6", "🔗")}${sw(vk, "Данные VK", "#0a84ff", "🅥")}${row(`<i class="ma-ico" style="--c:#34c759" aria-hidden="true">⟳</i><span class="ma-txt"><span>Обновить данные</span><span class="ma-chev">›</span></span>`, `data-ma-refresh="1"`)}</div>`;
     }
     let any = !q;
     GROUPS.forEach(([title, list]) => {
@@ -18112,7 +18514,7 @@ tbody tr.qv-able{cursor:pointer}
     if (typeof rawHist !== "undefined" && rawHist) {
       rawHist = rawHist.filter(x => String(x[F.date] ?? "").slice(0, 10) < from).concat(fresh);
       allRows = ultView(rawHist);
-      try { idbSet("history", {v:1, savedAt:Date.now(), lastDate:today, rows:rawHist}).catch(() => {}); } catch (e) {}
+      try { histSave(rawHist, today); } catch (e) {}
     } else allRows = allRows.filter(x => String(x[F.date] ?? "").slice(0, 10) < from).concat(ultView(fresh));
     try { histP = Promise.resolve(allRows); } catch (e) {}
     DS = null;
@@ -24177,7 +24579,7 @@ html body .fc-places > .fc-over{flex:1 1 300px;min-width:min(280px,100%)}
 }
 .card-av{display:none}
 body.cards-avatars table.tv-cards .card-av{display:inline-grid;place-items:center;position:relative;overflow:hidden;flex:0 0 36px;width:36px;height:36px;margin-right:10px;border-radius:50%;background:var(--p-color,#7aa2f7);color:#0f1117;font-size:16px;font-weight:700;vertical-align:middle}
-#ach-ev-table{width:100%}
+#ach-ev-table{width:auto}
 #ach-ev-table td,#ach-ev-table th{white-space:nowrap}
 .hc-lvl{display:inline-flex;height:30px;min-height:0;border-radius:10px}
 .row-name-with-action > .lvl-chip{margin-left:-3px}
@@ -24502,6 +24904,121 @@ html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8
 html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) :is(main .tab,#filter-drawer) .seg:not(.group-tabs):not(.tv-seg) > button{height:26px!important;min-height:0!important;padding:0 12px!important;border:0!important;border-radius:8px!important;background:transparent!important;box-shadow:none!important;color:var(--muted)!important;font-size:13.5px!important;font-weight:500!important;line-height:1}
 html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) :is(main .tab,#filter-drawer) .seg:not(.group-tabs):not(.tv-seg) > button:hover{color:var(--text)!important}
 html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) :is(main .tab,#filter-drawer) .seg:not(.group-tabs):not(.tv-seg) > button.active{background:var(--accent-bg)!important;color:var(--accent)!important}
+</style>
+<style id="patch-v2-css">
+/* Переключатели в шапке показываются только там, где они что-то меняют */
+body.no-ult #ult-toggle,body.no-lvl #lvl-toggle{display:none!important}
+/* «Рейтинг по событиям»: обёртка (рамка) сжимается вместе с таблицей, а не остаётся на всю ширину позади неё */
+html body .wrap:has(> #ach-ev-table):not(#zq){flex:0 1 auto!important;width:fit-content!important;max-width:100%!important;margin-left:0!important;margin-right:auto!important}
+/* «Ближайшие дни рождения»: подсветка строки закрывает и первый (закреплённый) столбец */
+html body .wrap tr.bd-soon > td{background-color:color-mix(in srgb,var(--accent) 9%,var(--panel))}
+html body .wrap tr.bd-today > td{background-color:color-mix(in srgb,#ffd166 16%,var(--panel))}
+html body .wrap tr.bd-soon:hover > td,html body .wrap tr.bd-today:hover > td{background-color:color-mix(in srgb,var(--accent) 16%,var(--panel))}
+
+/* ===== Правая шторка: сегменты переносятся на новую строку, а не вылезают за рамку и не наезжают на соседние поля ===== */
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) #filter-drawer .seg:not(.group-tabs):not(.tv-seg):not(#zq){display:flex!important;flex-wrap:wrap!important;height:auto!important;width:100%!important;max-width:100%!important;overflow:visible!important;box-sizing:border-box;row-gap:2px}
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) #filter-drawer .seg:not(.group-tabs):not(.tv-seg):not(#zq) > button{flex:1 1 auto!important;white-space:nowrap;padding:0 10px!important}
+#filter-drawer .field{min-width:0}
+#filter-drawer .field > :is(select,input,.msel){max-width:100%}
+/* Сегменты в основной части страницы тоже переносятся, если не помещаются в одну строку */
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) main .tab .seg:not(.group-tabs):not(.tv-seg):not(#zq){flex-wrap:wrap!important;height:auto!important;min-height:var(--ctl-h,32px);row-gap:2px}
+/* Столбики по месяцам: в узком блоке подписи ставятся вертикально и не слипаются */
+.mbars:has(> .mbar:nth-child(12)){container-type:inline-size}
+@container (max-width:330px){
+  .mbars .mbar-l,.mbars .mbar-v{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;justify-self:center;line-height:1.1}
+  .mbars .mbar-l{min-height:2.6em}
+}
+#bd-out .p-grid2{grid-template-columns:minmax(300px,1fr) minmax(0,1.5fr)}
+/* «Матрица»: компактные переключатели вместо длинного списка */
+.dm-new{display:none}
+#filter-drawer .dm-new{display:block}
+html body:not(#d1):not(#d2):not(#d3):not(#d4) #filter-drawer #fd-body :is(label.checkline,details.opt-pop):has(:is(#dm-week,#dm-years,#dm-year,#dm-compare,#dm-heat,#dm-show-share,#dm-show-delta,#dm-hide-noname,#hide-left-daymatrix)){display:none!important}
+.dm-chips{display:flex;flex-wrap:wrap;gap:6px}
+.dm-chip{height:28px;padding:0 11px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13px;line-height:1;cursor:pointer;white-space:nowrap}
+.dm-chip:hover{color:var(--text)}
+.dm-chip.on{background:var(--accent-bg);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
+.dm-chip:disabled{opacity:.45;cursor:default}
+html body:not(#d1):not(#d2):not(#d3):not(#d4) #filter-drawer #fd-body .filters:has(> .field > #dm-from){flex-direction:row!important;flex-wrap:wrap!important;column-gap:12px!important;align-items:flex-start}
+html body:not(#d1):not(#d2):not(#d3):not(#d4) #filter-drawer #fd-body .filters:has(> .field > #dm-from) > *{flex:1 0 100%;min-width:0}
+html body:not(#d1):not(#d2):not(#d3):not(#d4) #filter-drawer #fd-body .filters:has(> .field > #dm-from) > .field:has(> :is(#dm-from,#dm-to)){flex:1 1 calc(50% - 6px)}
+#filter-drawer .field > :is(#dm-from,#dm-to){width:100%;box-sizing:border-box}
+</style>
+<script id="patch-v2-js">
+(function(){
+  /* Где какой переключатель бесполезен (по текущей вкладке; в «Статистике» — по виду «Участники» / «Чаты») */
+  const NO_ULT = new Set(["hub", "reactions", "events", "time", "achievements", "birthdays", "settings"]);
+  const NO_LVL = new Set(["hub", "profile", "compare", "charts", "months", "days", "vk", "settings", "chats"]);
+  function sync(){
+    // Берём реально открытый раздел: «Время» и «Дни рождения» живут в группе «Хаб», и кнопка меню у них не та же, что у раздела.
+    const sec = document.querySelector("main > .tab.active"); let v = sec ? sec.id.replace(/^tab-/, "") : "";
+    if (v === "stats") { const sc = sec.querySelector(".stat-content.active"); v = sc ? sc.id.replace(/^tab-/, "") : "participants"; }
+    const b = document.body, nu = NO_ULT.has(v), nl = NO_LVL.has(v);
+    if (b.classList.contains("no-ult") !== nu) b.classList.toggle("no-ult", nu);
+    if (b.classList.contains("no-lvl") !== nl) b.classList.toggle("no-lvl", nl);
+  }
+  let t = 0; const later = () => { clearTimeout(t); t = setTimeout(sync, 30); };
+  document.addEventListener("click", () => { later(); setTimeout(sync, 300); }, true);
+  const nav = document.querySelector("nav"); if (nav) new MutationObserver(later).observe(nav, {attributes:true, attributeFilter:["class"], subtree:true});
+  const sub = document.getElementById("stats-subnav"); if (sub) new MutationObserver(later).observe(sub, {attributes:true, attributeFilter:["class"], subtree:true});
+  window.addEventListener("hashchange", later);
+  sync();
+
+  /* «Копировать» у таблицы прошедших юбилеев */
+  document.addEventListener("click", e => {
+    if (e.target.closest && e.target.closest("#copy-milestones-past-image")) { try { copyTableImage("milestone-past-table", "Прошедшие юбилеи участия", "copy-milestones-past-status"); } catch (err) {} }
+  });
+
+  /* «Матрица»: «Колонки» (дни / недели / годы) и чипы управляют прежними флажками — вся логика остаётся прежней */
+  (function(){
+    const $ = id => document.getElementById(id);
+    const chips = [...document.querySelectorAll(".dm-chip")], cols = [...document.querySelectorAll("#dm-cols button")];
+    if (!chips.length) return;
+    function syncDm(){
+      chips.forEach(c => { const i = $(c.dataset.for); if (!i) return; c.classList.toggle("on", !!i.checked); c.setAttribute("aria-pressed", String(!!i.checked)); c.disabled = !!i.disabled; });
+      const y = !!$("dm-years")?.checked, w = !!$("dm-week")?.checked, yr = !!$("dm-year")?.checked;
+      cols.forEach(b => { const k = b.dataset.c; b.classList.toggle("active", k === "years" ? y : k === "weeks" ? (!y && !yr && w) : (!y && !yr && !w)); });
+    }
+    const later = () => { setTimeout(syncDm, 60); setTimeout(syncDm, 450); };
+    chips.forEach(c => c.addEventListener("click", () => { const i = $(c.dataset.for); if (i && !i.disabled) i.click(); syncDm(); }));
+    cols.forEach(b => b.addEventListener("click", () => {
+      const k = b.dataset.c, years = $("dm-years"), week = $("dm-week");
+      if (k === "years") { if (years && !years.checked) years.click(); }
+      else {
+        if (years && years.checked) years.click();
+        setTimeout(() => { if (!week) return; if ((k === "weeks") !== week.checked && !week.disabled) week.click(); syncDm(); }, 350);
+      }
+      syncDm();
+    }));
+    document.addEventListener("click", later, true); document.addEventListener("change", later, true);
+    setTimeout(syncDm, 800); setTimeout(syncDm, 2500); syncDm();
+  })();
+
+  const D = window.__I18N_DICT;
+  if (D) Object.assign(D, {
+    "Прошедшие юбилеи участия":["Past membership anniversaries","Минулі ювілеї участі","Мінулыя юбілеі ўдзелу","Өткен қатысу мерейтойлары","Anniversaires passés de participation","Minione jubileusze uczestnictwa"],
+    "Последние 20 уже наступивших юбилеев: годовщины и круглые значения дней участия.":["The last 20 anniversaries that have already happened: yearly and round-number day milestones.","Останні 20 ювілеїв, що вже настали: річниці та круглі значення днів участі.","Апошнія 20 юбілеяў, якія ўжо надышлі: гадавіны і круглыя значэнні дзён удзелу.","Соңғы 20 өткен мерейтой: жылдықтар мен қатысу күндерінің дөңгелек мәндері.","Les 20 derniers anniversaires déjà passés : anniversaires annuels et jours ronds.","Ostatnie 20 jubileuszy, które już minęły: rocznice i okrągłe liczby dni."],
+    "Прошло":["Ago","Минуло","Прайшло","Өтті","Il y a","Minęło"]
+  });
+})();
+</script>
+<style id="patch-v3-css">
+#fx-lava-box[hidden]{display:none!important}
+.fx-lava-cols{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fx-lava-cols input[type=color]{width:44px;height:34px;padding:2px;border-radius:8px;border:1px solid var(--line);background:var(--ctrl);cursor:pointer}
+.um-card{position:relative}
+.um-map{touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.um-map.dragging{cursor:grabbing}
+.um-map svg text{pointer-events:none}
+.um-zoom{position:absolute;right:16px;top:16px;display:flex;flex-direction:column;gap:6px;z-index:2}
+.um-zoom .mini{width:36px;height:36px;padding:0;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center}
+.um-hint{position:absolute;right:62px;top:22px;text-align:right;white-space:nowrap;font-size:11.5px;color:var(--muted);opacity:.75;pointer-events:none}
+@media(max-width:700px){.um-hint{display:none}}
+/* Верхний переключатель разделов дублирует левое меню — скрываем. «Топ месяцев | Топ дней», «Хаб | Селфи | Время», «Профиль | Достижения» остаются: их нет в левом меню. */
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5) main section.tab > .seg.group-tabs[data-group-seg="other"]:not(#zq){display:none!important}
+/* Таблицы «Топов» и «Прогноза мест»: рамка всегда по размеру таблицы, слева, без пустого поля и без прокрутки внутри рамки */
+html body .wrap:has(> :is(#days-table,#months-table,#fc-places-table,#forecast-table)):not(#zq){flex:0 1 auto!important;width:fit-content!important;max-width:100%!important;margin-left:0!important;margin-right:auto!important}
+html body .wrap > :is(#days-table,#months-table,#fc-places-table,#forecast-table):not(#zq){max-width:100%}
+html body .fc-places:not(#zq){display:block}
 </style>
 </body>
 </html>
