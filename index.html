@@ -15892,6 +15892,28 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
+  {v:"2026.11.12-1", date:"2026-11-12", title:"План на месяц, «Если бы», таймлайн, частицы и эксперименты", items:[
+    {tag:"new", area:"Прогноз", text:"«План на месяц»: ставишь цель по сообщениям, стикерам, голосовым или видео (можно по отдельному чату) — сайт показывает, сколько нужно писать в день, успеваем ли мы, прогноз итога и график «план — факт»."},
+    {tag:"new", area:"Прогноз", text:"Калькулятор «Если бы»: измени активность одного или нескольких участников (вплоть до «не было») и посмотри, как поменяются места, лидер и общий итог за выбранный период."},
+    {tag:"new", area:"Прогноз", text:"В «Плане на месяц» появились цели-рекорды: «Лучший ноябрь» (лучший такой месяц среди всех лет + 1) и «Лучший месяц за всё время». Под планом видно, какое место цель и текущий прогноз заняли бы среди всех таких месяцев."},
+    {tag:"new", area:"Прогноз", text:"В калькуляторе «Если бы» можно вернуть вышедших участников: берётся их средний темп до выхода (30, 90, 180 дней или за всё время), и сайт показывает, какое место они заняли бы за выбранный период. Каждого можно включать и отключать."},
+    {tag:"new", area:"Графики", text:"Таймлайн по всей истории с мини-картой: двигай рамку и её края, приближай колесом мыши, стрелками на клавиатуре или щипком на телефоне; сводка считается по выбранному окну."},
+    {tag:"new", area:"Настройки", text:"Раздел «Эксперименты» с пробными функциями: выделение периода на графике (Shift + перетаскивание), закреплённые точки с заметками, разбор дня по клику на календаре, экспорт выбранного периода в CSV. Каждая включается отдельно."},
+    {tag:"new", area:"Эффекты", text:"Фоновые частицы: «Лавовая лампа» с настройкой цветов и более гладкими каплями, падающие лисички, кошки, собаки, авокадо и хинкали."},
+    {tag:"new", area:"Карта", text:"Карту можно приближать и двигать; при приближении там, где много людей, имена видны без наведения."},
+    {tag:"imp", area:"Марафоны", text:"«Гонка» стала динамичной и работает так же, как гонка на вкладке «Графики»."},
+    {tag:"imp", area:"Топы", text:"Годы в датах выделены цветными плашками, как в «Рекордах»; рамка таблицы теперь двигается вместе с ней."},
+    {tag:"fix", area:"Прогноз", text:"Рамка таблицы «Прогноз мест» больше не остаётся на месте, когда таблица двигается."},
+    {tag:"fix", area:"Профиль", text:"«Рейтинг по событиям»: рамка следует за таблицей."},
+    {tag:"imp", area:"Селфи", text:"Убраны цветные кружки у имён; посещаемость в таблице всегда считается от всех селфи (с учётом, когда человек пришёл в чат), а период влияет только на график."},
+    {tag:"new", area:"Время", text:"Прошедшие юбилеи участников — последние 20."},
+    {tag:"imp", area:"Дни рождения", text:"Починена таблица «Ближайшие дни рождения»; «Ближайшие годовщины в чате» убраны — они есть во вкладке «Время»."},
+    {tag:"imp", area:"Сравнение", text:"Боковое меню фильтров больше не наезжает само на себя; кнопки не съезжают вниз."},
+    {tag:"imp", area:"Матрица", text:"Переключателей стало меньше: часть объединена, правая панель фильтров починена."},
+    {tag:"fix", area:"Графики", text:"На графике «Сообщения по дням» подписи по горизонтальной оси идут через равные промежутки; текст, который наезжал на соседний, разведён по всему сайту."},
+    {tag:"del", area:"Весь сайт", text:"Убрана повторяющаяся строка вкладок сверху — остаётся только левое меню; скрыты переключатели «Уровни» и «Ultimate» там, где они ничего не меняют."},
+    {tag:"imp", area:"Весь сайт", text:"Быстрее открывается: меньше нагрузки на память и диск при загрузке (в том числе в Опере)."}
+  ]},
   {v:"2026.11.08-2", date:"2026-11-08", title:"Единая кнопка «Копировать» и доработки вкладок", items:[
     {tag:"imp", area:"Весь сайт", text:"Все кнопки копирования называются просто «Копировать»: в «Прогнозе» они стоят рядом со своим графиком и таблицей, дополнительные варианты — «С описанием», «С аватарками»."},
     {tag:"imp", area:"Хаб", text:"Пустая карточка «Рекорды» не показывается, карточки выровнены по верху, блок «Разделы» сворачивается (запоминается)."},
@@ -25446,6 +25468,7 @@ html body .tl-card .tl-lg:not(#zq){display:inline-flex;align-items:center;gap:6p
 .plan-bar u{position:absolute;top:-2px;bottom:-2px;width:2px;background:#ffd60a;text-decoration:none}
 .plan-svg{display:block;width:100%;height:auto}
 .plan-t{fill:var(--muted);font-size:11px}
+.plan-cmp{color:var(--muted)}.plan-rec{font-weight:600}
 .plan-hint{color:var(--muted);font-size:12.5px;margin:4px 0}
 </style>
 <script id="plan-js">
@@ -25465,6 +25488,9 @@ html body .tl-card .tl-lg:not(#zq){display:inline-flex;align-items:center;gap:6p
     const m = new Map(); for (const x of pick(ALL, chat)) { if (typeof isExcludedUser === "function" && isExcludedUser(x[F.userId])) continue; const d = String(x[F.date] ?? "").slice(0, 10); if (d.length !== 10) continue; m.set(d, (m.get(d) || 0) + (Number(g(x, metric)) || 0)); }
     cache.set(key, m); return m;
   };
+  const mtCache = new Map();
+  function monthTotals(map, key){ if (mtCache.has(key)) return mtCache.get(key); const m = new Map(); map.forEach((v, d) => { const k = d.slice(0, 7); m.set(k, (m.get(k) || 0) + v); }); mtCache.set(key, m); return m; }
+  const MONTHS_GEN = ["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"];
   const monthTotal = (map, k) => { let s = 0; const dim = new Date(+k.slice(0, 4), +k.slice(5, 7), 0).getDate(); for (let d = 1; d <= dim; d++) s += map.get(`${k}-${pad(d)}`) || 0; return s; };
   async function ensure(){
     if (ALL) return; ALL = await getHistory(); const hasT = ALL.some(x => Number(x[F.chatPk]) === 0);
@@ -25481,11 +25507,16 @@ html body .tl-card .tl-lg:not(#zq){display:inline-flex;align-items:center;gap:6p
     const tv = isCur ? v(day) : 0, total = isPast ? sumY : sumY + tv;
     let p14 = 0; { const base = new Date(); base.setHours(12); for (let i = 1; i <= 14; i++) { const d = new Date(base.getTime() - i * 864e5); p14 += map.get(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`) || 0; } p14 /= 14; }
     const left = isCur ? dim - day + 1 : isPast ? 0 : dim, prev = monthTotal(map, shiftM(ym, -1));
+    const MT = monthTotals(map, chat + "|" + metric), mnum = ym.slice(5, 7), mname = MONTHS[+mnum - 1], others = [...MT].filter(([k, t]) => k !== ym && t > 0);
+    const same = others.filter(([k]) => k.slice(5, 7) === mnum).sort((a, b) => b[1] - a[1]), ever = others.slice().sort((a, b) => b[1] - a[1]);
+    const rankOf = (val, list) => 1 + list.filter(([, t]) => t > val).length;
     const opts = Object.entries(MN).map(([k, t]) => `<option value="${k}"${k === metric ? " selected" : ""}>${t}</option>`).join("");
     const copts = `<option value="">Все чаты</option>` + titles.map(t => `<option value="${esc(t)}"${t === chat ? " selected" : ""}>${esc(t)}</option>`).join("");
     let h = `<div class="plan-head"><h3>План на месяц</h3><span class="plan-month"><button type="button" class="mini" data-pm="-1" aria-label="Предыдущий месяц">‹</button>${MONTHS[+ym.slice(5, 7) - 1]} ${ym.slice(0, 4)}<button type="button" class="mini" data-pm="1" aria-label="Следующий месяц">›</button></span><select data-pf="metric">${opts}</select><select data-pf="chat">${copts}</select></div>
       <div class="plan-set"><input type="text" inputmode="numeric" data-pg placeholder="Сколько нужно набрать" value="${plan ? nf(plan.goal) : ""}"><button type="button" class="mini" data-psave>${plan ? "Обновить план" : "Поставить план"}</button>`;
     if (prev > 0) h += [[1, "как в прошлом месяце"], [1.1, "+10%"], [1.25, "+25%"]].map(([k, l]) => `<button type="button" class="mini plan-chip" data-pq="${Math.round(prev * k)}" title="Прошлый месяц: ${nf(prev)}">${l} · ${nf(prev * k)}</button>`).join("");
+    if (same.length) h += `<button type="button" class="mini plan-chip plan-rec" data-pq="${Math.round(same[0][1]) + 1}" title="Рекорд среди всех месяцев «${mname}»: ${same[0][0].slice(0, 4)} — ${nf(same[0][1])}. Цель на единицу выше.">🏆 Лучший ${mname} · ${nf(same[0][1] + 1)}</button>`;
+    if (ever.length) h += `<button type="button" class="mini plan-chip plan-rec" data-pq="${Math.round(ever[0][1]) + 1}" title="Лучший месяц за всё время: ${MONTHS[+ever[0][0].slice(5, 7) - 1]} ${ever[0][0].slice(0, 4)} — ${nf(ever[0][1])}. Цель на единицу выше.">🏆 Лучший месяц за всё время · ${nf(ever[0][1] + 1)}</button>`;
     if (plan) h += `<button type="button" class="mini" data-pdel>Убрать план</button>`;
     h += `</div>`;
     if (!plan) { h += `<p class="plan-hint">Поставь цель на месяц — покажу, сколько нужно писать в день и успеваем ли мы.${prev > 0 ? ` В прошлом месяце было ${nf(prev)} ${MG[metric]}.` : ""}</p>`; host.innerHTML = h; bind(); return; }
@@ -25500,7 +25531,10 @@ html body .tl-card .tl-lg:not(#zq){display:inline-flex;align-items:center;gap:6p
       else if (proj >= goal) { cls = proj >= goal * 1.03 ? "ok" : "warn"; label = proj >= goal * 1.03 ? "✅ Успеваем" : "🟡 Успеваем, но впритык"; say = `Нужно в среднем <b>${nf(need)}</b> ${MG[metric]} в день, сейчас пишем ${nf(p14)} — запас ${nf(p14 - need)} в день. Итог при таком темпе ≈ ${nf(proj)}.`; }
       else { cls = proj >= goal * .93 ? "warn" : "bad"; label = proj >= goal * .93 ? "🟠 Почти успеваем" : "🔴 Не успеваем"; say = `Нужно в среднем <b>${nf(need)}</b> ${MG[metric]} в день, а сейчас пишем ${nf(p14)} — не хватает ${nf(need - p14)} в день: нужно писать на ${nf((need / (p14 || 1) - 1) * 100)}% больше. При таком темпе выйдет ≈ ${nf(proj)} из ${nf(goal)}.`; }
     } else { label = "📅 Месяц ещё не начался"; say = `Чтобы набрать ${nf(goal)}, нужно писать в среднем <b>${nf(need)}</b> ${MG[metric]} в день. Сейчас пишем ${nf(p14)} в день.`; }
-    h += `<div class="plan-pill ${cls}">${label}</div><div class="plan-say">${say}</div>`;
+    let cmp = "";
+    if (same.length) { const rg = rankOf(goal, same), rp = rankOf(proj, same), tot = same.length + 1, b0 = same[0], ordn = n => n === 1 ? "рекорд" : n + "-е место";
+      cmp = `<div class="plan-say plan-cmp">Среди всех месяцев «${mname}» (${tot}): лучший — ${b0[0].slice(0, 4)}, ${nf(b0[1])}. ${isPast ? `Этот месяц с результатом ${nf(total)} — ${ordn(rankOf(total, same))}.` : `Цель ${nf(goal)} — это ${rg === 1 ? "<b>новый рекорд</b>" : "<b>" + rg + "-е место</b>"}; при текущем темпе (≈ ${nf(proj)}) выйдет ${rp === 1 ? "<b>рекорд</b>" : rp + "-е место"}.`}</div>`; }
+    h += `<div class="plan-pill ${cls}">${label}</div><div class="plan-say">${say}</div>${cmp}`;
     h += `<div class="plan-bar" title="${pct.toFixed(1)}% плана">${`<i style="width:${Math.min(100, pct).toFixed(1)}%"></i>`}${isCur ? `<u style="left:${Math.min(100, (day - 1) / dim * 100).toFixed(1)}%" title="Где должны быть по графику"></u>` : ""}</div>`;
     h += `<div class="plan-grid"><div><small>Цель</small><b>${nf(goal)}</b><em>${MN[metric].toLowerCase()}${chat ? ", " + esc(chat) : ""}</em></div>
       <div><small>Набрано</small><b>${nf(total)}</b><em>${pct.toFixed(0)}% плана</em></div>
@@ -25533,7 +25567,7 @@ html body .tl-card .tl-lg:not(#zq){display:inline-flex;align-items:center;gap:6p
   let started = false;
   const check = () => { if (tab.classList.contains("active") && !started) { started = true; render(); } };
   new MutationObserver(check).observe(tab, {attributes:true, attributeFilter:["class"]}); check();
-  document.getElementById("refresh")?.addEventListener("click", () => { if (started) setTimeout(() => { ALL = null; cache.clear(); render(); }, 700); });
+  document.getElementById("refresh")?.addEventListener("click", () => { if (started) setTimeout(() => { ALL = null; cache.clear(); mtCache.clear(); render(); }, 700); });
 })();
 </script>
 
@@ -25554,6 +25588,7 @@ html body #wi-card .wi-r:not(#zq){display:grid!important;grid-template-columns:4
 .wi-r.h{color:var(--muted);font-size:11.5px;border-top:0!important}
 .wi-r span:nth-child(n+3){text-align:right}
 .wi-r.mod{background:color-mix(in srgb,#5e8bff 14%,transparent);border-radius:8px}
+.wi-ret{margin-top:10px}.wi-note{margin-left:12px;font-size:13px;color:var(--muted)}.wi-lv{margin-top:8px}html body #wi-card .wi-lv .mini:not(#zq){opacity:.55}html body #wi-card .wi-lv .mini.on:not(#zq){opacity:1;outline:1.5px solid #5e8bff}
 .wi-up{color:#30d158}.wi-dn{color:#ff6961}.wi-eq{color:var(--muted)}
 @media(max-width:640px){html body #wi-card .wi-r:not(#zq){grid-template-columns:38px minmax(60px,1fr) 62px 62px 60px;font-size:12px}.wi-r > :nth-child(6){display:none}}
 </style>
@@ -25565,8 +25600,31 @@ html body #wi-card .wi-r:not(#zq){display:grid!important;grid-template-columns:4
   const MN = {msgs:"Сообщения", stick:"Стикеры", voice:"Голосовые", video:"Видеосообщения"};
   const PER = {month:"Этот месяц", prev:"Прошлый месяц", "30":"Последние 30 дней", "90":"Последние 90 дней", "365":"Последний год", all:"Всё время"};
   const pad = n => String(n).padStart(2, "0"), isoD = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  const S = {chat:"", metric:"msgs", period:"30", mods:[]};
-  let ALL = null, titles = [], gen = 0;
+  const S = {chat:"", metric:"msgs", period:"30", mods:[], ret:false, win:"90", skip:new Set()};
+  let ALL = null, titles = [], gen = 0; const RC = new Map();
+  const dayN = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 864e5) + 1;
+  function periodDays(){ const [lo, hi] = range(); if (S.period === "all") return 0; return dayN(lo, hi); }
+  function recs(){
+    const key = S.chat + "|" + S.metric; if (RC.has(key)) return RC.get(key);
+    const m = new Map();
+    for (const x of pick(ALL, S.chat)) { const id = String(x[F.userId] ?? x[F.name]); if (typeof isExcludedUser === "function" && isExcludedUser(x[F.userId])) continue;
+      const d = String(x[F.date] ?? "").slice(0, 10), v = Number(g(x, S.metric)) || 0; if (d.length !== 10 || v <= 0) continue;
+      let u = m.get(id); if (!u) m.set(id, u = {id, n:who(x), items:[]}); u.items.push([d, v]); }
+    RC.set(key, m); return m;
+  }
+  // Вышедшие: по статусу из API, а если статусов нет — по отсутствию активности больше 60 дней.
+  function leavers(){
+    const pd = periodDays(); if (!pd) return [];
+    const st = typeof userStatuses !== "undefined" && userStatuses.size > 0, lim = isoD(new Date(Date.now() - 60 * 864e5)), out = [];
+    recs().forEach(u => {
+      const last = u.items.reduce((a, b) => b[0] > a ? b[0] : a, ""), first = u.items.reduce((a, b) => b[0] < a ? b[0] : a, "9999");
+      const gone = st ? (typeof isLeftUser === "function" && isLeftUser(u.id)) : last < lim; if (!gone) return;
+      const span = S.win === "all" ? dayN(first, last) : Math.min(+S.win, dayN(first, last)), from = isoD(new Date(Date.parse(last) - (span - 1) * 864e5));
+      const sum = u.items.reduce((a, [d, v]) => d >= from && d <= last ? a + v : a, 0), pace = sum / Math.max(1, span);
+      out.push({id:u.id, n:u.n, last, pace, hyp:pace * pd});
+    });
+    return out.filter(u => u.hyp > 0).sort((a, b) => b.hyp - a.hyp);
+  }
   function range(){
     const now = new Date(), t = isoD(now), y = now.getFullYear(), m = now.getMonth();
     if (S.period === "month") return [isoD(new Date(y, m, 1)), t];
@@ -25588,12 +25646,15 @@ html body #wi-card .wi-r:not(#zq){display:grid!important;grid-template-columns:4
     const my = ++gen;
     try { if (!ALL) { ALL = await getHistory(); const hasT = ALL.some(x => Number(x[F.chatPk]) === 0); titles = [...new Set((hasT ? ALL.filter(x => Number(x[F.chatPk]) !== 0) : ALL).map(x => x[F.chat]).filter(Boolean))].sort((a, c) => a.localeCompare(c, "ru")); } }
     catch (err) { host.innerHTML = '<p class="wi-hint">Не удалось загрузить данные.</p>'; return; }
+    if (S.ret && typeof ensureUserMetrics === "function") { try { await ensureUserMetrics(); } catch (err) {} }
     if (my !== gen) return;
     const base = totals(); if (!base.length) { host.innerHTML = '<div class="wi-head"><h3>Калькулятор «если бы»</h3></div><p class="wi-hint">За этот период нет данных. Выбери другой период или чат.</p>' + controls(); bind(); return; }
     const byName = base.slice().sort((a, b) => a.n.localeCompare(b.n, "ru"));
     if (!S.mods.length) S.mods.push({u:base.slice().sort((a, b) => b.v - a.v)[0].id, f:-100});
     S.mods.forEach(m => { if (!base.some(u => u.id === m.u)) { const free = base.find(u => !S.mods.some(q => q.u === u.id)); m.u = free ? free.id : base[0].id; } });
     const mods = new Map(S.mods.map(m => [m.u, m.f])), after = base.map(u => ({...u, v:u.v * (1 + (mods.has(u.id) ? mods.get(u.id) : 0) / 100)}));
+    const LV = S.ret ? leavers() : [], picked = LV.filter(u => !S.skip.has(u.id)), retIds = new Set(picked.map(u => u.id));
+    picked.forEach(u => { const i = after.findIndex(x => x.id === u.id); if (i >= 0) after[i] = {...after[i], v:u.hyp, ret:true}; else after.push({id:u.id, n:u.n, v:u.hyp, ret:true}); });
     const r0 = rank(base), r1 = rank(after), tot0 = base.reduce((s, u) => s + u.v, 0), tot1 = after.reduce((s, u) => s + u.v, 0);
     const lead = l => l.slice().sort((a, b) => b.v - a.v || a.n.localeCompare(b.n, "ru"))[0];
     const l0 = lead(base), l1 = lead(after), pct = tot0 ? (tot1 / tot0 - 1) * 100 : 0;
@@ -25603,13 +25664,19 @@ html body #wi-card .wi-r:not(#zq){display:grid!important;grid-template-columns:4
       <span class="wi-chips"><button type="button" class="mini" data-wq="${i}:-100">Без него</button><button type="button" class="mini" data-wq="${i}:-50">−50%</button><button type="button" class="mini" data-wq="${i}:50">+50%</button><button type="button" class="mini" data-wq="${i}:100">×2</button></span>
       ${S.mods.length > 1 ? `<button type="button" class="mini" data-wx="${i}" aria-label="Убрать участника">×</button>` : ""}</div>`).join("") + `</div>`;
     if (S.mods.length < 4) h += `<button type="button" class="mini" data-wadd>+ Ещё участник</button>`;
+    h += `<div class="wi-ret"><label class="checkline"><input type="checkbox" data-wret${S.ret ? " checked" : ""}> Вернуть вышедших участников</label>`;
+    if (S.ret) {
+      h += S.period === "all" ? `<p class="wi-hint">Для периода «Всё время» вышедшие уже учтены в таблице — выбери конкретный период.</p>` : `<span class="wi-note">Темп до выхода: <select data-wwin>${[["30", "последние 30 дней"], ["90", "последние 90 дней"], ["180", "последние 180 дней"], ["all", "всё время в чате"]].map(([k, t]) => `<option value="${k}"${k === S.win ? " selected" : ""}>${t}</option>`).join("")}</select></span>`;
+      if (S.period !== "all") h += LV.length ? `<div class="wi-chips wi-lv">${LV.slice(0, 24).map(u => `<button type="button" class="mini${S.skip.has(u.id) ? "" : " on"}" data-wlv="${esc(u.id)}" title="Вышел(ла) ${u.last.split("-").reverse().join(".")}, темп ${nf(u.pace)} в день">${esc(u.n)} · ${nf(u.hyp)}</button>`).join("")}</div>` : `<p class="wi-hint">Вышедших участников с активностью не нашлось (по статусам из API или, если их нет, по отсутствию активности больше 60 дней).</p>`;
+    }
+    h += `</div>`;
+    const sayRet = picked.map(u => `<div><b>${esc(u.n)}</b> (вышел(ла) ${u.last.split("-").reverse().join(".")}, темп ${nf(u.pace)} в день): за этот период набрал(а) бы ≈ ${nf(u.hyp)} — ${r1.get(u.id)}-е место из ${after.length}</div>`).join("");
     const say = S.mods.map(m => { const u = base.find(x => x.id === m.u); if (!u) return ""; const a = r0.get(u.id), b = r1.get(u.id), v1 = u.v * (1 + m.f / 100); return `<div><b>${esc(u.n)}</b>: ${m.f <= -100 ? "если бы не писал(а) вообще" : `${m.f > 0 ? "+" : ""}${m.f}%`} — ${nf(u.v)} → ${nf(v1)}, ${m.f <= -100 ? "место пропало" : a === b ? `место то же (${a}-е)` : `${a}-е → ${b}-е место`}</div>`; }).join("");
-    h += `<div class="wi-sum"><div class="big">${l0.id === l1.id ? `Лидер не меняется: ${esc(l0.n)}` : `Лидер меняется: ${esc(l0.n)} → ${esc(l1.n)}`}</div><div>${MN[S.metric]} в сумме: ${nf(tot0)} → <b>${nf(tot1)}</b> (${pct >= 0 ? "+" : "−"}${Math.abs(pct).toFixed(1)}%)</div>${say}</div>`;
-    const order = after.slice().sort((a, b) => r1.get(a.id) - r1.get(b.id)), shown = order.filter(u => r1.get(u.id) <= 15 || mods.has(u.id));
-    const ghost = base.filter(u => mods.has(u.id) && mods.get(u.id) <= -100);
+    h += `<div class="wi-sum"><div class="big">${l0.id === l1.id ? `Лидер не меняется: ${esc(l0.n)}` : `Лидер меняется: ${esc(l0.n)} → ${esc(l1.n)}`}</div><div>${MN[S.metric]} в сумме: ${nf(tot0)} → <b>${nf(tot1)}</b> (${pct >= 0 ? "+" : "−"}${Math.abs(pct).toFixed(1)}%)</div>${say}${sayRet}</div>`;
+    const order = after.slice().sort((a, b) => r1.get(a.id) - r1.get(b.id)), shown = order.filter(u => r1.get(u.id) <= 15 || mods.has(u.id) || retIds.has(u.id));
     h += `<div class="wi-grid"><div class="wi-r h"><span>Место</span><span>Участник</span><span>Было</span><span>Стало</span><span>Разница</span><span>Места</span></div>`;
-    shown.forEach(u => { const b0 = base.find(x => x.id === u.id).v, a = r0.get(u.id), b = r1.get(u.id), dm = a - b, gone = mods.get(u.id) <= -100;
-      h += `<div class="wi-r${mods.has(u.id) ? " mod" : ""}"><span>${gone ? "—" : b}</span><span title="${esc(u.n)}">${esc(u.n)}</span><span>${nf(b0)}</span><span>${nf(u.v)}</span><span class="${u.v === b0 ? "wi-eq" : u.v > b0 ? "wi-up" : "wi-dn"}">${u.v === b0 ? "—" : (u.v > b0 ? "+" : "−") + nf(Math.abs(u.v - b0))}</span><span class="${dm > 0 ? "wi-up" : dm < 0 ? "wi-dn" : "wi-eq"}">${gone ? "—" : dm > 0 ? "▲ " + dm : dm < 0 ? "▼ " + Math.abs(dm) : "="}</span></div>`; });
+    shown.forEach(u => { const bu = base.find(x => x.id === u.id), isRet = retIds.has(u.id), b0 = bu ? bu.v : 0, a = r0.get(u.id), b = r1.get(u.id), dm = a === undefined ? 0 : a - b, gone = mods.get(u.id) <= -100;
+      h += `<div class="wi-r${mods.has(u.id) || isRet ? " mod" : ""}"><span>${gone ? "—" : b}</span><span title="${esc(u.n)}">${esc(u.n)}${isRet ? " ↩" : ""}</span><span>${nf(b0)}</span><span>${nf(u.v)}</span><span class="${u.v === b0 ? "wi-eq" : u.v > b0 ? "wi-up" : "wi-dn"}">${u.v === b0 ? "—" : (u.v > b0 ? "+" : "−") + nf(Math.abs(u.v - b0))}</span><span class="${dm > 0 ? "wi-up" : dm < 0 ? "wi-dn" : "wi-eq"}">${gone ? "—" : a === undefined ? "новый" : dm > 0 ? "▲ " + dm : dm < 0 ? "▼ " + Math.abs(dm) : "="}</span></div>`; });
     h += `</div>`; host.innerHTML = h; bind();
   }
   function controls(){
@@ -25621,17 +25688,20 @@ html body #wi-card .wi-r:not(#zq){display:grid!important;grid-template-columns:4
     const q = (s, f) => host.querySelectorAll(s).forEach(f);
     q("[data-wp]", s => s.onchange = () => { S.period = s.value; render(); });
     q("[data-wm]", s => s.onchange = () => { S.metric = s.value; render(); });
-    q("[data-wc]", s => s.onchange = () => { S.chat = s.value; S.mods = []; render(); });
+    q("[data-wc]", s => s.onchange = () => { S.chat = s.value; S.mods = []; S.skip.clear(); render(); });
     q("[data-wu]", s => s.onchange = () => { S.mods[+s.dataset.wu].u = s.value; render(); });
     q("[data-wf]", s => s.oninput = () => { const i = +s.dataset.wf; S.mods[i].f = +s.value; clearTimeout(bind.t); bind.t = setTimeout(render, 60); const l = host.querySelector(`[data-wv="${i}"]`); if (l) l.textContent = S.mods[i].f <= -100 ? "не было" : (S.mods[i].f > 0 ? "+" : "") + S.mods[i].f + "%"; });
     q("[data-wq]", b => b.onclick = () => { const [i, f] = b.dataset.wq.split(":").map(Number); S.mods[i].f = f; render(); });
     q("[data-wx]", b => b.onclick = () => { S.mods.splice(+b.dataset.wx, 1); render(); });
+    q("[data-wret]", c => c.onchange = () => { S.ret = c.checked; render(); });
+    q("[data-wwin]", c => c.onchange = () => { S.win = c.value; render(); });
+    q("[data-wlv]", b => b.onclick = () => { const id = b.dataset.wlv; if (S.skip.has(id)) S.skip.delete(id); else S.skip.add(id); render(); });
     q("[data-wadd]", b => b.onclick = () => { S.mods.push({u:"", f:-100}); render(); });
   }
   let started = false;
   const check = () => { if (tab.classList.contains("active") && !started) { started = true; render(); } };
   new MutationObserver(check).observe(tab, {attributes:true, attributeFilter:["class"]}); check();
-  document.getElementById("refresh")?.addEventListener("click", () => { if (started) setTimeout(() => { ALL = null; render(); }, 700); });
+  document.getElementById("refresh")?.addEventListener("click", () => { if (started) setTimeout(() => { ALL = null; RC.clear(); render(); }, 700); });
 })();
 </script>
 
