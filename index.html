@@ -1487,7 +1487,6 @@ body.glass-ui .chart-settings-content .chart-bg-group,body.glass-ui .chart-setti
     <button data-tab="birthdays" class="nav-hidden">Дни рождения</button>
     <button data-tab="usermap" class="nav-hidden">Карта</button>
     <button data-tab="vk" class="nav-hidden">VK</button>
-    <button data-tab="lab" class="nav-hidden">Лаборатория</button>
   </nav>
 </header>
 <script id="beta-re-flag">
@@ -1853,6 +1852,7 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
     <div class="quick-ranges" id="c-quick" hidden role="group" aria-label="Быстрый период графика"><span class="qr-label">Период графика:</span><button type="button" class="quick-chip" data-q="">Как в фильтре</button><button type="button" class="quick-chip" data-q="7">7д</button><button type="button" class="quick-chip" data-q="30">30д</button><button type="button" class="quick-chip" data-q="90">90д</button><button type="button" class="quick-chip" data-q="365">Год</button><button type="button" class="quick-chip" data-q="all">Всё</button></div>
     <div class="chart" id="c-out"></div>
     <div class="series-chips" id="c-chips" hidden></div>
+    <section class="tl-card" id="tl-card" aria-label="Таймлайн по всей истории"></section>
   </section>
 
   <section class="tab" id="tab-achievements">
@@ -1900,11 +1900,6 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
     <div id="um-out"></div>
   </section>
 
-  <section class="tab" id="tab-lab">
-    <h2>Лаборатория</h2>
-    <p class="status" id="lab-status"></p>
-    <div id="lab-body"></div>
-  </section>
   <section class="tab" id="tab-vk">
     <div class="seg group-tabs" data-group-seg="other"><button type="button" data-gtab="records" class="">Рекорды</button><button type="button" data-gtab="months" class="">Топ месяцев</button><button type="button" data-gtab="days" class="">Топ дней</button><button type="button" data-gtab="forecast" class="">Прогноз</button><button type="button" data-gtab="marathons" class="">Марафоны</button><button type="button" data-gtab="time" class="">Время</button><button type="button" data-gtab="yearreview" class="">Итоги года</button><button type="button" data-gtab="chronicle" class="">Хроника</button><button type="button" data-gtab="birthdays" class="">Дни рождения</button><button type="button" data-gtab="selfie" class="">Селфи</button><button type="button" data-gtab="usermap" class="">Карта</button><button type="button" data-gtab="vk" class="active">VK</button></div>
     <div class="filters">
@@ -2075,6 +2070,8 @@ body.fr-boot main .filters:not(.fr-keep),body.fr-boot main #c-quick,body.fr-boot
     </div>
     <p class="hint">Прогноз = уже набранное + темп × оставшиеся дни. Темп смешивает средний день текущего периода и последние 14 дней, поэтому учитывает и общий уровень, и свежую динамику. Диапазон — примерно 80% вероятности.</p>
     <div class="chart-settings-panel fc-settings-panel" id="fc-settings-panel" aria-hidden="true"><div class="chart-settings-heading"><h2>Настройка графика прогноза</h2><button class="mini" id="fc-settings-close" type="button">Свернуть</button></div><div id="fc-settings-content" class="chart-settings-content fc-settings-content"></div></div>
+    <section id="plan-card" aria-label="План на месяц"></section>
+    <section id="wi-card" aria-label="Калькулятор «если бы»"></section>
     <p class="status" id="fc-status"></p>
     <div id="fc-out"></div>
   </section>
@@ -2668,7 +2665,7 @@ document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
   if (t === "yearreview") loadYearReview();
   if (t === "compare") loadCompare();
   if (t === "hub" && window.loadHub) window.loadHub();
-  $("upd-wrap").hidden = !["hub","stats","daymatrix","marathons","yearreview","compare","charts","records","profile","months","days","time","forecast","achievements","chronicle","birthdays","usermap","vk","lab"].includes(t);
+  $("upd-wrap").hidden = !["hub","stats","daymatrix","marathons","yearreview","compare","charts","records","profile","months","days","time","forecast","achievements","chronicle","birthdays","usermap","vk"].includes(t);
   applyFiltersVisibility();
 });
 
@@ -6000,7 +5997,6 @@ async function refreshAll(soft){
     else if (t === "birthdays") await loadBirthdays();
     else if (t === "usermap") await loadUserMap();
     else if (t === "vk") await loadVk();
-    else if (t === "lab") await (window.loadLab ? window.loadLab() : null);
     else if (t === "compare") await loadCompare();
     else if (t === "hub") await (window.loadHub ? window.loadHub() : load());
     else await load();
@@ -10968,7 +10964,7 @@ renderCacheInfo();
 
 
 /* ===================== Сгруппированные вкладки: «Профиль» (+ Достижения) и «Другое» ===================== */
-const TAB_GROUPS = {profile:["profile", "achievements"], other:["records", "months", "days", "forecast", "marathons", "time", "yearreview", "chronicle", "birthdays", "usermap", "vk", "lab"]};
+const TAB_GROUPS = {profile:["profile", "achievements"], other:["records", "months", "days", "forecast", "marathons", "time", "yearreview", "chronicle", "birthdays", "usermap", "vk"]};
 const GROUP_KEY = "chatstats.tabGroups.v1";
 (function(){
   const nav = document.querySelector("nav");
@@ -14792,9 +14788,9 @@ function multiplesChart(){
   const KEY = "chatstats.sideNav.v1", KEY_C = "chatstats.sideNavCollapsed.v1";
   const nav = document.querySelector("nav"); if (!nav) return;
   const ICONS = {hub:"🧭", profile:"👤", stats:"📊", compare:"⚖️", daymatrix:"🗓️", charts:"📈", settings:"⚙️", records:"🏆", months:"🥇", days:"📆", forecast:"🔮",
-    marathons:"🏁", time:"⏳", yearreview:"🎬", achievements:"🏅", chronicle:"📜", birthdays:"🎂", selfie:"📸", usermap:"🗺️", vk:"🅥", lab:"🧪"};
+    marathons:"🏁", time:"⏳", yearreview:"🎬", achievements:"🏅", chronicle:"📜", birthdays:"🎂", selfie:"📸", usermap:"🗺️", vk:"🅥"};
   const MAIN = ["hub", "profile", "stats", "compare", "daymatrix", "charts"];
-  const OTHER = ["records", "months", "days", "forecast", "marathons", "time", "yearreview", "chronicle", "birthdays", "selfie", "usermap", "vk", "lab"];
+  const OTHER = ["records", "months", "days", "forecast", "marathons", "time", "yearreview", "chronicle", "birthdays", "selfie", "usermap", "vk"];
   const btns = [...nav.querySelectorAll("button[data-tab]")];
   btns.forEach(b => {
     const tab = b.dataset.tab, grp = b.dataset.group;
@@ -15198,7 +15194,7 @@ function multiplesChart(){
     ["yearchips", "Пульсирующие плашки годов в «Топ месяцев» и «Топ дней»"],
     ["glow", "Свечение выделенной линии на графиках"],
     ["pulse", "Пульсирующая точка «сейчас» на линиях"],
-    ["morph", "Плавная перестройка столбцов при смене периода"],
+    ["morph", "Плавная перестройка столбцов при смене периода"]
   ];
   let FX = {}; LIST.forEach(([k]) => FX[k] = true);
   try { Object.assign(FX, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
@@ -16182,7 +16178,7 @@ window.CHANGELOG = [
       {tab:"settings", ic:"⚙️", t:"Настройки", d:"Тема, участники, аватарки, города и дни рождения, Ultimate, кэш, перенос настроек"},
     ]},
   ];
-  const NAV_HIDDEN = ["lab", "records", "forecast", "selfie", "marathons", "time", "yearreview", "achievements", "chronicle", "birthdays", "usermap", "vk", "months", "days"];
+  const NAV_HIDDEN = ["records", "forecast", "selfie", "marathons", "time", "yearreview", "achievements", "chronicle", "birthdays", "usermap", "vk", "months", "days"];
   function go(tab){
     const b = (NAV_HIDDEN.includes(tab) && document.querySelector(`nav button.nav-hidden[data-tab="${tab}"]`)) || document.querySelector(`nav button[data-tab="${tab}"]`);
     if (b) { b.click(); window.scrollTo({top:0}); }
@@ -17529,9 +17525,9 @@ body.holo-text-on tr > td.medal-3:first-child{background-image:linear-gradient(1
   const META = {
     hub:["🧭", "#5e8bff"], profile:["👤", "#4cb3ff"], stats:["📊", "#34c759"], compare:["⚖️", "#ff9f0a"], daymatrix:["🗓️", "#5ac8fa"], charts:["📈", "#af52de"],
     records:["🏆", "#ffb340"], months:["📅", "#ff6482"], days:["📆", "#ff453a"], forecast:["🔮", "#bf5af2"], marathons:["🏁", "#30b0c7"], time:["⏳", "#a2845e"],
-    yearreview:["🎬", "#ff375f"], achievements:["🏅", "#ffcc00"], chronicle:["📜", "#8e8e93"], birthdays:["🎂", "#ff2d55"], selfie:["📸", "#64d2ff"], usermap:["🗺️", "#32d74b"], vk:["🅥", "#0a84ff"], lab:["🧪", "#ff6b9d"], settings:["⚙️", "#8e8e93"]
+    yearreview:["🎬", "#ff375f"], achievements:["🏅", "#ffcc00"], chronicle:["📜", "#8e8e93"], birthdays:["🎂", "#ff2d55"], selfie:["📸", "#64d2ff"], usermap:["🗺️", "#32d74b"], vk:["🅥", "#0a84ff"], settings:["⚙️", "#8e8e93"]
   };
-  const GROUPS = [["Основное", ["hub", "profile", "stats", "compare", "daymatrix", "charts"]], ["Разделы", ["records", "months", "days", "forecast", "marathons", "time", "yearreview", "achievements", "chronicle", "birthdays", "selfie", "usermap", "vk", "lab"]]];
+  const GROUPS = [["Основное", ["hub", "profile", "stats", "compare", "daymatrix", "charts"]], ["Разделы", ["records", "months", "days", "forecast", "marathons", "time", "yearreview", "achievements", "chronicle", "birthdays", "selfie", "usermap", "vk"]]];
 
   // ---------- разметка ----------
   const bar = document.createElement("div"); bar.id = "ma-bar";
@@ -21539,7 +21535,6 @@ html body .sticky-table-head{background-color:var(--bg,#14161c)!important;-webki
     });
   }
   buildEvents();
-  window.__getEvents = () => EVENTS;
   const EV_ICON = {
     wand:'<path d="M4 20 15 9"/><path d="M14 5l1-2 1 2 2 1-2 1-1 2-1-2-2-1z"/><path d="M19 11l.6 1.4L21 13l-1.4.6L19 15l-.6-1.4L17 13l1.4-.6z"/>',
     shuriken:'<path d="M12 2l2 7 7-2-5 5 5 5-7-2-2 7-2-7-7 2 5-5-5-5 7 2z"/><circle cx="12" cy="12" r="1.6"/>',
@@ -25040,25 +25035,13 @@ html body .fc-places:not(#zq){display:block}
     {id:"range", t:"Выделение периода на графике", d:"Shift + перетаскивание по линейному графику — сводка за выбранный отрезок: сумма, среднее, пик, сравнение с предыдущим отрезком."},
     {id:"pins", t:"Закреплённые точки", d:"Клик по линейному графику закрепляет дату. Вторая точка показывает разницу между ними по каждой линии."},
     {id:"drill", t:"Разбор дня по клику", d:"Клик по ячейке календаря открывает панель: итоги дня и кто сколько написал."},
-    {id:"lab-brush", t:"Лаборатория: таймлайн с мини-картой", d:"Вкладка «Лаборатория». Выбирай период рамкой на мини-карте, колесом приближай; сводка считается по выбранному."},
-    {id:"lab-heat", t:"Лаборатория: дни недели × месяцы", d:"Теплокарта активности: когда чаще пишут. Переключай метрику и год, клик по ячейке показывает, кто писал."},
-    {id:"lab-stream", t:"Лаборатория: поток участников", d:"Стримграф: как менялся вклад топ-участников по месяцам. Слои можно выделять."},
-    {id:"lab-bubble", t:"Лаборатория: бульбашки с выбором осей", d:"Участники кружками: сам выбираешь, что по X, по Y и что задаёт размер."},
-    {id:"lab-spiral", t:"Лаборатория: спираль лет", d:"Все годы чата одной спиралью: кольцо — год, угол — день года, яркость — активность."},
-    {id:"lab-ghost", t:"Лаборатория: сейчас против прошлого", d:"Последние 30/90/365 дней поверх предыдущего периода и того же периода год назад."},
-    {id:"lab-hist", t:"Лаборатория: какие бывают дни", d:"Гистограмма активности по дням с медианой, средним и 90-м процентилем."},
-    {id:"lab-events", t:"Лаборатория: события на таймлайне", d:"Периоды событий поверх активности чата; клик сравнивает событие с 30 днями до него."},
-    {id:"lab-whatif", t:"Лаборатория: прогноз «что, если»", d:"Прогноз до конца месяца/года с коридором и ползунком темпа."},
-    {id:"lab-net", t:"Лаборатория: сеть активности", d:"Граф участников: связаны те, кто активен в одни и те же дни. Узлы можно двигать."},
     {id:"export", t:"Экспорт выбранного периода в CSV", d:"В карточке выделения периода (Shift + перетаскивание) появляется кнопка «CSV»."},
-    {id:"kbd", t:"Клавиатура на таймлайне лаборатории", d:"Стрелки сдвигают окно мини-карты, +/− меняют масштаб, Home/End — к началу и концу."},
     {id:"notes", t:"Заметки к закреплённым точкам", d:"В карточке закреплённых дат появляется поле для заметки. Заметки хранятся в браузере и подставляются при повторном закреплении той же даты."},
-    {id:"touch", t:"Касания на таймлайне лаборатории", d:"Один палец двигает окно графика, два пальца (щипок) меняют масштаб."},
   ];
   let st = {}; try { st = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
   const on = id => !!st[id];
   window.EXP = {on, list:LIST};
-  const syncBody = () => { document.body.classList.toggle("exp-drill", on("drill")); document.body.classList.toggle("exp-lab", LIST.some(f => f.id.indexOf("lab-") === 0 && on(f.id))); document.dispatchEvent(new Event("exp-change")); }; syncBody();
+  const syncBody = () => { document.body.classList.toggle("exp-drill", on("drill")); }; syncBody();
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   function buildUI(){
@@ -25248,6 +25231,7 @@ html body .exp-card .exp-grid > .exp-r:not(#zq){width:100%!important;max-width:n
 .exp-grid i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px}
 .exp-grid small{color:var(--muted)}
 .exp-actions{display:flex;gap:8px;margin-top:10px}
+.exp-notes{display:flex;flex-direction:column;gap:6px;margin-top:10px}.exp-note{display:flex;flex-direction:column;gap:2px}.exp-note input{width:100%;box-sizing:border-box;padding:6px 9px;border-radius:8px;border:1px solid var(--line);background:var(--ctrl,transparent);color:inherit;font:inherit;font-size:12.5px}
 .exp-bars{display:flex;flex-direction:column;gap:5px;margin-top:8px}
 .exp-bar{position:relative;display:flex;justify-content:space-between;gap:8px;height:24px;align-items:center;padding:0 8px;border-radius:6px;overflow:hidden}
 .exp-bar i{position:absolute;left:0;top:0;bottom:0;opacity:.28;z-index:0}
@@ -25255,69 +25239,45 @@ html body .exp-card .exp-grid > .exp-r:not(#zq){width:100%!important;max-width:n
 .exp-bar span{overflow:hidden;text-overflow:ellipsis}
 body.exp-drill #c-out [data-day]{cursor:pointer}
 </style>
-<style id="lab-css">
-body:not(.exp-lab) [data-tab="lab"]{display:none!important}
-#tab-lab h2{margin:6px 0 4px}
-#lab-body{display:flex;flex-direction:column;gap:16px;margin-top:12px}
-.lab-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px 18px;min-width:0}
-.lab-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.lab-head h3{margin:0 auto 0 0;font-size:16px}
-.lab-hint{color:var(--muted);font-size:12.5px;margin:6px 0 10px}
-.lab-svg{display:block;width:100%;height:auto;touch-action:none;user-select:none}
-.lab-mini{margin-top:6px;cursor:ew-resize}
-.lab-t{fill:var(--muted);font-size:11px}
-.lab-grid{stroke:var(--line);stroke-width:1}
-.lab-area{fill:#5e8bff;fill-opacity:.22}.lab-area2{fill-opacity:.35}
-.lab-line{fill:none;stroke:#5e8bff;stroke-width:2;stroke-linejoin:round}
-.lab-cross{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
-.lab-dot{fill:#5e8bff;stroke:#fff;stroke-width:1.5}
-.lab-dim{fill:#000;fill-opacity:.38}
-.lab-win{fill:#5e8bff;fill-opacity:.12;stroke:#5e8bff;stroke-width:1;cursor:grab}
-.lab-hd{fill:#5e8bff;fill-opacity:.9;cursor:ew-resize}
-.lab-stats{display:flex;gap:18px;flex-wrap:wrap;margin:4px 0 8px}
-.lab-stats div{display:flex;flex-direction:column;gap:2px}.lab-stats small{color:var(--muted);font-size:11.5px}.lab-stats b{font-size:15px}
-.lab-heat{display:grid;grid-template-columns:34px repeat(12,minmax(0,1fr));gap:4px;align-items:center}
-.lab-hc,.lab-hr{color:var(--muted);font-size:11.5px;text-align:center}
-.lab-hr{text-align:left}
-html body .lab-card .lab-cell:not(#zq){appearance:none;border:0;border-radius:8px;padding:0;height:36px;min-width:0;font:inherit;font-size:11px;color:var(--fg,inherit);background:color-mix(in srgb,#5e8bff calc(var(--a)*100%),transparent);cursor:pointer;outline-offset:2px;overflow:hidden}
-html body .lab-card .lab-cell.on:not(#zq){outline:2px solid #ffd60a}
-.lab-drill{margin-top:12px;display:flex;flex-direction:column;gap:4px}
-.lab-drill small{color:var(--muted);margin-left:8px}
-.lab-bar{position:relative;display:grid;grid-template-columns:120px 1fr 64px;align-items:center;gap:8px;font-size:12.5px}
-.lab-bar i{display:block;height:8px;border-radius:4px;background:#5e8bff}.lab-bar em{font-style:normal;text-align:right}
-.lab-layer{fill-opacity:.88;stroke:var(--panel);stroke-width:.6;cursor:pointer;transition:fill-opacity .15s}
-.lab-layer.rest{fill-opacity:.4}.lab-layer.off{fill-opacity:.12}.lab-layer:hover{fill-opacity:1}
-.lab-legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-html body .lab-card .lab-lg:not(#zq){display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:transparent;color:inherit;font-size:12px;cursor:pointer}
-.lab-lg i{width:9px;height:9px;border-radius:50%;display:block}.lab-lg.on{border-color:#ffd60a}
-.lab-axes{display:flex;gap:12px;flex-wrap:wrap;margin:6px 0}.lab-axes label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
-.lab-bub circle{fill-opacity:.78;stroke:rgba(255,255,255,.55);stroke-width:1;cursor:pointer;transition:fill-opacity .15s}.lab-bub.off{opacity:.18}.lab-bub.on circle{stroke:#ffd60a;stroke-width:2.5}.lab-bub:hover circle{fill-opacity:1}
-.lab-bl{fill:#fff;font-size:10px;pointer-events:none;paint-order:stroke;stroke:rgba(0,0,0,.55);stroke-width:2px}
-.lab-spk{stroke:var(--line);stroke-width:.6}.lab-sq{max-width:640px;margin:0 auto}.lab-yl{font-size:7px}
-.lab-hb{fill:#5e8bff;fill-opacity:.8}.lab-hb:hover{fill-opacity:1}
-.lab-slider{display:flex;align-items:center;gap:12px;margin:4px 0 8px}.lab-slider input{flex:1;max-width:420px}.lab-slider b{min-width:48px}
-.lab-ev{cursor:pointer}.lab-evt{fill:#fff;font-size:10.5px;pointer-events:none}
-.lab-ed{stroke:#8aa4ff;stroke-opacity:.35}.lab-ed.on{stroke-opacity:.95}.lab-ed.off{stroke-opacity:.07}
-.lab-nd{cursor:grab}.lab-nd circle{stroke:rgba(255,255,255,.6);stroke-width:1.2}.lab-nd.off{opacity:.25}
-.exp-notes{display:flex;flex-direction:column;gap:6px;margin-top:10px}.exp-note{display:flex;flex-direction:column;gap:2px}.exp-note input{width:100%;box-sizing:border-box;padding:6px 9px;border-radius:8px;border:1px solid var(--line);background:var(--ctrl,transparent);color:inherit;font:inherit;font-size:12.5px}
-.lab-tip{position:fixed;z-index:9995;display:none;pointer-events:none;background:rgba(18,18,24,.94);color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:7px 10px;font-size:12.5px;line-height:1.45}
-@media(max-width:640px){.lab-card{padding:12px}.lab-bar{grid-template-columns:90px 1fr 54px}.lab-heat{grid-template-columns:28px repeat(12,minmax(0,1fr));gap:2px}.lab-cell{font-size:9px!important}}
+
+
+
+<style id="tl-css">
+.tl-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px 18px;min-width:0}
+.tl-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tl-head h3{margin:0 auto 0 0;font-size:16px}
+.tl-hint{color:var(--muted);font-size:12.5px;margin:6px 0 10px}
+.tl-svg{display:block;width:100%;height:auto;touch-action:none;user-select:none}
+.tl-mini{margin-top:6px;cursor:ew-resize}
+.tl-t{fill:var(--muted);font-size:11px}
+.tl-grid{stroke:var(--line);stroke-width:1}
+.tl-area{fill:#5e8bff;fill-opacity:.22}.tl-area2{fill-opacity:.35}
+.tl-line{fill:none;stroke:#5e8bff;stroke-width:2;stroke-linejoin:round}
+.tl-cross{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
+.tl-dot{fill:#5e8bff;stroke:#fff;stroke-width:1.5}
+.tl-dim{fill:#000;fill-opacity:.38}
+.tl-win{fill:#5e8bff;fill-opacity:.12;stroke:#5e8bff;stroke-width:1;cursor:grab}
+.tl-hd{fill:#5e8bff;fill-opacity:.9;cursor:ew-resize}
+.tl-stats{display:flex;gap:18px;flex-wrap:wrap;margin:4px 0 8px}
+.tl-stats div{display:flex;flex-direction:column;gap:2px}.tl-stats small{color:var(--muted);font-size:11.5px}.tl-stats b{font-size:15px}
+html body .tl-card .tl-lg:not(#zq){display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:transparent;color:inherit;font-size:12px;cursor:pointer}
+.tl-tip{position:fixed;z-index:9995;display:none;pointer-events:none;background:rgba(18,18,24,.94);color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:7px 10px;font-size:12.5px;line-height:1.45}
+#tl-card{margin-top:16px}
+#tl-card .tl-hint{color:var(--muted);font-size:12.5px;margin:6px 0 10px}
 </style>
-<script id="lab-js">
-/* ===================== Лаборатория: новые типы графиков (экспериментальные) ===================== */
+
+<script id="tl-js">
+/* ===================== Графики: таймлайн по всей истории с мини-картой ===================== */
 (function(){
-  const sec = document.getElementById("tab-lab"); if (!sec) return;
-  const on = id => !!(window.EXP && window.EXP.on(id));
+  const card = document.getElementById("tl-card"), tab = document.getElementById("tab-charts"); if (!card || !tab) return;
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const nf = v => Math.round(v).toLocaleString("ru-RU");
   const MON = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
-  const WD = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
   const ML = {msgs:"Сообщения", stick:"Стикеры", voice:"Голосовые", video:"Видеосообщения"};
   const fd = d => `${d.slice(8, 10)}.${d.slice(5, 7)}.${d.slice(0, 4)}`;
-  let D = null, busy = null;
-
-  async function prep(){
-    const arr = pick(await getHistory(), "");
+  let D = null, chat = "", titles = null, gen = 0;
+  async function prep(chat){
+    const arr = pick(await getHistory(), chat || "");
     const rec = [], dayM = new Map();
     for (const x of arr) {
       const uid = x[F.userId]; if (typeof isExcludedUser === "function" && isExcludedUser(uid)) continue;
@@ -25340,13 +25300,13 @@ html body .lab-card .lab-lg:not(#zq){display:inline-flex;align-items:center;gap:
   }
 
   /* ---------- 1. Таймлайн с мини-картой ---------- */
-  function brushCard(box){
+  function brushCard(box, chatOpts, onChat){
     const S = {k:"msgs", a:Math.max(0, D.DS.length - 365), b:D.DS.length - 1};
-    box.innerHTML = `<div class="lab-head"><h3>Таймлайн с мини-картой</h3><select data-r="k">${Object.entries(ML).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></div>
-      <p class="lab-hint">Потяни рамку на мини-карте или её края. Колесо мыши над большим графиком — масштаб.</p>
-      <div class="lab-stats" data-r="st"></div>
-      <svg data-r="main" data-no-zoom viewBox="0 0 900 230" class="lab-svg"></svg>
-      <svg data-r="mini" data-no-zoom viewBox="0 0 900 56" class="lab-svg lab-mini"></svg>`;
+    box.innerHTML = `<div class="tl-head"><h3>Таймлайн по всей истории</h3><select data-r="c" title="Чат">${chatOpts}</select><select data-r="k">${Object.entries(ML).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></div>
+      <p class="tl-hint">Потяни рамку на мини-карте или её края. Колесо мыши над большим графиком — масштаб.</p>
+      <div class="tl-stats" data-r="st"></div>
+      <svg data-r="main" data-no-zoom viewBox="0 0 900 230" class="tl-svg"></svg>
+      <svg data-r="mini" data-no-zoom viewBox="0 0 900 56" class="tl-svg tl-mini"></svg>`;
     const main = box.querySelector('[data-r="main"]'), mini = box.querySelector('[data-r="mini"]'), st = box.querySelector('[data-r="st"]');
     const N = D.DS.length, MIN = 14, X0 = 46, X1 = 890;
     function bucketize(a, b, k){
@@ -25358,11 +25318,11 @@ html body .lab-card .lab-lg:not(#zq){display:inline-flex;align-items:center;gap:
       const {out, bs} = bucketize(S.a, S.b, S.k), mx = Math.max(1, ...out.map(o => o.v)) * 1.08;
       const px = i => X0 + (out.length < 2 ? 0 : (i / (out.length - 1)) * (X1 - X0)), py = v => 200 - (v / mx) * 178;
       let h = "";
-      for (let t = 0; t <= 4; t++) { const v = mx * t / 4, y = py(v); h += `<line x1="${X0}" x2="${X1}" y1="${y}" y2="${y}" class="lab-grid"/><text x="${X0 - 6}" y="${y + 4}" text-anchor="end" class="lab-t">${nf(v)}</text>`; }
+      for (let t = 0; t <= 4; t++) { const v = mx * t / 4, y = py(v); h += `<line x1="${X0}" x2="${X1}" y1="${y}" y2="${y}" class="tl-grid"/><text x="${X0 - 6}" y="${y + 4}" text-anchor="end" class="tl-t">${nf(v)}</text>`; }
       const pts = out.map((o, i) => `${px(i).toFixed(1)},${py(o.v).toFixed(1)}`);
-      h += `<path d="M${px(0)},200 L${pts.join(" L")} L${px(out.length - 1)},200Z" class="lab-area"/><polyline points="${pts.join(" ")}" class="lab-line"/>`;
-      const lab = 6; for (let t = 0; t < lab; t++) { const i = Math.round(t * (out.length - 1) / (lab - 1)), d = D.DS[out[i].i]; h += `<text x="${px(i)}" y="222" text-anchor="${t === 0 ? "start" : t === lab - 1 ? "end" : "middle"}" class="lab-t">${bs >= 7 || S.b - S.a > 200 ? MON[+d.slice(5, 7) - 1] + " " + d.slice(2, 4) : d.slice(8, 10) + "." + d.slice(5, 7)}</text>`; }
-      h += `<line id="lb-x" y1="22" y2="200" class="lab-cross" style="display:none"/><circle id="lb-c" r="4" class="lab-dot" style="display:none"/><rect id="lb-h" x="${X0}" y="0" width="${X1 - X0}" height="200" fill="transparent"/>`;
+      h += `<path d="M${px(0)},200 L${pts.join(" L")} L${px(out.length - 1)},200Z" class="tl-area"/><polyline points="${pts.join(" ")}" class="tl-line"/>`;
+      const lab = 6; for (let t = 0; t < lab; t++) { const i = Math.round(t * (out.length - 1) / (lab - 1)), d = D.DS[out[i].i]; h += `<text x="${px(i)}" y="222" text-anchor="${t === 0 ? "start" : t === lab - 1 ? "end" : "middle"}" class="tl-t">${bs >= 7 || S.b - S.a > 200 ? MON[+d.slice(5, 7) - 1] + " " + d.slice(2, 4) : d.slice(8, 10) + "." + d.slice(5, 7)}</text>`; }
+      h += `<line id="lb-x" y1="22" y2="200" class="tl-cross" style="display:none"/><circle id="lb-c" r="4" class="tl-dot" style="display:none"/><rect id="lb-h" x="${X0}" y="0" width="${X1 - X0}" height="200" fill="transparent"/>`;
       main.innerHTML = h;
       const hv = main.querySelector("#lb-h"), cx = main.querySelector("#lb-x"), cc = main.querySelector("#lb-c");
       hv.onmousemove = e => {
@@ -25374,7 +25334,7 @@ html body .lab-card .lab-lg:not(#zq){display:inline-flex;align-items:center;gap:
       hv.onmouseleave = () => { cx.style.display = "none"; cc.style.display = "none"; tip(); };
       if (!main._tc) { main._tc = 1;
         const ptr = new Map(); let pz = null;
-        main.addEventListener("pointerdown", e => { if (!on("touch") || e.pointerType === "mouse") return; ptr.set(e.pointerId, e.clientX); try { main.setPointerCapture(e.pointerId); } catch (err) {} pz = {a:S.a, b:S.b, x:e.clientX, d:null}; });
+        main.addEventListener("pointerdown", e => { if (e.pointerType === "mouse") return; ptr.set(e.pointerId, e.clientX); try { main.setPointerCapture(e.pointerId); } catch (err) {} pz = {a:S.a, b:S.b, x:e.clientX, d:null}; });
         main.addEventListener("pointermove", e => {
           if (!pz || !ptr.has(e.pointerId)) return; ptr.set(e.pointerId, e.clientX);
           const n0 = pz.b - pz.a + 1;
@@ -25397,10 +25357,10 @@ html body .lab-card .lab-lg:not(#zq){display:inline-flex;align-items:center;gap:
       for (let i = 0; i < N; i += bs) { const j = Math.min(N - 1, i + bs - 1), v = (D.pre[S.k][j + 1] - D.pre[S.k][i]) / (j - i + 1); pts.push(v); if (v > mx) mx = v; }
       const px = i => X0 + (i / Math.max(1, pts.length - 1)) * (X1 - X0), py = v => 50 - (v / mx) * 42;
       const xa = X0 + S.a / (N - 1) * (X1 - X0), xb = X0 + S.b / (N - 1) * (X1 - X0);
-      mini.innerHTML = `<path d="M${px(0)},50 L${pts.map((v, i) => `${px(i).toFixed(1)},${py(v).toFixed(1)}`).join(" L")} L${px(pts.length - 1)},50Z" class="lab-area lab-area2"/>
-        <rect x="${X0}" y="2" width="${Math.max(0, xa - X0)}" height="50" class="lab-dim"/><rect x="${xb}" y="2" width="${Math.max(0, X1 - xb)}" height="50" class="lab-dim"/>
-        <rect data-m="m" x="${xa}" y="2" width="${Math.max(6, xb - xa)}" height="50" class="lab-win"/>
-        <rect data-m="l" x="${xa - 4}" y="2" width="8" height="50" class="lab-hd"/><rect data-m="r" x="${xb - 4}" y="2" width="8" height="50" class="lab-hd"/>`;
+      mini.innerHTML = `<path d="M${px(0)},50 L${pts.map((v, i) => `${px(i).toFixed(1)},${py(v).toFixed(1)}`).join(" L")} L${px(pts.length - 1)},50Z" class="tl-area tl-area2"/>
+        <rect x="${X0}" y="2" width="${Math.max(0, xa - X0)}" height="50" class="tl-dim"/><rect x="${xb}" y="2" width="${Math.max(0, X1 - xb)}" height="50" class="tl-dim"/>
+        <rect data-m="m" x="${xa}" y="2" width="${Math.max(6, xb - xa)}" height="50" class="tl-win"/>
+        <rect data-m="l" x="${xa - 4}" y="2" width="8" height="50" class="tl-hd"/><rect data-m="r" x="${xb - 4}" y="2" width="8" height="50" class="tl-hd"/>`;
     }
     function stats(){
       const n = S.b - S.a + 1, sum = D.pre[S.k][S.b + 1] - D.pre[S.k][S.a]; let pk = S.a;
@@ -25409,6 +25369,7 @@ html body .lab-card .lab-lg:not(#zq){display:inline-flex;align-items:center;gap:
     }
     function draw(){ drawMain(); drawMini(); stats(); }
     box.querySelector('[data-r="k"]').onchange = e => { S.k = e.target.value; draw(); };
+    box.querySelector('[data-r="c"]').onchange = e => onChat(e.target.value);
     let drag = null;
     mini.addEventListener("pointerdown", e => {
       const r = mini.getBoundingClientRect(), f = Math.max(0, Math.min(1, ((e.clientX - r.left) / r.width * 900 - X0) / (X1 - X0))), i = Math.round(f * (N - 1)), m = e.target.dataset.m;
@@ -25425,7 +25386,7 @@ html body .lab-card .lab-lg:not(#zq){display:inline-flex;align-items:center;gap:
     });
     mini.tabIndex = 0; mini.setAttribute("aria-label", "Окно таймлайна: стрелки — сдвиг, плюс и минус — масштаб");
     mini.addEventListener("keydown", e => {
-      if (!on("kbd")) return; const n = S.b - S.a + 1, st2 = Math.max(1, Math.round(n * .1)); let a = S.a, b = S.b, ok = true;
+      const n = S.b - S.a + 1, st2 = Math.max(1, Math.round(n * .1)); let a = S.a, b = S.b, ok = true;
       if (e.key === "ArrowLeft") { a -= st2; b -= st2; } else if (e.key === "ArrowRight") { a += st2; b += st2; }
       else if (e.key === "+" || e.key === "=") { const c = Math.max(MIN, Math.round(n * .8)), m = (a + b) / 2; a = Math.round(m - c / 2); b = a + c - 1; }
       else if (e.key === "-") { const c = Math.min(N, Math.round(n * 1.25)), m = (a + b) / 2; a = Math.round(m - c / 2); b = a + c - 1; }
@@ -25436,325 +25397,241 @@ html body .lab-card .lab-lg:not(#zq){display:inline-flex;align-items:center;gap:
     draw();
   }
 
-  /* ---------- 2. Теплокарта: день недели × месяц ---------- */
-  function heatCard(box){
-    const years = [...new Set(D.DS.map(d => d.slice(0, 4)))];
-    const S = {k:"msgs", y:years[years.length - 1], avg:true};
-    box.innerHTML = `<div class="lab-head"><h3>Дни недели × месяцы</h3><select data-r="y"><option value="all">Все годы</option>${years.slice().reverse().map(y => `<option value="${y}"${y === S.y ? " selected" : ""}>${y}</option>`).join("")}</select>
-      <select data-r="k">${Object.entries(ML).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select>
-      <select data-r="v"><option value="avg">В среднем за день</option><option value="sum">Сумма</option></select></div>
-      <p class="lab-hint">Клик по ячейке — кто писал в эти дни.</p><div class="lab-heat" data-r="g"></div><div class="lab-drill" data-r="dr"></div>`;
-    const gr = box.querySelector('[data-r="g"]'), dr = box.querySelector('[data-r="dr"]');
-    let sel = null;
-    function draw(){
-      const sum = Array.from({length:7}, () => new Float64Array(12)), cnt = Array.from({length:7}, () => new Float64Array(12));
-      D.DS.forEach((d, i) => { if (S.y !== "all" && d.slice(0, 4) !== S.y) return; const m = +d.slice(5, 7) - 1; sum[D.wd[i]][m] += D.ser[S.k][i]; cnt[D.wd[i]][m]++; });
-      const val = (w, m) => S.avg ? (cnt[w][m] ? sum[w][m] / cnt[w][m] : 0) : sum[w][m];
-      let mx = 1; for (let w = 0; w < 7; w++) for (let m = 0; m < 12; m++) mx = Math.max(mx, val(w, m));
-      let h = `<i></i>` + MON.map(m => `<span class="lab-hc">${m}</span>`).join("");
-      for (let w = 0; w < 7; w++) { h += `<span class="lab-hr">${WD[w]}</span>`; for (let m = 0; m < 12; m++) { const v = val(w, m), a = cnt[w][m] ? v / mx : 0; h += `<button type="button" class="lab-cell${sel && sel[0] === w && sel[1] === m ? " on" : ""}" data-w="${w}" data-m="${m}" style="--a:${(.08 + .92 * a).toFixed(3)};${a > .55 ? "--fg:#0b0b10" : ""}" title="${WD[w]}, ${MON[m]}: ${cnt[w][m] ? nf(v) : "нет данных"}"${cnt[w][m] ? "" : " disabled"}>${cnt[w][m] ? nf(v) : "–"}</button>`; } }
-      gr.innerHTML = h; drill();
-    }
-    function drill(){
-      if (!sel) { dr.innerHTML = ""; return; }
-      const [w, m] = sel, u = new Map(); let tot = 0;
-      for (const r of D.rec) { const i = idx(r.d); if (i < 0 || D.wd[i] !== w || +r.d.slice(5, 7) - 1 !== m || (S.y !== "all" && r.d.slice(0, 4) !== S.y)) continue; const v = r.m[S.k]; tot += v; u.set(r.n, (u.get(r.n) || 0) + v); }
-      const top = [...u].sort((a, b) => b[1] - a[1]).slice(0, 10), mx = top.length ? top[0][1] : 1;
-      dr.innerHTML = `<b>${WD[w]} · ${MON[m]}${S.y === "all" ? "" : " " + S.y}</b> <small>всего ${nf(tot)}</small>` + top.map(([n, v]) => `<div class="lab-bar"><span>${esc(n)}</span><i style="width:${(v / mx * 100).toFixed(1)}%"></i><em>${nf(v)}</em></div>`).join("");
-    }
-    box.querySelector('[data-r="y"]').onchange = e => { S.y = e.target.value; draw(); };
-    box.querySelector('[data-r="k"]').onchange = e => { S.k = e.target.value; draw(); };
-    box.querySelector('[data-r="v"]').onchange = e => { S.avg = e.target.value === "avg"; draw(); };
-    gr.addEventListener("click", e => { const c = e.target.closest(".lab-cell"); if (!c) return; const w = +c.dataset.w, m = +c.dataset.m; sel = sel && sel[0] === w && sel[1] === m ? null : [w, m]; draw(); });
-    draw();
-  }
-  let idxMap = null; const idx = d => { if (!idxMap) { idxMap = new Map(D.DS.map((x, i) => [x, i])); } const i = idxMap.get(d); return i === undefined ? -1 : i; };
-
-  /* ---------- 3. Streamgraph ---------- */
-  function streamCard(box){
-    const S = {n:8, from:"all"};
-    box.innerHTML = `<div class="lab-head"><h3>Поток участников</h3><select data-r="f"><option value="all">Всё время</option><option value="3">Последние 3 года</option><option value="1">Последний год</option></select>
-      <select data-r="n"><option value="6">Топ-6</option><option value="8" selected>Топ-8</option><option value="12">Топ-12</option></select></div>
-      <p class="lab-hint">Толщина слоя — вклад участника в сообщения за месяц. Наведи на слой или кликни по имени в легенде, чтобы выделить.</p>
-      <svg data-r="s" data-no-zoom viewBox="0 0 900 300" class="lab-svg"></svg><div class="lab-legend" data-r="lg"></div>`;
-    const svg = box.querySelector('[data-r="s"]'), lg = box.querySelector('[data-r="lg"]');
-    let focus = null;
-    function draw(){
-      const e = D.DS[D.DS.length - 1].slice(0, 7), first = D.DS[0].slice(0, 7), months = [];
-      { let [y, m] = [+e.slice(0, 4), +e.slice(5, 7)]; const lim = S.from === "all" ? 1e4 : +S.from * 12;
-        while (months.length < lim) { const k = `${y}-${String(m).padStart(2, "0")}`; if (k < first) break; months.unshift(k); if (--m < 1) { m = 12; y--; } } }
-      const mi = new Map(months.map((k, i) => [k, i])), U = new Map();
-      for (const r of D.rec) { const i = mi.get(r.d.slice(0, 7)); if (i === undefined) continue; let u = U.get(r.u); if (!u) U.set(r.u, u = {n:r.n, v:new Float64Array(months.length), t:0}); u.v[i] += r.m.msgs; u.t += r.m.msgs; }
-      const top = [...U.values()].sort((a, b) => b.t - a.t), L = top.slice(0, +S.n), rest = new Float64Array(months.length);
-      top.slice(+S.n).forEach(u => u.v.forEach((v, i) => rest[i] += v));
-      L.push({n:"Остальные", v:rest, t:0, rest:true});
-      const T = months.map((_, i) => L.reduce((s, l) => s + l.v[i], 0)), mx = Math.max(1, ...T), X0 = 10, X1 = 890, cy = 150, sc = 130 / (mx / 2);
-      const px = i => X0 + (months.length < 2 ? 0 : i / (months.length - 1) * (X1 - X0));
-      const base = T.map(t => -t / 2), layers = [];
-      let cur = base.slice();
-      L.forEach((l, li) => { const lo2 = cur.slice(), hi = cur.map((c, i) => c + l.v[i]); layers.push({l, li, lo:lo2, hi}); cur = hi; });
-      const sm = (ys) => { let d = `M${px(0).toFixed(1)},${(cy + ys[0] * sc).toFixed(1)}`; for (let i = 1; i < ys.length; i++) { const x0 = px(i - 1), x1 = px(i), xm = (x0 + x1) / 2; d += ` C${xm.toFixed(1)},${(cy + ys[i - 1] * sc).toFixed(1)} ${xm.toFixed(1)},${(cy + ys[i] * sc).toFixed(1)} ${x1.toFixed(1)},${(cy + ys[i] * sc).toFixed(1)}`; } return d; };
-      const smr = (ys) => { let d = ""; for (let i = ys.length - 1; i > 0; i--) { const x0 = px(i), x1 = px(i - 1), xm = (x0 + x1) / 2; d += ` C${xm.toFixed(1)},${(cy + ys[i] * sc).toFixed(1)} ${xm.toFixed(1)},${(cy + ys[i - 1] * sc).toFixed(1)} ${x1.toFixed(1)},${(cy + ys[i - 1] * sc).toFixed(1)}`; } return d; };
-      const col = (li, rest) => rest ? "hsl(220 8% 48%)" : `hsl(${(li * 137.5 + 20) % 360} 62% 58%)`;
-      let h = "";
-      layers.forEach(({l, li, lo, hi}) => { h += `<path data-li="${li}" d="${sm(hi)} L${px(lo.length - 1).toFixed(1)},${(cy + lo[lo.length - 1] * sc).toFixed(1)}${smr(lo)}Z" fill="${col(li, l.rest)}" class="lab-layer${l.rest ? " rest" : ""}${focus === null ? "" : focus === li ? " on" : " off"}"/>`; });
-      const yrs = []; months.forEach((k, i) => { if (k.endsWith("-01") || i === 0) yrs.push([i, k.slice(0, 4)]); });
-      const step = Math.ceil(yrs.length / 10); yrs.forEach(([i, y], j) => { if (j % step === 0) h += `<text x="${px(i)}" y="294" text-anchor="${i === 0 ? "start" : "middle"}" class="lab-t">${y}</text>`; });
-      h += `<line id="st-x" y1="6" y2="280" class="lab-cross" style="display:none"/>`;
-      svg.innerHTML = h;
-      const cx = svg.querySelector("#st-x");
-      svg.onmousemove = e => {
-        const r = svg.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 900, i = Math.max(0, Math.min(months.length - 1, Math.round((x - X0) / (X1 - X0) * (months.length - 1))));
-        cx.setAttribute("x1", px(i)); cx.setAttribute("x2", px(i)); cx.style.display = "";
-        const p = e.target.closest && e.target.closest("[data-li]"), li = p ? +p.dataset.li : -1, [yy, mm] = months[i].split("-");
-        tip(e, `<b>${MON[+mm - 1]} ${yy}</b>` + (li >= 0 ? `<br>${esc(L[li].n)}: <b>${nf(L[li].v[i])}</b>` : "") + `<br>Всего: ${nf(T[i])}`);
-      };
-      svg.onmouseleave = () => { cx.style.display = "none"; tip(); };
-      svg.onclick = e => { const p = e.target.closest && e.target.closest("[data-li]"); setFocus(p ? +p.dataset.li : null); };
-      lg.innerHTML = L.map((l, li) => `<button type="button" data-li="${li}" class="lab-lg${focus === li ? " on" : ""}"><i style="background:${col(li, l.rest)}"></i>${esc(l.n)}</button>`).join("");
-    }
-    function setFocus(li){ focus = focus === li ? null : li; draw(); }
-    lg.addEventListener("click", e => { const b = e.target.closest("[data-li]"); if (b) setFocus(+b.dataset.li); });
-    box.querySelector('[data-r="f"]').onchange = e => { S.from = e.target.value; draw(); };
-    box.querySelector('[data-r="n"]').onchange = e => { S.n = e.target.value; focus = null; draw(); };
-    draw();
-  }
-
-  /* ---------- 4. Бульбашки: оси на выбор ---------- */
-  function bubbleCard(box){
-    const AX = {msgs:"Сообщения", stick:"Стикеры", voice:"Голосовые", video:"Видео", days:"Активных дней", perday:"Сообщений в активный день", tenure:"Дней от первого до последнего сообщения", share:"Доля сообщений, %"};
-    const S = {x:"days", y:"perday", s:"msgs", p:"all"}, last = D.DS.length - 1;
-    const opts = (sel, ex) => Object.entries(AX).filter(([k]) => k !== ex).map(([k, v]) => `<option value="${k}"${k === sel ? " selected" : ""}>${v}</option>`).join("");
-    box.innerHTML = `<div class="lab-head"><h3>Бульбашки: оси на выбор</h3><select data-r="p"><option value="all">Всё время</option><option value="365">Последний год</option><option value="90">90 дней</option></select></div>
-      <div class="lab-axes"><label>X <select data-r="x">${opts(S.x)}</select></label><label>Y <select data-r="y">${opts(S.y)}</select></label><label>Размер <select data-r="s">${opts(S.s)}</select></label></div>
-      <p class="lab-hint">Каждый кружок — участник. Клик по кружку выделяет его.</p><svg data-r="b" data-no-zoom viewBox="0 0 900 440" class="lab-svg"></svg>`;
-    const svg = box.querySelector('[data-r="b"]'); let focus = null;
-    function calc(){
-      const from = S.p === "all" ? 0 : Math.max(0, last - +S.p + 1), fromD = D.DS[from], U = new Map(); let tot = 0;
-      for (const r of D.rec) { if (r.d < fromD) continue; let u = U.get(r.u); if (!u) U.set(r.u, u = {n:r.n, msgs:0, stick:0, voice:0, video:0, ds:new Set(), a:r.d, b:r.d}); for (const k in ML) u[k] += r.m[k]; if (r.m.msgs + r.m.stick + r.m.voice + r.m.video > 0) u.ds.add(r.d); if (r.d < u.a) u.a = r.d; if (r.d > u.b) u.b = r.d; tot += r.m.msgs; }
-      return [...U.entries()].map(([id, u]) => ({id, n:u.n, msgs:u.msgs, stick:u.stick, voice:u.voice, video:u.video, days:u.ds.size, perday:u.ds.size ? u.msgs / u.ds.size : 0, tenure:(Date.parse(u.b) - Date.parse(u.a)) / 864e5, share:tot ? u.msgs / tot * 100 : 0})).filter(u => u.days > 0);
-    }
-    function draw(){
-      const L = calc(), X0 = 64, X1 = 880, Y0 = 20, Y1 = 390, rng = k => { const v = L.map(u => u[k]), mn = Math.min(...v), mx = Math.max(...v); return [mn, mx === mn ? mn + 1 : mx]; };
-      const [xa, xb] = rng(S.x), [ya, yb] = rng(S.y), [sa, sb] = rng(S.s), px = v => X0 + (v - xa) / (xb - xa) * (X1 - X0) * .96 + 12, py = v => Y1 - (v - ya) / (yb - ya) * (Y1 - Y0) * .94 - 10, rr = v => 5 + Math.sqrt((v - sa) / (sb - sa)) * 24;
-      let h = "";
-      for (let t = 0; t <= 4; t++) { const y = Y1 - t / 4 * (Y1 - Y0), x = X0 + t / 4 * (X1 - X0); h += `<line x1="${X0}" x2="${X1}" y1="${y}" y2="${y}" class="lab-grid"/><text x="${X0 - 6}" y="${y + 4}" text-anchor="end" class="lab-t">${nf(ya + (yb - ya) * t / 4)}</text><text x="${x}" y="412" text-anchor="middle" class="lab-t">${nf(xa + (xb - xa) * t / 4)}</text>`; }
-      h += `<text x="${(X0 + X1) / 2}" y="434" text-anchor="middle" class="lab-t">${AX[S.x]}</text><text x="12" y="${(Y0 + Y1) / 2}" transform="rotate(-90 12 ${(Y0 + Y1) / 2})" text-anchor="middle" class="lab-t">${AX[S.y]}</text>`;
-      const hue = id => { let n = 0; for (const c of String(id)) n = (n * 31 + c.charCodeAt(0)) >>> 0; return n % 360; };
-      L.sort((a, b) => b[S.s] - a[S.s]);
-      L.forEach((u, i) => { const cx = px(u[S.x]), cy = py(u[S.y]), r = rr(u[S.s]);
-        h += `<g class="lab-bub${focus === null ? "" : focus === u.id ? " on" : " off"}" data-id="${esc(u.id)}"><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="hsl(${hue(u.id)} 65% 58%)"/>${(i < 8 || focus === u.id) ? `<text x="${cx.toFixed(1)}" y="${(cy + 4).toFixed(1)}" text-anchor="middle" class="lab-bl">${esc(u.n.length > 9 ? u.n.slice(0, 8) + "…" : u.n)}</text>` : ""}</g>`; });
-      svg.innerHTML = h;
-      svg.onmousemove = e => { const g = e.target.closest && e.target.closest(".lab-bub"); if (!g) { tip(); return; } const u = L.find(x => String(x.id) === g.dataset.id); tip(e, `<b>${esc(u.n)}</b><br>${AX[S.x]}: ${nf(u[S.x])}<br>${AX[S.y]}: ${nf(u[S.y])}<br>${AX[S.s]}: ${nf(u[S.s])}`); };
-      svg.onmouseleave = () => tip();
-      svg.onclick = e => { const g = e.target.closest && e.target.closest(".lab-bub"); const id = g ? g.dataset.id : null; focus = focus === id ? null : id; draw(); };
-    }
-    ["x", "y", "s", "p"].forEach(k => box.querySelector(`[data-r="${k}"]`).onchange = e => { S[k] = e.target.value; draw(); });
-    draw();
-  }
-
-  /* ---------- 5. Спираль лет ---------- */
-  function spiralCard(box){
-    const S = {k:"msgs"}, years = [...new Set(D.DS.map(d => d.slice(0, 4)))];
-    box.innerHTML = `<div class="lab-head"><h3>Спираль лет</h3><select data-r="k">${Object.entries(ML).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></div>
-      <p class="lab-hint">Каждое кольцо — год (внутри самый старый), угол — день года, яркость — активность. Январь сверху, по часовой стрелке.</p>
-      <svg data-r="sp" data-no-zoom viewBox="-250 -250 500 500" class="lab-svg lab-sq"></svg>`;
-    const svg = box.querySelector('[data-r="sp"]');
-    function draw(){
-      const ring = 190 / (years.length + 1.5), r0 = 34, vals = D.ser[S.k].filter(v => v > 0).sort((a, b) => a - b), q = vals.length ? vals[Math.floor(vals.length * .95)] : 1;
-      let h = ""; const pt = (r, a) => `${(r * Math.sin(a)).toFixed(2)},${(-r * Math.cos(a)).toFixed(2)}`;
-      MON.forEach((m, i) => { const a = i / 12 * 6.2832; h += `<line x1="0" y1="0" x2="${(232 * Math.sin(a)).toFixed(2)}" y2="${(-232 * Math.cos(a)).toFixed(2)}" class="lab-spk"/><text x="${(240 * Math.sin(a + .26)).toFixed(1)}" y="${(-240 * Math.cos(a + .26) + 4).toFixed(1)}" text-anchor="middle" class="lab-t">${m}</text>`; });
-      D.DS.forEach((d, i) => { const yi = years.indexOf(d.slice(0, 4)), y0 = Date.UTC(+d.slice(0, 4), 0, 1), doy = (Date.parse(d + "T00:00:00Z") - y0) / 864e5, ylen = (Date.UTC(+d.slice(0, 4) + 1, 0, 1) - y0) / 864e5, a0 = doy / ylen * 6.2832, a1 = (doy + 1) / ylen * 6.2832 + .004, ri = r0 + yi * ring, ro = ri + ring * .86, v = D.ser[S.k][i];
-        const al = v ? .12 + .88 * Math.min(1, v / q) : .04;
-        h += `<path data-i="${i}" d="M${pt(ri, a0)}L${pt(ro, a0)}L${pt(ro, a1)}L${pt(ri, a1)}Z" fill="#5e8bff" fill-opacity="${al.toFixed(2)}"/>`; });
-      years.forEach((y, yi) => { h += `<text x="3" y="${-(r0 + yi * ring + ring * .5) + 3}" class="lab-t lab-yl">${y.slice(2)}</text>`; });
-      svg.innerHTML = h;
-      svg.onmousemove = e => { const p = e.target.closest && e.target.closest("[data-i]"); if (!p) { tip(); return; } const i = +p.dataset.i; tip(e, `<b>${fd(D.DS[i])}</b> · ${WD[D.wd[i]]}<br>${ML[S.k]}: ${nf(D.ser[S.k][i])}`); };
-      svg.onmouseleave = () => tip();
-    }
-    box.querySelector('[data-r="k"]').onchange = e => { S.k = e.target.value; draw(); };
-    draw();
-  }
-
-  /* ---------- 6. Сейчас против прошлого ---------- */
-  function ghostCard(box){
-    const S = {k:"msgs", n:30, cum:true}, N = D.DS.length;
-    box.innerHTML = `<div class="lab-head"><h3>Сейчас против прошлого</h3><select data-r="n"><option value="30">30 дней</option><option value="90">90 дней</option><option value="365">Год</option></select>
-      <select data-r="k">${Object.entries(ML).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select><select data-r="c"><option value="1">Накопительно</option><option value="0">По дням (среднее за неделю)</option></select></div>
-      <p class="lab-hint">Сплошная линия — последние дни, пунктир — предыдущий такой же период, точки — тот же период год назад.</p>
-      <div class="lab-stats" data-r="st"></div><svg data-r="g" data-no-zoom viewBox="0 0 900 260" class="lab-svg"></svg>`;
-    const svg = box.querySelector('[data-r="g"]'), st = box.querySelector('[data-r="st"]');
-    function draw(){
-      const n = S.n, offs = [0, n, 365].filter(o => N - o - n >= 0), ser = D.ser[S.k];
-      const line = o => { const a = N - o - n, out = []; let c = 0; for (let i = 0; i < n; i++) { if (S.cum) { c += ser[a + i]; out.push(c); } else { let s = 0, m = 0; for (let j = Math.max(0, i - 6); j <= i; j++) { s += ser[a + j]; m++; } out.push(s / m); } } return out; };
-      const L = offs.map(line), mx = Math.max(1, ...L.map(l => Math.max(...l))) * 1.08, X0 = 56, X1 = 890, px = i => X0 + i / (n - 1) * (X1 - X0), py = v => 220 - v / mx * 196;
-      let h = ""; for (let t = 0; t <= 4; t++) { const y = py(mx * t / 4); h += `<line x1="${X0}" x2="${X1}" y1="${y}" y2="${y}" class="lab-grid"/><text x="${X0 - 6}" y="${y + 4}" text-anchor="end" class="lab-t">${nf(mx * t / 4)}</text>`; }
-      const sty = [["#5e8bff", "", 2.4], ["#ff9f0a", "7 5", 1.8], ["#8e8e93", "2 4", 1.8]], nm = {0:"Сейчас", [n]:"Предыдущий период", 365:"Год назад"};
-      offs.forEach((o, i) => { const k = offs.length === 3 ? i : (o === 0 ? 0 : (o === n ? 1 : 2)); h += `<polyline fill="none" stroke="${sty[k][0]}" stroke-dasharray="${sty[k][1]}" stroke-width="${sty[k][2]}" stroke-linejoin="round" points="${L[i].map((v, j) => px(j).toFixed(1) + "," + py(v).toFixed(1)).join(" ")}"/>`; });
-      for (let t = 0; t < 6; t++) { const i = Math.round(t * (n - 1) / 5); h += `<text x="${px(i)}" y="246" text-anchor="${t === 0 ? "start" : t === 5 ? "end" : "middle"}" class="lab-t">${D.DS[N - n + i].slice(8, 10)}.${D.DS[N - n + i].slice(5, 7)}</text>`; }
-      h += `<line id="gh-x" y1="20" y2="220" class="lab-cross" style="display:none"/><rect id="gh-h" x="${X0}" y="0" width="${X1 - X0}" height="225" fill="transparent"/>`;
-      svg.innerHTML = h; const cx = svg.querySelector("#gh-x"), hv = svg.querySelector("#gh-h");
-      hv.onmousemove = e => { const r = svg.getBoundingClientRect(), i = Math.max(0, Math.min(n - 1, Math.round(((e.clientX - r.left) / r.width * 900 - X0) / (X1 - X0) * (n - 1)))); cx.setAttribute("x1", px(i)); cx.setAttribute("x2", px(i)); cx.style.display = "";
-        tip(e, offs.map((o, j) => `<span style="color:${sty[offs.length === 3 ? j : (o === 0 ? 0 : o === n ? 1 : 2)][0]}">●</span> ${nm[o]} (${fd(D.DS[N - o - n + i]).slice(0, 5)}): <b>${nf(L[j][i])}</b>`).join("<br>")); };
-      hv.onmouseleave = () => { cx.style.display = "none"; tip(); };
-      const tot = o => D.pre[S.k][N - o] - D.pre[S.k][N - o - n], now = tot(0), pr = N - n - n >= 0 ? tot(n) : null, ya = N - 365 - n >= 0 ? tot(365) : null, dl = (a, b) => b ? `${a >= b ? "+" : "−"}${Math.abs((a / b - 1) * 100).toFixed(0)}%` : "—";
-      st.innerHTML = `<div><small>Сейчас (${n} дн.)</small><b>${nf(now)}</b></div><div><small>К предыдущему</small><b>${pr === null ? "—" : dl(now, pr)}</b></div><div><small>К году назад</small><b>${ya === null ? "—" : dl(now, ya)}</b></div>`;
-    }
-    box.querySelector('[data-r="n"]').onchange = e => { S.n = +e.target.value; draw(); };
-    box.querySelector('[data-r="k"]').onchange = e => { S.k = e.target.value; draw(); };
-    box.querySelector('[data-r="c"]').onchange = e => { S.cum = e.target.value === "1"; draw(); };
-    draw();
-  }
-
-  /* ---------- 7. Гистограмма дней ---------- */
-  function histCard(box){
-    const S = {k:"msgs", p:"all", w:"all"}, N = D.DS.length;
-    box.innerHTML = `<div class="lab-head"><h3>Какие бывают дни</h3><select data-r="p"><option value="all">Всё время</option><option value="730">2 года</option><option value="365">Год</option></select>
-      <select data-r="k">${Object.entries(ML).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select><select data-r="w"><option value="all">Все дни</option><option value="wk">Будни</option><option value="we">Выходные</option></select></div>
-      <p class="lab-hint">Сколько дней приходится на каждый уровень активности. Линии — медиана, среднее и 90-й процентиль.</p>
-      <div class="lab-stats" data-r="st"></div><svg data-r="h" data-no-zoom viewBox="0 0 900 250" class="lab-svg"></svg>`;
-    const svg = box.querySelector('[data-r="h"]'), st = box.querySelector('[data-r="st"]');
-    function draw(){
-      const a = S.p === "all" ? 0 : Math.max(0, N - +S.p), v = []; for (let i = a; i < N; i++) { const we = D.wd[i] >= 5; if (S.w === "wk" && we || S.w === "we" && !we) continue; v.push(D.ser[S.k][i]); }
-      if (!v.length) { svg.innerHTML = ""; return; }
-      const s = v.slice().sort((x, y) => x - y), q = p => s[Math.min(s.length - 1, Math.floor(s.length * p))], mean = v.reduce((x, y) => x + y, 0) / v.length, top = Math.max(1, q(.99)), B = 30, bw = top / B / 1, bins = new Array(B).fill(0);
-      v.forEach(x => { bins[Math.min(B - 1, Math.floor(x / (top / B)))]++; });
-      const mx = Math.max(...bins), X0 = 50, X1 = 890, W = (X1 - X0) / B, px = x => X0 + Math.min(1, x / top) * (X1 - X0), py = c => 210 - c / mx * 188;
-      let h = ""; for (let t = 0; t <= 4; t++) { const y = py(mx * t / 4); h += `<line x1="${X0}" x2="${X1}" y1="${y}" y2="${y}" class="lab-grid"/><text x="${X0 - 6}" y="${y + 4}" text-anchor="end" class="lab-t">${nf(mx * t / 4)}</text>`; }
-      bins.forEach((c, i) => { h += `<rect data-i="${i}" x="${X0 + i * W + 1}" y="${py(c)}" width="${W - 2}" height="${210 - py(c)}" rx="3" class="lab-hb"/>`; });
-      [[q(.5), "медиана", "#ffd60a"], [mean, "среднее", "#30d158"], [q(.9), "90%", "#ff453a"]].forEach(([x, l, c], i) => { h += `<line x1="${px(x)}" x2="${px(x)}" y1="14" y2="210" stroke="${c}" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${px(x) + 4}" y="${24 + i * 13}" class="lab-t" fill="${c}">${l}</text>`; });
-      for (let t = 0; t <= 5; t++) h += `<text x="${X0 + t / 5 * (X1 - X0)}" y="232" text-anchor="middle" class="lab-t">${nf(top * t / 5)}</text>`;
-      svg.innerHTML = h;
-      svg.onmousemove = e => { const r = e.target.closest && e.target.closest("[data-i]"); if (!r) { tip(); return; } const i = +r.dataset.i; tip(e, `<b>${nf(i * top / B)} – ${nf((i + 1) * top / B)}</b><br>Дней: ${nf(bins[i])} (${(bins[i] / v.length * 100).toFixed(1)}%)`); };
-      svg.onmouseleave = () => tip();
-      st.innerHTML = `<div><small>Дней в выборке</small><b>${nf(v.length)}</b></div><div><small>Медиана</small><b>${nf(q(.5))}</b></div><div><small>Среднее</small><b>${nf(mean)}</b></div><div><small>90-й процентиль</small><b>${nf(q(.9))}</b></div><div><small>Максимум</small><b>${nf(s[s.length - 1])}</b></div>`;
-    }
-    ["p", "k", "w"].forEach(k => box.querySelector(`[data-r="${k}"]`).onchange = e => { S[k] = e.target.value; draw(); });
-    draw();
-  }
-
-  /* ---------- 8. События на таймлайне ---------- */
-  function eventsCard(box){
-    const evs = (typeof window.__getEvents === "function" ? window.__getEvents() : []).filter(e => e.start), N = D.DS.length;
-    box.innerHTML = `<div class="lab-head"><h3>События на таймлайне</h3></div><p class="lab-hint">Активность чата по неделям и периоды событий поверх. Клик по событию сравнивает его с 30 днями до начала.</p><div class="lab-stats" data-r="st"></div><svg data-r="e" data-no-zoom viewBox="0 0 900 250" class="lab-svg"></svg>`;
-    const svg = box.querySelector('[data-r="e"]'), st = box.querySelector('[data-r="st"]');
-    if (!evs.length) { svg.remove(); st.innerHTML = "<small>Событий в данных нет — график появится, когда API отдаст события.</small>"; return; }
-    const W = 7, pts = []; for (let i = 0; i < N; i += W) pts.push((D.pre.msgs[Math.min(N, i + W)] - D.pre.msgs[i]) / (Math.min(N, i + W) - i));
-    const mx = Math.max(...pts, 1) * 1.1, X0 = 50, X1 = 890, px = i => X0 + i / (N - 1) * (X1 - X0), py = v => 200 - v / mx * 170, di = d => Math.max(0, Math.min(N - 1, Math.round((Date.parse(d) - Date.parse(D.DS[0])) / 864e5)));
-    let h = ""; for (let t = 0; t <= 3; t++) { const y = py(mx * t / 3); h += `<line x1="${X0}" x2="${X1}" y1="${y}" y2="${y}" class="lab-grid"/><text x="${X0 - 6}" y="${y + 4}" text-anchor="end" class="lab-t">${nf(mx * t / 3)}</text>`; }
-    h += `<path d="M${px(0)},200 L${pts.map((v, i) => px(i * W).toFixed(1) + "," + py(v).toFixed(1)).join(" L")} L${px(N - 1)},200Z" class="lab-area"/>`;
-    evs.forEach((e, k) => { const a = di(e.start), b = di(e.end || D.DS[N - 1]), y = 8 + (k % 3) * 22; h += `<g class="lab-ev" data-k="${k}"><rect x="${px(a)}" y="${y}" width="${Math.max(4, px(b) - px(a))}" height="18" rx="5" fill="${e.c1 || "#6366f1"}" fill-opacity=".85"/><rect x="${px(a)}" y="${y + 18}" width="${Math.max(4, px(b) - px(a))}" height="${200 - y - 18}" fill="${e.c1 || "#6366f1"}" fill-opacity=".1"/><clipPath id="lab-cp${k}"><rect x="${px(a)}" y="${y}" width="${Math.max(4, px(b) - px(a))}" height="18"/></clipPath><text x="${px(a) + 5}" y="${y + 13}" class="lab-evt" clip-path="url(#lab-cp${k})">${esc(e.title)}</text></g>`; });
-    for (let t = 0; t <= 6; t++) { const i = Math.round(t / 6 * (N - 1)); h += `<text x="${px(i)}" y="222" text-anchor="${t === 0 ? "start" : t === 6 ? "end" : "middle"}" class="lab-t">${D.DS[i].slice(0, 4)}</text>`; }
-    svg.innerHTML = h;
-    svg.onmousemove = e => { const g = e.target.closest && e.target.closest(".lab-ev"); if (!g) { tip(); return; } const ev = evs[+g.dataset.k]; tip(e, `<b>${esc(ev.title)}</b><br>${fd(ev.start)} – ${ev.end ? fd(ev.end) : "идёт"}`); };
-    svg.onmouseleave = () => tip();
-    svg.onclick = e => { const g = e.target.closest && e.target.closest(".lab-ev"); if (!g) return; const ev = evs[+g.dataset.k], a = di(ev.start), b = di(ev.end || D.DS[N - 1]), p0 = Math.max(0, a - 30);
-      const inn = (D.pre.msgs[b + 1] - D.pre.msgs[a]) / (b - a + 1), bef = a > p0 ? (D.pre.msgs[a] - D.pre.msgs[p0]) / (a - p0) : 0;
-      st.innerHTML = `<div><small>Событие</small><b>${esc(ev.title)}</b></div><div><small>В день во время</small><b>${nf(inn)}</b></div><div><small>В день за 30 дней до</small><b>${bef ? nf(bef) : "—"}</b></div><div><small>Эффект</small><b>${bef ? (inn >= bef ? "+" : "−") + Math.abs((inn / bef - 1) * 100).toFixed(0) + "%" : "—"}</b></div>`; };
-  }
-
-  /* ---------- 9. Прогноз «что, если» ---------- */
-  function whatifCard(box){
-    const S = {h:"month", w:30, m:0}, N = D.DS.length;
-    box.innerHTML = `<div class="lab-head"><h3>Прогноз «что, если»</h3><select data-r="h"><option value="month">До конца месяца</option><option value="year">До конца года</option><option value="90">Ближайшие 90 дней</option></select>
-      <select data-r="w"><option value="14">База: 14 дней</option><option value="30" selected>База: 30 дней</option><option value="90">База: 90 дней</option></select></div>
-      <p class="lab-hint">Прогноз строится от среднего за базовый период. Повзунок меняет темп: что будет, если писать больше или меньше.</p>
-      <div class="lab-slider"><span>Темп</span><input type="range" min="-60" max="100" step="5" value="0" data-r="m"><b data-r="mv">0%</b></div>
-      <div class="lab-stats" data-r="st"></div><svg data-r="f" data-no-zoom viewBox="0 0 900 260" class="lab-svg"></svg>`;
-    const svg = box.querySelector('[data-r="f"]'), st = box.querySelector('[data-r="st"]');
-    function draw(){
-      const lastD = D.DS[N - 1], y = +lastD.slice(0, 4), mo = +lastD.slice(5, 7);
-      let startD, endD; if (S.h === "month") { startD = `${lastD.slice(0, 7)}-01`; endD = new Date(Date.UTC(y, mo, 0)).toISOString().slice(0, 10); } else if (S.h === "year") { startD = `${y}-01-01`; endD = `${y}-12-31`; } else { startD = D.DS[Math.max(0, N - 90)]; endD = new Date(Date.parse(lastD) + 90 * 864e5).toISOString().slice(0, 10); }
-      const a = Math.max(0, Math.round((Date.parse(startD) - Date.parse(D.DS[0])) / 864e5)), tot = Math.round((Date.parse(endD) - Date.parse(startD)) / 864e5) + 1, done = N - a, left = Math.max(0, tot - done);
-      const base = D.ser.msgs.slice(Math.max(0, N - S.w)), mean = base.reduce((x, y2) => x + y2, 0) / base.length, sd = Math.sqrt(base.reduce((x, v) => x + (v - mean) ** 2, 0) / base.length), k = 1 + S.m / 100;
-      const act = []; let c = 0; for (let i = 0; i < done; i++) { c += D.ser.msgs[a + i]; act.push(c); }
-      const fc = [], lo = [], hi = []; for (let i = 1; i <= left; i++) { fc.push(c + mean * k * i); const dv = 1.28 * sd * Math.sqrt(i); lo.push(Math.max(c, c + mean * k * i - dv)); hi.push(c + mean * k * i + dv); }
-      const end = left ? fc[left - 1] : c, endHi = left ? hi[left - 1] : c, endLo = left ? lo[left - 1] : c;
-      const mx = Math.max(endHi, c, 1) * 1.05, X0 = 60, X1 = 890, px = i => X0 + i / Math.max(1, tot - 1) * (X1 - X0), py = v => 220 - v / mx * 196;
-      let h = ""; for (let t = 0; t <= 4; t++) { const yy = py(mx * t / 4); h += `<line x1="${X0}" x2="${X1}" y1="${yy}" y2="${yy}" class="lab-grid"/><text x="${X0 - 6}" y="${yy + 4}" text-anchor="end" class="lab-t">${nf(mx * t / 4)}</text>`; }
-      if (left) h += `<path d="M${px(done - 1)},${py(c)} ${hi.map((v, i) => `L${px(done + i).toFixed(1)},${py(v).toFixed(1)}`).join(" ")} ${lo.map((v, i) => `L${px(done + left - 1 - i).toFixed(1)},${py(lo[left - 1 - i]).toFixed(1)}`).join(" ")}Z" fill="#ff9f0a" fill-opacity=".18"/><polyline fill="none" stroke="#ff9f0a" stroke-width="2" stroke-dasharray="6 4" points="${px(done - 1)},${py(c)} ${fc.map((v, i) => px(done + i).toFixed(1) + "," + py(v).toFixed(1)).join(" ")}"/>`;
-      h += `<polyline fill="none" stroke="#5e8bff" stroke-width="2.4" stroke-linejoin="round" points="${act.map((v, i) => px(i).toFixed(1) + "," + py(v).toFixed(1)).join(" ")}"/>`;
-      for (let t = 0; t <= 5; t++) { const i = Math.round(t / 5 * (tot - 1)), d = new Date(Date.parse(startD) + i * 864e5).toISOString().slice(0, 10); h += `<text x="${px(i)}" y="246" text-anchor="${t === 0 ? "start" : t === 5 ? "end" : "middle"}" class="lab-t">${d.slice(8, 10)}.${d.slice(5, 7)}</text>`; }
-      svg.innerHTML = h;
-      st.innerHTML = `<div><small>Уже набрано</small><b>${nf(c)}</b></div><div><small>Ожидаем к ${endD.slice(8, 10)}.${endD.slice(5, 7)}</small><b>${nf(end)}</b></div><div><small>Диапазон 80%</small><b>${nf(endLo)} – ${nf(endHi)}</b></div><div><small>Темп в день</small><b>${nf(mean * k)}</b></div>`;
-    }
-    box.querySelector('[data-r="h"]').onchange = e => { S.h = e.target.value; draw(); };
-    box.querySelector('[data-r="w"]').onchange = e => { S.w = +e.target.value; draw(); };
-    box.querySelector('[data-r="m"]').oninput = e => { S.m = +e.target.value; box.querySelector('[data-r="mv"]').textContent = (S.m > 0 ? "+" : "") + S.m + "%"; draw(); };
-    draw();
-  }
-
-  /* ---------- 10. Сеть совместной активности ---------- */
-  function netCard(box){
-    const S = {top:18, thr:55}, N = D.DS.length;
-    box.innerHTML = `<div class="lab-head"><h3>Сеть: кто активен в одни дни</h3><select data-r="n"><option value="12">12 участников</option><option value="18" selected>18 участников</option><option value="26">26 участников</option></select></div>
-      <p class="lab-hint">Связь — похожий ритм активности (корреляция по дням за последний год). Повзунок оставляет только сильнейшие связи. Узлы можно перетаскивать.</p>
-      <div class="lab-slider"><span>Связей</span><input type="range" min="10" max="100" step="5" value="55" data-r="t"><b data-r="tv">55%</b></div><svg data-r="n2" data-no-zoom viewBox="0 0 900 480" class="lab-svg"></svg>`;
-    const svg = box.querySelector('[data-r="n2"]'); let nodes = [], edges = [];
-    function build(){
-      const a = Math.max(0, N - 365), U = new Map(), ix = new Map(D.DS.slice(a).map((d, i) => [d, i]));
-      for (const r of D.rec) { const i = ix.get(r.d); if (i === undefined) continue; let u = U.get(r.u); if (!u) U.set(r.u, u = {id:r.u, n:r.n, v:new Float64Array(N - a), t:0}); u.v[i] += r.m.msgs; u.t += r.m.msgs; }
-      nodes = [...U.values()].sort((x, y) => y.t - x.t).slice(0, S.top);
-      const z = nodes.map(u => { const m = u.v.reduce((x, y) => x + y, 0) / u.v.length, s = Math.sqrt(u.v.reduce((x, y) => x + (y - m) ** 2, 0)) || 1; return Array.from(u.v, y => (y - m) / s); });
-      edges = []; for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) { let c = 0; for (let k = 0; k < z[i].length; k++) c += z[i][k] * z[j][k]; edges.push({i, j, w:c}); }
-      edges.sort((x, y) => y.w - x.w);
-      nodes.forEach((u, i) => { const ang = i / nodes.length * 6.2832; u.x = 450 + 160 * Math.cos(ang); u.y = 240 + 160 * Math.sin(ang); u.r = 7 + Math.sqrt(u.t / nodes[0].t) * 16; });
-    }
-    function layout(){
-      const keep = edges.slice(0, Math.max(1, Math.round(edges.length * S.thr / 100 * .5)));
-      for (let it = 0; it < 220; it++) {
-        for (const a of nodes) { a.fx = (450 - a.x) * .004; a.fy = (240 - a.y) * .004; }
-        for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) { const A = nodes[i], B = nodes[j]; let dx = A.x - B.x, dy = A.y - B.y, d2 = dx * dx + dy * dy + .01, f = 2600 / d2, d = Math.sqrt(d2); A.fx += dx / d * f; A.fy += dy / d * f; B.fx -= dx / d * f; B.fy -= dy / d * f; }
-        for (const e of keep) { const A = nodes[e.i], B = nodes[e.j], dx = B.x - A.x, dy = B.y - A.y, d = Math.sqrt(dx * dx + dy * dy) + .01, f = (d - 90) * .02 * Math.max(.2, e.w / (keep[0].w || 1)); A.fx += dx / d * f; A.fy += dy / d * f; B.fx -= dx / d * f; B.fy -= dy / d * f; }
-        for (const a of nodes) { a.x = Math.max(40, Math.min(860, a.x + Math.max(-8, Math.min(8, a.fx)))); a.y = Math.max(30, Math.min(450, a.y + Math.max(-8, Math.min(8, a.fy)))); }
-      }
-      return keep;
-    }
-    let keep = [], hl = null;
-    const hue = id => { let n = 0; for (const c of String(id)) n = (n * 31 + c.charCodeAt(0)) >>> 0; return n % 360; };
-    function draw(){
-      const wm = keep.length ? keep[0].w : 1;
-      let h = keep.map(e => `<line data-e="${e.i}-${e.j}" x1="${nodes[e.i].x.toFixed(1)}" y1="${nodes[e.i].y.toFixed(1)}" x2="${nodes[e.j].x.toFixed(1)}" y2="${nodes[e.j].y.toFixed(1)}" class="lab-ed${hl !== null && (e.i === hl || e.j === hl) ? " on" : hl !== null ? " off" : ""}" stroke-width="${(.6 + 3 * Math.max(0, e.w) / (wm || 1)).toFixed(2)}"/>`).join("");
-      h += nodes.map((u, i) => `<g class="lab-nd${hl !== null && hl !== i && !keep.some(e => (e.i === hl && e.j === i) || (e.j === hl && e.i === i)) ? " off" : ""}" data-i="${i}"><circle cx="${u.x.toFixed(1)}" cy="${u.y.toFixed(1)}" r="${u.r.toFixed(1)}" fill="hsl(${hue(u.id)} 65% 58%)"/><text x="${u.x.toFixed(1)}" y="${(u.y + u.r + 12).toFixed(1)}" text-anchor="middle" class="lab-t">${esc(u.n)}</text></g>`).join("");
-      svg.innerHTML = h;
-    }
-    function relayout(){ keep = layout(); draw(); }
-    let drag = null;
-    svg.addEventListener("pointerdown", e => { const g = e.target.closest && e.target.closest(".lab-nd"); if (!g) return; drag = +g.dataset.i; svg.setPointerCapture(e.pointerId); e.preventDefault(); });
-    svg.addEventListener("pointermove", e => { const r = svg.getBoundingClientRect(); if (drag !== null) { nodes[drag].x = (e.clientX - r.left) / r.width * 900; nodes[drag].y = (e.clientY - r.top) / r.height * 480; draw(); return; } const g = e.target.closest && e.target.closest(".lab-nd"), i = g ? +g.dataset.i : null; if (i !== hl) { hl = i; draw(); } if (g) tip(e, `<b>${esc(nodes[i].n)}</b><br>Сообщений за год: ${nf(nodes[i].t)}`); else tip(); });
-    svg.addEventListener("pointerup", () => { drag = null; }); svg.addEventListener("pointerleave", () => { hl = null; tip(); draw(); });
-    box.querySelector('[data-r="n"]').onchange = e => { S.top = +e.target.value; build(); relayout(); };
-    box.querySelector('[data-r="t"]').oninput = e => { S.thr = +e.target.value; box.querySelector('[data-r="tv"]').textContent = S.thr + "%"; relayout(); };
-    build(); relayout();
-  }
-
   /* ---------- тултип ---------- */
   let tp = null;
   function tip(e, html){
     if (!e) { if (tp) tp.style.display = "none"; return; }
-    if (!tp) { tp = document.createElement("div"); tp.className = "lab-tip"; tp.setAttribute("data-no-export", "1"); document.body.appendChild(tp); }
+    if (!tp) { tp = document.createElement("div"); tp.className = "tl-tip"; tp.setAttribute("data-no-export", "1"); document.body.appendChild(tp); }
     tp.innerHTML = html; tp.style.display = "block";
     const w = tp.offsetWidth, x = e.clientX + 14 + w > innerWidth ? e.clientX - w - 14 : e.clientX + 14;
     tp.style.left = x + "px"; tp.style.top = Math.max(8, e.clientY - 12) + "px";
   }
 
-  /* ---------- сборка вкладки ---------- */
-  const CARDS = [["lab-brush", brushCard], ["lab-heat", heatCard], ["lab-stream", streamCard], ["lab-bubble", bubbleCard], ["lab-spiral", spiralCard], ["lab-ghost", ghostCard], ["lab-hist", histCard], ["lab-events", eventsCard], ["lab-whatif", whatifCard], ["lab-net", netCard]];
   async function render(){
-    const body = sec.querySelector("#lab-body"), st = sec.querySelector("#lab-status"); if (!body) return;
-    const act = CARDS.filter(([id]) => on(id));
-    if (!act.length) { body.innerHTML = ""; st.textContent = "Графики лаборатории выключены. Включи их в Настройки → Эксперименты."; return; }
-    st.textContent = "Загружаю данные…";
+    const my = ++gen;
     try {
-      if (!D) D = await (busy || (busy = prep()));
-      if (!D) { st.textContent = "Нет данных для графиков."; return; }
-      idxMap = null; st.textContent = `Данные: ${fd(D.DS[0])} – ${fd(D.DS[D.DS.length - 1])}, все чаты. Это пробные графики — оставим те, что понравятся.`;
-      body.innerHTML = ""; act.forEach(([id, fn]) => { const b = document.createElement("section"); b.className = "lab-card"; b.dataset.lab = id; body.appendChild(b); fn(b); });
-    } catch (err) { busy = null; st.textContent = "Не удалось загрузить данные: " + (err && err.message || err); }
+      if (!titles) { const all = await getHistory(), hasT = all.some(x => Number(x[F.chatPk]) === 0); titles = [...new Set((hasT ? all.filter(x => Number(x[F.chatPk]) !== 0) : all).map(x => x[F.chat]).filter(Boolean))].sort((a, c) => a.localeCompare(c, "ru")); }
+      D = await prep(chat); if (my !== gen) return;
+      if (!D) { card.innerHTML = '<p class="tl-hint">Нет данных для таймлайна.</p>'; return; }
+      const opts = `<option value="">Все чаты</option>` + titles.map(t => `<option value="${esc(t)}"${t === chat ? " selected" : ""}>${esc(t)}</option>`).join("");
+      card.innerHTML = ""; const box = document.createElement("div"); card.appendChild(box);
+      brushCard(box, opts, c => { chat = c; render(); });
+    } catch (err) { card.innerHTML = '<p class="tl-hint">Не удалось загрузить таймлайн: ' + esc(err && err.message || err) + '</p>'; }
   }
-  window.loadLab = () => { D = null; busy = null; return render(); };
-  document.addEventListener("exp-change", () => { if (sec.classList.contains("active")) render(); });
-  new MutationObserver(() => { if (sec.classList.contains("active") && !sec.dataset.done) { sec.dataset.done = "1"; render(); } else if (!sec.classList.contains("active")) delete sec.dataset.done; }).observe(sec, {attributes:true, attributeFilter:["class"]});
+  let started = false;
+  const check = () => { if (tab.classList.contains("active") && !started) { started = true; render(); } };
+  new MutationObserver(check).observe(tab, {attributes:true, attributeFilter:["class"]}); check();
+  document.getElementById("refresh")?.addEventListener("click", () => { if (started) setTimeout(() => { titles = null; render(); }, 600); });
+})();
+</script>
+
+<style id="plan-css">
+#plan-card{margin:14px 0 18px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px 18px;min-width:0}
+.plan-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.plan-head h3{margin:0 auto 0 0;font-size:16px}
+.plan-month{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600}
+.plan-month button{min-width:30px}
+.plan-set{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+.plan-set input[type=text]{width:150px;box-sizing:border-box}
+.plan-chip{font-size:12px}
+.plan-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-weight:700;font-size:13.5px;margin:10px 0 2px}
+.plan-pill.ok{background:#30d15826;color:#30d158}.plan-pill.warn{background:#ffd60a26;color:#ffd60a}.plan-pill.bad{background:#ff453a26;color:#ff6961}.plan-pill.info{background:#5e8bff26;color:#8aa4ff}
+.plan-say{margin:6px 0 10px;font-size:14px;line-height:1.5}
+.plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:10px;margin:8px 0 10px}
+.plan-grid > div{display:flex;flex-direction:column;gap:2px;padding:9px 11px;border-radius:12px;background:color-mix(in srgb,var(--text) 5%,transparent)}
+.plan-grid small{color:var(--muted);font-size:11.5px}.plan-grid b{font-size:17px}.plan-grid em{font-style:normal;color:var(--muted);font-size:11.5px}
+.plan-grid .hot{outline:1.5px solid #5e8bff}
+.plan-bar{height:10px;border-radius:6px;background:color-mix(in srgb,var(--text) 10%,transparent);position:relative;overflow:hidden;margin:4px 0 12px}
+.plan-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:#5e8bff}
+.plan-bar u{position:absolute;top:-2px;bottom:-2px;width:2px;background:#ffd60a;text-decoration:none}
+.plan-svg{display:block;width:100%;height:auto}
+.plan-t{fill:var(--muted);font-size:11px}
+.plan-hint{color:var(--muted);font-size:12.5px;margin:4px 0}
+</style>
+<script id="plan-js">
+/* ===================== План на месяц: сколько нужно в день, успеваем ли ===================== */
+(function(){
+  const host = document.getElementById("plan-card"), tab = document.getElementById("tab-forecast"); if (!host || !tab) return;
+  const KEY = "chatstats.plan.v1"; let PL = {}; try { PL = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(PL)); } catch (e) {} };
+  const nf = v => Math.round(v).toLocaleString("ru-RU"), esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const MN = {msgs:"Сообщения", stick:"Стикеры", voice:"Голосовые", video:"Видеосообщения"}, MG = {msgs:"сообщений", stick:"стикеров", voice:"голосовых", video:"видеосообщений"};
+  const MONTHS = ["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"];
+  const pad = n => String(n).padStart(2, "0"), todayIso = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+  const shiftM = (ym, k) => { let y = +ym.slice(0, 4), m = +ym.slice(5, 7) - 1 + k; y += Math.floor(m / 12); m = ((m % 12) + 12) % 12; return `${y}-${pad(m + 1)}`; };
+  let ym = todayIso().slice(0, 7), titles = null, ALL = null, cache = new Map(), draft = {metric:"msgs", chat:""}, gen = 0;
+  const dayMap = (chat, metric) => {
+    const key = chat + "|" + metric; if (cache.has(key)) return cache.get(key);
+    const m = new Map(); for (const x of pick(ALL, chat)) { if (typeof isExcludedUser === "function" && isExcludedUser(x[F.userId])) continue; const d = String(x[F.date] ?? "").slice(0, 10); if (d.length !== 10) continue; m.set(d, (m.get(d) || 0) + (Number(g(x, metric)) || 0)); }
+    cache.set(key, m); return m;
+  };
+  const monthTotal = (map, k) => { let s = 0; const dim = new Date(+k.slice(0, 4), +k.slice(5, 7), 0).getDate(); for (let d = 1; d <= dim; d++) s += map.get(`${k}-${pad(d)}`) || 0; return s; };
+  async function ensure(){
+    if (ALL) return; ALL = await getHistory(); const hasT = ALL.some(x => Number(x[F.chatPk]) === 0);
+    titles = [...new Set((hasT ? ALL.filter(x => Number(x[F.chatPk]) !== 0) : ALL).map(x => x[F.chat]).filter(Boolean))].sort((a, c) => a.localeCompare(c, "ru"));
+  }
+  async function render(){
+    const my = ++gen;
+    try { await ensure(); } catch (err) { host.innerHTML = '<p class="plan-hint">Не удалось загрузить данные для плана.</p>'; return; }
+    if (my !== gen) return;
+    const plan = PL[ym], metric = plan ? plan.metric : draft.metric, chat = plan ? plan.chat || "" : draft.chat, map = dayMap(chat, metric);
+    const today = todayIso(), cur = today.slice(0, 7), isCur = ym === cur, isPast = ym < cur, dim = new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate();
+    const day = isCur ? +today.slice(8) : isPast ? dim + 1 : 0, v = d => map.get(`${ym}-${pad(d)}`) || 0;
+    let sumY = 0; for (let d = 1; d < Math.min(day, dim + 1); d++) sumY += v(d);
+    const tv = isCur ? v(day) : 0, total = isPast ? sumY : sumY + tv;
+    let p14 = 0; { const base = new Date(); base.setHours(12); for (let i = 1; i <= 14; i++) { const d = new Date(base.getTime() - i * 864e5); p14 += map.get(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`) || 0; } p14 /= 14; }
+    const left = isCur ? dim - day + 1 : isPast ? 0 : dim, prev = monthTotal(map, shiftM(ym, -1));
+    const opts = Object.entries(MN).map(([k, t]) => `<option value="${k}"${k === metric ? " selected" : ""}>${t}</option>`).join("");
+    const copts = `<option value="">Все чаты</option>` + titles.map(t => `<option value="${esc(t)}"${t === chat ? " selected" : ""}>${esc(t)}</option>`).join("");
+    let h = `<div class="plan-head"><h3>План на месяц</h3><span class="plan-month"><button type="button" class="mini" data-pm="-1" aria-label="Предыдущий месяц">‹</button>${MONTHS[+ym.slice(5, 7) - 1]} ${ym.slice(0, 4)}<button type="button" class="mini" data-pm="1" aria-label="Следующий месяц">›</button></span><select data-pf="metric">${opts}</select><select data-pf="chat">${copts}</select></div>
+      <div class="plan-set"><input type="text" inputmode="numeric" data-pg placeholder="Сколько нужно набрать" value="${plan ? nf(plan.goal) : ""}"><button type="button" class="mini" data-psave>${plan ? "Обновить план" : "Поставить план"}</button>`;
+    if (prev > 0) h += [[1, "как в прошлом месяце"], [1.1, "+10%"], [1.25, "+25%"]].map(([k, l]) => `<button type="button" class="mini plan-chip" data-pq="${Math.round(prev * k)}" title="Прошлый месяц: ${nf(prev)}">${l} · ${nf(prev * k)}</button>`).join("");
+    if (plan) h += `<button type="button" class="mini" data-pdel>Убрать план</button>`;
+    h += `</div>`;
+    if (!plan) { h += `<p class="plan-hint">Поставь цель на месяц — покажу, сколько нужно писать в день и успеваем ли мы.${prev > 0 ? ` В прошлом месяце было ${nf(prev)} ${MG[metric]}.` : ""}</p>`; host.innerHTML = h; bind(); return; }
+    const goal = plan.goal, pct = total / goal * 100;
+    const need = left > 0 ? Math.max(0, (isCur ? goal - sumY : goal)) / left : 0;
+    const proj = isPast ? total : isCur ? sumY + Math.max(tv, p14) + p14 * (dim - day) : p14 * dim;
+    const ideal = isCur ? goal * (day - 1) / dim : 0, ahead = sumY - ideal;
+    let cls = "info", label = "", say = "";
+    if (isPast) { cls = total >= goal ? "ok" : "bad"; label = total >= goal ? "✅ План выполнен" : "❌ План не выполнен"; say = total >= goal ? `Набрано ${nf(total)} из ${nf(goal)} — на ${nf(total - goal)} больше цели.` : `Набрано ${nf(total)} из ${nf(goal)} — не хватило ${nf(goal - total)}.`; }
+    else if (isCur) {
+      if (total >= goal) { cls = "ok"; label = "🎉 План выполнен"; say = `Цель ${nf(goal)} уже достигнута, ещё и на ${nf(total - goal)} больше.`; }
+      else if (proj >= goal) { cls = proj >= goal * 1.03 ? "ok" : "warn"; label = proj >= goal * 1.03 ? "✅ Успеваем" : "🟡 Успеваем, но впритык"; say = `Нужно в среднем <b>${nf(need)}</b> ${MG[metric]} в день, сейчас пишем ${nf(p14)} — запас ${nf(p14 - need)} в день. Итог при таком темпе ≈ ${nf(proj)}.`; }
+      else { cls = proj >= goal * .93 ? "warn" : "bad"; label = proj >= goal * .93 ? "🟠 Почти успеваем" : "🔴 Не успеваем"; say = `Нужно в среднем <b>${nf(need)}</b> ${MG[metric]} в день, а сейчас пишем ${nf(p14)} — не хватает ${nf(need - p14)} в день: нужно писать на ${nf((need / (p14 || 1) - 1) * 100)}% больше. При таком темпе выйдет ≈ ${nf(proj)} из ${nf(goal)}.`; }
+    } else { label = "📅 Месяц ещё не начался"; say = `Чтобы набрать ${nf(goal)}, нужно писать в среднем <b>${nf(need)}</b> ${MG[metric]} в день. Сейчас пишем ${nf(p14)} в день.`; }
+    h += `<div class="plan-pill ${cls}">${label}</div><div class="plan-say">${say}</div>`;
+    h += `<div class="plan-bar" title="${pct.toFixed(1)}% плана">${`<i style="width:${Math.min(100, pct).toFixed(1)}%"></i>`}${isCur ? `<u style="left:${Math.min(100, (day - 1) / dim * 100).toFixed(1)}%" title="Где должны быть по графику"></u>` : ""}</div>`;
+    h += `<div class="plan-grid"><div><small>Цель</small><b>${nf(goal)}</b><em>${MN[metric].toLowerCase()}${chat ? ", " + esc(chat) : ""}</em></div>
+      <div><small>Набрано</small><b>${nf(total)}</b><em>${pct.toFixed(0)}% плана</em></div>
+      <div><small>Осталось</small><b>${nf(Math.max(0, goal - total))}</b><em>${left ? left + " " + (left === 1 ? "день" : left < 5 ? "дня" : "дней") + (isCur ? " (с сегодняшним)" : "") : "—"}</em></div>
+      <div class="${left ? "hot" : ""}"><small>Нужно в день</small><b>${left ? nf(need) : "—"}</b><em>${isCur && tv ? `сегодня уже ${nf(tv)} (${need ? Math.round(tv / need * 100) : 0}%)` : "&nbsp;"}</em></div>
+      <div><small>Сейчас пишем в день</small><b>${nf(p14)}</b><em>среднее за 14 дней</em></div>
+      <div><small>Прогноз итога</small><b>${nf(proj)}</b><em>${isCur ? (ahead >= 0 ? "опережаем график на " : "отстаём от графика на ") + nf(Math.abs(ahead)) : "&nbsp;"}</em></div></div>`;
+    // график
+    const W = 900, X0 = 54, X1 = 890, mx = Math.max(goal, proj, total, 1) * 1.06, px = d => X0 + (d - 1) / Math.max(1, dim - 1) * (X1 - X0), py = y => 200 - y / mx * 176;
+    let s = ""; for (let t = 0; t <= 4; t++) { const y = py(mx * t / 4); s += `<line x1="${X0}" x2="${X1}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${X0 - 6}" y="${y + 4}" text-anchor="end" class="plan-t">${nf(mx * t / 4)}</text>`; }
+    s += `<line x1="${X0}" x2="${X1}" y1="${py(goal)}" y2="${py(goal)}" stroke="#ffd60a" stroke-dasharray="5 4" stroke-opacity=".8"/><text x="${X1}" y="${py(goal) - 5}" text-anchor="end" class="plan-t" fill="#ffd60a" style="fill:#ffd60a">цель</text>`;
+    s += `<polyline fill="none" stroke="#8e8e93" stroke-dasharray="3 4" stroke-width="1.6" points="${px(1)},${py(goal / dim)} ${px(dim)},${py(goal)}"/>`;
+    const upTo = isPast ? dim : isCur ? day : 0; let c = 0, pts = []; for (let d = 1; d <= upTo; d++) { c += v(d); pts.push(`${px(d).toFixed(1)},${py(c).toFixed(1)}`); }
+    if (pts.length) s += `<polyline fill="none" stroke="#5e8bff" stroke-width="2.6" stroke-linejoin="round" points="${pts.join(" ")}"/>`;
+    if (!isPast) { const d0 = isCur ? day : 1, y0 = isCur ? c : 0; s += `<polyline fill="none" stroke="#ff9f0a" stroke-dasharray="6 4" stroke-width="2" points="${px(d0)},${py(y0)} ${px(dim)},${py(proj)}"/>`; }
+    if (isCur) s += `<line x1="${px(day)}" x2="${px(day)}" y1="24" y2="200" stroke="var(--muted)" stroke-dasharray="2 3"/>`;
+    for (let t = 0; t < 6; t++) { const d = Math.round(1 + t * (dim - 1) / 5); s += `<text x="${px(d)}" y="220" text-anchor="${t === 0 ? "start" : t === 5 ? "end" : "middle"}" class="plan-t">${d}</text>`; }
+    h += `<svg class="plan-svg" viewBox="0 0 ${W} 230" data-no-zoom><title>План и факт по дням месяца</title>${s}</svg><p class="plan-hint">Синяя линия — набрано, серый пунктир — равномерный план, оранжевый — прогноз при текущем темпе, жёлтая — цель.</p>`;
+    host.innerHTML = h; bind();
+  }
+  function bind(){
+    const q = s => host.querySelector(s);
+    host.querySelectorAll("[data-pm]").forEach(b => b.onclick = () => { ym = shiftM(ym, +b.dataset.pm); render(); });
+    host.querySelectorAll("[data-pf]").forEach(s => s.onchange = () => { const k = s.dataset.pf; if (PL[ym]) { PL[ym][k] = s.value; save(); } else draft[k] = s.value; render(); });
+    const inp = q("[data-pg]"), go = v => { const n = Number(String(v).replace(/[\s ,]/g, "")); if (!isFinite(n) || n <= 0) { inp.focus(); inp.style.outline = "2px solid #ff453a"; return; } PL[ym] = {goal:Math.round(n), metric:PL[ym] ? PL[ym].metric : draft.metric, chat:PL[ym] ? PL[ym].chat : draft.chat}; save(); render(); };
+    if (inp) { inp.onkeydown = e => { if (e.key === "Enter") go(inp.value); e.stopPropagation(); }; q("[data-psave]").onclick = () => go(inp.value); }
+    host.querySelectorAll("[data-pq]").forEach(b => b.onclick = () => go(b.dataset.pq));
+    const del = q("[data-pdel]"); if (del) del.onclick = () => { delete PL[ym]; save(); render(); };
+  }
+  let started = false;
+  const check = () => { if (tab.classList.contains("active") && !started) { started = true; render(); } };
+  new MutationObserver(check).observe(tab, {attributes:true, attributeFilter:["class"]}); check();
+  document.getElementById("refresh")?.addEventListener("click", () => { if (started) setTimeout(() => { ALL = null; cache.clear(); render(); }, 700); });
+})();
+</script>
+
+<style id="wi-css">
+#wi-card{margin:0 0 18px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px 18px;min-width:0}
+.wi-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.wi-head h3{margin:0 auto 0 0;font-size:16px}
+.wi-hint{color:var(--muted);font-size:12.5px;margin:6px 0 10px}
+.wi-mods{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+.wi-mod{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;border-radius:12px;background:color-mix(in srgb,var(--text) 5%,transparent)}
+.wi-mod input[type=range]{flex:1 1 160px;min-width:120px}
+.wi-mod b{min-width:58px;text-align:right}
+.wi-chips{display:flex;gap:6px;flex-wrap:wrap}
+.wi-sum{margin:10px 0;display:flex;flex-direction:column;gap:4px;font-size:14px;line-height:1.5}
+.wi-sum .big{font-size:15px;font-weight:700}
+.wi-grid{display:flex;flex-direction:column;font-size:13px;margin-top:6px}
+html body #wi-card .wi-r:not(#zq){display:grid!important;grid-template-columns:44px minmax(70px,1fr) 78px 78px 86px 74px;gap:0 8px;align-items:center;width:100%!important;max-width:none!important;margin:0!important;padding:6px 4px;box-sizing:border-box;border-top:1px solid color-mix(in srgb,var(--text) 8%,transparent)}
+.wi-r.h{color:var(--muted);font-size:11.5px;border-top:0!important}
+.wi-r span:nth-child(n+3){text-align:right}
+.wi-r.mod{background:color-mix(in srgb,#5e8bff 14%,transparent);border-radius:8px}
+.wi-up{color:#30d158}.wi-dn{color:#ff6961}.wi-eq{color:var(--muted)}
+@media(max-width:640px){html body #wi-card .wi-r:not(#zq){grid-template-columns:38px minmax(60px,1fr) 62px 62px 60px;font-size:12px}.wi-r > :nth-child(6){display:none}}
+</style>
+<script id="wi-js">
+/* ===================== Калькулятор «если бы» ===================== */
+(function(){
+  const host = document.getElementById("wi-card"), tab = document.getElementById("tab-forecast"); if (!host || !tab) return;
+  const nf = v => Math.round(v).toLocaleString("ru-RU"), esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const MN = {msgs:"Сообщения", stick:"Стикеры", voice:"Голосовые", video:"Видеосообщения"};
+  const PER = {month:"Этот месяц", prev:"Прошлый месяц", "30":"Последние 30 дней", "90":"Последние 90 дней", "365":"Последний год", all:"Всё время"};
+  const pad = n => String(n).padStart(2, "0"), isoD = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const S = {chat:"", metric:"msgs", period:"30", mods:[]};
+  let ALL = null, titles = [], gen = 0;
+  function range(){
+    const now = new Date(), t = isoD(now), y = now.getFullYear(), m = now.getMonth();
+    if (S.period === "month") return [isoD(new Date(y, m, 1)), t];
+    if (S.period === "prev") return [isoD(new Date(y, m - 1, 1)), isoD(new Date(y, m, 0))];
+    if (S.period === "all") return ["0000-00-00", "9999-99-99"];
+    return [isoD(new Date(now.getTime() - (+S.period - 1) * 864e5)), t];
+  }
+  function totals(){
+    const [lo, hi] = range(), U = new Map();
+    for (const x of pick(ALL, S.chat)) {
+      const uid = String(x[F.userId] ?? x[F.name]); if (typeof isExcludedUser === "function" && isExcludedUser(x[F.userId])) continue;
+      const d = String(x[F.date] ?? "").slice(0, 10); if (d < lo || d > hi) continue;
+      let u = U.get(uid); if (!u) U.set(uid, u = {id:uid, n:who(x), v:0}); u.v += Number(g(x, S.metric)) || 0;
+    }
+    return [...U.values()].filter(u => u.v > 0);
+  }
+  const rank = list => { const r = new Map(); list.slice().sort((a, b) => b.v - a.v || a.n.localeCompare(b.n, "ru")).forEach((u, i) => r.set(u.id, i + 1)); return r; };
+  async function render(){
+    const my = ++gen;
+    try { if (!ALL) { ALL = await getHistory(); const hasT = ALL.some(x => Number(x[F.chatPk]) === 0); titles = [...new Set((hasT ? ALL.filter(x => Number(x[F.chatPk]) !== 0) : ALL).map(x => x[F.chat]).filter(Boolean))].sort((a, c) => a.localeCompare(c, "ru")); } }
+    catch (err) { host.innerHTML = '<p class="wi-hint">Не удалось загрузить данные.</p>'; return; }
+    if (my !== gen) return;
+    const base = totals(); if (!base.length) { host.innerHTML = '<div class="wi-head"><h3>Калькулятор «если бы»</h3></div><p class="wi-hint">За этот период нет данных. Выбери другой период или чат.</p>' + controls(); bind(); return; }
+    const byName = base.slice().sort((a, b) => a.n.localeCompare(b.n, "ru"));
+    if (!S.mods.length) S.mods.push({u:base.slice().sort((a, b) => b.v - a.v)[0].id, f:-100});
+    S.mods.forEach(m => { if (!base.some(u => u.id === m.u)) { const free = base.find(u => !S.mods.some(q => q.u === u.id)); m.u = free ? free.id : base[0].id; } });
+    const mods = new Map(S.mods.map(m => [m.u, m.f])), after = base.map(u => ({...u, v:u.v * (1 + (mods.has(u.id) ? mods.get(u.id) : 0) / 100)}));
+    const r0 = rank(base), r1 = rank(after), tot0 = base.reduce((s, u) => s + u.v, 0), tot1 = after.reduce((s, u) => s + u.v, 0);
+    const lead = l => l.slice().sort((a, b) => b.v - a.v || a.n.localeCompare(b.n, "ru"))[0];
+    const l0 = lead(base), l1 = lead(after), pct = tot0 ? (tot1 / tot0 - 1) * 100 : 0;
+    let h = `<div class="wi-head"><h3>Калькулятор «если бы»</h3></div><p class="wi-hint">Измени активность участников за выбранный период и посмотри, как поменяются места, лидер и общий итог. Ничего не сохраняется в данных.</p>` + controls();
+    h += `<div class="wi-mods">` + S.mods.map((m, i) => `<div class="wi-mod"><select data-wu="${i}">${byName.map(u => `<option value="${esc(u.id)}"${u.id === m.u ? " selected" : ""}>${esc(u.n)}</option>`).join("")}</select>
+      <input type="range" min="-100" max="300" step="5" value="${m.f}" data-wf="${i}"><b data-wv="${i}">${m.f <= -100 ? "не было" : (m.f > 0 ? "+" : "") + m.f + "%"}</b>
+      <span class="wi-chips"><button type="button" class="mini" data-wq="${i}:-100">Без него</button><button type="button" class="mini" data-wq="${i}:-50">−50%</button><button type="button" class="mini" data-wq="${i}:50">+50%</button><button type="button" class="mini" data-wq="${i}:100">×2</button></span>
+      ${S.mods.length > 1 ? `<button type="button" class="mini" data-wx="${i}" aria-label="Убрать участника">×</button>` : ""}</div>`).join("") + `</div>`;
+    if (S.mods.length < 4) h += `<button type="button" class="mini" data-wadd>+ Ещё участник</button>`;
+    const say = S.mods.map(m => { const u = base.find(x => x.id === m.u); if (!u) return ""; const a = r0.get(u.id), b = r1.get(u.id), v1 = u.v * (1 + m.f / 100); return `<div><b>${esc(u.n)}</b>: ${m.f <= -100 ? "если бы не писал(а) вообще" : `${m.f > 0 ? "+" : ""}${m.f}%`} — ${nf(u.v)} → ${nf(v1)}, ${m.f <= -100 ? "место пропало" : a === b ? `место то же (${a}-е)` : `${a}-е → ${b}-е место`}</div>`; }).join("");
+    h += `<div class="wi-sum"><div class="big">${l0.id === l1.id ? `Лидер не меняется: ${esc(l0.n)}` : `Лидер меняется: ${esc(l0.n)} → ${esc(l1.n)}`}</div><div>${MN[S.metric]} в сумме: ${nf(tot0)} → <b>${nf(tot1)}</b> (${pct >= 0 ? "+" : "−"}${Math.abs(pct).toFixed(1)}%)</div>${say}</div>`;
+    const order = after.slice().sort((a, b) => r1.get(a.id) - r1.get(b.id)), shown = order.filter(u => r1.get(u.id) <= 15 || mods.has(u.id));
+    const ghost = base.filter(u => mods.has(u.id) && mods.get(u.id) <= -100);
+    h += `<div class="wi-grid"><div class="wi-r h"><span>Место</span><span>Участник</span><span>Было</span><span>Стало</span><span>Разница</span><span>Места</span></div>`;
+    shown.forEach(u => { const b0 = base.find(x => x.id === u.id).v, a = r0.get(u.id), b = r1.get(u.id), dm = a - b, gone = mods.get(u.id) <= -100;
+      h += `<div class="wi-r${mods.has(u.id) ? " mod" : ""}"><span>${gone ? "—" : b}</span><span title="${esc(u.n)}">${esc(u.n)}</span><span>${nf(b0)}</span><span>${nf(u.v)}</span><span class="${u.v === b0 ? "wi-eq" : u.v > b0 ? "wi-up" : "wi-dn"}">${u.v === b0 ? "—" : (u.v > b0 ? "+" : "−") + nf(Math.abs(u.v - b0))}</span><span class="${dm > 0 ? "wi-up" : dm < 0 ? "wi-dn" : "wi-eq"}">${gone ? "—" : dm > 0 ? "▲ " + dm : dm < 0 ? "▼ " + Math.abs(dm) : "="}</span></div>`; });
+    h += `</div>`; host.innerHTML = h; bind();
+  }
+  function controls(){
+    return `<div class="wi-head" style="margin-top:6px"><select data-wp>${Object.entries(PER).map(([k, t]) => `<option value="${k}"${k === S.period ? " selected" : ""}>${t}</option>`).join("")}</select>
+      <select data-wm>${Object.entries(MN).map(([k, t]) => `<option value="${k}"${k === S.metric ? " selected" : ""}>${t}</option>`).join("")}</select>
+      <select data-wc><option value="">Все чаты</option>${titles.map(t => `<option value="${esc(t)}"${t === S.chat ? " selected" : ""}>${esc(t)}</option>`).join("")}</select></div>`;
+  }
+  function bind(){
+    const q = (s, f) => host.querySelectorAll(s).forEach(f);
+    q("[data-wp]", s => s.onchange = () => { S.period = s.value; render(); });
+    q("[data-wm]", s => s.onchange = () => { S.metric = s.value; render(); });
+    q("[data-wc]", s => s.onchange = () => { S.chat = s.value; S.mods = []; render(); });
+    q("[data-wu]", s => s.onchange = () => { S.mods[+s.dataset.wu].u = s.value; render(); });
+    q("[data-wf]", s => s.oninput = () => { const i = +s.dataset.wf; S.mods[i].f = +s.value; clearTimeout(bind.t); bind.t = setTimeout(render, 60); const l = host.querySelector(`[data-wv="${i}"]`); if (l) l.textContent = S.mods[i].f <= -100 ? "не было" : (S.mods[i].f > 0 ? "+" : "") + S.mods[i].f + "%"; });
+    q("[data-wq]", b => b.onclick = () => { const [i, f] = b.dataset.wq.split(":").map(Number); S.mods[i].f = f; render(); });
+    q("[data-wx]", b => b.onclick = () => { S.mods.splice(+b.dataset.wx, 1); render(); });
+    q("[data-wadd]", b => b.onclick = () => { S.mods.push({u:"", f:-100}); render(); });
+  }
+  let started = false;
+  const check = () => { if (tab.classList.contains("active") && !started) { started = true; render(); } };
+  new MutationObserver(check).observe(tab, {attributes:true, attributeFilter:["class"]}); check();
+  document.getElementById("refresh")?.addEventListener("click", () => { if (started) setTimeout(() => { ALL = null; render(); }, 700); });
 })();
 </script>
 
