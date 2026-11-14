@@ -1,0 +1,31 @@
+
+/* ===================== v37: симметричная рамка — шапка во всю ширину, слева вкладки, справа фильтры под ней; Достижения как Профиль ===================== */
+@media (min-width:721px){
+  body{--padL:0px;--padR:0px}
+  body.side-nav{--padL:calc(var(--side-w) + 12px)}
+  body.filters-right:not(.fr-collapsed){--padR:calc(var(--fr-w-open,360px) + 24px)}
+  html body.filters-right.fr-collapsed{padding-right:0!important}
+  /* Шапка — во всю ширину окна с отступом 12 px, над обеими боковыми панелями */
+  html body:is(.side-nav,.filters-right) > header{width:auto!important;max-width:none!important;margin-left:calc(12px - var(--padL))!important;margin-right:calc(12px - var(--padR))!important}
+  html body.filters-right.fr-collapsed > header{padding-right:72px!important}
+  /* Фильтры: свёрнуты — круглая кнопка внутри шапки справа; развёрнуты — панель под шапкой, зеркально левым вкладкам */
+  html body.filters-right.fr-collapsed #filter-drawer{width:40px!important;height:40px!important;top:calc(12px + (var(--hdr-h,57px) - 40px) / 2)!important;right:24px!important;box-shadow:none!important;border-color:var(--glass-line,var(--line))!important;background:color-mix(in srgb,var(--text) 8%,transparent)!important;z-index:60}
+  html body.filters-right.fr-collapsed #filter-drawer .fd-rail::before{width:19px!important;height:19px!important}
+  html body.filters-right.fr-collapsed:not(.side-nav) #filter-drawer{top:30px!important}
+  html body.filters-right:not(.fr-collapsed) #filter-drawer{top:calc(var(--hdr-h,57px) + 24px)!important;height:calc(100vh - var(--hdr-h,57px) - 36px)!important}
+
+  /* Достижения — та же компоновка, что у Профиля: наверху карточка участника, ниже одной строкой переключатель и выбор */
+  #tab-achievements.active{display:flex!important;flex-wrap:wrap;align-items:center;column-gap:var(--sp-3);row-gap:0}
+  #tab-achievements.active > *{flex:1 0 100%;min-width:0;order:5}
+  #tab-achievements.active > #ach-out{display:contents}
+  #tab-achievements.active > #ach-out > *{flex:1 0 100%;min-width:0;max-width:100%;order:6}
+  #tab-achievements.active > #ach-out > .ach-hero{order:1;margin:0 0 14px!important}
+  #tab-achievements.active > .group-tabs{order:2;flex:0 0 auto;margin:0 0 18px!important}
+  #tab-achievements.active > :is(.filters,.filters.fr-keep){order:3;flex:1 1 auto;margin:0 0 18px!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;justify-content:flex-start}
+  #tab-achievements.active > :is(.filters,.filters.fr-keep) > .table-export-actions{margin-left:auto!important}
+  #tab-achievements.active > #ach-status{order:4}
+}
+/* Выбор участника в Профиле и Достижениях — цветом темы */
+:is(#tab-profile,#tab-achievements,#filter-drawer) .field:has(> :is(#person,#ach-person)),
+:is(#tab-profile,#tab-achievements) .field:has(:is(#person,#ach-person)){--fc:var(--accent)!important;border-color:color-mix(in srgb,var(--accent) 45%,var(--glass-line,var(--line)))!important}
+:is(#tab-profile,#tab-achievements) .field:has(:is(#person,#ach-person)) :is(.msel,select){color:var(--accent)!important}

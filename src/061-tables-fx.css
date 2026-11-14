@@ -1,0 +1,16 @@
+
+/* ===================== Переливающаяся рамка таблиц =====================
+   Настройки → Эффекты → «Рамка таблиц»: цвет, скорость или «Выключено». */
+@property --tb-ang{syntax:"<angle>";inherits:false;initial-value:0deg}
+@keyframes tbSpin{to{--tb-ang:360deg}}
+body.tb-on .wrap:has(> table){border:1.5px solid transparent;background:linear-gradient(var(--panel),var(--panel)) padding-box,conic-gradient(from var(--tb-ang),var(--tb-c)) border-box;animation:tbSpin var(--tb-speed,6s) linear infinite;box-shadow:var(--shadow),0 0 22px -10px var(--tb-glow,transparent)}
+/* «Бегущий блик»: по спокойной рамке пробегает одна яркая искра */
+@media (prefers-reduced-motion:reduce){body.tb-on .wrap:has(> table){animation:none}}
+
+/* ===================== Перелив у первых трёх мест в столбце «Место» =====================
+   Тот же перелив, что у имён призёров; фон ячейки сохраняется, потому что столбец закреплён при прокрутке. */
+body.holo-text-on :is(tr:has(> td.medal-1),tr:has(> td.medal-2),tr:has(> td.medal-3)) > td:first-child:is(.medal-1,.medal-2,.medal-3){background-size:300% 100%;background-repeat:repeat;-webkit-background-clip:text,padding-box;background-clip:text,padding-box;-webkit-text-fill-color:transparent;font-weight:700}
+body.holo-text-on tr > td.medal-1:first-child{background-image:linear-gradient(100deg,#ffd166 0%,#ff9ecf 18%,#67e8f9 36%,#a78bfa 54%,#76f0b6 72%,#ffd166 90%),none;animation:holoText 7s linear infinite}
+body.holo-text-on tr > td.medal-2:first-child{background-image:linear-gradient(100deg,#9aa6bd 0%,#ffffff 16%,#7f8aa1 36%,#dfe6f2 56%,#8e99b0 78%,#9aa6bd 100%),none;animation:holoText 10s linear infinite}
+body.holo-text-on tr > td.medal-3:first-child{background-image:linear-gradient(100deg,#e3a36b 0%,#f3c79a 30%,#b8784a 55%,#e3a36b 80%,#e3a36b 100%),none;animation:holoText 14s linear infinite}
+@media (prefers-reduced-motion:reduce){body.holo-text-on tr > td:first-child:is(.medal-1,.medal-2,.medal-3){animation:none}}

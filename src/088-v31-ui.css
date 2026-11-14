@@ -1,0 +1,31 @@
+
+/* ===================== v31: Матрица и цвета участников без внутренней прокрутки, «Графики»: компактная панель ===================== */
+/* Таблица показывается целиком: без вертикальной полосы прокрутки, рамка идёт вокруг всей таблицы */
+#c-out > svg.norm-svg{width:100%;max-width:1150px}
+/* Закреплённые столбцы и шапка Матрицы — непрозрачные: при прокрутке вбок числа не просвечивают сквозь «№ / Имя» */
+.dm-table{--dm-solid:color-mix(in srgb,var(--panel) 92%,var(--bg))}
+html body .wrap.sx > #dm-table > :is(tbody,tfoot) > tr > td:is(.dm-no,.dm-name){background-color:var(--dm-solid)!important;background-image:none!important;background-clip:border-box!important;-webkit-background-clip:border-box!important;-webkit-text-fill-color:currentColor!important;animation:none!important}
+html body .wrap.sx > #dm-table > thead > tr > th:is(.dm-no,.dm-name,.dm-corner){background-color:color-mix(in srgb,var(--panel) 86%,var(--bg))!important}
+html body .wrap.sx > #dm-table > tfoot > tr.dm-sum > td:is(.dm-no,.dm-name){background-color:color-mix(in srgb,var(--accent) 13%,var(--dm-solid))!important}
+/* Переливающаяся рамка со стеклом рисуется поверх таблицы: держим её на месте, когда таблицу листают вбок */
+body.glass-ui.tb-on .wrap:has(> table:not(.tv-cards))::after{inset:auto!important;left:var(--wrap-sl,0px)!important;top:var(--wrap-st,0px)!important;width:100%!important;height:100%!important;box-sizing:border-box}
+/* Матрица: строка «Итого» заметно отделена от участников */
+.dm-table tfoot tr.dm-sum > td{font-weight:700;color:var(--text);background:color-mix(in srgb,var(--accent) 13%,var(--panel))!important;border-top:2px solid color-mix(in srgb,var(--accent) 55%,transparent)!important;border-bottom:0!important;padding-top:12px;padding-bottom:12px}
+body.glass-ui .dm-table tfoot tr.dm-sum > td{background:color-mix(in srgb,var(--accent) 14%,transparent)!important}
+.dm-table tfoot tr.dm-sum > td.dm-name{color:var(--accent);letter-spacing:.01em}
+.dm-table tfoot tr.dm-sum > td:is(.dm-no,.dm-name){position:sticky;z-index:2}
+/* Матрица: год → месяцы → дни по клику на заголовок; переключатель «Участники | Чаты» без подписи */
+.dm-table th.dm-drill{cursor:pointer;text-decoration:underline dotted color-mix(in srgb,var(--accent) 60%,transparent);text-underline-offset:4px}
+.dm-table th.dm-drill:hover{color:var(--accent)}
+.dm-table .dm-up{align-items:center;margin:0 0 8px;padding:4px 10px;border-radius:var(--r-m);border:1px solid var(--glass-line,var(--line));background:color-mix(in srgb,var(--text) 7%,transparent);color:var(--accent);font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.dm-table th.dm-grand,.dm-table th.dm-corner{vertical-align:middle!important}
+.dm-table .dm-up{display:flex;width:max-content}
+.dm-table .dm-up:hover{background:color-mix(in srgb,var(--accent) 16%,transparent)}
+.dm-entity-field{justify-content:flex-end}
+#tab-daymatrix .wrap,#tab-settings .people-wrap{max-height:none!important;overflow-y:visible!important}
+/* «Графики»: «Участники | Чаты» без подписи и компактнее; поле месяца шире — название месяца влезает целиком */
+.c-entity-field{justify-content:flex-end}
+.c-entity-field > .seg > button{min-width:0!important}
+html body .filters input[type=month]{min-width:215px!important;width:auto!important;flex:0 0 auto!important}
+html body .filters .field:has(> input[type=month]){flex:0 0 auto!important;max-width:none!important}
+body.filters-right #tab-charts > .filters.fr-keep #f-mode .seg{flex-wrap:nowrap}

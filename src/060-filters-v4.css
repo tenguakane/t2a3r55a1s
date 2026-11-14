@@ -1,0 +1,65 @@
+
+/* ===================== Фильтры v4: крупнее, спокойнее, современнее =====================
+   Работает поверх «Современного вида фильтров» (Настройки → Фильтры). Выключить: снять ту же галочку. */
+body:not(.fv3-off){--fv4-line:color-mix(in srgb,var(--text) 11%,transparent);--fv4-line-hi:color-mix(in srgb,var(--text) 22%,transparent);--fv4-fill:color-mix(in srgb,var(--text) 4%,var(--ctrl));--fv4-on:color-mix(in srgb,var(--text) 11%,transparent)}
+body:not(.fv3-off) .filters{--control-height:46px;gap:var(--sp-2)}
+body:not(.fv3-off) .tab > .filters,body:not(.fv3-off) #shared > .filters,body:not(.fv3-off) .stat-content > .filters{padding:10px;border-radius:var(--r-l);background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid var(--fv4-line);box-shadow:0 1px 0 #ffffff08 inset,0 14px 34px -26px #000;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+/* поле: подпись слева, значение справа, одна спокойная «капсула» */
+body:not(.fv3-off) .filters .field{border-radius:var(--r-l);background:var(--fv4-fill);box-shadow:inset 0 0 0 1px var(--fv4-line)}
+body:not(.fv3-off) .filters .field:hover{box-shadow:inset 0 0 0 1px var(--fv4-line-hi)}
+body:not(.fv3-off) .filters .field:focus-within{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 45%,var(--fv4-line)),0 0 0 3px color-mix(in srgb,var(--accent) 9%,transparent)}
+body:not(.fv3-off) .filters .field > label{padding:0 4px 0 16px;font-size:13.5px;letter-spacing:0;color:var(--muted)}
+body:not(.fv3-off) .filters .field > label::after{height:16px;margin-left:12px;background:var(--fv4-line)}
+body:not(.fv3-off) .filters .field select,body:not(.fv3-off) .filters .field input:not([type=checkbox]):not([type=range]):not([type=color]){font-size:15px;padding:0 14px}
+body:not(.fv3-off) .filters .field select{max-width:300px;padding-right:32px}
+@media (min-width:721px){
+  body:not(.fv3-off) .filters .field input[type=date]{width:150px}
+  body:not(.fv3-off) .filters .field input[type=month]{width:140px}
+  body:not(.fv3-off) .filters .field input[type=number]{width:86px!important}
+  body:not(.fv3-off) .filters .field input[type=text],body:not(.fv3-off) .filters .field input:not([type]),body:not(.fv3-off) .filters .field input[list]{width:170px}
+}
+/* сегменты: активный — мягкая светлая подложка вместо яркого акцента */
+body:not(.fv3-off) .filters .seg,body:not(.fv3-off) .stat-subnav,body:not(.fv3-off) .group-tabs{gap:var(--sp-1);padding:3px;border-radius:var(--r-l);background:var(--fv4-fill);box-shadow:inset 0 0 0 1px var(--fv4-line)}
+body:not(.fv3-off) .filters .seg button,body:not(.fv3-off) .stat-subnav button,body:not(.fv3-off) .group-tabs button{padding:0 16px;font-size:15px;font-weight:500;border-radius:var(--r-m);color:var(--muted)}
+body:not(.fv3-off) .filters .seg button:hover,body:not(.fv3-off) .stat-subnav button:hover,body:not(.fv3-off) .group-tabs button:hover{color:var(--text);background:color-mix(in srgb,var(--text) 6%,transparent)}
+body:not(.fv3-off) .filters .seg button.active,body:not(.fv3-off) .stat-subnav button.active,body:not(.fv3-off) .group-tabs button.active{background:var(--fv4-on);color:var(--text);box-shadow:inset 0 0 0 1px var(--fv4-line),0 1px 2px #0003,inset 0 -2px 0 color-mix(in srgb,var(--accent) 38%,transparent)}
+body:not(.fv3-off) .filters .field > .seg{padding:3px;background:transparent;box-shadow:none}
+body:not(.fv3-off) .filters .field > .seg button{height:calc(var(--control-height) - 8px)!important;font-size:15px;padding:0 14px}
+/* переключатели-галочки */
+body:not(.fv3-off) .checkline{min-height:var(--control-height,46px);padding:0 16px;gap:var(--sp-2);border-radius:var(--r-l);font-size:15px;background:var(--fv4-fill,var(--ctrl));box-shadow:inset 0 0 0 1px var(--fv4-line,var(--line))}
+body:not(.fv3-off) .checkline:has(input:checked){background:color-mix(in srgb,var(--text) 8%,var(--ctrl));box-shadow:inset 0 0 0 1px var(--fv4-line-hi,var(--line))}
+body:not(.fv3-off) .checkline input[type=checkbox]{flex-basis:30px;width:30px!important;height:17px!important;background:radial-gradient(circle at 8.5px 50%,#cfd5e3 0 5.5px,transparent 6.2px),color-mix(in srgb,var(--text) 18%,transparent)}
+body:not(.fv3-off) .checkline input[type=checkbox]:checked{background:radial-gradient(circle at 21.5px 50%,#fff 0 5.5px,transparent 6.2px),color-mix(in srgb,var(--accent) 70%,#7a8090)}
+/* кнопки и «Параметры» */
+body:not(.fv3-off) .filters button.mini,body:not(.fv3-off) .filters .table-export-actions .mini{height:var(--control-height);padding:0 16px;font-size:15px;border-radius:var(--r-l);border-color:var(--fv4-line);background:var(--fv4-fill)}
+body:not(.fv3-off) .filters button.mini:hover,body:not(.fv3-off) .filters .table-export-actions .mini:hover{border-color:var(--fv4-line-hi)}
+body:not(.fv3-off) .filters .field > .pbtn > .mini,body:not(.fv3-off) .filters .field > button.mini{border-radius:0;font-size:14px;padding:0 12px;background:transparent}
+body:not(.fv3-off) .filters .opt-pop>summary{padding:0 16px;font-size:15px;border-radius:var(--r-l);border-color:var(--fv4-line);background:var(--fv4-fill)}
+body:not(.fv3-off) .opt-pop[open]>summary,body:not(.fv3-off) .opt-pop>summary:hover{border-color:var(--fv4-line-hi)}
+body:not(.fv3-off) .opt-pop .opt-n{background:color-mix(in srgb,var(--text) 12%,transparent);color:var(--text)}
+body:not(.fv3-off) .filters .field .pick summary{font-size:14.5px;padding:0 12px}
+/* цветные метки фильтров — тише */
+body.filter-colors:not(.fv3-off) .filters .field[data-fcat],body.filter-colors:not(.fv3-off) .filters .checkline[data-fcat]{box-shadow:inset 0 0 0 1px var(--fv4-line),inset 0 2px 0 color-mix(in srgb,var(--fc) 38%,transparent)}
+@media (min-width:721px){body:not(.fv3-off) .stat-subnav button,body:not(.fv3-off) .group-tabs button{height:var(--h-m);min-height:var(--h-m);font-size:15px}
+  /* рамка переключателя подстраивается под кнопки (иначе кнопки вылезают за неё) */
+  body:not(.fv3-off) .stat-subnav,body:not(.fv3-off) .group-tabs{height:auto;min-height:0;align-items:center}}
+body.filter-colors:not(.fv3-off) .filters .field[data-fcat] > label{background:transparent;color:color-mix(in srgb,var(--fc) 30%,var(--muted))}
+/* ---------- выпадающий список: просторнее и крупнее ---------- */
+.msel{gap:var(--sp-2);max-width:320px;padding:0 36px 0 14px;font-size:15px}
+.msel::after{right:14px;width:7px;height:7px}
+.msel.solo{height:var(--control-height,40px);border-radius:var(--r-l);background:color-mix(in srgb,var(--text) 4%,var(--ctrl));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 11%,transparent)}
+.msel-pop{min-width:240px;max-width:min(440px,calc(100vw - 16px));padding:8px;gap:var(--sp-1);border-radius:var(--r-l);background:color-mix(in srgb,var(--panel-2) 92%,#000);border:1px solid color-mix(in srgb,var(--text) 10%,transparent);box-shadow:0 24px 60px -16px #000e,0 1px 0 #ffffff0a inset}
+.msel-pop input{height:var(--h-m);padding:0 12px;border-radius:var(--r-m);font-size:14px}
+.msel-pop input:focus{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 50%,transparent)}
+.msel-list{gap:2px}
+.msel-opt{min-height:38px;padding:9px 14px 9px 36px;border-radius:var(--r-m);font-size:14.5px;line-height:1.3}
+.msel-opt:hover,.msel-opt.hl{background:color-mix(in srgb,var(--text) 7%,transparent)}
+.msel-opt[aria-selected="true"]{color:var(--text);font-weight:600;background:color-mix(in srgb,var(--text) 10%,transparent)}
+.msel-opt[aria-selected="true"]::before{left:14px;width:9px;height:4.5px;color:color-mix(in srgb,var(--accent) 80%,var(--text))}
+.msel-grp{padding:10px 14px 4px;font-size:11.5px}
+.msel-empty{padding:12px 14px;font-size:14px}
+@media (max-width:720px){
+  body:not(.fv3-off) .filters{--control-height:42px;gap:var(--sp-2)}
+  body:not(.fv3-off) .tab > .filters,body:not(.fv3-off) #shared > .filters,body:not(.fv3-off) .stat-content > .filters{padding:8px;border-radius:var(--r-l)}
+  body:not(.fv3-off) .filters .field select,body:not(.fv3-off) .filters .field input:not([type=checkbox]):not([type=range]):not([type=color]){font-size:16px}
+}

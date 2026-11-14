@@ -1,0 +1,105 @@
+
+/* ===================== Шторка фильтров справа: крупнее и просторнее ===================== */
+@media (min-width:721px){
+  body.filters-right{--fr-w:var(--fr-w-open,360px)}
+  body.filters-right.fr-collapsed{--fr-w:52px}
+  /* На вкладке «Настройки» шторка не нужна: у настроек свои вкладки */
+  body.filters-right.fr-settings{--fr-w:0px}
+  body.fr-settings #filter-drawer,body.fr-settings #fr-resizer{display:none!important}
+  .fd-head{font-size:16px}
+  #fd-body{padding:14px 14px 20px}
+  #fd-body .filters,#fd-body .quick-ranges{gap:var(--sp-2)}
+  #fd-body .filters .field{border-radius:var(--r-l)}
+  #fd-body .filters .field > label{height:auto;padding:10px 16px 2px!important;border:0!important;background:transparent!important;font-size:14px!important;font-weight:500;line-height:1.3;color:var(--muted)}
+  #fd-body .filters .field > label::after{display:none!important}
+  #fd-body .filters .field select,#fd-body .filters .field input:not([type=checkbox]):not([type=range]):not([type=color]){height:46px!important;padding:0 38px 0 16px!important;font-size:16px!important;font-weight:500}
+  #fd-body .filters .field input:not([type=checkbox]):not([type=range]):not([type=color]):not(select){padding-right:16px!important}
+  #fd-body .filters .field .msel{height:46px;width:100%;max-width:none;padding:0 38px 0 16px;font-size:16px}
+  #fd-body .filters .field > .seg button,#fd-body .filters .field > .pbtn > .mini{height:var(--h-m)!important;font-size:15px!important}
+  #fd-body .filters .field > .seg,#fd-body .filters .field > .pbtn{padding:4px 6px 6px}
+  #fd-body .checkline{min-height:48px;font-size:15.5px}
+  #fd-body .filters > button.mini,#fd-body .table-export-actions .mini,#fd-body .opt-pop > summary{min-height:46px;font-size:15.5px}
+  #fd-body .quick-ranges button{min-height:var(--h-m);font-size:14.5px}
+  .fd-top .ult-btn{min-height:40px;font-size:14.5px}
+}
+
+/* ===================== Настройки: вкладки (ПК) и список разделов (телефон) ===================== */
+.set-tabs{display:flex;flex-wrap:wrap;gap:var(--sp-1);margin:0 0 18px;padding:4px;border-radius:var(--r-l);background:color-mix(in srgb,var(--text) 4%,var(--ctrl));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 11%,transparent);position:sticky;top:calc(var(--hdr-h,57px) + 6px);z-index:20;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.set-tabs button{display:inline-flex;align-items:center;gap:var(--sp-2);height:var(--h-m);padding:0 16px;border:0;border-radius:var(--r-m);background:transparent;color:var(--muted);font:inherit;font-size:15px;font-weight:500;cursor:pointer;transition:background .15s,color .15s}
+.set-tabs button:hover{color:var(--text);background:color-mix(in srgb,var(--text) 6%,transparent)}
+.set-tabs button.active{color:var(--text);background:color-mix(in srgb,var(--text) 11%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 11%,transparent),0 1px 2px #0003,inset 0 -2px 0 color-mix(in srgb,var(--accent) 45%,transparent)}
+.set-tabs button i{font-style:normal;font-size:16px;line-height:1}
+#tab-settings[data-scat] .set-pane{display:none}
+#tab-settings[data-scat="look"] .set-pane[data-cat="look"],#tab-settings[data-scat="mobile"] .set-pane[data-cat="mobile"],#tab-settings[data-scat="fx"] .set-pane[data-cat="fx"],#tab-settings[data-scat="exp"] .set-pane[data-cat="exp"],#tab-settings[data-scat="filters"] .set-pane[data-cat="filters"],#tab-settings[data-scat="people"] .set-pane[data-cat="people"],#tab-settings[data-scat="data"] .set-pane[data-cat="data"],#tab-settings[data-scat="site"] .set-pane[data-cat="site"]{display:block;animation:setIn .22s ease-out}
+@keyframes setIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.set-pane > h2:first-child,.set-pane > .set-back + h2{margin-top:0}
+.set-menu,.set-back{display:none}
+body:not(.fv3-off) #tab-settings .set-pane > .filters{padding:10px;border-radius:var(--r-l);background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid var(--fv4-line,var(--line));box-shadow:0 1px 0 #ffffff08 inset,0 14px 34px -26px #000}
+@media (max-width:720px){
+  .set-tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;position:static}
+  .set-tabs::-webkit-scrollbar{display:none}
+  .set-tabs button{flex:0 0 auto}
+  /* приложение: сначала список разделов, внутри — настройки раздела и кнопка «назад» */
+  body.mapp .set-tabs{display:none}
+  body.mapp #tab-settings:not(.sm-in) .set-pane{display:none!important}
+  body.mapp #tab-settings:not(.sm-in) .set-menu{display:block}
+  body.mapp .set-menu{margin:4px 2px 18px;border-radius:var(--r-l);background:var(--ma-group,var(--panel));overflow:hidden}
+  body.mapp .set-menu .ma-txt{min-height:58px}
+  body.mapp .set-menu .ma-txt > span:first-child{display:flex;flex-direction:column;gap:2px;white-space:normal}
+  body.mapp .set-menu .ma-txt b{font-weight:500;font-size:16px}
+  body.mapp .set-menu .ma-txt em{font-style:normal;color:var(--muted);font-size:13px;line-height:1.3}
+  body.mapp .set-menu-title{text-transform:uppercase}
+  body.mapp #tab-settings.sm-in .set-back{display:flex;align-items:center;gap:var(--sp-1);height:40px;margin:0 0 6px -6px;padding:0 8px;border:0;background:transparent;color:var(--accent);font:inherit;font-size:16px;font-weight:500;cursor:pointer}
+  body.mapp #tab-settings.sm-in .set-back::before{content:"‹";font-size:28px;line-height:1;margin-top:-3px}
+}
+
+/* ===================== Анимированные плашки годов («Топ месяцев», «Топ дней») ===================== */
+/* плашка года: лёгкая пульсация её же цветом вместо бегущего блика */
+@keyframes ycPulse{0%,100%{background-color:color-mix(in srgb,currentColor 0%,transparent);box-shadow:0 0 0 0 transparent}50%{background-color:color-mix(in srgb,currentColor 22%,transparent);box-shadow:0 0 10px -3px currentColor}}
+@keyframes ycShine{0%,58%{transform:translateX(0) skewX(-18deg)}100%{transform:translateX(330%) skewX(-18deg)}}
+@keyframes ycGlow{0%,100%{box-shadow:0 0 0 0 transparent;filter:none}55%{box-shadow:0 0 0 0 transparent;filter:none}75%{box-shadow:0 0 12px -3px currentColor,inset 0 0 6px -3px currentColor;filter:brightness(1.18)}}
+/* кнопки-фильтры годов над таблицей: точка пульсирует, у выбранного бежит блик */
+@keyframes ycDot{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--yc) 70%,transparent)}70%,100%{box-shadow:0 0 0 7px color-mix(in srgb,var(--yc) 0%,transparent)}}
+@keyframes ycBtnPulse{0%,100%{background-color:color-mix(in srgb,var(--yc) 16%,var(--ctrl))}50%{background-color:color-mix(in srgb,var(--yc) 32%,var(--ctrl));box-shadow:0 0 12px -4px var(--yc)}}
+@keyframes ycBtn{from{background-position:120% 0}to{background-position:-130% 0}}
+
+/* ===================== Переливающаяся рамка у графиков (как у таблиц) ===================== */
+body.tb-on .chart:not(:has(svg.heatrows-svg)){position:relative;border-color:transparent;box-shadow:var(--shadow),0 0 22px -10px var(--tb-glow,transparent)}
+body.tb-on .chart:not(:has(svg.heatrows-svg))::after{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:2px;background:conic-gradient(from var(--tb-ang),var(--tb-c));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);animation:tbSpin var(--tb-speed,6s) linear infinite;pointer-events:none;z-index:1}
+body.tb-on .chart:has(svg.heatrows-svg){border:1.5px solid transparent;background:linear-gradient(var(--panel),var(--panel)) padding-box,conic-gradient(from var(--tb-ang),var(--tb-c)) border-box;animation:tbSpin var(--tb-speed,6s) linear infinite}
+@media (prefers-reduced-motion:reduce){body.tb-on .chart::after,body.tb-on .chart{animation:none!important}}
+/* Настройки в приложении: разделы оформлены как сгруппированные списки, как в шторке фильтров */
+@media (max-width:720px){
+  body.mapp #tab-settings .set-pane .filters{display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;align-items:stretch!important;gap:0!important;padding:0!important;overflow:hidden!important;border:0!important;border-radius:var(--r-l)!important;background:var(--ma-group)!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;--control-height:46px}
+  body.mapp #tab-settings .set-pane .filters > *{width:100%!important;max-width:none!important;flex:0 0 auto!important;margin:0!important}
+  body.mapp #tab-settings .set-pane .filters > * + *{border-top:1px solid var(--ma-hair)!important}
+  body.mapp #tab-settings .set-pane .filters > [hidden],body.mapp #tab-settings .set-pane .filters .field[hidden]{display:none!important}
+  body.mapp #tab-settings .set-pane .filters .field{display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;align-items:center!important;justify-content:space-between;height:auto!important;min-height:48px;padding:0 4px 0 0;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
+  body.mapp #tab-settings .set-pane .filters .field > label{flex:1 1 0;min-width:0;display:flex;align-items:center;min-height:48px;padding:6px 10px 6px 14px!important;background:transparent!important;border:0!important;color:var(--text)!important;font-size:15.5px!important;line-height:1.25}
+  body.mapp #tab-settings .set-pane .filters .field > label::after{display:none!important}
+  body.mapp #tab-settings .set-pane .filters .field select,body.mapp #tab-settings .set-pane .filters .field input:not([type=checkbox]):not([type=range]):not([type=color]){flex:0 1 auto!important;width:auto!important;min-width:0!important;max-width:64%!important;height:46px!important;padding:0 28px 0 8px!important;border:0!important;background-color:transparent!important;box-shadow:none!important;color:var(--muted)!important;font-size:15.5px!important;text-align:right;text-align-last:right}
+  body.mapp #tab-settings .set-pane .filters .field input[type=date],body.mapp #tab-settings .set-pane .filters .field input[type=month],body.mapp #tab-settings .set-pane .filters .field input[type=number]{padding-right:10px!important}
+  body.mapp #tab-settings .set-pane .filters .field > .seg,body.mapp #tab-settings .set-pane .filters .field > .pbtn{flex:1 1 100%!important;order:5;display:flex!important;flex-wrap:wrap!important;gap:var(--sp-1)!important;margin:0 10px 10px 14px!important;padding:3px!important;height:auto!important;border-radius:var(--r-m)!important;background:color-mix(in srgb,var(--text) 7%,transparent)!important;box-shadow:none!important;overflow:visible!important}
+  body.mapp #tab-settings .set-pane .filters > .seg{display:flex!important;flex-wrap:wrap!important;gap:var(--sp-1)!important;padding:10px 14px!important;height:auto!important;background:transparent!important;box-shadow:none!important;border-radius:0!important}
+  body.mapp #tab-settings .set-pane .filters .seg button,body.mapp #tab-settings .set-pane .filters .field > .pbtn > .mini{flex:1 1 auto!important;height:var(--h-s)!important;min-height:0;padding:0 10px!important;border:0!important;border-radius:var(--r-m)!important;background:transparent!important;color:var(--text)!important;font-size:14px!important;box-shadow:none!important}
+  body.mapp #tab-settings .set-pane .filters > .seg button{background:color-mix(in srgb,var(--text) 7%,transparent)!important}
+  body.mapp #tab-settings .set-pane .filters .seg button.active{background:var(--panel-2,var(--panel))!important;color:var(--text)!important;font-weight:600;box-shadow:0 1px 3px #0004!important}
+  body.mapp #tab-settings .set-pane .filters .field > .pbtn .hint{flex:1 1 100%;padding:2px 4px}
+  body.mapp #tab-settings .set-pane .checkline{display:flex!important;flex-direction:row-reverse!important;justify-content:space-between!important;align-items:center!important;min-height:48px;height:auto!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:var(--text)!important;font-size:15.5px!important}
+  body.mapp #tab-settings .set-pane .checkline input[type=checkbox]{flex:0 0 46px!important;width:46px!important;height:28px!important;background:radial-gradient(circle at 14px 50%,#fff 0 11px,transparent 11.6px),color-mix(in srgb,var(--text) 18%,transparent)!important}
+  body.mapp #tab-settings .set-pane .checkline input[type=checkbox]:checked{background:radial-gradient(circle at 32px 50%,#fff 0 11px,transparent 11.6px),#34c759!important}
+  body.mapp #tab-settings .set-pane .opt-pop>summary{display:none!important}
+  body.mapp #tab-settings .set-pane .opt-pop .opt-list{position:static!important;display:flex!important;flex-direction:column;gap:0;min-width:0;padding:0;border:0;border-radius:0;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important}
+  body.mapp #tab-settings .set-pane .opt-pop .opt-list > * + *{border-top:1px solid var(--ma-hair)!important}
+  body.mapp #tab-settings .set-pane .table-export-actions{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:0!important}
+  body.mapp #tab-settings .set-pane .table-export-actions > * + *{border-top:1px solid var(--ma-hair)}
+  body.mapp #tab-settings .set-pane .filters > button.mini,body.mapp #tab-settings .set-pane .table-export-actions .mini{display:flex!important;align-items:center;justify-content:flex-start!important;height:48px!important;width:100%;padding:0 14px!important;border:0!important;border-radius:0!important;background:transparent!important;color:var(--accent)!important;font-size:15.5px!important;box-shadow:none!important}
+  body.mapp #tab-settings .set-pane .table-export-actions .hint{padding:8px 14px;font-size:13px}
+  body.mapp #tab-settings .set-pane .pick .pop{position:static!important;box-shadow:none}
+  body.mapp #tab-settings .set-pane [data-fcat]{box-shadow:none!important}
+  body.mapp #tab-settings .set-pane .filters{margin:0 0 16px!important}
+  body.mapp #tab-settings .set-pane .checkline{white-space:normal!important;text-align:left!important;line-height:1.3;padding:8px 14px!important;gap:var(--sp-3)!important;overflow:visible!important;text-overflow:clip!important}
+  body.mapp #tab-settings .set-pane .filters .field > label{white-space:normal!important}
+  body.mapp #tab-settings .set-pane .filters > .hint,body.mapp #tab-settings .set-pane .filters > span.hint{padding:8px 14px;font-size:13px}
+  body.mapp #tab-settings .set-pane > .pbtn{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin:0 0 16px!important}
+}

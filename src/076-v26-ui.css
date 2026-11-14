@@ -1,0 +1,126 @@
+
+/* ===================== v26: шапка с версией, единый вид фильтров, стекло везде, фон по теме ===================== */
+
+/* ---------- 1. Шапка: содержимое по центру по вертикали, версия рядом с названием ---------- */
+header .top{align-items:center}
+.top-title{display:flex;align-items:center;gap:var(--sp-3);min-width:0}
+.top-title h1{margin:0}
+.top-title .app-ver{max-width:none;margin:0;padding:0!important;gap:var(--sp-2);flex-wrap:nowrap;font-size:12px;line-height:1}
+.top-title #app-ver-text{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;border:1px solid color-mix(in srgb,var(--text) 12%,transparent);background:color-mix(in srgb,var(--text) 5%,transparent);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;cursor:default}
+.top-title #app-ver-text:empty{display:none}
+.top-title .app-ver.new #app-ver-text{color:#ffd166;border-color:color-mix(in srgb,#ffd166 45%,transparent)}
+.top-title #app-ver-reload{height:24px;min-height:24px;padding:0 10px;font-size:12px;border-radius:999px}
+@media (min-width:721px){
+  body.side-nav > header{padding:10px 24px!important}
+  body.side-nav > header .top{margin:0!important;min-height:36px}
+}
+.top-title h1{white-space:nowrap}
+@media (max-width:1180px){.top-title .app-ver{display:none!important}}
+
+/* ---------- 2. Все переключатели фильтров — как «Участники | Чаты» ---------- */
+body{--sg-fill:color-mix(in srgb,var(--text) 4%,var(--ctrl));--sg-line:color-mix(in srgb,var(--text) 11%,transparent);--sg-hi:transparent;--sg-on:color-mix(in srgb,var(--text) 11%,transparent)}
+body.glass-ui{--sg-fill:linear-gradient(145deg,color-mix(in srgb,var(--text) 9%,transparent),color-mix(in srgb,var(--text) 2%,transparent) 55%),var(--glass-bg);--sg-line:var(--glass-line);--sg-hi:var(--glass-hi)}
+@media (min-width:721px){
+  body :is(.seg,.sq-seg,.quick-ranges:not(#theme-bases)){display:inline-flex;align-items:center;flex-wrap:wrap;gap:var(--sp-1)!important;padding:3px!important;border:1px solid var(--sg-line)!important;border-radius:var(--r-l)!important;background:var(--sg-fill)!important;box-shadow:inset 0 1px 0 var(--sg-hi)!important;height:auto!important;min-height:0!important;overflow:visible}
+  body.glass-ui :is(.seg,.sq-seg,.quick-ranges:not(#theme-bases)){-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur)}
+  body :is(.seg,.sq-seg,.quick-ranges:not(#theme-bases)) > :is(button,.quick-chip){display:inline-flex;align-items:center;justify-content:center;height:var(--h-m);min-height:var(--h-m);padding:0 16px;border:0!important;border-radius:var(--r-m)!important;background:transparent!important;box-shadow:none!important;color:var(--muted)!important;font:inherit;font-size:15px!important;font-weight:500;line-height:1;white-space:nowrap;transition:background .15s,color .15s,box-shadow .15s}
+  body :is(.seg,.sq-seg,.quick-ranges:not(#theme-bases)) > :is(button,.quick-chip):hover{color:var(--text)!important;background:color-mix(in srgb,var(--text) 6%,transparent)!important}
+  body :is(.seg,.sq-seg,.quick-ranges:not(#theme-bases)) > :is(button,.quick-chip):is(.active,[aria-pressed="true"]){background:var(--sg-on)!important;color:var(--text)!important;box-shadow:inset 0 0 0 1px var(--sg-line),0 1px 2px #0003,inset 0 -2px 0 color-mix(in srgb,var(--accent) 38%,transparent)!important}
+  body .sq-seg > button{padding:0 13px!important;font-size:14.5px!important}
+  body .quick-ranges:not(#theme-bases) > .qr-label{padding:0 6px 0 12px;font-size:13.5px;color:var(--muted)}
+  /* в шторке: переключатель — отдельная «капсула» под подписью */
+  #fd-body .filters .field > .seg{margin:2px 8px 8px;width:auto}
+  #fd-body .filters .field > .seg > button{flex:1 1 auto}
+  #fd-body .quick-ranges:not(#theme-bases){display:flex}
+  #fd-body .quick-ranges:not(#theme-bases) > .qr-label{flex:1 0 100%;padding:6px 10px 2px}
+  /* одиночные кнопки рядом с переключателями — в той же «капсуле» */
+  body :is(.st-desk-tools,.hc-bar) :is(.hc-btn,.tv-btn),body .sq-date,body .fd-top .ult-btn,body #filters-visibility-toggle{border:1px solid var(--sg-line)!important;border-radius:var(--r-l)!important;background:var(--sg-fill)!important;box-shadow:inset 0 1px 0 var(--sg-hi)!important;color:var(--text)!important}
+  body.glass-ui :is(.st-desk-tools,.hc-bar) :is(.hc-btn,.tv-btn),body.glass-ui .sq-date,body.glass-ui .fd-top .ult-btn{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur)}
+  body .st-desk-tools :is(.hc-btn,.tv-btn),body .stats-quick .sq-date{height:48px;min-height:48px;padding:0 16px;font-size:15px;gap:var(--sp-2)}
+  body .hc-bar :is(.hc-btn,.tv-btn){height:var(--h-m);min-height:var(--h-m);padding:0 13px;font-size:14px}
+  body :is(.st-desk-tools,.hc-bar) :is(.hc-btn,.tv-btn):hover,body .fd-top .ult-btn:hover{background:var(--sg-on)!important}
+  body :is(.st-desk-tools,.hc-bar) .hc-btn[aria-expanded="true"]{box-shadow:inset 0 0 0 1px var(--sg-line),inset 0 -2px 0 color-mix(in srgb,var(--accent) 38%,transparent)!important}
+  body .fd-top .ult-btn{min-height:46px;height:46px}
+  body .fd-top .ult-btn.on{background:var(--sg-on)!important;box-shadow:inset 0 0 0 1px var(--sg-line),inset 0 -2px 0 color-mix(in srgb,var(--accent) 45%,transparent)!important}
+  body .sq-date :is(input,select){background:transparent!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  body .stats-quick{align-items:center}
+}
+
+/* ---------- 3. Строки исключаются в меню «Столбцы»: крестиков в таблицах больше нет ---------- */
+.row-exclude-btn,.excluded-rows-host{display:none!important}
+.hc-pop:has(> .hc-rows){overflow-y:auto;max-height:calc(100vh - 16px)!important;scrollbar-width:thin}
+.hc-pop:has(> .hc-rows) > *{flex-shrink:0}
+.hc-pop:has(> .hc-rows) .hc-list{max-height:none;overflow:visible}
+.hc-rows{margin-top:8px;padding-top:8px;border-top:1px solid color-mix(in srgb,var(--text) 10%,transparent);display:flex;flex-direction:column;min-height:0}
+.hc-rows h4 small{margin-left:6px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--accent)}
+.hc-rows .hc-rfind{margin:0 4px 6px;height:32px;padding:0 10px;border-radius:var(--r-m);border:1px solid color-mix(in srgb,var(--text) 12%,transparent);background:color-mix(in srgb,var(--text) 5%,transparent);color:var(--text);font:inherit;font-size:13.5px}
+.hc-rows-list{overflow-y:auto;max-height:min(34vh,260px);scrollbar-width:thin}
+.hc-pop label.hc-ritem{display:flex!important;align-items:center;gap:var(--sp-2);margin:0!important;padding:5px 8px!important;border-radius:var(--r-m);cursor:pointer;color:var(--text);font-size:14px;white-space:nowrap}
+.hc-pop label.hc-ritem:hover{background:color-mix(in srgb,var(--text) 6%,transparent)}
+.hc-pop label.hc-ritem.off span{color:var(--muted);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--muted) 60%,transparent)}
+.hc-pop label.hc-ritem input{flex:0 0 16px!important;width:16px!important;min-width:0!important;max-width:16px!important;height:16px!important;padding:0!important;margin:0!important;accent-color:var(--accent)}
+.hc-pop label.hc-ritem span{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis}
+.hc-rows .hc-rfoot{display:flex;justify-content:flex-end;padding:6px 4px 0}
+.hc-rows .hc-rfoot button{height:var(--h-s);padding:0 10px;border-radius:var(--r-m);border:1px solid color-mix(in srgb,var(--text) 12%,transparent);background:transparent;color:var(--text);font:inherit;font-size:13px;cursor:pointer}
+.hc-rows .hc-rfoot button:disabled{opacity:.45;cursor:default}
+.hc-btn .hc-rn{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;margin-left:2px;border-radius:999px;font-size:11px;font-style:normal;font-weight:600;background:color-mix(in srgb,#f7768e 22%,transparent);color:#ffb3c0}
+.hc-btn .hc-rn[hidden]{display:none}
+
+/* ---------- 4–5. Шторка фильтров: значки у названий, сворачивается кнопкой (без выезда по наведению) ---------- */
+.fd-ic{display:inline-block;width:1.35em;margin-right:4px;text-align:center;font-style:normal;filter:saturate(1.1)}
+#fd-body .checkline > .fd-ic{margin-right:-2px}
+#fd-body .opt-pop > summary > .fd-ic{margin-right:6px}
+@media (min-width:721px){
+  body.fr-collapsed #filter-drawer.fr-peek{width:var(--fr-w)!important;box-shadow:none!important}
+  body.fr-collapsed #filter-drawer.fr-peek > :is(.fd-top,#fd-body),body.fr-collapsed #filter-drawer.fr-peek .fd-head span{opacity:0!important;pointer-events:none!important}
+  body.filters-right #filter-drawer .fd-head #fd-toggle{color:var(--muted)}
+  body.filters-right #filter-drawer .fd-head #fd-toggle:hover{color:var(--text);background:color-mix(in srgb,var(--text) 8%,transparent)}
+  body.filters-right #filter-drawer .fd-head #fd-toggle svg{width:16px;height:16px}
+  body.fr-collapsed #filter-drawer .fd-head{justify-content:center!important;padding:0!important;width:52px!important;min-width:52px!important}
+  body.fr-collapsed #filter-drawer .fd-head span{display:none!important}
+  body.fr-collapsed #filter-drawer .fd-rail{width:52px;padding-top:16px;gap:var(--sp-2)}
+  body.fr-collapsed #filter-drawer .fd-rail::before{content:"";width:36px;height:36px;border-radius:var(--r-m);flex:0 0 auto;writing-mode:horizontal-tb;background:color-mix(in srgb,var(--text) 6%,transparent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23aab' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6h16M7 12h10M10 18h4'/%3E%3C/svg%3E") center/18px no-repeat;box-shadow:inset 0 0 0 1px var(--sg-line)}
+  body.fr-collapsed #filter-drawer .fd-rail:hover::before{background-color:color-mix(in srgb,var(--text) 12%,transparent)}
+}
+
+/* ---------- 7. «Рекорды»: столбец «Место» по центру ---------- */
+#records-table:not(.tv-cards) > thead > tr > th:first-child,#records-table:not(.tv-cards) > tbody > tr > td:first-child,#records-table:not(.tv-cards) > tfoot > tr > td:first-child{text-align:center!important;padding-left:10px;padding-right:10px}
+
+/* ---------- 8. Стекло для всего, что осталось плотным ---------- */
+body.glass-ui{--glass-ctrl:linear-gradient(145deg,color-mix(in srgb,var(--text) 13%,transparent),color-mix(in srgb,var(--text) 5%,transparent));--glass-ctrl-hover:color-mix(in srgb,var(--text) 16%,transparent)}
+body.glass-ui :is(main,#filter-drawer,header) :is(button.mini,.copy-btn,.chip,.s-chip,.ychip-btn,.bd-pill,.p-cmp-btn,.msel.solo,.top-search,.sq-date,.ult-btn):not(.active):not(.on):not([aria-pressed="true"]),
+body.glass-ui :is(main,#filter-drawer) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),select,.pick > summary):not(.filters *),
+body.glass-ui #hub-find,body.glass-ui #dg-week{background:var(--glass-ctrl)!important;border-color:var(--glass-line)!important;box-shadow:inset 0 1px 0 color-mix(in srgb,var(--text) 10%,transparent)!important;-webkit-backdrop-filter:blur(12px) saturate(160%);backdrop-filter:blur(12px) saturate(160%)}
+body.glass-ui :is(main,#filter-drawer,header) :is(button.mini,.copy-btn,.chip,.s-chip,.ychip-btn,.p-cmp-btn):not(.active):not([aria-pressed="true"]):hover{background:var(--glass-ctrl-hover)!important}
+body.glass-ui .ult-btn.on,body.glass-ui .ult-btn[aria-pressed="true"]{-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.ult-btn i{background:color-mix(in srgb,var(--text) 18%,transparent)}
+.ult-btn.on i{background:linear-gradient(90deg,var(--accent),var(--accent-2,var(--accent)))}
+/* значки: события Хаба, плитки разделов, иконки и цифры достижений и серий */
+body.glass-ui :is(.hub-ev .ic,.hub-tile .ic,.hub-card .ic,.ch-ev .ic,.ach-ico,.ach-hstat,.mt-mini,.p-streak,.p-streak-ic,.streak-ic,.st-badge,.p-stat,.p-hero .p-cmp-btn){background:linear-gradient(145deg,color-mix(in srgb,var(--text) 12%,transparent),color-mix(in srgb,var(--text) 3%,transparent))!important;border:1px solid var(--glass-line)!important;box-shadow:inset 0 1px 0 var(--glass-hi),0 6px 16px -10px rgba(0,0,0,.6)!important;-webkit-backdrop-filter:blur(10px) saturate(160%);backdrop-filter:blur(10px) saturate(160%)}
+/* неполученные достижения: приглушаем содержимое, а не саму карточку — иначе пропадает стекло */
+body.glass-ui .ach-card.locked{filter:none!important;opacity:1!important}
+body.glass-ui .ach-card.locked > *{opacity:.72;filter:saturate(.35)}
+body.glass-ui .checkline{background:var(--glass-ctrl)!important;box-shadow:inset 0 0 0 1px var(--glass-line),inset 0 1px 0 color-mix(in srgb,var(--text) 10%,transparent)!important}
+body.glass-ui .checkline:has(input:checked){background:linear-gradient(145deg,color-mix(in srgb,var(--text) 13%,transparent),color-mix(in srgb,var(--text) 5%,transparent))!important}
+
+/* ---------- 9. Цвет темы заметно красит фон ---------- */
+body{background:
+  radial-gradient(1200px 640px at 6% -10%,color-mix(in srgb,var(--accent) 20%,transparent) 0%,transparent 64%),
+  radial-gradient(1000px 600px at 106% -4%,color-mix(in srgb,var(--accent-2) 17%,transparent) 0%,transparent 60%),
+  radial-gradient(1100px 700px at 50% 112%,color-mix(in srgb,var(--accent) 11%,transparent) 0%,transparent 62%),
+  linear-gradient(170deg,color-mix(in srgb,var(--accent) 5%,var(--bg)),var(--bg) 40%,color-mix(in srgb,var(--accent-2) 6%,var(--bg)));background-attachment:fixed}
+body.glass-ui::before{
+  background:radial-gradient(38% 34% at 14% 18%,color-mix(in srgb,var(--accent) 48%,transparent),transparent 70%),
+             radial-gradient(34% 30% at 88% 26%,color-mix(in srgb,var(--accent-2) 40%,transparent),transparent 70%),
+             radial-gradient(42% 38% at 62% 88%,color-mix(in srgb,var(--theme-c3,var(--accent)) 34%,transparent),transparent 70%),
+             radial-gradient(30% 28% at 30% 70%,color-mix(in srgb,var(--theme-c4,var(--accent-2)) 30%,transparent),transparent 70%)!important}
+
+/* ---------- 10. Настройки: пояснение под каждым пунктом ---------- */
+#tab-settings label.checkline.set-x{display:flex!important;align-items:flex-start!important;gap:var(--sp-3);white-space:normal!important;height:auto!important;min-height:0!important;padding:12px 16px!important;width:min(100%,560px);flex:1 1 380px;max-width:560px;text-align:left}
+#tab-settings label.checkline.set-x > input{margin-top:2px;flex:0 0 auto}
+#tab-settings .set-txt{display:flex;flex-direction:column;gap:var(--sp-1);min-width:0}
+#tab-settings .set-txt > b{font-weight:500;color:var(--text);font-size:15px;line-height:1.3}
+#tab-settings .set-txt > small,#tab-settings .set-fdesc{font-size:13px;line-height:1.4;color:var(--muted);font-weight:400}
+#tab-settings .set-frow{display:flex;flex-direction:column;gap:var(--sp-1);max-width:560px;flex:1 1 300px}
+#tab-settings .set-frow > .set-fdesc{padding:0 4px}
+#tab-settings .filters:has(> label.set-x){align-items:stretch}

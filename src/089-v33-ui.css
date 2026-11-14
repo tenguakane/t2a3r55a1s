@@ -1,0 +1,20 @@
+
+/* ===================== v33: парящая боковая панель вкладок, плавное появление блоков при смене вкладки ===================== */
+@media (min-width:721px){
+  body.side-nav{padding-left:calc(var(--side-w) + 12px)!important}
+  body.side-nav nav{top:12px!important;bottom:12px!important;left:12px!important;border:1px solid var(--line)!important;border-radius:var(--r-l)!important;box-shadow:0 0 0 1px color-mix(in srgb,var(--line) 40%,transparent),0 14px 36px -14px #000b!important}
+  body.side-nav.side-collapsed nav:hover{box-shadow:0 0 0 1px var(--line),16px 14px 44px -14px rgba(0,0,0,.7)!important}
+  body.side-nav:not(.side-collapsed) #side-resizer{left:calc(var(--side-w) + 8px)!important}
+}
+@keyframes tabIn{from{opacity:0;transform:translateY(18px) scale(.985)}60%{opacity:1}to{opacity:1;transform:none}}
+@keyframes rowIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes tabFade{from{opacity:.4}to{opacity:1}}
+.tab-in{animation:tabIn .62s cubic-bezier(.22,1,.36,1) both;animation-delay:var(--tab-in-d,0ms)}
+@keyframes tabInG{from{transform:translateY(22px) scale(.985)}to{transform:none}}
+.tab-in-g{animation:tabInG .66s cubic-bezier(.22,1,.36,1) both;animation-delay:var(--tab-in-d,0ms)}
+.tab-in-c{animation:fadeIn .5s ease both;animation-delay:var(--tab-in-d,0ms)}
+tr.row-in{animation:rowIn .45s cubic-bezier(.22,1,.36,1) both;animation-delay:var(--tab-in-d,0ms)}
+svg.fade-in{animation:fadeIn .55s ease both;animation-delay:var(--tab-in-d,0ms)}
+main > .tab.tab-fade{animation:tabFade .32s ease both}
+@media (prefers-reduced-motion:reduce){.tab-in,.tab-in-g,.tab-in-c,tr.row-in,svg.fade-in,main > .tab.tab-fade{animation:none}}

@@ -1,0 +1,16 @@
+
+/* ===================== v29: настройки только для своего устройства, свайпы на телефоне ===================== */
+/* На компьютере не показываем раздел «Телефон» (мобильная версия, вибрация). */
+@media (min-width:721px){
+  #tab-settings [data-scat="mobile"],#tab-settings .set-pane[data-cat="mobile"]{display:none!important}
+}
+/* На телефоне не показываем настройки, которые работают только на компьютере. */
+@media (max-width:720px){
+  #tab-settings label.checkline:has(> input:is(#set-modern-select,#set-tbl-cards-desk,#exp-sidenav,#exp-sidenav-icons,#exp-filters-right)){display:none!important}
+  /* Короткий «въезд» страницы после свайпа */
+  body.sw-from-r main > .tab.active{animation:swIn .26s cubic-bezier(.2,.8,.2,1) both;--sw-x:36px}
+  body.sw-from-l main > .tab.active{animation:swIn .26s cubic-bezier(.2,.8,.2,1) both;--sw-x:-36px}
+  body.sw-from-l #tab-settings.sm-in .set-pane,body.sw-from-r #tab-settings.sm-in .set-pane{animation:none}
+}
+@keyframes swIn{from{transform:translateX(var(--sw-x));opacity:.35}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){body.sw-from-r main > .tab.active,body.sw-from-l main > .tab.active{animation:none}}

@@ -1,0 +1,41 @@
+
+/* ===================== v27: подпись свёрнутой шторки, «Статистика» в один ряд, главные фильтры «Графиков» на странице ===================== */
+@media (min-width:721px){
+  /* Свёрнутая шторка: значок сверху, подпись «Фильтры» вертикально под ним — внутри полоски, а не за её краем */
+  body.fr-collapsed #filter-drawer .fd-rail{flex-direction:row!important;writing-mode:vertical-rl;align-items:center!important;justify-content:flex-start;box-sizing:border-box;overflow:hidden;font-size:12.5px;letter-spacing:.1em}
+
+  /* Статистика: «Режим» в шторке не нужен — период выбирается по центру */
+  body.filters-right:has(#tab-stats.active) #fd-body .field:has(> #mode){display:none!important}
+
+  /* Статистика: всё управление в одну строку; при нехватке места сначала прячутся подписи кнопок */
+  body.filters-right .stats-topbar{flex-wrap:nowrap!important;container-type:inline-size;gap:var(--sp-3)}
+  body.filters-right .stats-topbar > .stat-subnav{flex:0 0 auto}
+  body.filters-right .stats-topbar > .stats-quick{flex:1 1 auto;min-width:0;flex-wrap:nowrap;gap:var(--sp-3)}
+  body.filters-right .stats-quick .st-desk-tools{flex:0 0 auto;display:flex;gap:var(--sp-2)}
+  body.filters-right .stats-topbar .sq-seg{flex-wrap:nowrap!important;flex:0 0 auto}
+  body.filters-right .stats-topbar .sq-date{flex:0 0 auto}
+  @container (max-width:1500px){
+    .stats-topbar .sq-seg > button{padding:0 9px!important;font-size:13.5px!important}
+    .stats-topbar .sq-range{display:none!important}
+  }
+  @container (max-width:1340px){
+    html body .stats-topbar .st-desk-tools .tv-btn[data-tv-mode]::after{content:none!important}
+    .stats-topbar .st-desk-tools .st-hc-lbl{display:none!important}
+    .stats-topbar .st-desk-tools :is(.tv-btn,.hc-btn){padding:0 14px!important}
+  }
+  @container (max-width:1180px){
+    body.filters-right .stats-topbar > .stats-quick{flex-wrap:wrap;row-gap:var(--sp-2)}
+    body.filters-right .stats-quick .st-desk-tools{margin-left:0}
+  }
+
+  /* Статистика: «Копировать как изображение» — в строке заголовка таблицы, справа */
+  body.filters-right #tab-stats .stat-content.active{display:flex;flex-wrap:wrap;align-items:center;column-gap:var(--sp-3)}
+  body.filters-right #tab-stats .stat-content.active > *{flex:1 0 100%;order:3;min-width:0}
+  body.filters-right #tab-stats .stat-content.active > .table-export-row{order:1;flex:1 1 auto;width:auto}
+  body.filters-right #tab-stats .stat-content.active > .filters.fr-keep{order:2;flex:0 0 auto;margin:16px 0 0!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+
+  /* Графики: вид графика, группировка и дата — на странице одной строкой */
+  .filters.fr-keep:empty{display:none!important}
+  main .fd-ic,#shared .fd-ic{display:none!important}
+  body.filters-right #tab-charts > .filters.fr-keep{flex-wrap:wrap;align-items:center}
+}

@@ -1,0 +1,31 @@
+
+/* ===================== v30: остатки стекла, таблицы всегда по центру, «Прогноз мест», цвет облака селфи ===================== */
+/* ---------- Стекло: Хаб (карточка «Ты сегодня», «Обновить», «Обгоны»), история обновлений, «Параметры», «Сегодня» ---------- */
+body.glass-ui #tab-hub{--ctrl:color-mix(in srgb,var(--text) 8%,transparent)}
+body.glass-ui :is(.mt-acts button,.mt-h button:not(.on),.cl-more .mini,#cl-find),
+body.glass-ui .filters .opt-pop > summary{background:var(--glass-ctrl)!important;border:1px solid var(--glass-line)!important;box-shadow:inset 0 1px 0 color-mix(in srgb,var(--text) 10%,transparent)!important;-webkit-backdrop-filter:blur(12px) saturate(160%);backdrop-filter:blur(12px) saturate(160%)}
+body.glass-ui :is(.mt-acts button,.mt-h button,.cl-more .mini,.filters .opt-pop > summary):hover{background:var(--glass-ctrl-hover)!important;border-color:color-mix(in srgb,var(--accent) 55%,var(--glass-line))!important}
+body.glass-ui .mt-h button.on{background:color-mix(in srgb,var(--accent) 22%,transparent)!important;border-color:color-mix(in srgb,var(--accent) 45%,transparent)!important;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+body.glass-ui .st-today.active{background:color-mix(in srgb,var(--accent) 20%,transparent)!important;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+body.glass-ui :is(.cl-sum > div,.cl-ver){
+  background:linear-gradient(145deg,color-mix(in srgb,var(--text) 9%,transparent),color-mix(in srgb,var(--text) 2%,transparent) 55%),var(--glass-bg)!important;
+  -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-line)!important;
+  box-shadow:inset 0 1px 0 var(--glass-hi),inset 0 -1px 0 color-mix(in srgb,var(--text) 5%,transparent),0 12px 34px -14px rgba(0,0,0,.55)!important}
+body.glass-ui .cl-ver::before{background:var(--bg)}
+body.glass-ui .cl-ver.cur::before{background:var(--accent)}
+body.glass-ui .cl-head code{background:color-mix(in srgb,var(--accent) 16%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 28%,transparent)}
+.cl-more{display:flex;justify-content:center;margin:4px 0 8px}
+.cl-more .mini{height:40px;padding:0 20px;border-radius:var(--r-l);font-size:14px}
+
+/* ---------- Таблицы: текст всегда по центру (кроме карточек и редакторов в настройках) ---------- */
+main table:not(.tv-cards):not(#tab-settings table) > :is(thead,tbody,tfoot) > tr > :is(th,td),
+.sticky-table-head table > thead > tr > th{text-align:center!important}
+main table:not(.tv-cards):not(#tab-settings table) > :is(thead,tbody,tfoot) > tr > :is(th,td) :is(.row-name-with-action,.name-cell,.pcell){justify-content:center}
+
+/* ---------- «Прогноз мест»: таблица слева, «Ожидаемые обгоны» справа; кнопки «Карточки/Столбцы» — над таблицей ---------- */
+.fc-places > .hc-bar{grid-column:1;grid-row:1;margin:0!important}
+.fc-places > .wrap{grid-column:1;grid-row:2;width:100%}
+.fc-places > .fc-over{grid-column:2;grid-row:2}
+.fc-places > .wrap:first-child{grid-row:1/3}
+@media(max-width:900px){.fc-places > :is(.hc-bar,.wrap,.fc-over){grid-column:1;grid-row:auto}}

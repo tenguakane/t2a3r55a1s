@@ -1,0 +1,159 @@
+
+/* ===================== Мобильная версия в стиле приложения =====================
+   Только экраны до 720 px. Выключается в «Настройки → Шрифт → Мобильная версия в стиле приложения».
+   Своя шапка с названием раздела, нижняя панель вкладок, страница «Меню» со всеми разделами и фильтры в шторке. */
+#ma-bar,#ma-tabs,#ma-menu,#ma-fsheet{display:none}
+@media (max-width:720px){
+  nav .side-toggle,nav .side-sep{display:none!important}
+  body.mapp{--ma-hair:color-mix(in srgb,var(--text) 9%,transparent);--ma-group:color-mix(in srgb,var(--text) 3.5%,var(--panel))}
+  body.mapp > header{display:none!important}
+  body.mapp .filters-summary{display:none!important}
+
+  /* ---------- верхняя панель ---------- */
+  body.mapp #ma-bar{display:block;position:sticky;top:0;z-index:60;padding-top:env(safe-area-inset-top,0px);border-bottom:1px solid var(--ma-hair)}
+  #ma-bar .ma-top{display:flex;align-items:center;gap:var(--sp-1);height:52px;padding:0 6px 0 16px}
+  #ma-bar .ma-title{flex:1 1 auto;min-width:0;font-size:19px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #ma-bar .ma-ic{position:relative;flex:0 0 40px;width:40px;height:40px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--text);padding:0;cursor:pointer}
+  #ma-bar .ma-ic:active{background:color-mix(in srgb,var(--text) 10%,transparent)}
+  #ma-bar .ma-ic svg{width:22px;height:22px}
+  #ma-bar .ma-ic[hidden]{display:none}
+  #ma-bar .ma-ic .ma-dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--bg)}
+  #ma-bar .ma-ic.spin svg{animation:maSpin .8s linear infinite}
+  #ma-bar .ma-sum{display:flex;gap:var(--sp-1);overflow-x:auto;padding:0 12px 9px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  #ma-bar .ma-sum::-webkit-scrollbar{display:none}
+  #ma-bar .ma-sum[hidden]{display:none}
+  #ma-bar .ma-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:var(--sp-1);height:30px;padding:0 12px;border:0;border-radius:999px;background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--text);font:inherit;font-size:13px;white-space:nowrap;cursor:pointer}
+  #ma-bar .ma-chip.first{background:color-mix(in srgb,var(--accent) 20%,transparent)}
+  #ma-bar .ma-chip svg{width:14px;height:14px}
+  @keyframes maSpin{to{transform:rotate(360deg)}}
+
+  /* ---------- нижняя панель вкладок ---------- */
+  body.mapp #ma-tabs{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:70;height:calc(var(--ma-tabs-h) + env(safe-area-inset-bottom,0px));padding:0 4px env(safe-area-inset-bottom,0px)}
+  #ma-tabs button{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--sp-1);border:0;background:transparent;color:var(--muted);font:inherit;font-size:10.5px;font-weight:500;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  #ma-tabs button svg{width:25px;height:25px;transition:transform .18s}
+  #ma-tabs button.on{color:var(--accent)}
+  #ma-tabs button.on svg{transform:translateY(-1px)}
+  #ma-tabs button:active svg{transform:scale(.88)}
+  body.mapp main{padding:10px 10px calc(var(--ma-tabs-h) + 16px + env(safe-area-inset-bottom,0px))}
+  body.mapp .app-ver{padding-bottom:calc(var(--ma-tabs-h) + 16px + env(safe-area-inset-bottom,0px))}
+  body.mapp .toast,body.mapp .snackbar{bottom:calc(var(--ma-tabs-h) + 12px + env(safe-area-inset-bottom,0px))!important}
+
+  /* ---------- фильтры спрятаны в шторку, на странице — только строка-сводка ---------- */
+  body.mapp :is(#shared,.tab:not(#tab-settings),.stat-content) > .filters{display:none!important}
+  body.mapp .quick-ranges{flex-wrap:nowrap;overflow-x:auto;margin:0 -10px 10px;padding:0 10px 2px;scrollbar-width:none}
+
+  /* ---------- вкладки внутри разделов: подчёркивание, как в Telegram ---------- */
+  body.mapp :is(.group-tabs,.stat-subnav){display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;border-bottom:1px solid var(--ma-hair)!important;background:transparent!important;box-shadow:none!important;scrollbar-width:none}
+  body.mapp :is(.group-tabs,.stat-subnav)::-webkit-scrollbar{display:none}
+  body.mapp :is(.group-tabs,.stat-subnav) button{flex:0 0 auto!important;padding:0 14px!important;border:0!important;background:transparent!important;box-shadow:none!important;color:var(--muted)!important;font-size:14.5px!important;font-weight:600;white-space:nowrap}
+  body.mapp :is(.group-tabs,.stat-subnav) button.active{color:var(--accent)!important}
+  body.mapp .stats-topbar{margin-bottom:0}
+
+  /* ---------- плотнее карточки, таблицы и заголовки ---------- */
+  body.mapp h2{font-size:17px;margin:16px 0 8px}
+  body.mapp h3{font-size:14.5px}
+  body.mapp .hint,body.mapp .status{font-size:12.5px}
+  body.mapp .sec-nav,body.mapp #bd-nav{margin:0 -10px 10px!important;padding:2px 10px 4px}
+  body.mapp .tiles{gap:var(--sp-2)}
+  body.mapp .tile{padding:10px 12px;border-radius:var(--r-l)}
+  body.mapp .tile .num{font-size:20px}
+  body.mapp .p-hero{padding:14px;gap:var(--sp-2);border-radius:var(--r-l)}
+  body.mapp .p-name{font-size:20px}
+  body.mapp .p-stats{gap:var(--sp-1)}
+  body.mapp .p-card{padding:12px;border-radius:var(--r-l)}
+  body.mapp .wrap{border-radius:var(--r-l);margin-left:0;margin-right:0}
+  body.mapp .wrap th,body.mapp .wrap td{padding:8px;font-size:12.5px}
+  body.mapp .wrap th{font-size:11.5px}
+  body.mapp .section-head h2{margin:12px 0 6px}
+  body.mapp .hub-hero{margin:0 0 10px;gap:var(--sp-2)}
+  body.mapp .hub-hero > div:first-child:has(> h2 + .hint){display:none}
+  body.mapp .hub-hero h2{font-size:21px}
+  body.mapp .hub-kpis{gap:var(--sp-2)}
+  body.mapp .hub-kpi{padding:10px 12px;border-radius:var(--r-l)}
+  body.mapp .hub-kpi .v{font-size:20px}
+  body.mapp .hub-sec{margin:18px 0 8px}
+  body.mapp .hub-sec h2{font-size:17px}
+  body.mapp .hub-feed{gap:var(--sp-2)}
+  body.mapp .hub-card{padding:10px 12px;border-radius:var(--r-l)}
+  body.mapp .hub-card h3{font-size:14.5px;margin-bottom:6px}
+  body.mapp .hub-card h3 button{height:var(--h-s);min-height:0;padding:0 10px;font-size:12px;border-radius:999px}
+  body.mapp .hub-ev .tx{font-size:13.5px}
+  body.mapp .hub-find{flex:1 1 100%}
+  body.mapp .hub-find input{width:100%}
+  body.mapp .hub-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-2)}
+  body.mapp .hub-tile{flex-direction:column;align-items:center;text-align:center;gap:var(--sp-1);padding:12px 4px;border-radius:var(--r-l)}
+  body.mapp .hub-tile .ic{flex:0 0 auto;width:42px;height:42px;border-radius:var(--r-l);font-size:21px}
+  body.mapp .hub-tile b{font-size:12.5px;line-height:1.2}
+  body.mapp .hub-tile span.d,body.mapp .hub-tile span.m{display:none}
+
+  /* ---------- страница «Меню» ---------- */
+  body.mapp #ma-menu{position:fixed;left:0;right:0;top:0;bottom:calc(var(--ma-tabs-h) + env(safe-area-inset-bottom,0px));z-index:65;overflow-y:auto;overscroll-behavior:contain;padding:calc(10px + env(safe-area-inset-top,0px)) 0 20px;background:var(--bg)}
+  body.mapp #ma-menu.open{display:block;animation:maIn .2s ease-out}
+  #ma-menu .ma-h{margin:6px 16px 12px;font-size:30px;font-weight:800;letter-spacing:-.02em}
+  #ma-menu .ma-search{display:block;margin:0 12px 16px;position:relative}
+  #ma-menu .ma-search input{display:block;width:100%!important;height:var(--h-m)!important;min-height:0!important;margin:0!important;padding:0 12px 0 38px!important;border:0!important;border-radius:var(--r-l)!important;background:color-mix(in srgb,var(--text) 8%,transparent)!important;box-shadow:none!important;color:var(--text);font:inherit;font-size:16px!important}
+  #ma-menu .ma-search svg{position:absolute;left:12px;top:11px;width:18px;height:18px;color:var(--muted)}
+  #ma-menu .ma-app{display:flex;align-items:center;gap:var(--sp-3);margin:0 12px 18px;padding:14px;border-radius:var(--r-l);background:var(--ma-group)}
+  #ma-menu .ma-logo{flex:0 0 52px;height:52px;border-radius:var(--r-l);display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent-2,var(--accent)));color:#fff}
+  #ma-menu .ma-logo svg{width:28px;height:28px}
+  #ma-menu .ma-app b{display:block;font-size:17px}
+  #ma-menu .ma-app span{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+  #ma-menu .ma-gt{margin:0 28px 6px;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+  #ma-menu .ma-grp{margin:0 12px 20px;border-radius:var(--r-l);background:var(--ma-group);overflow:hidden}
+  .ma-row{display:flex;align-items:center;gap:var(--sp-3);width:100%;padding:0 0 0 14px;border:0;background:transparent;color:var(--text);font:inherit;font-size:16px;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .ma-row:active{background:color-mix(in srgb,var(--text) 7%,transparent)}
+  .ma-ico{flex:0 0 30px;width:30px;height:30px;display:grid;place-items:center;background:var(--c,#7aa2f7);font-size:16px;line-height:1}
+  .ma-txt{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:var(--sp-2);min-height:48px;padding-right:14px}
+  .ma-row + .ma-row .ma-txt{box-shadow:inset 0 1px 0 var(--ma-hair)}
+  .ma-txt > span:first-child{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ma-txt small{color:var(--muted);font-size:14px}
+  .ma-chev{color:var(--muted);opacity:.6;font-size:20px;line-height:1}
+  .ma-row.cur .ma-txt > span:first-child{color:var(--accent);font-weight:600}
+  .ma-sw{flex:0 0 46px;width:46px;height:28px;border-radius:999px;background:color-mix(in srgb,var(--text) 18%,transparent);position:relative;transition:background .18s}
+  .ma-sw::after{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0005;transition:transform .18s}
+  .ma-row.on .ma-sw{background:#34c759}
+  .ma-row.on .ma-sw::after{transform:translateX(18px)}
+  #ma-menu .ma-empty{margin:20px;text-align:center;color:var(--muted)}
+  @keyframes maIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* ---------- шторка фильтров ---------- */
+  body.mapp #ma-fsheet.open{display:flex;position:fixed;inset:0;z-index:80;align-items:flex-end}
+  #ma-fsheet .ma-bd{position:absolute;inset:0;background:#0009;animation:maFade .2s ease-out}
+  #ma-fsheet .ma-panel{position:relative;width:100%;max-height:88vh;display:flex;flex-direction:column;border-radius:20px 20px 0 0;background:var(--bg);box-shadow:0 -20px 50px -10px #000;animation:maUp .26s cubic-bezier(.2,.8,.2,1);padding-bottom:env(safe-area-inset-bottom,0px)}
+  #ma-fsheet .ma-grip{width:38px;height:5px;margin:7px auto 0;border-radius:99px;background:color-mix(in srgb,var(--text) 25%,transparent)}
+  #ma-fsheet .ma-fhead{display:flex;align-items:center;justify-content:space-between;height:48px;padding:0 8px 0 18px}
+  #ma-fsheet .ma-fhead b{font-size:18px}
+  #ma-fsheet .ma-done{height:36px;padding:0 12px;border:0;border-radius:var(--r-m);background:transparent;color:var(--accent);font:inherit;font-size:16px;font-weight:600}
+  #ma-fsheet .ma-fbody{overflow-y:auto;overscroll-behavior:contain;padding:4px 12px 16px}
+  #ma-fsheet .filters{display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;align-items:stretch!important;gap:0!important;margin:0 0 14px!important;padding:0!important;overflow:hidden!important;border:0!important;border-radius:var(--r-l)!important;background:var(--ma-group)!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;--control-height:46px}
+  #ma-fsheet .filters > *{width:100%!important;max-width:none!important;flex:0 0 auto!important;margin:0!important}
+  #ma-fsheet .filters > * + *{border-top:1px solid var(--ma-hair)!important}
+  #ma-fsheet .filters > [hidden],#ma-fsheet .filters .field[hidden]{display:none!important}
+  #ma-fsheet .filters .field{display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;align-items:center!important;justify-content:space-between;height:auto!important;min-height:48px;padding:0 4px 0 0;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
+  #ma-fsheet .filters .field > label{flex:1 1 0;min-width:0;display:flex;align-items:center;min-height:48px;padding:6px 10px 6px 14px!important;background:transparent!important;border:0!important;color:var(--text)!important;font-size:15.5px!important;line-height:1.25;white-space:normal}
+  #ma-fsheet .filters .field > label::after{display:none!important}
+  #ma-fsheet .filters .field select,#ma-fsheet .filters .field input:not([type=checkbox]):not([type=range]):not([type=color]){flex:0 1 auto!important;width:auto!important;min-width:0!important;max-width:64%!important;height:46px!important;padding:0 28px 0 8px!important;border:0!important;background-color:transparent!important;box-shadow:none!important;color:var(--muted)!important;font-size:15.5px!important;text-align:right;text-align-last:right}
+  #ma-fsheet .filters .field input[type=date],#ma-fsheet .filters .field input[type=month],#ma-fsheet .filters .field input[type=number]{padding-right:10px!important}
+  #ma-fsheet .filters .field > .seg,#ma-fsheet .filters .field > .pbtn{flex:1 1 100%!important;order:5;display:flex!important;flex-wrap:wrap!important;gap:var(--sp-1)!important;margin:0 10px 10px 14px!important;padding:3px!important;height:auto!important;border-radius:var(--r-m)!important;background:color-mix(in srgb,var(--text) 7%,transparent)!important;box-shadow:none!important;overflow:visible!important}
+  #ma-fsheet .filters > .seg{display:flex!important;flex-wrap:wrap!important;gap:var(--sp-1)!important;padding:10px 14px!important;height:auto!important;background:transparent!important;box-shadow:none!important;border-radius:0!important}
+  #ma-fsheet .filters .seg button,#ma-fsheet .filters .field > .pbtn > .mini{flex:1 1 auto!important;height:var(--h-s)!important;min-height:0;padding:0 10px!important;border:0!important;border-radius:var(--r-m)!important;background:transparent!important;color:var(--text)!important;font-size:14px!important;box-shadow:none!important}
+  #ma-fsheet .filters > .seg button{background:color-mix(in srgb,var(--text) 7%,transparent)!important}
+  #ma-fsheet .filters .seg button.active{background:var(--panel-2,var(--panel))!important;color:var(--text)!important;font-weight:600;box-shadow:0 1px 3px #0004!important}
+  #ma-fsheet .filters .field > .pbtn .hint{flex:1 1 100%;padding:2px 4px}
+  #ma-fsheet .checkline{display:flex!important;flex-direction:row-reverse!important;justify-content:space-between!important;align-items:center!important;min-height:48px;height:auto!important;padding:0 14px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:var(--text)!important;font-size:15.5px!important}
+  #ma-fsheet .checkline input[type=checkbox]{flex:0 0 46px!important;width:46px!important;height:28px!important;background:radial-gradient(circle at 14px 50%,#fff 0 11px,transparent 11.6px),color-mix(in srgb,var(--text) 18%,transparent)!important}
+  #ma-fsheet .checkline input[type=checkbox]:checked{background:radial-gradient(circle at 32px 50%,#fff 0 11px,transparent 11.6px),#34c759!important}
+  #ma-fsheet .opt-pop>summary{display:none!important}
+  #ma-fsheet .opt-pop .opt-list{position:static!important;display:flex!important;flex-direction:column;gap:0;min-width:0;padding:0;border:0;border-radius:0;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important}
+  #ma-fsheet .opt-pop .opt-list > * + *{border-top:1px solid var(--ma-hair)!important}
+  #ma-fsheet .table-export-actions{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:0!important}
+  #ma-fsheet .table-export-actions > * + *{border-top:1px solid var(--ma-hair)}
+  #ma-fsheet .filters > button.mini,#ma-fsheet .table-export-actions .mini{display:flex!important;align-items:center;justify-content:flex-start!important;height:48px!important;width:100%;padding:0 14px!important;border:0!important;border-radius:0!important;background:transparent!important;color:var(--accent)!important;font-size:15.5px!important;box-shadow:none!important}
+  #ma-fsheet .table-export-actions .hint{padding:8px 14px;font-size:13px}
+  #ma-fsheet .pick .pop{position:static!important;box-shadow:none}
+  #ma-fsheet [data-fcat]{box-shadow:none!important}
+  @keyframes maUp{from{transform:translateY(100%)}to{transform:none}}
+  @keyframes maFade{from{opacity:0}to{opacity:1}}
+}
+@media (max-width:360px){body.mapp .hub-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (prefers-reduced-motion:reduce){#ma-menu.open,#ma-fsheet .ma-panel,#ma-fsheet .ma-bd{animation:none!important}}

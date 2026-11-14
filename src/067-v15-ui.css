@@ -1,0 +1,33 @@
+
+/* ===================== Скрытие столбцов в таблицах ===================== */
+.hc-bar{display:flex;justify-content:flex-end;align-items:center;gap:var(--sp-1);margin:0 0 6px;min-height:30px}
+.hc-btn{display:inline-flex;align-items:center;gap:var(--sp-1);height:30px;padding:0 12px;border:1px solid color-mix(in srgb,var(--text) 11%,transparent);border-radius:var(--r-m);background:color-mix(in srgb,var(--text) 4%,var(--ctrl));color:var(--muted);font:inherit;font-size:13px;cursor:pointer;opacity:.75;transition:opacity .15s,color .15s,border-color .15s}
+.hc-btn:hover,.hc-btn[aria-expanded="true"]{opacity:1;color:var(--text);border-color:color-mix(in srgb,var(--text) 22%,transparent)}
+.hc-btn.has{opacity:1;color:var(--text)}
+.hc-btn b{min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--text);font-size:11.5px;line-height:18px;text-align:center;font-weight:600}
+.hc-btn svg{width:15px;height:15px}
+.hc-pop{position:fixed;z-index:10050;min-width:230px;max-width:min(320px,calc(100vw - 16px));max-height:min(70vh,520px);display:flex;flex-direction:column;padding:8px;border-radius:var(--r-l);background:color-mix(in srgb,var(--panel-2,var(--panel)) 94%,#000);border:1px solid color-mix(in srgb,var(--text) 10%,transparent);box-shadow:0 24px 60px -16px #000e;animation:hcIn .14s ease-out}
+@keyframes hcIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.hc-pop h4{margin:2px 6px 8px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.hc-list{overflow-y:auto;display:flex;flex-direction:column;gap:2px;scrollbar-width:thin}
+.hc-item{display:flex;align-items:center;gap:var(--sp-2);min-height:36px;padding:0 10px;border-radius:var(--r-m);font-size:14px;cursor:pointer;user-select:none}
+.hc-item:hover{background:color-mix(in srgb,var(--text) 7%,transparent)}
+.hc-pop label.hc-item{justify-content:flex-start!important;text-align:left!important;width:auto;margin:0;color:var(--text)}
+.hc-item span{flex:1 1 auto;min-width:0}
+.hc-pop .hc-item input{flex:0 0 16px!important;width:16px!important;min-width:0!important;max-width:16px!important;padding:0!important;height:16px;margin:0;accent-color:var(--accent)}
+.hc-item.off span{color:var(--muted);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--muted) 60%,transparent)}
+.hc-foot{display:flex;gap:var(--sp-1);margin-top:8px;padding-top:8px;border-top:1px solid color-mix(in srgb,var(--text) 9%,transparent)}
+.hc-foot button{flex:1 1 auto;height:var(--h-s);border:0;border-radius:var(--r-m);background:color-mix(in srgb,var(--text) 7%,transparent);color:var(--text);font:inherit;font-size:13.5px;cursor:pointer}
+.hc-foot button:hover{background:color-mix(in srgb,var(--text) 12%,transparent)}
+.hc-foot button:disabled{opacity:.45;cursor:default}
+.hc-cell-off{display:none!important}
+/* ===================== Топ месяцев и дней: поиск и «показать все» ===================== */
+.top-tools{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2);margin:0 0 10px}
+.top-search{display:flex;align-items:center;gap:var(--sp-2);flex:0 1 380px;min-width:220px;height:42px;padding:0 6px 0 14px;border-radius:var(--r-l);background:color-mix(in srgb,var(--text) 4%,var(--ctrl));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 11%,transparent);color:var(--muted)}
+.top-search:focus-within{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent),0 0 0 3px color-mix(in srgb,var(--accent) 9%,transparent)}
+.top-search input{flex:1 1 auto;min-width:0;height:100%;border:0!important;outline:0;background:transparent!important;box-shadow:none!important;color:var(--text);font:inherit;font-size:15px;padding:0!important}
+.top-search input::-webkit-search-cancel-button{cursor:pointer}
+.top-more{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:var(--sp-2);margin:12px 0 4px;color:var(--muted);font-size:14px}
+.top-more:empty{display:none}
+.top-more .mini{height:38px;padding:0 18px;border-radius:var(--r-l);font-size:14.5px}
+@media (max-width:720px){.top-search{flex:1 1 100%;min-width:0}.hc-bar{margin-bottom:4px}}

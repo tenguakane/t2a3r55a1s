@@ -1,0 +1,74 @@
+
+/* ===================== v34: боковая панель из трёх блоков, фильтры — круглая кнопка, белые линейные иконки, градиент под одиночными графиками ===================== */
+.side-grp{display:contents}
+@media (min-width:721px){
+  /* ---------- Левая панель: три парящих блока (основное · другое · настройки) ---------- */
+  html body.side-nav nav{background:none!important;border:0!important;box-shadow:none!important;padding:0!important;gap:var(--sp-3)!important;overflow:visible!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;display:flex!important;flex-direction:column!important}
+  body.side-nav .side-grp{display:flex;flex-direction:column;gap:2px;padding:8px;box-sizing:border-box;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-l);box-shadow:0 14px 36px -16px #000b}
+  body.glass-ui.side-nav .side-grp{background:color-mix(in srgb,var(--panel) 55%,transparent);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border-color:var(--glass-line);box-shadow:inset 0 1px 0 var(--glass-hi),0 14px 36px -16px #000b}
+  body.side-nav .side-grp.g-main{flex:0 0 auto}
+  body.side-nav .side-grp.g-other{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+  body.side-nav .side-grp.g-other::-webkit-scrollbar{display:none}
+  body.side-nav .side-grp.g-set{flex:0 0 auto;width:54px;height:54px;padding:0;border-radius:50%;align-self:flex-start;align-items:center;justify-content:center}
+  body.side-nav .side-grp.g-set .side-sep{display:none!important}
+  html body.side-nav .side-grp.g-set > button[data-tab]{width:52px!important;height:52px!important;min-height:0!important;padding:0!important;border-radius:50%!important;justify-content:center!important;gap:0!important;font-size:0!important;-webkit-text-fill-color:transparent}
+  html body.side-nav .side-grp.g-set > button[data-tab]::before{margin:0!important}
+  html body.side-nav .side-toggle{margin:0 0 4px!important;height:40px!important;padding:0 8px!important;border-radius:var(--r-m)!important;border:0!important}
+  html body.side-nav nav button[data-tab]{border-radius:var(--r-m)!important}
+  html body.side-nav .side-grp.g-other .side-sep{margin:4px 8px 6px!important}
+  /* Свёрнутая панель: выезжает при наведении, блоки растут вместе с ней */
+
+  /* ---------- Правая шторка фильтров: круглая кнопка, по нажатию плавно выезжает парящая панель ---------- */
+  html body.filters-right:not(.fr-collapsed){padding-right:calc(var(--fr-w-open,360px) + 24px)!important}
+  html body.filters-right #filter-drawer{top:18px!important;right:12px!important;bottom:auto!important;height:calc(100vh - 30px)!important;width:var(--fr-w-open,360px)!important;border:1px solid var(--line)!important;border-radius:20px!important;box-shadow:0 18px 48px -18px #000c!important;overflow:hidden!important;transition:width .38s cubic-bezier(.4,0,.2,1),height .42s cubic-bezier(.4,0,.2,1),border-radius .38s ease,box-shadow .3s ease!important}
+  html body.filters-right.fr-collapsed #filter-drawer{border-radius:50%!important;cursor:pointer}
+  html body.filters-right.fr-collapsed #filter-drawer > :is(.fd-head,.fd-top,#fd-body){opacity:0!important;pointer-events:none!important;transition:opacity .12s linear!important}
+  html body.filters-right:not(.fr-collapsed) #filter-drawer > :is(.fd-head,.fd-top,#fd-body){opacity:1;transition:opacity .2s linear .22s!important}
+  html body.filters-right #filter-drawer .fd-head{border-radius:19px 19px 0 0}
+  html body.filters-right.fr-collapsed #filter-drawer .fd-rail{position:absolute!important;inset:0!important;width:auto!important;height:auto!important;padding:0!important;margin:0!important;display:grid!important;place-items:center!important;font-size:0!important;letter-spacing:0!important;writing-mode:horizontal-tb!important;opacity:1!important;pointer-events:auto!important;transition:opacity .2s linear .2s!important}
+  html body.filters-right.fr-collapsed #filter-drawer .fd-rail::before{border-radius:0!important;background:currentColor!important;-webkit-mask:var(--li-filter) center/contain no-repeat;mask:var(--li-filter) center/contain no-repeat;color:var(--text)}
+  html body.filters-right.fr-collapsed #filter-drawer .fd-rail > *{display:none!important}
+  html body.filters-right.fr-collapsed #filter-drawer:hover{box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent),0 18px 48px -18px #000c!important}
+  html body.filters-right:not(.fr-collapsed) #filter-drawer .fd-rail{opacity:0!important;pointer-events:none!important}
+  html body.filters-right:not(.fr-collapsed) #fr-resizer{right:calc(var(--fr-w-open,360px) + 8px)!important}
+}
+
+/* ---------- Белые линейные иконки ---------- */
+svg.li{width:1.15em;height:1.15em;vertical-align:-.2em;flex:0 0 auto;overflow:visible}
+.li-lead{display:inline-flex;margin-right:.4em;vertical-align:-.15em}
+.li-lead svg.li{width:1.05em;height:1.05em;vertical-align:0}
+:is(.hub-tile,.hub-card,.hub-ev,.ch-ev) .ic svg.li{width:22px;height:22px;color:var(--text)}
+.ma-ico svg.li{width:62%;height:62%;color:#fff}
+.set-tabs button > i svg.li{width:17px;height:17px}
+.fd-ic svg.li{width:15px;height:15px;color:var(--muted)}
+/* Боковые вкладки: иконка — маска, цвет берётся из текста кнопки */
+body.side-nav nav button[data-tab]::before{content:""!important;display:inline-block;width:18px!important;height:18px!important;flex:0 0 18px;background:currentColor;-webkit-mask:var(--li) center/contain no-repeat;mask:var(--li) center/contain no-repeat;-webkit-text-fill-color:initial}
+
+/* ---------- Градиентный спад под одиночными линиями ---------- */
+.li-area{pointer-events:none}
+
+@media (min-width:721px){
+  /* «Другое» без подписи, блок — по высоте своих пунктов; настройки — внизу */
+  html body.side-nav .side-grp.g-other .side-sep{display:none!important}
+  html body.side-nav .side-grp.g-other{flex:0 1 auto!important}
+  html body.side-nav .side-grp.g-set{margin-top:auto}
+  /* Значок закрепления — в одной колонке и того же размера, что и значки вкладок */
+  html body.side-nav nav .side-grp .side-toggle{padding:0 0 0 9px!important;justify-content:flex-start!important;gap:var(--sp-2)!important}
+  html body.side-nav .side-toggle i{flex:0 0 18px!important;width:18px!important;height:18px!important;border-radius:var(--r-s)!important}
+  html body.side-nav .side-toggle i svg{width:18px!important;height:18px!important}
+  /* Свёрнутая панель: выезжает только блок под курсором, а не вся панель */
+  html body.side-nav.side-collapsed nav,html body.side-nav.side-collapsed nav:hover{width:var(--side-w)!important;box-shadow:none!important}
+  html body.side-nav.side-collapsed .side-grp:not(.g-set){width:100%;transition:width .3s cubic-bezier(.4,0,.2,1) .12s,box-shadow .3s ease .12s}
+  html body.side-nav.side-collapsed .side-grp:not(.g-set):hover{box-shadow:0 0 0 1px var(--line),16px 14px 44px -14px rgba(0,0,0,.7);transition-delay:.04s}
+  html body.side-nav.side-collapsed nav:hover .side-grp :is(button,.side-sep,.side-toggle span){-webkit-text-fill-color:transparent!important;transition:-webkit-text-fill-color .12s linear!important}
+  html body.side-nav.side-collapsed nav .side-grp:not(.g-set):hover :is(button,.side-toggle span){-webkit-text-fill-color:currentColor!important;transition:-webkit-text-fill-color .1s linear .14s!important}
+  html body.side-nav.side-collapsed nav button::before{-webkit-text-fill-color:initial!important}
+  /* Под тремя блоками нет общего фона панели (в том числе со стеклом) */
+  html body.side-nav header nav,html body.glass-ui.side-nav header nav,html body.glass-ui.side-nav nav{background:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border:0!important;box-shadow:none!important}
+  /* Значки вкладок почти белые; текст остаётся своего цвета */
+  html body.side-nav nav button[data-tab]::before{background:#eef1f7!important;opacity:.92}
+  html body.side-nav nav button[data-tab]:is(.active,.side-active)::before{background:#fff!important;opacity:1}
+  html body.side-nav nav .side-toggle i{color:#eef1f7!important;opacity:.92}
+  /* Значок фильтров — точно по центру круглой кнопки */
+  html body.filters-right.fr-collapsed #filter-drawer .fd-rail::before{position:absolute!important;left:50%!important;top:50%!important;margin:0!important;transform:translate(-50%,-50%)!important}
+}
