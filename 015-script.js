@@ -1,0 +1,1 @@
+document.addEventListener("click",e=>{const c=e.target.closest&&e.target.closest("[data-ma-today]");if(!c)return;e.preventDefault();e.stopPropagation();document.getElementById("dm-today-years")?.click();},true);

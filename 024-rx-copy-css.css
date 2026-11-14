@@ -1,0 +1,8 @@
+
+.rx-head{display:flex;align-items:center;gap:var(--sp-2);margin:26px 0 10px}
+.rx-head > h2{margin:0!important;margin-right:auto!important}
+.rx-head.rx-head-3{margin:0 0 4px}.rx-head.rx-head-3 > h3{margin:0!important;margin-right:auto!important}
+.rx-head.rx-head-solo{justify-content:flex-end;margin:0 0 8px}
+.rx-head .rx-copy,.hc-bar .rx-copy{height:30px;padding:0 10px;font-size:13px}
+.rx-head-3 .rx-copy{height:26px;padding:0 9px;font-size:12.5px}
+.rx-copy-msg{margin:0!important;font-size:12.5px}

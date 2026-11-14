@@ -1,0 +1,7 @@
+
+#dm-ymd-field .dm-ymd-row{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap}
+#dm-ymd-custom{display:inline-flex;align-items:center;gap:var(--sp-1)}
+#dm-ymd-custom[hidden]{display:none}
+#dm-ymd-custom input{width:56px;text-align:center}
+.dm-today-btn{white-space:nowrap;font-weight:600;border:1px solid color-mix(in srgb,var(--accent,#7aa2f7) 55%,transparent)!important;background:color-mix(in srgb,var(--accent,#7aa2f7) 14%,transparent)!important;color:var(--text,#fff)!important;border-radius:var(--r-m);padding:6px 12px;cursor:pointer}
+.dm-today-btn.active{background:color-mix(in srgb,var(--accent,#7aa2f7) 38%,transparent)!important;box-shadow:0 0 0 1px var(--accent,#7aa2f7) inset}

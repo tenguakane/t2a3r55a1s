@@ -1,0 +1,1 @@
+window.__TABLO=(function(){try{if(location.hash==="#notablo")return false;return localStorage.getItem("chatstats.tablo.v1")!=="0"}catch(e){return true}})();

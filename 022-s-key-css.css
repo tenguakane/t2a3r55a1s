@@ -1,0 +1,1 @@
+.s-people-note{margin:8px 0 0;color:#f87171}@keyframes sKeyFlash{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 0 3px var(--accent)}}.s-key-flash{animation:sKeyFlash .8s ease-in-out 3}@media (prefers-reduced-motion:reduce){.s-key-flash{animation:none;outline:2px solid var(--accent)}}

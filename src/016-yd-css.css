@@ -1,0 +1,1 @@
+#years-days-field .yd-row{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap}#years-days-custom{display:inline-flex;align-items:center;gap:var(--sp-1)}#years-days-custom[hidden]{display:none}#years-days-custom input{width:56px;text-align:center}

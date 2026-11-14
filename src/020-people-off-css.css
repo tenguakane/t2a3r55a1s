@@ -1,0 +1,4 @@
+#people-body tr.people-off > td:not(:nth-last-child(2)){opacity:.45}.people-show{display:inline-flex;align-items:center;gap:var(--sp-1);cursor:pointer;font-size:13px;white-space:nowrap}
+html body #people-body .people-show input[type=checkbox]{width:18px!important;min-width:0!important;height:18px!important;margin:0;padding:0;accent-color:var(--accent);flex:0 0 auto}
+html body #people-body input[data-pf="name"]{width:200px!important;min-width:0!important}
+html body #people-body input[data-pf="pk"]{width:100px!important}
