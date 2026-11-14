@@ -1,0 +1,5 @@
+
+/* Один цвет на участника: точка перед именем везде, где имя открывает профиль; цвет тот же, что у его линии на графиках */
+.pname[data-pc]::before{content:"";display:inline-block;width:.5em;height:.5em;margin-right:.4em;border-radius:50%;background:var(--p-color);box-shadow:0 0 0 1px color-mix(in srgb,var(--p-color) 40%,transparent);vertical-align:.08em}
+body.cards-avatars .pname[data-pc]::before{display:none}
+.p-name .pname::before,.mini-card .pname::before{display:none}

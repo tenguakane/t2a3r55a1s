@@ -1,0 +1,21 @@
+
+/* ===== Слой «top»: правки, которые должны победить всё остальное =====
+   Правило с !important внутри @layer сильнее любого !important вне слоёв, какой бы длинный селектор там ни был.
+   Поэтому селекторы здесь простые, без цепочек :not(#q1)…:not(#q13). Новые перекрывающие правки дописывать сюда,
+   каждое объявление — с !important (без него правило в слое проиграет обычным стилям сайта). */
+@layer top{
+  .wrap:has(> table.tv-cards){width:auto!important}
+  @media (max-width:720px){
+    main .tab .seg > button{min-height:var(--h-s)!important}
+  }
+  body.mapp #ma-bar.ma-has-more :is(#ma-freset,#ma-refresh,#ma-exit){display:none!important}
+  @media (max-width:720px){
+    main .tab :is(.tv-seg > button,.quick-ranges > .quick-chip){height:var(--h-s)!important;min-height:var(--h-s)!important}
+  }
+  .sticky-table-clone th{letter-spacing:normal!important;font-weight:600!important;text-overflow:clip!important}
+  @media (min-width:721px){
+    #tab-settings .fx-lava-cols > button.mini{height:var(--h-s)!important;min-height:0!important;margin:0 0 0 6px!important}
+    #tab-settings .pbtn > button.mini:not(.copy-btn):hover{border-color:var(--accent)!important}
+    #tab-settings .filters > label.set-x + span.hint{display:none!important}
+  }
+}

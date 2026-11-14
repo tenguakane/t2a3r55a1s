@@ -1,0 +1,37 @@
+
+/* Переключатели в шапке показываются только там, где они что-то меняют */
+body.no-ult #ult-toggle,body.no-lvl #lvl-toggle{display:none!important}
+/* «Рейтинг по событиям»: обёртка (рамка) сжимается вместе с таблицей, а не остаётся на всю ширину позади неё */
+html body .wrap:has(> #ach-ev-table):not(#zq){flex:0 1 auto!important;width:fit-content!important;max-width:100%!important;margin-left:0!important;margin-right:auto!important}
+/* «Ближайшие дни рождения»: подсветка строки закрывает и первый (закреплённый) столбец */
+html body .wrap tr.bd-soon > td{background-color:color-mix(in srgb,var(--accent) 9%,var(--panel))}
+html body .wrap tr.bd-today > td{background-color:color-mix(in srgb,#ffd166 16%,var(--panel))}
+html body .wrap tr.bd-soon:hover > td,html body .wrap tr.bd-today:hover > td{background-color:color-mix(in srgb,var(--accent) 16%,var(--panel))}
+
+/* ===== Правая шторка: сегменты переносятся на новую строку, а не вылезают за рамку и не наезжают на соседние поля ===== */
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) #filter-drawer .seg:not(.group-tabs):not(.tv-seg):not(#zq){display:flex!important;flex-wrap:wrap!important;height:auto!important;width:100%!important;max-width:100%!important;overflow:visible!important;box-sizing:border-box;row-gap:2px}
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) #filter-drawer .seg:not(.group-tabs):not(.tv-seg):not(#zq) > button{flex:1 1 auto!important;white-space:nowrap;padding:0 10px!important}
+#filter-drawer .field{min-width:0}
+#filter-drawer .field > :is(select,input,.msel){max-width:100%}
+/* Сегменты в основной части страницы тоже переносятся, если не помещаются в одну строку */
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10) main .tab .seg:not(.group-tabs):not(.tv-seg):not(#zq){flex-wrap:wrap!important;height:auto!important;min-height:var(--ctl-h,32px);row-gap:2px}
+/* Столбики по месяцам: в узком блоке подписи ставятся вертикально и не слипаются */
+.mbars:has(> .mbar:nth-child(12)){container-type:inline-size}
+@container (max-width:330px){
+  .mbars .mbar-l,.mbars .mbar-v{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;justify-self:center;line-height:1.1}
+  .mbars .mbar-l{min-height:2.6em}
+}
+#bd-out .p-grid2{grid-template-columns:minmax(300px,1fr) minmax(0,1.5fr)}
+/* «Матрица»: компактные переключатели вместо длинного списка */
+.dm-new{display:none}
+#filter-drawer .dm-new{display:block}
+html body:not(#d1):not(#d2):not(#d3):not(#d4) #filter-drawer #fd-body :is(label.checkline,details.opt-pop):has(:is(#dm-week,#dm-years,#dm-year,#dm-compare,#dm-heat,#dm-show-share,#dm-show-delta,#dm-hide-noname,#hide-left-daymatrix)){display:none!important}
+.dm-chips{display:flex;flex-wrap:wrap;gap:var(--sp-1)}
+.dm-chip{height:28px;padding:0 11px;border-radius:var(--r-m);border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13px;line-height:1;cursor:pointer;white-space:nowrap}
+.dm-chip:hover{color:var(--text)}
+.dm-chip.on{background:var(--accent-bg);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
+.dm-chip:disabled{opacity:.45;cursor:default}
+html body:not(#d1):not(#d2):not(#d3):not(#d4) #filter-drawer #fd-body .filters:has(> .field > #dm-from){flex-direction:row!important;flex-wrap:wrap!important;column-gap:var(--sp-3)!important;align-items:flex-start}
+html body:not(#d1):not(#d2):not(#d3):not(#d4) #filter-drawer #fd-body .filters:has(> .field > #dm-from) > *{flex:1 0 100%;min-width:0}
+html body:not(#d1):not(#d2):not(#d3):not(#d4) #filter-drawer #fd-body .filters:has(> .field > #dm-from) > .field:has(> :is(#dm-from,#dm-to)){flex:1 1 calc(50% - 6px)}
+#filter-drawer .field > :is(#dm-from,#dm-to){width:100%;box-sizing:border-box}

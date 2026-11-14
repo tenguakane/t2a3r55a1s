@@ -1,0 +1,47 @@
+
+.dp{position:fixed;z-index:200;width:300px;padding:12px;border-radius:var(--r-l);background:var(--panel);border:1px solid var(--line);box-shadow:0 18px 44px -12px #000a;color:var(--text);font-size:14px;user-select:none}
+.dp.glass{background:color-mix(in srgb,var(--panel) 78%,transparent);-webkit-backdrop-filter:var(--glass-blur,blur(18px));backdrop-filter:var(--glass-blur,blur(18px))}
+.dp[hidden],.dp-scrim[hidden]{display:none}
+.dp button{font:inherit;color:inherit;background:transparent;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dp button:disabled{opacity:.3;cursor:default}
+.dp button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.dp-head{display:flex;align-items:center;gap:var(--sp-1);margin:0 0 8px}
+.dp-title{flex:1;height:36px;border-radius:var(--r-m);font-weight:700;font-size:15px}
+.dp-title:not(.is-static):hover{background:color-mix(in srgb,var(--text) 7%,transparent)}
+.dp-title.is-static{display:grid;place-items:center}
+.dp-nav{flex:0 0 36px;width:36px;height:36px;border-radius:var(--r-m);font-size:22px;line-height:1;color:var(--muted)!important}
+.dp-nav:not(:disabled):hover{background:color-mix(in srgb,var(--text) 7%,transparent);color:var(--text)!important}
+.dp-wd,.dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.dp-wd{margin:0 0 2px}
+.dp-wd span{display:grid;place-items:center;height:26px;font-size:12px;font-weight:600;color:var(--muted)}
+.dp-wd span.we,.dp-day.we:not(.sel){color:color-mix(in srgb,var(--accent-2,var(--accent)) 70%,var(--text))}
+.dp-day{height:36px;border-radius:var(--r-m);font-variant-numeric:tabular-nums}
+.dp-day:not(:disabled):not(.sel):hover{background:color-mix(in srgb,var(--text) 8%,transparent)}
+.dp-day.today:not(.sel){box-shadow:inset 0 0 0 1.5px var(--accent);color:var(--accent)}
+.dp-day.sel,.dp-mon.sel{background:var(--accent)!important;color:var(--bg)!important;font-weight:700}
+.dp-hint{margin:0 0 6px;font-size:12.5px;color:var(--muted);text-align:center}
+.dp-grid{gap:2px 0}
+.dp-day.in{background:color-mix(in srgb,var(--accent) 20%,transparent)!important;border-radius:0}
+.dp-day.rs,.dp-day.re{background:var(--accent)!important;color:var(--bg)!important;font-weight:700}
+.dp-day.rs{border-radius:10px 0 0 10px}.dp-day.re{border-radius:0 10px 10px 0}
+.dp.dp-modal .dp-day.rs{border-radius:22px 0 0 22px}.dp.dp-modal .dp-day.re{border-radius:0 22px 22px 0}
+.dp-months{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-1)}
+.dp-mon{height:44px;border-radius:var(--r-m);text-transform:capitalize}
+.dp-mon:not(:disabled):not(.sel):hover{background:color-mix(in srgb,var(--text) 8%,transparent)}
+.dp-mon.today:not(.sel){box-shadow:inset 0 0 0 1.5px var(--accent);color:var(--accent)}
+.dp-foot{display:flex;justify-content:space-between;gap:var(--sp-2);margin:10px 0 0;padding:8px 0 0;border-top:1px solid var(--line)}
+.dp-link{height:34px;padding:0 10px;border-radius:var(--r-m);font-weight:600;color:var(--accent)!important}
+.dp-link:not(:disabled):hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+/* Телефон: окно по центру, как в Android (радиус 28, крупные ячейки 48) */
+.dp-scrim{position:fixed;inset:0;z-index:199;background:rgba(0,0,0,.32)}
+.dp.dp-modal{left:50%!important;top:50%!important;transform:translate(-50%,-50%);width:min(360px,calc(100vw - 32px));padding:16px 12px 8px;border-radius:28px;border:0;background:var(--panel)}
+.dp.dp-modal .dp-title{font-size:16px;height:48px}
+.dp.dp-modal .dp-nav{flex-basis:48px;width:48px;height:48px;border-radius:24px}
+.dp.dp-modal .dp-day{height:44px;border-radius:22px}
+.dp.dp-modal .dp-mon{height:52px;border-radius:26px}
+.dp.dp-modal .dp-foot{border-top:0;justify-content:flex-end}
+.dp.dp-modal .dp-link{height:40px;padding:0 14px;border-radius:20px}
+input[type=date][aria-expanded="true"],input[type=month][aria-expanded="true"]{outline:2px solid var(--accent);outline-offset:1px}
+@media (prefers-reduced-motion:no-preference){.dp:not([hidden]){animation:dpIn .14s cubic-bezier(.2,0,0,1)}.dp.dp-modal:not([hidden]){animation:dpInM .18s cubic-bezier(.2,0,0,1)}}
+@keyframes dpIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@keyframes dpInM{from{opacity:0;transform:translate(-50%,-48%)}to{opacity:1;transform:translate(-50%,-50%)}}

@@ -1,0 +1,104 @@
+
+/* Правки аудитов (телефон и ПК): обычные правила. Те, что должны перекрывать остальной сайт, вынесены в слой «top» ниже. */
+/* ---- Аудит мобильной версии ---- */
+/* ---- Второй аудит мобильной версии ---- */
+.qs-it .qs-ic{position:relative}
+#mz-view{position:fixed;inset:0;z-index:6000;background:var(--bg,#0e1016);display:none;touch-action:none;overflow:hidden}
+#mz-view.open{display:block}
+#mz-view .mz-stage{position:absolute;left:50%;top:50%;width:100vw;height:100vh;height:100dvh;transform:translate(-50%,-50%);box-sizing:border-box;padding:56px 10px 10px;display:flex;align-items:center;justify-content:center}
+#mz-view.rot .mz-stage{width:100vh;width:100dvh;height:100vw;transform:translate(-50%,-50%) rotate(90deg);padding:52px 14px 10px}
+#mz-view .mz-stage > svg{width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;min-width:0!important;min-height:0!important;margin:0!important;display:block;background:none!important;border:0!important;box-shadow:none!important;border-radius:0!important;animation:none!important}
+#mz-view .mz-close{position:absolute;right:calc(8px + env(safe-area-inset-right,0px));top:calc(8px + env(safe-area-inset-top,0px));width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--panel,#161a24);color:var(--text);display:grid;place-items:center;padding:0;cursor:pointer;z-index:2}
+#mz-view .mz-close svg{width:20px;height:20px}
+#mz-view .mz-stage.has-lg,#mz-view.rot .mz-stage.has-lg{padding-bottom:54px}
+#mz-view .mz-tools{position:absolute;top:6px;right:62px;display:flex;gap:var(--sp-1);z-index:2}
+#mz-view.rot .mz-tools{right:14px}
+#mz-view .mz-btn{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--panel,#161a24);color:var(--text);display:grid;place-items:center;padding:0;cursor:pointer;touch-action:manipulation}
+#mz-view .mz-btn:disabled{opacity:.38;cursor:default}
+#mz-view .mz-btn svg{width:20px;height:20px}
+#mz-view .mz-tip{position:absolute;top:58px;left:12px;display:none;max-width:min(62%,320px);max-height:calc(100% - 130px);overflow:hidden;box-sizing:border-box;background:#14161cf2;border:1px solid var(--line);border-radius:var(--r-m);padding:8px 10px;font-size:12px;line-height:1.45;box-shadow:0 8px 24px #0009;pointer-events:none;z-index:1}
+#mz-view .mz-tip.r{left:auto;right:12px}
+#mz-view .mz-tip b{display:block;margin-bottom:3px}
+#mz-view .mz-tip i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;flex:0 0 auto}
+#mz-view .mz-tip .tr{display:flex;justify-content:space-between;gap:var(--sp-3);align-items:baseline}
+#mz-view .mz-tip .tr em{font-style:normal;color:var(--muted)}
+#mz-view .mz-tip .tr span{float:none;margin-left:0;font-variant-numeric:tabular-nums}
+#mz-view .mz-tip .up{color:#76F0B6}#mz-view .mz-tip .down{color:#f7768e}
+#mz-view .mz-lg{position:absolute;left:10px;right:10px;bottom:6px;display:flex;gap:var(--sp-1);overflow-x:auto;overscroll-behavior:contain;scrollbar-width:none;touch-action:pan-x}
+#mz-view .mz-lg::-webkit-scrollbar{display:none}
+#mz-view .mz-hint{position:absolute;left:50%;bottom:64px;transform:translateX(-50%);width:max-content;max-width:86%;box-sizing:border-box;background:#14161cf2;border:1px solid var(--line);border-radius:var(--r-l);padding:8px 14px;font-size:12px;line-height:1.4;text-align:center;pointer-events:none;z-index:3;animation:mzHint 4s ease forwards}
+@keyframes mzHint{0%{opacity:0}8%,82%{opacity:1}100%{opacity:0}}
+#mz-view .mz-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:var(--sp-1);min-height:40px;padding:0 12px;border-radius:20px;border:1px solid var(--line);background:var(--panel,#161a24);color:var(--text);font:inherit;font-size:13px;cursor:pointer;white-space:nowrap;touch-action:manipulation}
+#mz-view .mz-chip i{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+#mz-view .mz-chip:not(.on){opacity:.5}
+#mz-view .mz-chip:not(.on) span{text-decoration:line-through}
+#set-mscale-row{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2) var(--sp-3);width:100%;box-sizing:border-box;padding:10px 14px}
+#set-mscale-row > span{flex:1 1 160px;min-width:0}
+#set-mscale-row .seg{flex:0 0 auto}
+#set-mscale-row .seg button{min-width:58px;min-height:var(--h-m)}
+@media (max-width:720px){
+  /* Все переключатели-сегменты и значок «данные на…» — не ниже 32 px */
+  html body main .rx-badge:not(#zq){min-height:30px}
+  /* Настройки: строки меню не слипаются */
+  html body.mapp .set-menu .ma-txt:not(#zq){padding-top:10px;padding-bottom:10px}
+  /* Дни рождения: числа над 24 столбиками часов не сливаются */
+  html body .bd-bars .mbar-v:not(#zq){font-size:9px;letter-spacing:-.04em}
+  /* Плитки: длинное значение переносится, а не обрезается */
+  html body main .tiles .tile .num:not(#zq){white-space:normal;overflow-wrap:anywhere;line-height:1.15}
+  /* «Меню»: под полупрозрачной нижней панелью не просвечивает страница */
+  html body.mapp #ma-menu:not(#zq){bottom:0;padding-bottom:calc(var(--ma-tabs-h) + env(safe-area-inset-bottom,0px) + 20px)}
+  /* Реакции и события: сообщение об ошибке переносится под заголовок */
+  html body main .bx-head > h2:not(#zq){display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-1) var(--sp-2)}
+  html body main .bx-head > h2 > .rx-err:not(#zq){flex:1 1 100%;font-size:12.5px;line-height:1.35;font-weight:400}
+}
+#ma-more-menu{position:fixed;z-index:5000;min-width:220px;max-width:calc(100vw - 16px);padding:6px;border-radius:var(--r-l);border:1px solid var(--line);background:var(--panel,#161a24);box-shadow:0 18px 50px #000a;display:none}
+#ma-more-menu.open{display:block}
+#ma-more-menu button{display:flex;align-items:center;gap:var(--sp-3);width:100%;min-height:46px;padding:0 14px;border:0;border-radius:var(--r-m);background:transparent;color:var(--text);font:inherit;font-size:15px;text-align:left;cursor:pointer}
+#ma-more-menu button:active{background:color-mix(in srgb,var(--accent) 16%,transparent)}
+#ma-more-menu button svg{width:20px;height:20px;flex:0 0 auto;color:var(--muted)}
+#ma-more-menu button[hidden]{display:none}
+@media (max-width:720px){
+  /* Статистика: «Таблица/Карточки» больше не ложится поверх «Участники/Чаты» */
+  html body .stats-topbar:not(#zq){flex-wrap:wrap!important;row-gap:var(--sp-2)}
+  html body .stats-topbar .st-tools:not(#zq){position:static!important;height:auto!important;padding-left:0!important;background:none!important;margin-left:auto}
+  /* Цели касания не ниже 32 px */
+  html body main :is(.quick-chip,.mini,.hub-fold,.s-nchip,.copy-btn,.chip):not(#zq){min-height:var(--h-s)}
+  html body main input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not(#zq){min-height:36px}
+  html body main details > summary:not(#zq){padding-block:6px}
+  html body main .mt-h button:not(#zq){min-height:var(--h-s)!important;height:auto}
+  /* Мелкий текст */
+  html body :is(.hub-log-new,#re-out small):not(#zq){font-size:11px}
+  /* Быстрые периоды переносятся, а не обрезаются */
+  html body main .quick-ranges:not(#zq){flex-wrap:wrap;row-gap:var(--sp-1)}
+  /* Заголовок раздела в шапке помещается целиком */
+  html body.mapp #ma-bar .ma-title:not(#zq){font-size:20px}
+}
+/* Очень узкие экраны (до 350 px): ничего не уходит за правый край */
+@media (max-width:350px){
+  html body .goal-grid:not(#zq){grid-template-columns:minmax(0,1fr)}
+  html body #wi-card .wi-r:not(#zq):not(#zq2){grid-template-columns:28px minmax(44px,1fr) 52px 52px 52px;gap:0 var(--sp-1);font-size:11.5px}
+  html body main table.tv-cards > tbody > tr:not(#zq):not(#zq2):not(#zq3){flex-wrap:wrap!important;max-width:100%!important;box-sizing:border-box}
+  html body main label.checkline:not(#zq){white-space:normal;max-width:100%;box-sizing:border-box}
+}
+/* ---- Аудит ПК-версии ---- */
+/* Карта: две таблицы рядом не выталкивают страницу вправо на узком окне */
+html body .um-two:not(#zq){grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr))}
+html body .um-two > *:not(#zq){min-width:0}
+/* Закреплённая шапка таблицы: тот же шрифт, что у настоящей, — заголовки больше не обрезаются многоточием */
+/* Значок «данные на…» в одну строку */
+@media (min-width:721px){
+  html body .rx-badge:not(#zq){white-space:nowrap}
+  /* Настройки: выбор цвета — аккуратные образцы, а не полосы на всю ширину */
+  html body #tab-settings :is(#theme-custom,#fx-lava-box) input[type=color]:not(#zq){width:56px!important;min-width:56px!important;max-width:56px!important;height:32px!important;padding:2px!important;border-radius:var(--r-m)!important;border:1px solid var(--line)!important;background:var(--panel)!important;cursor:pointer;flex:0 0 auto}
+  html body #tab-settings #theme-custom:not(#zq){display:flex!important;flex-wrap:wrap;align-items:flex-end;gap:var(--sp-3) var(--sp-5)}
+  html body #tab-settings #theme-custom > .field:not(#zq){flex:0 0 auto;width:auto!important;min-width:0}
+  html body #tab-settings #theme-custom > .field:has(input[type=range]):not(#zq){flex:1 1 320px;max-width:520px}
+  html body #tab-settings #theme-custom > .hint:not(#zq){flex:1 1 100%}
+  html body #tab-settings #fx-lava-box:not(#zq){display:flex!important;flex-wrap:wrap;align-items:flex-end;gap:var(--sp-3) var(--sp-5)}
+  html body #tab-settings #fx-lava-box > .field:not(#zq){flex:0 0 auto;width:auto!important;min-width:0}
+  html body #tab-settings .fx-lava-cols:not(#zq){display:flex!important;flex-direction:row!important;flex-wrap:wrap;align-items:center;gap:var(--sp-2)}
+  /* Настройки: кнопки действий выглядят как кнопки */
+  html body #tab-settings .pbtn > button.mini:not(.copy-btn):not(#zq){height:var(--h-s)!important;min-height:0!important;padding:0 12px!important;border:1px solid var(--line)!important;border-radius:var(--r-l)!important;background:var(--panel)!important;color:var(--text)!important;font-size:14px}
+  html body #tab-settings .pbtn:not(#zq){display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2)}
+  /* Настройки: подсказка, дублирующая описание переключателя */
+}

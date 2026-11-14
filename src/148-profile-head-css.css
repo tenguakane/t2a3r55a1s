@@ -1,0 +1,33 @@
+
+/* ===================== Профиль: участник в шапке, копирование таблиц, отступы (2026.11.08) ===================== */
+#hp-chip{display:none;align-items:center;gap:2px;margin:-4px 0 -4px 14px;padding:2px;border:1px solid var(--line);border-radius:var(--r-l);background:color-mix(in srgb,var(--panel,#161922) 82%,transparent);position:relative;opacity:0;transform:translateY(-4px);transition:opacity .2s,transform .2s}
+body.hp-show #hp-chip{display:inline-flex}
+body.hp-show.hp-in #hp-chip{opacity:1;transform:none}
+#hp-chip button{border:0;background:transparent;color:var(--text);font:inherit;cursor:pointer;border-radius:var(--r-m);height:var(--h-s);display:inline-flex;align-items:center;gap:var(--sp-2);padding:0 8px}
+#hp-chip button:hover,#hp-chip button[aria-expanded="true"]{background:color-mix(in srgb,var(--text) 9%,transparent)}
+#hp-chip .hp-nav{width:30px;padding:0;justify-content:center;color:var(--muted);font-size:17px}
+#hp-chip .hp-av{width:24px;height:24px;border-radius:50%;object-fit:cover;flex:none;background:var(--accent);color:#111;font-size:12px;font-weight:700;display:inline-grid;place-items:center}
+#hp-chip .hp-name{font-weight:700;font-size:14.5px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#hp-chip .hp-caret{color:var(--muted);font-size:11px}
+#hp-pop{position:absolute;top:calc(100% + 8px);left:0;width:280px;max-height:min(440px,70vh);display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r-l);background:var(--panel,#161922);box-shadow:0 18px 50px rgba(0,0,0,.45);z-index:200;overflow:hidden}
+#hp-pop[hidden]{display:none}
+#hp-pop input{margin:8px;height:var(--h-s);border-radius:var(--r-m);border:1px solid var(--line);background:var(--ctrl,transparent);color:var(--text);padding:0 10px;font:inherit}
+#hp-pop .hp-list{overflow:auto;padding:0 6px 6px}
+#hp-pop .hp-item{display:flex;width:100%;height:34px!important;justify-content:flex-start;padding:0 10px!important}
+#hp-pop .hp-item.cur{background:color-mix(in srgb,var(--accent) 22%,transparent)}
+#hp-pop .hp-item.kb{outline:1px solid color-mix(in srgb,var(--accent) 60%,transparent)}
+#hp-pop .hp-empty{padding:10px 12px;color:var(--muted);font-size:13px}
+@media (max-width:720px){#hp-chip{display:none!important}}
+/* Отступ под таблицей реакций и под таблицей стикеров */
+#p-out .re-prof-note,#p-out .re-prof-empty{margin:12px 0 18px!important;line-height:1.45}
+#p-out .re-prof-empty + .re-prof-note{margin-top:-12px!important}
+#p-out .rx-emo-scope .wrap + .bx-grid{margin-top:18px}
+#p-out .p-media-note,#p-out .p-media-none{margin:10px 0 4px!important}
+#p-out table.p-media td.zero{color:var(--muted);opacity:.7}
+/* «Прогноз мест»: таблица шире своей колонки заезжала под «Ожидаемые обгоны» — теперь блок с обгонами переносится вниз, если места не хватает */
+html body .fc-places{display:flex!important;flex-wrap:wrap;align-items:flex-start;gap:var(--sp-4)}
+html body .fc-places > .hc-bar{flex:1 1 100%;justify-content:flex-start}
+html body .fc-places > .wrap{min-width:0;max-width:100%;width:auto!important}
+html body .fc-places > .fc-over{flex:1 1 300px;min-width:min(280px,100%)}
+/* Кнопка копирования в карточке «Кто чаще в хронике» */
+.ch-copy-h{display:flex;align-items:center;gap:var(--sp-2)}.ch-copy-h > span:first-child{margin-right:auto}

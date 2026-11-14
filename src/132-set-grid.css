@@ -1,0 +1,65 @@
+
+/* ===================== Настройки: вся ширина, одинаковые плитки, предпросмотр эффектов ===================== */
+/* Фон без сетки точек */
+html body.ds{background-image:none!important}
+@media (min-width:721px){
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters:has(> label.checkline),
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters:has(> .field){display:grid!important;grid-template-columns:repeat(auto-fill,minmax(440px,1fr))!important;grid-auto-rows:1fr;gap:var(--sp-3)!important;align-items:stretch!important;background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:0!important;margin:0 0 18px!important;width:100%!important;max-width:none!important}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > :is(label.checkline,.field){margin:0!important;width:auto!important;max-width:none!important;min-width:0!important;height:auto!important;min-height:96px;box-sizing:border-box;display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:var(--sp-1)!important;padding:14px 16px!important;border-radius:var(--r-l)!important;background:var(--nv-fill,var(--panel))!important;border:1px solid var(--nv-line,var(--line))!important;box-shadow:inset 0 1px 0 var(--glass-hi,transparent)!important;position:relative}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > label.checkline{flex-direction:row!important;align-items:flex-start!important;gap:var(--sp-3)!important;cursor:pointer}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > label.checkline:hover{border-color:color-mix(in srgb,var(--text) 24%,transparent)!important}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > label.checkline:has(input:checked){border-color:color-mix(in srgb,var(--accent) 40%,transparent)!important}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > label.checkline > input{margin-top:2px!important;flex:0 0 auto}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > label.checkline .set-txt{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:var(--sp-1)}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > :is(label.checkline,.field)[hidden]{display:none!important}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > .field > label{font-size:13px!important;color:var(--muted)!important}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > .field :is(select,input:not([type=checkbox]):not([type=radio])){width:100%!important;max-width:none!important}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane .filters > :not(label.checkline):not(.field):not(.set-frow){grid-column:1/-1;align-self:center;justify-self:start;width:auto!important}
+  html body:is(.zq.zq.zq.zq,*) #tab-settings .set-pane > :is(p.hint,h2){max-width:78ch}
+}
+/* Предпросмотр эффекта */
+.fx-pv{flex:0 0 112px;height:64px;border-radius:var(--r-m);overflow:hidden;position:relative;background:color-mix(in srgb,var(--text) 5%,transparent);border:1px solid var(--nv-line,var(--line));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;color:var(--text);font-variant-numeric:tabular-nums;isolation:isolate;pointer-events:none}
+label.checkline:not(:has(input:checked)) .fx-pv{filter:grayscale(1);opacity:.45}
+label.checkline:not(:has(input:checked)) .fx-pv *{animation-play-state:paused!important}
+@media (max-width:720px){.fx-pv{flex-basis:84px;height:52px;font-size:16px}}
+@media (prefers-reduced-motion:reduce){.fx-pv *{animation:none!important}}
+.fx-pv .pv-bar{position:absolute;left:12px;right:12px;height:10px;border-radius:var(--r-xs)}
+.pv-grad{background:linear-gradient(90deg,#3f8a8f,#9ff3e8)}
+.pv-holo{background:linear-gradient(90deg,#ff7ad9,#ffd36e,#7cf7c0,#6fe3ff,#b195ff,#ff7ad9);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:pvHolo 3s linear infinite}
+@keyframes pvHolo{to{background-position:200% 0}}
+.pv-card{width:58px;height:40px;border-radius:var(--r-m);background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 40%,#222),#2a2e39);position:relative;overflow:hidden;animation:pvTilt 3s ease-in-out infinite;transform:perspective(200px)}
+.pv-card::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.55) 45%,transparent 60%);animation:pvShine 3s ease-in-out infinite}
+@keyframes pvTilt{0%,100%{transform:perspective(200px) rotateY(-14deg) rotateX(6deg)}50%{transform:perspective(200px) rotateY(14deg) rotateX(-4deg)}}
+@keyframes pvShine{0%{transform:translateX(-100%)}60%,100%{transform:translateX(100%)}}
+.pv-odo{display:inline-block;height:1.2em;overflow:hidden;line-height:1.2em}
+.pv-odo > span{display:block;animation:pvOdo 2.6s cubic-bezier(.3,.7,.2,1) infinite}
+@keyframes pvOdo{0%{transform:translateY(0)}55%,100%{transform:translateY(-83.333%)}}
+.pv-shimmer{background:linear-gradient(100deg,var(--text) 40%,#ffe9a8 50%,var(--text) 60%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:pvShim 2.4s linear infinite}
+@keyframes pvShim{from{background-position:120% 0}to{background-position:-120% 0}}
+.pv-neon{color:#fff;text-shadow:0 0 6px var(--accent),0 0 14px var(--accent);font-size:17px}
+.pv-fire{font-size:24px;animation:pvFire .5s ease-in-out infinite alternate;display:inline-block;transform-origin:50% 90%}
+@keyframes pvFire{from{transform:scale(1) rotate(-4deg)}to{transform:scale(1.12) rotate(4deg)}}
+.pv-type{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;border-right:2px solid var(--accent);width:0;animation:pvType 3s steps(10) infinite}
+@keyframes pvType{0%{width:0}60%,100%{width:10ch}}
+.pv-border{width:74px;height:40px;border-radius:var(--r-m);position:relative;background:#22262f}
+.pv-border::before{content:"";position:absolute;inset:-2px;border-radius:var(--r-m);z-index:-1;background:conic-gradient(from var(--pva,0deg),#ff7ad9,#ffd36e,#7cf7c0,#6fe3ff,#b195ff,#ff7ad9);animation:pvSpin 3s linear infinite}
+@property --pva{syntax:"<angle>";inherits:false;initial-value:0deg}
+@keyframes pvSpin{to{--pva:360deg}}
+.pv-glass{width:76px;height:34px;border-radius:var(--r-m);background:rgba(255,255,255,.12);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.25);position:relative;z-index:2}
+.pv-glass-bg{position:absolute;inset:0;background:repeating-linear-gradient(45deg,var(--accent) 0 6px,transparent 6px 14px);opacity:.5}
+.pv-par{position:absolute;inset:-20%;background:radial-gradient(circle at 30% 40%,color-mix(in srgb,var(--accent) 60%,transparent),transparent 40%),radial-gradient(circle at 70% 70%,#ff6fb5aa,transparent 40%);animation:pvPar 4s ease-in-out infinite alternate}
+@keyframes pvPar{to{transform:translate(12%,-10%)}}
+.pv-dot{position:absolute;width:6px;height:6px;border-radius:var(--r-xs);top:-8px;animation:pvFall 1.8s linear infinite}
+@keyframes pvFall{to{transform:translateY(80px) rotate(360deg)}}
+.pv-spark{position:absolute;width:4px;height:4px;border-radius:50%;left:50%;top:50%;animation:pvBurst 1.6s ease-out infinite}
+@keyframes pvBurst{0%{transform:translate(-50%,-50%) scale(.2);opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1);opacity:0}}
+.pv-chip{padding:3px 10px;border-radius:999px;font-size:13px;font-weight:700;color:#7aa2f7;border:1px solid #7aa2f7;animation:pvPulse 1.6s ease-in-out infinite}
+@keyframes pvPulse{0%,100%{box-shadow:0 0 0 0 #7aa2f766}50%{box-shadow:0 0 0 6px #7aa2f700}}
+.pv-pdot{width:10px;height:10px;border-radius:50%;background:var(--accent);position:relative}
+.pv-pdot::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid var(--accent);animation:pvRing 1.4s ease-out infinite}
+@keyframes pvRing{to{transform:scale(2.6);opacity:0}}
+.pv-cols{display:flex;align-items:flex-end;gap:var(--sp-1);height:40px}
+.pv-cols i{width:10px;border-radius:3px 3px 0 0;background:var(--accent);animation:pvMorph 2.4s ease-in-out infinite alternate}
+.pv-cols i:nth-child(2){animation-delay:-.6s}.pv-cols i:nth-child(3){animation-delay:-1.2s}.pv-cols i:nth-child(4){animation-delay:-1.8s}
+@keyframes pvMorph{from{height:20%}to{height:100%}}
+.pv-frame{width:70px;height:40px;border-radius:var(--r-s);background:#22262f;border:2px solid transparent;background:linear-gradient(#22262f,#22262f) padding-box,linear-gradient(90deg,#7cf7c0,#6fe3ff,#b195ff,#ff7ad9) border-box}

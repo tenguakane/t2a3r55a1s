@@ -1,0 +1,66 @@
+
+/* ===================== v42: Реакции и События, «Топы», Селфи/Время/ДР в Хабе ===================== */
+html body.beta-re nav button.beta-hide{display:none!important}
+html body.beta-re :is(.group-tabs,.seg) > button.beta-hide{display:none!important}
+html body.beta-re section.tab > .seg.group-tabs[data-group-seg="other"].beta-hide{display:none!important}
+.rx-refresh{cursor:pointer;font-family:inherit;line-height:1.5}
+.rx-refresh:hover{background:color-mix(in srgb,var(--accent) 22%,transparent)}
+.rx-refresh.err{color:#f8a3a3;border-color:color-mix(in srgb,#f87171 45%,transparent);background:color-mix(in srgb,#f87171 12%,transparent)}
+.rx-err{display:block;margin-top:6px;font-size:12.5px;font-weight:400;color:#f8a3a3;letter-spacing:0}
+.rx-badge{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:600;letter-spacing:.02em;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);vertical-align:middle}
+.bx-head{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2);margin:0 0 14px}
+.bx-head h2{margin:0 auto 0 0!important}
+.bx-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:var(--sp-3);margin:0 0 18px}
+.bx-card{padding:16px 16px 12px;border-radius:var(--r-l);background:var(--nv-fill,var(--panel));border:1px solid var(--nv-line,var(--line));box-shadow:inset 0 1px 0 var(--glass-hi,transparent);min-width:0}
+body.glass-ui .bx-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur)}
+.bx-card h3{margin:0 0 4px;font-size:15px}
+.bx-card > .hint{margin:0 0 12px;font-size:12.5px}
+.bx-list{display:flex;flex-direction:column;gap:var(--sp-2)}
+.bx-row{display:grid;grid-template-columns:minmax(70px,140px) 1fr auto;align-items:center;gap:var(--sp-2);font-size:13.5px}
+.bx-row > span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bx-row .bx-bar{height:12px;border-radius:var(--r-s);background:color-mix(in srgb,var(--text) 6%,transparent);overflow:hidden}
+.bx-row .bx-bar > i{display:block;height:100%;border-radius:var(--r-s);min-width:3px}
+.bx-row b{font-variant-numeric:tabular-nums;min-width:44px;text-align:right}
+.bx-row.emo{grid-template-columns:30px 1fr auto}
+.bx-row.emo > span:first-child{font-size:20px;line-height:1}
+.bx-empty{color:var(--muted);font-size:13px;padding:8px 0}
+.re-hours{display:flex;align-items:flex-end;gap:var(--sp-1);height:220px;margin-top:4px}
+.re-hours > div{position:relative;flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;min-width:0;padding-bottom:18px;box-sizing:border-box}
+.re-hours > div > i{width:100%;border-radius:4px 4px 2px 2px;background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 80%,#fff),color-mix(in srgb,var(--accent) 70%,#000));min-height:2px}
+.re-hours > div > small{position:absolute;left:50%;bottom:0;transform:translateX(-50%);font-size:10px;line-height:14px;color:var(--muted);white-space:nowrap}
+.re-person{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2);margin:6px 0 14px}
+.re-person select{min-width:200px}
+.re-mutual{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin:0 0 12px}
+.re-mutual span{padding:5px 10px;border-radius:var(--r-m);background:color-mix(in srgb,var(--text) 6%,transparent);font-size:13px}
+.ev-timeline{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:var(--sp-3);margin:0 0 20px}
+.ev-card{position:relative;padding:16px;border-radius:var(--r-l);background:var(--nv-fill,var(--panel));border:1px solid var(--nv-line,var(--line));cursor:pointer;overflow:hidden;transition:border-color .15s,transform .15s}
+body.glass-ui .ev-card{-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur)}
+.ev-card::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,var(--ec1),var(--ec2))}
+.ev-card.on{border-color:color-mix(in srgb,var(--ec2) 70%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--ec2) 40%,transparent),0 14px 30px -18px var(--ec1)}
+.ev-card h3{margin:2px 0 4px;font-size:17px;display:flex;align-items:center;gap:var(--sp-2)}
+.ev-card h3 svg{width:20px;height:20px;color:var(--ec2);flex:0 0 auto}
+.ev-card .hint{margin:0;font-size:12.5px}
+.ev-st{display:inline-block;margin-top:10px;padding:2px 9px;border-radius:999px;font-size:12px;background:color-mix(in srgb,var(--text) 8%,transparent)}
+.ev-st.live{color:#4ade80;background:color-mix(in srgb,#4ade80 14%,transparent)}
+.ev-prog{height:6px;border-radius:var(--r-xs);margin-top:10px;background:color-mix(in srgb,var(--text) 8%,transparent);overflow:hidden}
+.ev-prog > i{display:block;height:100%;background:linear-gradient(90deg,var(--ec1),var(--ec2))}
+.ev-meta{display:flex;gap:var(--sp-3);margin-top:10px;font-size:12.5px;color:var(--muted)}
+.ev-meta b{color:var(--text)}
+td .ev-tier + small{display:inline!important;margin-left:4px;font-size:12.5px;font-weight:600}
+.ev-tier{display:inline-block;min-width:26px;padding:1px 6px;border-radius:var(--r-m);font-weight:700;font-size:12px;color:var(--tc);border:1px solid color-mix(in srgb,var(--tc) 55%,transparent);background:color-mix(in srgb,var(--tc) 12%,transparent)}
+.ev-rank{font-size:12.5px;color:var(--muted)}
+.ev-lv{display:inline-flex;align-items:center;gap:var(--sp-2)}
+.ev-lv i{display:inline-block;width:80px;height:6px;border-radius:var(--r-xs);background:color-mix(in srgb,var(--text) 8%,transparent);overflow:hidden}
+.ev-lv i > em{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+/* Закреплённая шапка таблицы: подложка всегда непрозрачная, иначе при «стекле» сквозь неё видны строки */
+html body .sticky-table-head{background-color:var(--bg,#14161c)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+/* Вкладка «События»: воздух между таблицей уровней, панелями под ней и плитками прогноза */
+#ev-out > .wrap + .bx-grid{margin-top:22px}
+.ev-title-empty{opacity:.55}
+#ev-titles-table td:nth-child(2){text-align:left}
+#ev-out > .tiles + .hc-bar{margin-top:16px}
+.ach-view-seg{margin:0 0 16px!important}
+#tab-achievements.active > #ach-out > .ach-view-seg{flex:0 0 auto!important;max-width:max-content}
+@media (max-width:720px){
+  .bx-row{grid-template-columns:minmax(60px,110px) 1fr auto}
+}

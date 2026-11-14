@@ -1,0 +1,23 @@
+
+/* ===================== Фон страницы: цветные пятна, один цвет или лёгкий градиент ===================== */
+/* Фон рисуется на html (самый нижний слой), body прозрачный — иначе он перекрывал частицы и другие слои с z-index:-1 */
+html:has(body.pbg-on){background:var(--pbg)!important;background-color:var(--pbg-base)!important;background-attachment:fixed!important;background-size:auto!important;min-height:100%}
+html body.pbg-on.pbg-on{background:transparent!important}
+html body.pbg-on.pbg-on::before{display:none!important}
+html body.pbg-on #fx-bg{display:none!important}
+@media (max-width:720px){
+  html body.pbg-on.pbg-on #ma-menu::before{display:none!important}
+  html body.pbg-on.glass-ui #ma-menu{background:var(--pbg)!important}
+}
+#pbg-box .pbg-row{display:flex;flex-wrap:wrap;gap:var(--sp-3);align-items:flex-end}
+#pbg-box input[type=color]{width:56px;height:34px;padding:2px;border-radius:var(--r-m);border:1px solid var(--line);background:var(--ctrl);cursor:pointer}
+#pbg-box [hidden]{display:none!important}
+#pbg-box .pbg-prev{width:72px;height:34px;border-radius:var(--r-m);border:1px solid var(--line);flex:none}
+#pbg-box .hint{flex-basis:100%;margin:2px 0 0}
+/* Лишние настройки графиков (см. syncUselessChartControls) — только на вкладке «Графики» */
+body.cs-noday:has(#tab-charts.active) #mode button[data-m="day"]:not(.active),
+body.cs-yearonly:has(#tab-charts.active) #mode button:not([data-m="year"]):not(.active),
+body.cs-noshare:has(#tab-charts.active) #norm-seg button[data-norm="share"]:not(.active){display:none!important}
+/* «Сезонность» в режиме «Год»: переключать там нечего — оставляем только выбор года */
+body.cs-yearonly:has(#tab-charts.active) #f-mode:has(button[data-m="year"].active){display:none!important}
+#tab-charts label.checkline[hidden],#filter-drawer label.checkline[hidden]{display:none!important}

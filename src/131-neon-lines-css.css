@@ -1,0 +1,5 @@
+
+svg.neon-on .neon-l,svg.neon-on .neon-tip{animation:neonIn 1s ease-out both}
+svg.neon-on .neon-tip{animation-delay:.4s}
+@keyframes neonIn{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){svg.neon-on :is(.neon-l,.neon-tip){animation:none}}

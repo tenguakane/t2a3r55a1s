@@ -1,0 +1,6 @@
+
+svg.cz-on{cursor:grab}svg.cz-drag{cursor:grabbing;user-select:none}
+.cz-badge{position:fixed;z-index:60;transform:translateX(-100%);padding:4px 10px;border-radius:999px;background:var(--tip-bg,#14161cf2);border:1px solid var(--line);color:var(--text);font-size:13px;font-weight:700;pointer-events:none;opacity:0;transition:opacity .2s}
+.cz-badge span{font-weight:400;color:var(--muted);margin-left:6px}
+.cz-badge.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.cz-badge{transition:none}}

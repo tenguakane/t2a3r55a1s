@@ -1,0 +1,108 @@
+
+/* ===================== Стиль «Табло» (2026.11.02, по навыку unslop) =====================
+   Продукт: статистика Telegram-чата компании «Колония». Характер: азартный, точный, по-дружески тёплый.
+   Мир: турнирное табло в клубе. Хром — тихий графит и один акцент темы.
+   Цвет живёт только в «моментах»: цвета участников на графиках и в таблицах, металл медалей.
+   Подпись: цифры мест и счёта — моноширинные, как на табло; рядом с именем — точка цвета человека.
+   Эффекты (частицы, рамки, блеск, неон, стекло) в этом стиле выключены. */
+html body.tablo{
+  --bg:#141415!important;--panel:#19191b!important;--raised:#202022;--line:rgba(237,237,237,.08)!important;--line-2:rgba(237,237,237,.14);
+  --text:#ededed!important;--muted:#a1a1a6!important;--faint:#85858b;
+  --ctrl:#202022!important;--ctrl-2:#26262a;--accent-bg:color-mix(in srgb,var(--accent) 14%,#19191b)!important;--m3-glass:#19191b;--m3-surf-hi:#202022;--m3-blur:none;
+  --th-bg:#1e1e20!important;--dm-head-bg:#1e1e20!important;--nv-fill:#19191b;--ds-line:rgba(237,237,237,.08);--ds-line-2:rgba(237,237,237,.12);
+  --t-ease:cubic-bezier(.22,1,.36,1);
+  --mono:"Geist Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  background:#141415!important;background-image:none!important;
+}
+html body.tablo::before,html body.tablo::after{content:none!important;display:none!important}
+html body.tablo header{background:#141415!important}
+html body.tablo #fx-season,html body.tablo #fx-confetti{display:none!important}
+
+/* ---------- Поверхности: одна плоскость, тонкая линия, без градиентов и цветных теней ---------- */
+html body.tablo.tablo :is(main,#ds-x) :is(.p-card,.p-hero,.cmp-hero,.cmp-side,.cmp-verdict,.yr-award,.ach-hero,.ach-card,.tile,.hub-kpi,.ev-card,.hub-card,.hub-box,.vk-card,.mt-card,.hub-who,.hub-today){background:var(--panel)!important;background-image:none!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html body.tablo.tablo :is(main,#ds-x) :is(.p-card,.p-hero,.cmp-hero,.cmp-side,.cmp-verdict,.yr-chart-card,.yr-award,.ach-hero,.ach-card,.chart,.ev-card,.hub-card,.vk-card){border:1px solid var(--line)!important;border-radius:var(--r-l)!important}
+html body.tablo.tablo main :is(.tiles,.hub-kpis){background:var(--panel)!important;border:1px solid var(--line)!important;border-radius:var(--r-l)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html body.tablo.tablo main :is(.tile,.hub-kpi,.ev-card,.ach-hero,.ach-card,.p-hero,.yr-tile,.streak-card)::before,html body.tablo.tablo main :is(h2,h3)::before{content:none!important;display:none!important}
+html body.tablo.tablo main :is(.tile,.hub-kpi,.ev-card,.ach-card,.yr-award,.p-card)::after{box-shadow:none!important}
+html body.tablo.tablo main .ev-card.on{border-color:color-mix(in srgb,var(--accent) 55%,transparent)!important}
+html body.tablo.tablo main .ach-card{border-left-width:1px!important}
+html body.tablo.tablo main .wrap{border-radius:var(--r-l)!important;box-shadow:none!important;background:var(--panel)!important;border:1px solid var(--line)!important}
+
+/* ---------- Шрифт: иерархия размером и цветом, веса 400–500 ---------- */
+html body.tablo.tablo{font-weight:400}
+html body.tablo.tablo main h2{font-weight:500!important;font-size:20px!important;letter-spacing:0!important}
+html body.tablo.tablo main h3{font-weight:500!important}
+html body.tablo.tablo :is(main,header,nav,#ds-x) :is(b,strong,th,.pname,.p-name,.ach-hname,.yr-award-name,.cmp-name,.cmp-total,.cmp-score,.ev-tier,.av-l,.ach-lvl,.hub-tier,.mt-name,.dm-name,label,summary){font-weight:500!important}
+html body.tablo.tablo header h1 .wm-a{font-weight:600!important;letter-spacing:-.01em!important}
+html body.tablo.tablo main :is(.tile .num,.hub-kpi .v,.p-stat b,.cmp-total,.yr-tile .num,.dm-grand,.ach-hstat b,.ach-num){font-weight:500!important;font-variant-numeric:tabular-nums}
+html body.tablo.tablo main table tbody td:first-child:not([colspan]),html body.tablo.tablo main :is(.mt-rank,.yr-rank,.rank,.hub-rank){font-family:var(--mono)!important;font-variant-numeric:tabular-nums;font-weight:400!important}
+html body.tablo.tablo main table tbody td{font-variant-numeric:tabular-nums}
+html body.tablo.tablo main table tbody td:is(.medal-1,.medal-2,.medal-3){font-weight:500!important}
+html body.tablo.tablo :is(main,#ds-x) :is(.chart-title){text-transform:none!important;letter-spacing:0!important}
+html body.tablo.tablo main .hint,html body.tablo.tablo main .sub{color:var(--muted)}
+
+/* ---------- Мелкие плашки: не пилюли, тихий текст ---------- */
+html body.tablo.tablo :is(main,header) :is(.hub-tier,.ach-lvl,.ev-st,.yr-delta,.yr-rank,.ychip,.rx-badge,.tag,.badge){border-radius:var(--r-s)!important;box-shadow:none!important;background-image:none!important}
+html body.tablo.tablo :is(main,header,nav) :is(.hub-log-new,.vk-badge.new){display:none!important}
+html body.tablo.tablo main :is(.yr-delta.up){color:#4cc38a!important;background:rgba(76,195,138,.1)!important}
+html body.tablo.tablo main :is(.yr-delta.down){color:#e5484d!important;background:rgba(229,72,77,.1)!important}
+
+
+/* ---------- Управление: один язык для переключателей, кнопок, полей ---------- */
+/* Переключатели периода в основной строке — вкладки с подчёркиванием, как на «Графиках» и в «Матрице» */
+html body.tablo.tablo main :is(.sq-seg,#hub-period,.hub-period-seg){background:none!important;box-shadow:none!important;border:0!important;padding:0!important;gap:var(--sp-4)!important;border-radius:0!important}
+html body.tablo.tablo.tablo:not(#zq1):not(#zq2) main .sq-seg button{height:var(--h-m)!important;padding:0 1px!important;border:0!important;border-radius:0!important;background:none!important;color:var(--muted)!important;font-size:14px!important;font-weight:500!important;box-shadow:none!important}
+html body.tablo.tablo.tablo:not(#zq1):not(#zq2) main .sq-seg button:hover{color:var(--text)!important}
+html body.tablo.tablo.tablo:not(#zq1):not(#zq2) main .sq-seg button.active{color:var(--text)!important;box-shadow:inset 0 -2px 0 var(--accent)!important}
+/* Поле даты: подпись-значение с пунктиром, как остальные фильтры */
+html body.tablo.tablo.tablo:not(#zq1):not(#zq2) main .stats-quick .sq-date{height:36px!important;min-height:0!important;padding:0 2px!important;background:none!important;border:0!important;border-bottom:1px dashed var(--line-2)!important;border-radius:0!important;box-shadow:none!important;font-size:14px!important}
+html body.tablo.tablo.tablo:not(#zq1):not(#zq2) main .stats-quick .sq-date input{min-width:132px;padding-right:6px!important;background:none!important;border:0!important;color:var(--text)!important;font:inherit!important;font-weight:500!important}
+html body.tablo.tablo.tablo:not(#zq1):not(#zq2) main .stats-quick .sq-date:hover{border-bottom-color:var(--accent)!important}
+/* Кнопки действий: одна высота, одна форма, тихий контур */
+html body.tablo.tablo :is(main,#filter-drawer,.fd-body) :is(button.mini,.copy-btn,.tv-btn,.hc-btn,.st-desk-tools > button):not(.seg *):not(.sq-seg *):not(.group-tabs *):not(.ma-chip){height:var(--h-s)!important;min-height:var(--h-s)!important;padding:0 12px!important;border-radius:var(--r-m)!important;background:transparent!important;border:1px solid var(--line-2)!important;box-shadow:none!important;color:var(--text)!important;font-size:13.5px!important;font-weight:500!important;gap:var(--sp-1)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html body.tablo.tablo :is(main,#filter-drawer,.fd-body) :is(button.mini,.copy-btn,.tv-btn,.hc-btn,.st-desk-tools > button):not(.seg *):not(.sq-seg *):not(.group-tabs *):hover{background:var(--raised)!important;border-color:rgba(237,237,237,.2)!important}
+html body.tablo.tablo :is(main,#filter-drawer) :is(.tv-btn,.hc-btn,.st-desk-tools > button):is(.on,.active,[aria-pressed="true"],[aria-expanded="true"]){background:var(--raised)!important;border-color:rgba(237,237,237,.22)!important}
+/* Шторка фильтров: переключатели — тихие чипы, активный — ступенька поверхности */
+html body.tablo.tablo #filter-drawer .seg,html body.tablo.tablo .fd-body .seg{background:none!important;box-shadow:none!important;border:0!important;padding:0!important;gap:var(--sp-1)!important}
+html body.tablo.tablo #filter-drawer .seg > button,html body.tablo.tablo .fd-body .seg > button{height:var(--h-s)!important;min-height:0!important;border-radius:var(--r-m)!important;border:1px solid transparent!important;background:transparent!important;color:var(--muted)!important;box-shadow:none!important;font-weight:500!important}
+html body.tablo.tablo #filter-drawer .seg > button:hover,html body.tablo.tablo .fd-body .seg > button:hover{color:var(--text)!important;background:rgba(237,237,237,.04)!important}
+html body.tablo.tablo #filter-drawer .seg > button:is(.active,[aria-pressed="true"]),html body.tablo.tablo .fd-body .seg > button:is(.active,[aria-pressed="true"]){background:var(--raised)!important;color:var(--text)!important;border-color:var(--line-2)!important}
+html body.tablo.tablo #filter-drawer :is(.field,.checkline,.opt-pop,.seg-wrap),html body.tablo.tablo .fd-body :is(.field,.checkline,.opt-pop){box-shadow:none!important;background-image:none!important}
+html body.tablo.tablo #filter-drawer .checkline,html body.tablo.tablo .fd-body .checkline{border:1px solid var(--line)!important;background:transparent!important;border-radius:var(--r-m)!important}
+/* Карточки настроек: включённая — не подсвечивается, состояние видно по переключателю */
+html body.tablo.tablo.tablo:not(#zq1):not(#zq2) #tab-settings :is(.set-x,.checkline){border-color:var(--line)!important;box-shadow:none!important;background-image:none!important}
+html body.tablo.tablo.tablo:not(#zq1):not(#zq2) #tab-settings :is(.set-x,.checkline):has(input:checked){background:var(--panel)!important}
+html body.tablo.tablo #tab-settings .set-tablo-note{margin:-4px 0 16px;color:var(--muted);font-size:13.5px}
+/* Всплывающие списки и подсказки */
+html body.tablo.tablo :is(.msel-pop,.pick .pop,.opt-pop > div,.qs-box,#tip,.tip){background:#1f1f21!important;border:1px solid var(--line-2)!important;box-shadow:0 12px 32px rgba(0,0,0,.45)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border-radius:var(--r-l)!important}
+html body.tablo.tablo .msel-opt{border-radius:var(--r-m)!important}
+/* Уведомление снизу: без цветной рамки */
+html body.tablo.tablo #cs-toast{border:1px solid var(--line-2)!important;background:#232325!important;box-shadow:0 12px 32px rgba(0,0,0,.45)!important;border-radius:var(--r-m)!important;font-size:14px!important}
+html body.tablo #fcat-legend{display:none!important}
+/* Подписи легенд графиков */
+html body.tablo.tablo :is(main) :is(.series-chips,.lg-chips,.chart-legend-chips) :is(button,span,b){font-weight:500!important}
+/* Шапки таблиц: тихая серая ступенька */
+html body.tablo.tablo.tablo:not(#zq1) :is(main,.table-image-measure) table :is(tfoot td,tfoot th){background-color:#1e1e20!important}
+html body.tablo.tablo.tablo:not(#zq1) .table-image-measure table thead th{background-color:#1e1e20!important}
+html body.tablo.tablo main table thead th{background-color:#1e1e20!important;color:var(--muted)!important;font-weight:500!important}
+html body.tablo.tablo main table thead th:is(.sorted,[aria-sort="ascending"],[aria-sort="descending"]){color:var(--text)!important}
+
+
+/* ---------- Телефон: строки-карточки главных таблиц — числа не обрезаются ---------- */
+html body.mapp main table.tv-cards:is(#participants-table,#chat-rank-table,#re-table,#ev-table) > :is(tbody,tfoot) > tr > :is(td,th):not(:nth-child(1)):not(:nth-child(2)){flex:1 1 auto!important;min-width:max-content!important}
+html body.mapp main table.tv-cards:is(#participants-table,#chat-rank-table,#re-table,#ev-table) > :is(tbody,tfoot) > tr > :is(td,th):nth-child(2){flex:1 1 22%!important;min-width:56px!important}
+html body.mapp main table.tv-cards:is(#participants-table,#chat-rank-table) > :is(tbody,tfoot) > tr > :is(td,th):has(> svg,> .spark,> canvas){display:none!important}
+html body.mapp main table.tv-cards:is(#participants-table,#chat-rank-table,#re-table,#ev-table) > :is(tbody,tfoot) > tr > :is(td,th)::before{max-width:100%}
+/* Шторка фильтров на телефоне: переключатели — чипы, активный — ступенька поверхности */
+html body.tablo.tablo.mapp:not(#zq1):not(#zq2):not(#zq3) .ma-fbody .seg{background:none!important;border:0!important;box-shadow:none!important;padding:0!important;gap:var(--sp-1)!important;flex-wrap:wrap!important;border-radius:0!important;overflow:visible!important}
+html body.tablo.tablo.mapp:not(#zq1):not(#zq2):not(#zq3) .ma-fbody .seg > button{flex:0 0 auto!important;height:var(--h-m)!important;padding:0 14px!important;border:1px solid var(--line-2)!important;border-radius:var(--r-m)!important;background:transparent!important;color:var(--muted)!important;box-shadow:none!important;margin:0!important}
+html body.tablo.tablo.mapp:not(#zq1):not(#zq2):not(#zq3) .ma-fbody .seg > button:is(.active,[aria-pressed="true"]){background:var(--raised)!important;color:var(--text)!important;border-color:rgba(237,237,237,.24)!important}
+
+/* ---------- Иконки вместо эмодзи ---------- */
+html body.tablo .tb-ico-wrap{display:inline-flex;vertical-align:-3px;color:currentColor;opacity:.85}
+html body.tablo .tb-ico{width:16px;height:16px;flex:none}
+html body.tablo.tablo :is(main,#ds-x) :is(.sec-nav button,.sec-nav a,.series-chips button,.series-chips .chip,.chip){border-radius:var(--r-m)!important}
+
+/* ---------- Движение: коротко и по делу ---------- */
+html body.tablo.tablo :is(button,a,.seg button,summary){transition-property:color,background-color,border-color,opacity,transform;transition-duration:.15s;transition-timing-function:var(--t-ease)}
+html body.tablo.tablo :is(.tile,.hub-kpi,.ach-card,.p-card,.yr-award,.ev-card):hover{transform:none!important}

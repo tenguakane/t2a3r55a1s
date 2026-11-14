@@ -1,0 +1,22 @@
+
+/* Крит. 5: контраст мелкого текста */
+.tile .lbl,.hub-kpi .l,.hint,.p-sub{font-size:13.5px}
+.tile .lbl,.hint{color:color-mix(in srgb,var(--muted) 78%,var(--text))}
+.tile .place,.tile .sub{font-size:13px}
+/* Крит. 2: «Уровни» — переключатель вида, отделён от переключателей данных (Ultimate, VK) */
+#fd-top #lvl-toggle,.top-actions #lvl-toggle{position:relative;margin-left:12px}
+#fd-top #lvl-toggle::before,.top-actions #lvl-toggle::before{content:"";position:absolute;left:-9px;top:7px;bottom:7px;width:1px;background:var(--line)}
+/* Крит. 3: второстепенные плитки спокойнее */
+.tab .tiles ~ .tiles .tile::before{opacity:.45}
+.tab .tiles ~ .tiles .tile:hover{border-color:var(--line)}
+/* Крит. 4: пустое состояние вместо рядов нулей */
+.pf-empty-note{padding:14px 16px;border:1px dashed var(--line);border-radius:var(--r-l);color:var(--muted);font-size:14px;margin:0 0 8px}
+/* Крит. 1: подписи у групп меню */
+nav .side-grp:has(> [data-tab="reactions"])::before{content:"Разделы";order:-1;display:block;padding:8px 12px 4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);opacity:.8}
+body.side-collapsed nav .side-grp:has(> [data-tab="reactions"])::before{display:none}
+/* затухание у обрезанных рядов «К разделу» */
+.ov-fade{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent)}
+/* единые отступы между блоками */
+.tab > h2{margin-top:28px;margin-bottom:12px}
+.tab > h2:first-child,.tab > .tbar + h2{margin-top:8px}
+@media(max-width:720px){.tab > h2 .sub-title,.tab > h2 small{display:none}}

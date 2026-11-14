@@ -1,0 +1,5 @@
+
+/* Телефон: ряды и сетки не должны шире экрана */
+@media(max-width:900px){html body .fc-places > *{grid-column:1!important;grid-row:auto!important}}
+@media(max-width:720px){html body .hc-bar{flex-wrap:wrap;max-width:100%;min-width:0}}
+@media(max-width:720px){html body .quick-ranges{max-width:100%;overflow-x:auto;scrollbar-width:none}html body .quick-ranges::-webkit-scrollbar{display:none}}

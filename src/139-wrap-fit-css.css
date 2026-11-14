@@ -1,0 +1,1 @@
+html body .wrap[data-fit="1"]:not(#zq){width:fit-content!important;max-width:100%!important}html body.glass-ui.tb-on .wrap[data-fit="1"]:not(#zq){grid-template-columns:max-content!important}

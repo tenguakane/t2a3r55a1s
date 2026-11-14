@@ -1,0 +1,18 @@
+
+#fx-lava-box[hidden]{display:none!important}
+.fx-lava-cols{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap}
+.fx-lava-cols input[type=color]{width:44px;height:34px;padding:2px;border-radius:var(--r-m);border:1px solid var(--line);background:var(--ctrl);cursor:pointer}
+.um-card{position:relative}
+.um-map{touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.um-map.dragging{cursor:grabbing}
+.um-map svg text{pointer-events:none}
+.um-zoom{position:absolute;right:16px;top:16px;display:flex;flex-direction:column;gap:var(--sp-1);z-index:2}
+.um-zoom .mini{width:36px;height:36px;padding:0;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center}
+.um-hint{position:absolute;right:62px;top:22px;text-align:right;white-space:nowrap;font-size:11.5px;color:var(--muted);opacity:.75;pointer-events:none}
+@media(max-width:700px){.um-hint{display:none}}
+/* Верхний переключатель разделов дублирует левое меню — скрываем. «Топ месяцев | Топ дней», «Хаб | Селфи | Время», «Профиль | Достижения» остаются: их нет в левом меню. */
+html body:not(#q1):not(#q2):not(#q3):not(#q4):not(#q5) main section.tab > .seg.group-tabs[data-group-seg="other"]:not(#zq){display:none!important}
+/* Таблицы «Топов» и «Прогноза мест»: рамка всегда по размеру таблицы, слева, без пустого поля и без прокрутки внутри рамки */
+html body .wrap:has(> :is(#days-table,#months-table,#fc-places-table,#forecast-table)):not(#zq){flex:0 1 auto!important;width:fit-content!important;max-width:100%!important;margin-left:0!important;margin-right:auto!important}
+html body .wrap > :is(#days-table,#months-table,#fc-places-table,#forecast-table):not(#zq){max-width:100%}
+html body .fc-places:not(#zq){display:block}

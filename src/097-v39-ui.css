@@ -1,0 +1,39 @@
+
+/* ===================== v39: единая панель инструментов над таблицами, читаемый поиск ===================== */
+input::placeholder,textarea::placeholder{color:color-mix(in srgb,var(--text) 48%,transparent)!important;opacity:1!important}
+html body .top-search{height:38px;padding:0 10px 0 12px;border-radius:var(--r-l)}
+html body .top-search > span{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;color:var(--muted);font-size:0}
+html body .top-search > span svg{width:17px;height:17px}
+html body .top-search input,html body.glass-ui :is(main,#filter-drawer) .top-search input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]){-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:none!important;background-image:none!important;box-shadow:none!important;border:0!important;border-radius:0!important;height:100%!important;min-height:0!important;margin:0!important;padding:0!important;color:var(--text)!important;-webkit-text-fill-color:var(--text);font-size:14.5px!important}
+@media (min-width:721px){
+  .tbar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2) var(--sp-2);margin:0 0 14px}
+  .tbar > .hc-bar{order:3;display:flex;gap:var(--sp-2);flex:0 0 auto}
+  .tbar > .year-legend{flex:1 0 100%!important}
+  .tb-head{display:flex!important;flex-wrap:wrap;align-items:center;gap:var(--sp-2)}
+  .tb-head > :is(h2,h3){margin-right:auto!important}
+  .tb-head > :is(.hc-bar,.filters,.table-export-actions){margin:0!important;display:flex;gap:var(--sp-2);flex:0 0 auto;min-height:0}
+  html body .tb-head > .filters{padding:0!important;background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  .tbar > *{margin:0!important}
+  .tbar > .sec-nav{order:0;flex:0 1 auto;align-items:center}
+  .tbar > .sec-nav > .hint{margin:0 4px 0 0!important;align-self:center}
+  .tbar > .top-tools{order:1;flex:0 1 340px}
+  .tbar > .top-tools .top-search{flex:1 1 auto;min-width:200px}
+  .tbar > .year-legend{order:4;display:flex;flex-wrap:wrap;gap:var(--sp-1)}
+  .tbar > .year-legend .ychip-btn{height:32px}
+  html body .tbar > .filters{order:2;margin-left:auto!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;flex:0 0 auto;display:flex}
+  html body .tbar .filters-export-actions{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin:0!important;padding:0!important}
+  html body .tbar .filters-export-actions .mini{min-height:0!important;padding:0 14px!important;font-size:14px!important;border-radius:var(--r-l)!important;display:inline-flex;align-items:center;gap:var(--sp-1)}
+  html body .hc-bar :is(.tv-btn,.hc-btn){height:var(--h-m)!important;border-radius:var(--r-l)!important;padding:0 13px!important}
+}
+main .sec-nav{align-items:center}
+main .sec-nav > .hint{margin:0 4px 0 0!important;align-self:center}
+.tb-lbl{align-self:center;color:var(--muted);font-size:13.5px;margin-right:2px}
+@media (min-width:721px){
+  /* одна высота и скругление у всех кнопок над блоками */
+  html body main :is(.section-head,.table-export-row,.tbar,.s-mark-head) :is(button.mini,.msel.solo),
+  html body main .hc-bar :is(.tv-btn,.hc-btn){height:var(--h-m)!important;min-height:0!important;padding:0 13px!important;border-radius:var(--r-l)!important;display:inline-flex!important;align-items:center;gap:var(--sp-1);font-size:14px!important;line-height:1}
+  html body main :is(.section-head,.table-export-row){align-items:center}
+  html body .tbar .filters-export-actions .mini{height:36px!important}
+  html body .top-search{height:36px}
+}
+@media (max-width:720px){.tbar{display:contents}}

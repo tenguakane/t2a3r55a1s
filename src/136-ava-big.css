@@ -1,0 +1,14 @@
+
+/* Главный аватар участника — крупнее: Профиль и сводка «Ты» в Хабе; в топе дня в Хабе — чуть крупнее */
+html body #p-out .p-hero > .p-avatar{flex:0 0 112px!important;width:112px!important;height:112px!important;font-size:48px!important;box-shadow:0 0 0 5px color-mix(in srgb,var(--p-color) 28%,transparent)!important}
+html body .mt-who .mt-ava{flex:0 0 80px!important;width:80px!important;height:80px!important;font-size:34px!important}
+html body .mt-who .mt-ava *:not(img){font-size:34px!important;line-height:1}
+html body .mt-row .mt-mini *:not(img){font-size:15px!important;line-height:1}
+html body .mt-who b{font-size:22px}
+html body .mt-row .mt-mini{flex:0 0 34px!important;width:34px!important;height:34px!important;font-size:15px!important}
+html body .mt-row{padding:9px 12px!important}
+@media (max-width:720px){
+  html body #p-out .p-hero > .p-avatar{flex-basis:88px!important;width:88px!important;height:88px!important;font-size:38px!important}
+  html body .mt-who .mt-ava{flex-basis:64px!important;width:64px!important;height:64px!important;font-size:28px!important}
+  html body .mt-row .mt-mini{flex-basis:30px!important;width:30px!important;height:30px!important}
+}

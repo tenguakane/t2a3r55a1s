@@ -1,0 +1,153 @@
+
+/* ===================== Переключатели вместо кнопок (2026.11.07) =====================
+   Всё, что выбирает «одно из нескольких» (период, Таблица/Карточки, режимы, сортировки),
+   оформлено как «Участники / Чаты»: текст и линия под активным пунктом, без рамок и заливок.
+   Кнопки-действия («Копировать», «Столбцы») — тихий текст без рамки. Только ПК; на телефоне всё как раньше. */
+@media (min-width:721px){
+  /* ---------- Переключатели: вкладки с подчёркиванием ---------- */
+  html body:not(#tu1):not(#tu2):not(#tu3) :is(main,#filter-drawer) :is(.seg,.sq-seg,#hub-period,.hub-period-seg,.quick-ranges:not(#theme-bases):not(#ch-types)):not(.stat-subnav):not(.group-tabs):not(.ach-view-seg):not(#hub-seg):not(#tab-settings *){
+    display:inline-flex!important;flex-wrap:wrap;align-items:stretch;width:fit-content;max-width:100%;gap:0 var(--sp-4)!important;padding:0!important;
+    background:none!important;background-image:none!important;border:0!important;border-bottom:1px solid var(--ds-line,var(--line))!important;border-radius:0!important;
+    box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;overflow:visible!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) :is(main,#filter-drawer) :is(.seg,.sq-seg,#hub-period,.hub-period-seg,.quick-ranges:not(#theme-bases):not(#ch-types)):not(.stat-subnav):not(.group-tabs):not(.ach-view-seg):not(#hub-seg):not(#tab-settings *) > :is(button,.quick-chip){
+    flex:0 0 auto!important;width:auto!important;min-width:0!important;height:var(--h-m)!important;min-height:0!important;padding:0 1px!important;margin:0 0 -1px!important;
+    border:0!important;border-radius:0!important;background:none!important;background-image:none!important;box-shadow:none!important;
+    color:var(--muted)!important;font-size:14px!important;font-weight:500!important;white-space:nowrap;text-align:center}
+  html body:not(#tu1):not(#tu2):not(#tu3) :is(main,#filter-drawer) :is(.seg,.sq-seg,#hub-period,.hub-period-seg,.quick-ranges:not(#theme-bases):not(#ch-types)):not(.stat-subnav):not(.group-tabs):not(.ach-view-seg):not(#hub-seg):not(#tab-settings *) > :is(button,.quick-chip):hover{color:var(--text)!important;background:none!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) :is(main,#filter-drawer) :is(.seg,.sq-seg,#hub-period,.hub-period-seg,.quick-ranges:not(#theme-bases):not(#ch-types)):not(.stat-subnav):not(.group-tabs):not(.ach-view-seg):not(#hub-seg):not(#tab-settings *) > :is(button,.quick-chip):is(.active,[aria-pressed="true"],[aria-selected="true"]){
+    color:var(--text)!important;background:none!important;box-shadow:inset 0 -2px 0 var(--accent)!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) :is(main,#filter-drawer) :is(.seg,.sq-seg,#hub-period,.hub-period-seg,.quick-ranges:not(#theme-bases):not(#ch-types)):not(.stat-subnav):not(.group-tabs):not(.ach-view-seg):not(#hub-seg):not(#tab-settings *) > :is(button,.quick-chip)::before{content:none!important}
+
+  html body:not(#tu1):not(#tu2):not(#tu3) main .quick-ranges:not(#theme-bases):not(#ch-types) > .qr-label{align-self:center;margin:0 -4px 0 0!important;color:var(--faint,var(--muted))}
+
+  /* Строка статистики: те же 40 px и тот же шрифт, что у «Участники / Чаты» — линии лежат на одной высоте */
+  html body:not(#tu1):not(#tu2):not(#tu3):not(#tu4):not(#tu5):not(#tu6):not(#tu7):not(#tu8):not(#tu9) .stats-topbar .sq-seg{gap:0 var(--sp-4)!important}
+  html body:not(#tu1):not(#tu2):not(#tu3):not(#tu4):not(#tu5):not(#tu6):not(#tu7):not(#tu8):not(#tu9) .stats-topbar .sq-seg > button{height:var(--h-m)!important;font-size:15px!important;font-weight:600!important}
+  html body:not(#tu1):not(#tu2):not(#tu3):not(#tu4):not(#tu5):not(#tu6):not(#tu7):not(#tu8):not(#tu9) .stats-topbar .tv-seg > button{height:var(--h-m)!important;font-size:15px!important;font-weight:600!important}
+  @container (max-width:1500px){
+    html body:not(#tu1):not(#tu2):not(#tu3):not(#tu4):not(#tu5):not(#tu6):not(#tu7):not(#tu8):not(#tu9) .stats-topbar .sq-seg{gap:0 var(--sp-3)!important}
+    html body:not(#tu1):not(#tu2):not(#tu3):not(#tu4):not(#tu5):not(#tu6):not(#tu7):not(#tu8):not(#tu9) .stats-topbar .sq-seg > button{font-size:14px!important}
+  }
+
+  /* ---------- «Таблица | Карточки»: настоящий переключатель; старая кнопка остаётся скрытой и по-прежнему всё делает ---------- */
+  html body:not(#tu1):not(#tu2):not(#tu3) .tv-btn[data-tu-seg]{display:none!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .tv-seg[hidden]{display:none!important}
+  .tv-seg{display:none}
+  html body:not(#tu1):not(#tu2):not(#tu3) .tv-seg:not([hidden]){display:inline-flex!important}
+
+  /* ---------- Дата: строка с пунктирной линией, как остальные фильтры ---------- */
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date{height:40px!important;min-height:0!important;padding:0 2px!important;gap:var(--sp-1)!important;
+    background:none!important;background-image:none!important;border:0!important;border-bottom:1px dashed var(--ds-line-2,var(--line-2))!important;border-radius:0!important;
+    box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;font-size:15px!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date > span[aria-hidden]{display:none!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date input{background:none!important;border:0!important;box-shadow:none!important;color:var(--text)!important;font:inherit!important;font-weight:500!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date:is(:hover,:focus-within){border-bottom-color:var(--accent)!important}
+
+  /* ---------- Кнопки-действия: тихий текст без рамки ---------- */
+  html body:not(#tu1):not(#tu2):not(#tu3) main :is(.st-desk-tools .hc-btn,.hc-bar .hc-btn,.table-export-actions .copy-btn,.table-export-actions button.mini){
+    height:var(--h-m)!important;min-height:0!important;padding:0 2px!important;gap:var(--sp-1)!important;border:0!important;border-radius:0!important;background:none!important;background-image:none!important;
+    box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;color:var(--muted)!important;font-size:14px!important;font-weight:500!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick :is(.st-desk-tools .hc-btn,.table-export-actions .copy-btn,.table-export-actions button.mini){height:var(--h-m)!important;font-size:15px!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) main :is(.st-desk-tools .hc-btn,.hc-bar .hc-btn,.table-export-actions .copy-btn,.table-export-actions button.mini):is(:hover,[aria-expanded="true"]){color:var(--text)!important;background:none!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .st-desk-tools .hc-btn .st-hc-lbl{display:inline!important}
+
+
+  /* ---------- «Статистика»: быстрые даты — в календарь, чат — в верхнюю строку, «Копировать» ближе ---------- */
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-seg > :is([data-sq="yday"],[data-sq="7"],[data-sq="pmonth"],[data-sq="all"]){display:none!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date{position:relative}
+  /* когда выбран один из перенесённых периодов, поле даты называет его вместо цифр */
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date[data-preset]::before{content:attr(data-preset);position:absolute;left:2px;top:50%;transform:translateY(-50%);color:var(--text);font-size:15px;font-weight:500;white-space:nowrap;pointer-events:none}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date[data-preset] input{color:transparent!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick > .field#f-chat{display:flex!important;flex-direction:row;align-items:center;flex:0 0 auto;margin:0!important;padding:0!important;min-width:0}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick > .field#f-chat > label{display:none!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick #f-chat .msel{width:170px;height:40px!important;min-height:0!important;padding:0 24px 0 0!important;text-align:left;
+    border:0!important;border-bottom:1px dashed var(--ds-line-2,var(--line-2))!important;border-radius:0!important;background:none!important;box-shadow:none!important;font-size:15px!important;font-weight:600!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .st-copy-slot{margin-left:0!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .st-copy-slot .copy-btn::before{margin-right:7px!important}
+  /* подпись таблицы — над самой таблицей и чуть дальше от неё */
+  html body:not(#tu1):not(#tu2):not(#tu3) main .table-export-row[data-tw]{width:var(--tw)!important;max-width:100%!important;flex:0 0 auto!important;margin-left:auto!important;margin-right:auto!important;margin-bottom:18px!important}
+
+
+  /* ---------- Строка «Статистики» — по центру; год и месяц — отдельные поля, календарь не пропадает ---------- */
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-topbar{justify-content:center!important;flex-wrap:wrap!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-topbar > .stats-quick{flex:0 1 auto!important;justify-content:center!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date.sq-sub[hidden]{display:none!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date.sq-sub input{min-width:0!important}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date.sq-sub input[type="month"]{width:150px}
+  html body:not(#tu1):not(#tu2):not(#tu3) .stats-quick .sq-date.sq-sub input[type="number"]{width:76px}
+  /* hover строки: закреплённые «Место»/«Участник» подсвечиваются так же, как остальные ячейки */
+  html body .wrap.sx > #dm-table > tbody > tr:hover > td:is(.dm-no,.dm-name){background-color:color-mix(in srgb,var(--text) 6%,var(--dm-solid))!important}
+  /* имя в таблицах не «загорается» цветом и подчёркиванием при наведении */
+  html body main table .pname:hover{color:inherit!important;border-bottom-color:transparent!important}
+  /* топ-3: перелив имени рисуется на самом имени, а не на всей ячейке — иначе background-clip:text съедает подсветку строки при наведении */
+  html body.holo-text-on :is(tr:has(> td.medal-1),tr:has(> td.medal-2),tr:has(> td.medal-3)) > td:nth-child(2):not(.dm-name){background-image:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;-webkit-text-fill-color:currentColor!important;animation:none!important;filter:none!important}
+  html body.holo-text-on tr:has(> td.medal-1) > td:nth-child(2):not(.dm-name) .pname{background-image:linear-gradient(100deg,#ffd166 0%,#ff9ecf 18%,#67e8f9 36%,#a78bfa 54%,#76f0b6 72%,#ffd166 90%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:holoText 7s linear infinite;filter:drop-shadow(0 0 6px rgba(167,139,250,.25))}
+  html body.holo-text-on tr:has(> td.medal-2) > td:nth-child(2):not(.dm-name) .pname{background-image:linear-gradient(100deg,#9aa6bd 0%,#ffffff 16%,#7f8aa1 36%,#dfe6f2 56%,#8e99b0 78%,#9aa6bd 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:holoText 10s linear infinite}
+  html body.holo-text-on tr:has(> td.medal-3) > td:nth-child(2):not(.dm-name) .pname{background-image:linear-gradient(100deg,#e3a36b 0%,#f3c79a 30%,#b8784a 55%,#e3a36b 80%,#e3a36b 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:holoText 14s linear infinite}
+  /* нули в таблицах — тёмные прочерки */
+  html body main td.zero{color:color-mix(in srgb,var(--text) 19%,transparent)!important}
+
+  /* ---------- Панель «Фильтры»: плоская, без рамок в рамках ---------- */
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body :is(.filters,.field,.checkline,.table-export-actions,.opt-pop,.opt-list){
+    background:none!important;background-image:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body :is(.field,.checkline,.opt-pop,.table-export-actions)::before,
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body :is(.field,.checkline,.opt-pop,.table-export-actions)::after{content:none!important;display:none!important}
+  /* галочки — просто строки с переключателем */
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .checkline{display:flex!important;align-items:center;justify-content:flex-start!important;gap:var(--sp-2)!important;width:100%;min-height:0!important;height:auto!important;color:var(--text)!important;font-size:15px!important;font-weight:500!important}
+  /* «Параметры» не нужны: переключатели выведены прямо в панель */
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .opt-pop{display:block!important;width:100%;flex:0 0 auto}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .opt-pop > summary{display:none!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .opt-pop .opt-list{position:static!important;display:flex!important;flex-direction:column;gap:0!important;min-width:0!important;width:100%;margin:0!important;padding:0!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .opt-pop::details-content{content-visibility:visible!important;display:block!important}
+  /* кнопки «Копировать / Видео / Настройка» — тихий текст в ряд */
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .table-export-actions{display:flex!important;flex-wrap:wrap;justify-content:flex-start!important;gap:2px var(--sp-4)!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .table-export-actions :is(button,.mini,.copy-btn){flex:0 0 auto!important;width:auto!important;height:var(--h-s)!important;min-height:0!important;padding:0!important;margin:0!important;
+    border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;color:var(--muted)!important;font-size:15px!important;font-weight:500!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .table-export-actions :is(button,.mini,.copy-btn):hover{color:var(--text)!important;background:none!important}
+  /* Ultimate / VK — два переключателя без коробок */
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer .fd-top{gap:var(--sp-5)!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer .fd-top .ult-btn{flex:0 0 auto!important;width:auto!important;height:auto!important;min-height:0!important;padding:6px 2px!important;justify-content:flex-start;
+    border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+
+  /* выравнивание: подписи и вкладки встают в один левый край с остальными полями */
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .filters{align-items:stretch!important;gap:var(--sp-3)!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .field:has(> .seg) > label{padding:0 0 2px!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .field > .seg{margin:2px 0 4px!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .opt-pop{margin:0 0 6px!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .checkline{padding:6px 0!important}
+  /* ряды кнопок («Копировать», «Видео», «Настройка») — тихий текст */
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body :is(.field > .pbtn,.field > button.mini){display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start!important;gap:2px var(--sp-4);padding:0!important;margin:0!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body :is(.field > .pbtn > :is(button,.mini),.field > button.mini){flex:0 0 auto!important;width:auto!important;height:var(--h-s)!important;min-height:0!important;padding:0!important;margin:0!important;
+    border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;color:var(--muted)!important;font-size:15px!important;font-weight:500!important;justify-content:flex-start!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body :is(.field > .pbtn > :is(button,.mini),.field > button.mini):hover{color:var(--text)!important;background:none!important}
+  /* выбор участников/чатов — как остальные списки: пунктир и стрелка */
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .field > .pick{position:relative;width:100%}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .field > .pick > summary{display:flex!important;align-items:center;width:100%;height:34px!important;min-height:0!important;padding:0 22px 0 0!important;
+    border:0!important;border-bottom:1px dashed var(--ds-line-2,var(--line-2))!important;border-radius:0!important;background:none!important;box-shadow:none!important;color:var(--text)!important;font-size:15px!important;font-weight:600!important;list-style:none}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .field > .pick > summary::-webkit-details-marker{display:none}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .field > .pick > summary::after{content:""!important;display:block!important;position:absolute;right:3px;top:12px;width:6px;height:6px;border-right:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:rotate(45deg);opacity:.55}
+
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .filters{margin:0!important}
+  html body:not(#d1):not(#d2):not(#d3) #filter-drawer #fd-body .filters + .filters{margin-top:14px!important}
+  /* строка чипов «Показывать» — без общей рамки, как и сами чипы */
+  html body:not(#d1):not(#d2):not(#d3) main #ch-types{background:none!important;background-image:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;gap:var(--sp-2)!important}
+
+  /* ---------- Чипы: один тихий вид ---------- */
+  html body:not(#d1):not(#d2):not(#d3) :is(main,#filter-drawer) :is(#ch-types .quick-chip,.series-chips .chip,.s-chip,.ychip-btn){
+    height:var(--h-s)!important;min-height:0!important;padding-top:0!important;padding-bottom:0!important;border:1px solid var(--ds-line-2,var(--line-2))!important;border-radius:var(--r-m)!important;
+    background:none!important;background-image:none!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+    color:var(--muted)!important;font-size:13.5px!important;font-weight:500!important}
+  html body:not(#d1):not(#d2):not(#d3) :is(main,#filter-drawer) :is(#ch-types .quick-chip,.series-chips .chip,.s-chip,.ychip-btn):hover{color:var(--text)!important;border-color:color-mix(in srgb,var(--text) 32%,transparent)!important;background:none!important}
+  html body:not(#d1):not(#d2):not(#d3) :is(main,#filter-drawer) :is(#ch-types .quick-chip.active,.series-chips .chip:not(.off),.s-chip[aria-pressed="true"]){
+    color:var(--text)!important;border-color:color-mix(in srgb,var(--accent) 55%,transparent)!important;background:var(--accent-bg)!important}
+  html body:not(#d1):not(#d2):not(#d3) :is(main,#filter-drawer) .ychip-btn.active{color:var(--text)!important;border-color:var(--yc,var(--accent))!important;background:color-mix(in srgb,var(--yc,var(--accent)) 16%,transparent)!important}
+  html body:not(#d1):not(#d2):not(#d3) :is(main,#filter-drawer) .series-chips .chip.off{color:var(--faint,var(--muted))!important;text-decoration:line-through;border-style:dashed!important}
+}
+
+/* Календарь «Статистики» на ПК: слева быстрые периоды, справа календарь */
+.dp.dp-has-pre{width:auto;display:flex;align-items:flex-start;gap:var(--sp-3)}
+.dp-pre{flex:0 0 150px;display:flex;flex-direction:column;gap:2px;padding:0 12px 0 0;border-right:1px solid var(--line)}
+.dp .dp-q{white-space:nowrap;height:36px;padding:0 10px;border-radius:var(--r-m);text-align:left;font-weight:600;color:var(--muted)}
+.dp .dp-q:hover{background:color-mix(in srgb,var(--text) 7%,transparent);color:var(--text)}
+.dp .dp-q.on{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.dp-cal{flex:0 0 276px;min-width:0}

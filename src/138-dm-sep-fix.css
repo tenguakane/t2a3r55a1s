@@ -1,0 +1,3 @@
+html body .dm-table:is(table) :is(th.dm-grand,th.dm-totcol,td.dm-total,td.dm-totcol):not(#zq){border-left:0!important}
+/* «Всего» в шапке: фон-картинка блеска цифр при дробной ширине столбцов давала тёмную щель в 1px слева — красим ячейку обычным фоном, без блеска */
+html body .dm-table:is(table) thead th.dm-grand:not(#zq){background-image:none!important;background-color:var(--dm-head-bg,var(--th-bg))!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;animation:none!important;-webkit-text-fill-color:currentColor!important;color:var(--text)!important}

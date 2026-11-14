@@ -1,0 +1,5 @@
+
+.ui-i{display:inline-flex;align-items:center;vertical-align:-.17em;margin:0 .1em;line-height:1;position:relative}
+.ui-i svg.li{width:1.1em;height:1.1em;vertical-align:0}
+.ui-i .ui-e{display:inline-block;width:0;height:1em;overflow:hidden;vertical-align:top;opacity:0;pointer-events:none}
+.ui-dot{display:inline-block;width:.68em;height:.68em;border-radius:50%;background:var(--c,currentColor);vertical-align:-.03em;margin:0 .22em}

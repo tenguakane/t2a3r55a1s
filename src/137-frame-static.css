@@ -1,0 +1,6 @@
+
+/* Рамка таблицы неподвижна при прокрутке вбок: она закреплена (sticky) в той же ячейке сетки, что и таблица,
+   и двигается вместе с прокруткой самим браузером — без запаздывания на телефоне. */
+html body.glass-ui.tb-on .wrap:has(> table:not(.tv-cards)):not(#zq){display:grid!important;grid-template-columns:max-content;align-items:start}
+html body.glass-ui.tb-on .wrap:has(> table:not(.tv-cards)):not(#zq) > table{grid-area:1/1;z-index:0}
+html body.glass-ui.tb-on .wrap:has(> table:not(.tv-cards)):not(#zq)::after{grid-area:1/1;position:sticky!important;inset:auto!important;left:0!important;top:0!important;width:var(--wrap-cw,100%)!important;height:auto!important;min-height:100%;align-self:stretch!important;justify-self:start!important;box-sizing:border-box;margin:0!important}

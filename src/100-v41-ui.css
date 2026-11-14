@@ -1,0 +1,5 @@
+
+/* ===================== v41: свёрнутое боковое меню раскрывается ровно по ширине подписей ===================== */
+@media (min-width:721px){
+  html body.side-nav.side-collapsed .side-grp:not(.g-set):hover{width:var(--grp-w,var(--side-w-open,188px))}
+}

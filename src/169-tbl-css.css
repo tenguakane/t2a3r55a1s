@@ -1,0 +1,36 @@
+
+/* ---- Таблицы: сортировка, закрепление строк, перенос столбцов ---- */
+html body th[data-gs]:not(#zq){cursor:pointer;user-select:none}
+html body th[data-gs]:not(#zq):hover{color:var(--text,#fff)}
+html body th[data-gs-dir="asc"]:not(#zq)::after{content:" ↑";color:var(--accent);font-weight:700}
+html body th[data-gs-dir="desc"]:not(#zq)::after{content:" ↓";color:var(--accent);font-weight:700}
+.sticky-table-clone .tc-grip,.sticky-table-clone .tp-pin{display:none!important}
+.tp-pin{position:absolute;left:1px;top:50%;transform:translateY(-50%);width:20px;height:20px;padding:0;border:0;border-radius:var(--r-s);background:transparent;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s,background .12s,color .12s;z-index:2}
+.tp-pin svg{width:13px;height:13px;pointer-events:none}
+tr:hover > * > .tp-pin,.tp-pin:focus-visible{opacity:.75}
+.tp-pin:hover{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent);opacity:1}
+tr.tp-pinned > * > .tp-pin{opacity:1;color:var(--accent)}
+tr.tp-pinned > *{background-image:linear-gradient(color-mix(in srgb,var(--accent) 9%,transparent),color-mix(in srgb,var(--accent) 9%,transparent))}
+@media (hover:none){.tp-pin{opacity:.4}}
+table.tv-cards .tp-pin{display:none}
+html body th.tc-has-grip:not(#zq){position:relative;padding-left:20px}
+.tc-grip{position:absolute;left:3px;top:50%;transform:translateY(-50%);width:14px;height:22px;display:inline-flex;align-items:center;justify-content:center;cursor:grab;color:var(--muted);opacity:.45;touch-action:none;border-radius:var(--r-xs)}
+th:hover > .tc-grip{opacity:1}
+.tc-grip:hover{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+.tc-grip svg{width:8px;height:14px;pointer-events:none}
+th.tc-drag{opacity:.55}
+th.tc-over{box-shadow:inset 3px 0 0 var(--accent)}
+body.tc-dragging,body.tc-dragging *{cursor:grabbing!important;user-select:none!important}
+#anime-bar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2) var(--sp-3);margin:6px 0;max-width:100%}
+#anime-bar[hidden]{display:none}
+#anime-bar .an-btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--sp-1);height:30px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--ctrl,var(--panel));color:var(--text);font:inherit;font-size:13px;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+#anime-bar .an-btn svg{width:12px;height:12px;flex:0 0 auto;color:var(--accent)}
+#anime-bar .an-btn:hover{border-color:var(--accent)}
+#anime-bar .an-btn.on{background:color-mix(in srgb,var(--accent) 16%,transparent);border-color:var(--accent);color:color-mix(in srgb,var(--accent) 35%,#ffffff)}
+#anime-bar .an-sp{min-width:44px;padding:0 10px;color:var(--muted);font-variant-numeric:tabular-nums}
+#anime-bar .an-date{font-weight:700;font-variant-numeric:tabular-nums;min-width:7ch}
+#anime-bar .an-vals{display:flex;flex-wrap:wrap;gap:var(--sp-1) var(--sp-2);font-size:12.5px;color:var(--muted);min-width:0}
+#anime-bar .an-vals b{font-weight:600}
+#anime-bar .an-vals i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:baseline}
+.anime-run .anim-line{animation:none!important;stroke-dasharray:none!important}
+.anime-run .anim-fade-late{animation:none!important}
