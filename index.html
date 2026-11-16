@@ -4910,7 +4910,7 @@ function lineChart({title, st, series: allSeries, xMin, xMax, ticks, yMax: yMaxI
   const gi = (s, html) => xLabel ? `<g class="lg-item" data-name="${escH(s.name)}"${s.ek ? ` data-ek="${escH(s.ek)}"` : ""} opacity="${hiddenSeries.has(s.name) ? 0.35 : 1}" style="cursor:pointer">${html}</g>` : html;
   // Сдвигаем область построения вправо, чтобы значения шкалы не отстояли далеко от графика.
   const endLbl = !!xLabel && series.length >= 3, many = series.length > 6;
-  const W = 900, L = endLbl ? 66 : 16, R = endLbl ? 700 : 850, B = 500;
+  const W = 900, B = 500; let L = endLbl ? 66 : 16, R = endLbl ? 700 : 850;
   const size = appearance || DEFAULT_TREND_STYLE;
   const lineWidth = Number(size.line) || 4, pointRadius = Number(size.point) || 8;
   const arrowLength = Number(size.arrowLength) || 6, arrowSize = Number(size.arrowSize) || 8;
@@ -4921,6 +4921,9 @@ function lineChart({title, st, series: allSeries, xMin, xMax, ticks, yMax: yMaxI
   const T = 100;
   const yCeilIn = Number($("y-ceil") && $("y-ceil").value), yCeil = yCeilIn > 0 ? yCeilIn : 0;
   const H = B + 52, sc = axisScale(yMax, yCeil), max = sc.max;
+  // Поле под подписи оси Y считаем по самой длинной подписи («1,2 тыс.» длиннее «1.2K»), иначе она обрезается.
+  const axW = Math.max(30, ...axisTicks(sc).map(v => axisLabel(v).length * 10.8)) + 4;
+  if (endLbl) L = Math.max(L, Math.ceil(axW + 16)); else R = Math.min(R, Math.floor(894 - axW - 8));
   const sx = x => L + (x - xMin) / ((xMax - xMin) || 1) * (R - L - 20), sy = y => B - y / max * (B - T);
   let o = head(title, st); const defs = [];
   // Сетка и оси бледнее данных: линии — главное на графике.
@@ -16146,13 +16149,16 @@ function multiplesChart(){
 window.CHANGELOG = [
   // Правило ведения: мелкие правки не заводят новую запись — они дописываются в текущий выпуск (у выпуска обновляется номер сборки).
   // Новая запись — когда начинается новый заметный выпуск. Пункты — коротко и по делу.
-  {v:"2026.11.12-1", date:"2026-11-12", title:"План на месяц, «Если бы», таймлайн, частицы и эксперименты", items:[
+  {v:"2026.11.14-1", date:"2026-11-14", title:"Единая шкала размеров, цвет участника, вид линий и чистка кода", items:[
     {tag:"imp", area:"Код", text:"Убран мёртвый код: четыре неиспользуемые функции, 62 CSS-селектора с классами, которых нет ни в разметке, ни в скриптах, и 410 перекрытых CSS-деклараций (около 25 КБ). Внешний вид проверен сверкой вычисленных стилей по всем вкладкам на ПК и телефоне."},
     {tag:"imp", area:"Дизайн", text:"Единая шкала размеров: отступы 4/8/12/16/24, три высоты кнопок (32/40/48) и четыре радиуса скругления собраны в переменные --sp-*, --h-*, --r-*. Около 800 значений по всей странице приведены к ней, поэтому соседние блоки больше не расходятся на пару пикселей."},
     {tag:"new", area:"Участники", text:"Один цвет на участника везде: перед именем в таблицах и списках появилась цветная точка того же цвета, что у его линии на графиках. Цвет по-прежнему меняется в настройках графиков."},
     {tag:"new", area:"Графики", text:"В «Динамике» добавлен «Вид линий»: накопительно (как раньше), по дням и скользящее среднее за 7 дней. Вторые два показывают темп и не дёргаются от выходных."},
     {tag:"imp", area:"Графики", text:"Оси и сетка бледнее данных, выходные слегка подсвечены на периодах до четырёх месяцев, подписи оси читаются как «1,2 тыс.» на языке интерфейса, а год в подсказке не повторяется, если период лежит в текущем году. Длинные ряды прореживаются под ширину графика (минимум и максимум каждого участка сохраняются), подсказка при этом работает по полным данным."},
+    {tag:"fix", area:"Графики", text:"Подписи вертикальной оси больше не обрезаются: поле под них считается по самой длинной подписи, например «7,5 тыс.»."},
     {tag:"imp", area:"Интерфейс", text:"Пустой результат больше не оставляет пустое место: короткое пояснение и кнопка «Сбросить фильтры»."},
+  ]},
+  {v:"2026.11.12-1", date:"2026-11-12", title:"План на месяц, «Если бы», таймлайн, частицы и эксперименты", items:[
     {tag:"new", area:"Графики", text:"Полноэкранный график на телефоне стал живым: подсказка следует за пальцем, масштаб двумя пальцами и двойным касанием, кнопки «+», «−» и сброс, список серий внизу — касанием серию можно скрыть."},
     {tag:"fix", area:"Переводы", text:"Допереведены строки с числами и именами: «3 дня назад», «сообщений всего», «реакций поставлено», подписи в Хронике, Времени, Достижениях, Сравнении, Итогах года, ошибки загрузки реакций. «N назад» ставится по правилам языка («3 days ago», «il y a 3 jours»). Названия событий, званий и имена остаются как в данных."},
     {tag:"imp", area:"Код", text:"Проверка переводов теперь обходит все вкладки на шести языках (раньше — только «Настройки»); для украинского и белорусского ищет слова с русскими буквами."},
@@ -22521,7 +22527,9 @@ body.cards-avatars .pname[data-pc]::before{display:none}
     });
   }
   const later = () => { clearTimeout(t); t = setTimeout(paintNames, 150); };
-  try { new MutationObserver(later).__hub(document.querySelector("main") || document.body); } catch (e) { new MutationObserver(later).observe(document.body, {childList:true, subtree:true}); }
+  try { new MutationObserver(later).__hub(document.body); } catch (e) { new MutationObserver(later).observe(document.body, {childList:true, subtree:true}); }
+  // Атрибут data-open-profile часть модулей ставит уже после вставки имени: следим и за ним (узкий фильтр, лишней нагрузки нет).
+  try { new MutationObserver(later).observe(document.body, {attributes:true, attributeFilter:["data-open-profile"], subtree:true}); } catch (e) {}
   document.addEventListener("change", later);
   window.__paintNames = paintNames; paintNames();
 })();
